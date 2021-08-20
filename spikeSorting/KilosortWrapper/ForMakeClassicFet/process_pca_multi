@@ -1,0 +1,197 @@
+#!/bin/bash
+
+#////////////////////////////////////////////////////////////////////////////
+#// Principal component analysis
+#//
+#//   copyright            : (C) 2004 by Micha� Zugaro and Lynn Hazan
+#//   email                : mzugaro@andromeda.rutgers.edu lynn.hazan@myrealbox.com
+#//
+#//   This program is free software; you can redistribute it and/or modify
+#//   it under the terms of the GNU General Public License as published by
+#//   the Free Software Foundation; either version 2 of the License, or
+#//   (at your option) any later version.
+#//
+#////////////////////////////////////////////////////////////////////////////
+
+if [ $# -ne 2 ]
+then
+	echo "usage: $(basename $0) basename electrodeGroup $1 hello"
+	exit 1
+fi
+
+
+base=$1
+electrodeGroup=$2
+programName=$(basename $0)
+
+# Check requirements
+if [ ! -f $base.xml ]
+then
+	echo "$programName - Error: cannot perform PCA ($base.xml not found)."
+	exit 1
+fi
+
+if [ ! -f $base.fil ]
+then
+	echo "$programName - Error: cannot perform PCA ($base.fil not found)."
+	exit 1
+fi
+
+if [ ! -f $base.res.$electrodeGroup ]
+then
+	echo "$programName - Error: cannot perform PCA ($base.res.$electrodeGroup not found)."
+	exit 1
+fi
+
+if [ ! -f $base.spk.$electrodeGroup ]
+then
+	echo "$programName - Error: cannot perform PCA ($base.spk.$electrodeGroup not found)."
+	exit 1
+fi
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+# // Functions
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+multiply(){
+ echo $1 | awk -v samplingInterval=$samplingInterval '{printf "%i",$1*100/samplingInterval}'
+}
+
+errorCheck(){
+ if [ $1 -eq 127 ]
+ then
+  echo -e "$programName - Error: the program $2 was not found.\n$3"
+  exit 1
+ fi
+ 
+ if [ $1 -eq 126 ]
+ then
+  echo -e "$programName - Error: the program $2 is not executable.\n$3"
+  exit 1
+ fi
+ 
+# One of the processes in the command could be receiving a term signal of 13 (128 + 13 =
+# 141) SIGPIPE. Apparrently this could happen if the process after the pipe
+# closes its STDIN before the original process is finished.
+#This seems to be the case of spower | sbaselin, and this is not an error
+ 
+ if [ $1 -ne 141 ] && [ $1 -ne 0 ]
+ then
+  echo -e "$programName - Error: the program $2 exited with the return code $1.\n$3" 
+  exit 1
+ fi
+}
+
+exist(){
+nb=$(xpathReader --count $base.xml $1)
+if [ $nb -eq 0 ] 
+then
+ echo "programName - Error: the $2 is missing."
+ exit 1
+fi
+}
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+# // Parameters
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+
+exist "//acquisitionSystem/nChannels" "number of channels"
+exist "//acquisitionSystem/nBits" "number of bits"
+exist "//acquisitionSystem/offset" "offset"
+exist "//acquisitionSystem/samplingRate" "sampling rate"
+exist "//spikeDetection/channelGroups/group[$electrodeGroup]/nSamples" "number of samples in a waveform for the spike group $electrodeGroup"
+exist "//spikeDetection/channelGroups/group[$electrodeGroup]/peakSampleIndex" "sample index of the peak in a waveform for the spike group $electrodeGroup"
+exist "//program/name[.='process_pca']/../parameters/parameter/name[.='beforePeak']/../value" "beforePeak parameter of the script process_pca"
+exist "//program/name[.='process_pca']/../parameters/parameter/name[.='afterPeak']/../value" "afterPeak parameter of the script process_pca"
+exist "//program/name[.='process_pca']/../parameters/parameter/name[.='nSamplesInPCA']/../value" "nSamplesInPCA parameter of the script process_pca"
+exist "//spikeDetection/channelGroups/group[$electrodeGroup]/nFeatures" "number of features for the spike group $electrodeGroup"
+
+nChannels=$(xpathReader $base.xml "//acquisitionSystem/nChannels")
+resolution=$(xpathReader $base.xml "//acquisitionSystem/nBits")
+offset=$(xpathReader $base.xml "//acquisitionSystem/offset")
+samplingRate=$(xpathReader $base.xml "//acquisitionSystem/samplingRate")
+samplingInterval=$((1000000/$samplingRate))
+nElectrodeGroups=$(xpathReader --count $base.xml "//spikeDetection/channelGroups/group")
+
+#check that spike groups are define, in particular the one for the $electrodeGroup
+if [ $nElectrodeGroups == 0 ]
+then
+  echo  "programName - Error: no spike groups have been defined."
+  exit 1
+fi
+
+if [ $electrodeGroup -gt $nElectrodeGroups ]
+then
+  echo  "programName - Error: the spike group $electrodeGroup has not been defined."
+  exit 1
+fi
+nElectrodesInGroup=$(xpathReader --count $base.xml "//spikeDetection/channelGroups/group[$electrodeGroup]/channels/channel")
+#the electrodes are store in an array
+electrodes=($(xpathReader $base.xml "//spikeDetection/channelGroups/group[$electrodeGroup]/channels/channel"))
+electrodeList=$(for ((i=0;i<$nElectrodesInGroup;i++)); do	echo -n  ${electrodes[${i}]}","; done)
+electrodeList=${electrodeList:0:${#electrodeList}-1} #remove the trailing comma
+
+# number of samples in each waveform (depend on the group)
+samplesInWaveform=$(xpathReader $base.xml "//spikeDetection/channelGroups/group[$electrodeGroup]/nSamples")
+# sample index of the peak in a waveform (depend on the group)
+peakSample=$(xpathReader $base.xml "//spikeDetection/channelGroups/group[$electrodeGroup]/peakSampleIndex")
+# number of features for the current spike group
+nFeatures=$(xpathReader $base.xml "//spikeDetection/channelGroups/group[$electrodeGroup]/nFeatures")
+
+#The following variables depend on the sampling rate. The default is for a sampling rate of 10khz.
+# The values in the parameter file are multiplifaction factor of 10khz
+declare -i beforePeak
+declare -i afterPeak
+
+# number of samples before peak to be used for the PCA. One for all the electrodes
+beforePeak=$(xpathReader $base.xml "//program/name[.='process_pca']/../parameters/parameter/name[.='beforePeak']/../value")
+beforePeak=$(multiply $beforePeak)
+
+# number of samples after peak to be used for the PCA. One for all the electrodes
+afterPeak=$(xpathReader $base.xml "//program/name[.='process_pca']/../parameters/parameter/name[.='afterPeak']/../value")
+afterPeak=$(multiply $afterPeak)
+
+# number of samples used for PCA. One for all the electrodes
+nSamplesInPCA=$(xpathReader $base.xml "//program/name[.='process_pca']/../parameters/parameter/name[.='nSamplesInPCA']/../value")
+
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+# // Compute variance (create .m1m2.# file)
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+echo -e "Compute variance (create .m1m2.# file) \n"
+
+# Compute variance
+echo -e "Compute variance \n"
+echo -e "process_variance $base.fil $base.res.$2 $base.m1m2.$electrodeGroup -o $offset -n $nChannels -c $electrodeList -s $samplesInWaveform -p $peakSample\n"
+
+process_variance $base.fil $base.res.$2 $base.m1m2.$electrodeGroup -o $offset -n $nChannels -c $electrodeList -s $samplesInWaveform -p $peakSample
+
+errorCheck $? "process_variance" "The call to process_variance failed."
+
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+# // Perform PCA (create .fet.# and .mm.# files)
+# ////////////////////////////////////////////////////////////////////////////////////////////////
+echo -e "Perform PCA (create .fet.# and .mm.# files) \n"
+
+echo -e "Perform PCA\n"
+echo -e "process_feature $base.spk.$electrodeGroup $base.m1m2.$electrodeGroup $base.fet.$electrodeGroup $base.mm.$electrodeGroup -o $offset -n $nElectrodesInGroup -s $samplesInWaveform -p $peakSample -b $beforePeak -a $afterPeak -t "eigen" -f $nFeatures -v $nSamplesInPCA\n"
+
+# Perform PCA
+process_feature $base.spk.$electrodeGroup $base.m1m2.$electrodeGroup $base.fet.$electrodeGroup $base.mm.$electrodeGroup -o $offset -n $nElectrodesInGroup -s $samplesInWaveform -p $peakSample -b $beforePeak -a $afterPeak -t "eigen" -f $nFeatures -v $nSamplesInPCA
+
+errorCheck $? "process_feature" "The call to process_feature failed."
+
+# Adjust files 
+echo -e "Adjust files\n"
+#Add the content of the res file (spike time) as the last column of the fet file
+#Add the number of features in the first line of the feature file
+head -1 $base.fet.$electrodeGroup | awk '{print $1+1}' >jnk.$electrodeGroup
+tail -n +2 $base.fet.$electrodeGroup | paste -d " " - $base.res.$electrodeGroup >> jnk.$electrodeGroup
+mv jnk.$electrodeGroup $base.fet.$electrodeGroup
+#Keep only the first line ?
+tail -1 $base.mm.$electrodeGroup >> $base.mm.$electrodeGroup
+
+# Clean temporary files
+echo -e "Clean temporary files \n"
+rm -f  jnk.$electrodeGroup
+
+exit 0

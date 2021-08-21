@@ -1,5 +1,5 @@
-function    [SleepState]    =   bz_thetaEpochs(basepath)
-% [SleepState]    =   bz_thetaEpochs(basepath)
+function    [SleepState]    =   thetaEpochs(basepath)
+% [SleepState]    =   thetaEpochs(basepath)
 % Find theta and non-theta epochs using the theta ratio determined by the
 % SleepScoreMaster. Appends the the data to the output of SleepScoreMaster
 % (SleepState.mat)
@@ -8,7 +8,7 @@ function    [SleepState]    =   bz_thetaEpochs(basepath)
 
             [~,recordingname] = fileparts(basepath);
             savefolder =basepath;
-            bz_sleepstatepath = fullfile(savefolder,[recordingname,'.SleepState.states.mat']);
+            sleepstatepath = fullfile(savefolder,[recordingname,'.SleepState.states.mat']);
             load([recordingname '.SleepState.states.mat'])
  
             thratio = SleepState.detectorinfo.detectionparms.SleepScoreMetrics.thratio;
@@ -30,6 +30,6 @@ function    [SleepState]    =   bz_thetaEpochs(basepath)
             [INT] = bz_IDXtoINT(SleepState.idx.theta_epochs);
             SleepState.ints.THETA = INT.THETAstate;
             SleepState.ints.nonTHETA = INT.nonTHETAstate;
-            save(bz_sleepstatepath,'SleepState');            
+            save(sleepstatepath,'SleepState');            
 end
 

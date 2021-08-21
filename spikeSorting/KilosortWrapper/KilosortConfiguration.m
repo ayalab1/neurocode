@@ -7,7 +7,7 @@ addParameter(p,'basepath',pwd,@ischar)
 parse(p,varargin{:});
 basepath = p.Results.basepath;
 
-session = bz_getSession('basepath',basepath);
+session = getSession('basepath',basepath);
 
 % identify files
 datFile = checkFile('basepath',basepath,'filename',[session.general.name '.dat'],'searchSubdirs',false);

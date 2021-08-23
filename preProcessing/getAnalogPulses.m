@@ -1,6 +1,6 @@
 
-function [pulses] = bz_getAnalogPulses(varargin)
-% [pul, val, dur] = bz_getAnalogPulses(varargin)
+function [pulses] = getAnalogPulses(varargin)
+% [pul, val, dur] = getAnalogPulses(varargin)
 %
 % Find square pulses. If not argument it provide, it tries to find pulses
 % in intan analog-in file.

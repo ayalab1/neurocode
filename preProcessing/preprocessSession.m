@@ -1,6 +1,6 @@
-function  bz_PreprocessSession(varargin)
+function  preprocessSession(varargin)
 
-%         bz_PreprocessSession(varargin)
+%         preprocessSession(varargin)
 
 %   Master function to run the basic pre-processing pipeline for an
 %   individual sessions. Is based on sessionsPipeline.m but in this case
@@ -21,11 +21,9 @@ function  bz_PreprocessSession(varargin)
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
 %
 %  HISTORY: 
-%     - Created based on sessionsPipeline: AntonioFR, 5/20
+%   AntonioFR, 5/20
 
 %  TO DO:
-%   - Verify that data format and alysis output are compatible with CellExplorer
-%   - Include Kilosort2 support
 %   - Improve auto-clustering routine 
 
 % write file to keep track of 
@@ -138,26 +136,25 @@ end
 
 % Auxilary input
 if getAcceleration
-    accel = bz_computeIntanAccel('saveMat',true); % uses the old sessionInfo
+    accel = computeIntanAccel('saveMat',true); 
 end
 
 %% Make LFP
 
-LFPfromDat(pwd,'outFs',1250);
-% gives an error if CellExplorer in the path 
-        %Error in bz_LFPfromDat_km (line 161)
-        %    tmp=  iosr.dsp.sincFilter(d,ratio);
-    
+LFPfromDat(pwd,'outFs',1250,'useGPU',true);
+% 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
+% it is possible to remove the copy of iosr toolbox from CellExplorer
+
 %% Clean data
 % Remove stimulation artifacts
 if cleanArtifacts && analogInputs
-    [pulses] = bz_computeAnalogPulses(analogInp,'analogCh',analogChannels);
+    [pulses] = getAnalogPulses(analogInp,'analogCh',analogChannels);
     cleanPulses(pulses.ints{1}(:));
 end
 
 % remove noise from data for cleaner spike sorting
 if removeNoise
-    NoiseRemoval(pwd);
+    NoiseRemoval(pwd); % not very well tested yet
 end
 
 %% Get brain states
@@ -168,7 +165,7 @@ if stateScore
             SleepScoreMaster(pwd,'noPrompts',true,'ignoretime',pulses.intsPeriods); % try to sleep score
             thetaEpochs(pwd); 
         else
-            SleepScoreMaster(pwd,'noPrompts',true); % try to sleep score
+            SleepScoreMaster(pwd,'noPrompts',true); % takes lfp in base 0
             thetaEpochs(pwd); 
         end
     catch
@@ -178,16 +175,15 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSort2Wrapper('SSD_path','G:');
+    kilosortFolder = KiloSortWrapper('SSD_path','E:');
     PhyAutoClustering(strcat(basepath,filesep,kilosortFolder));
 end
 %% Get tracking positions 
-% works for optitrack, no idea about others
 if getPos
     getSessionTracking('optitrack',true);
 end
 
-%% Summary
+%% Summary -  NOT WELL IMPLEMENTED YET
 if runSummary
     if forceSum || (~isempty(dir('*Kilosort*')) && (isempty(dir('summ*')))) % is kilosorted but no summ
         disp('running summary analysis...');

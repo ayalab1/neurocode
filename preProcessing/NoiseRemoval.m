@@ -1,12 +1,13 @@
 function NoiseRemoval(basepath)
 %must have already computed lfp
 % come back and fancify parameters
+% KM, 2021
 
-session = bz_getSession('basepath',basepath);
+session = getSession('basepath',basepath);
 nChannels = session.extracellular.nChannels;
 sf = session.extracellular.srLfp;
 dat_path = [basepath,filesep, session.general.name, '.dat'];
-lfp = bz_GetLFP('all','basepath',basepath);
+lfp = getLFP('all','basepath',basepath);
 
 
 % Identify Noise intervals

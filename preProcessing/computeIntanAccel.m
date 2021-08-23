@@ -1,5 +1,5 @@
-function accel = bz_computeIntanAccel(varargin)
-% bz_getIntanAccel - Get accelerometer data from Intan-generated auxiliary.dat file
+function accel = computeIntanAccel(varargin)
+% computeIntanAccel - Get accelerometer data from Intan-generated auxiliary.dat file
 %
 % USAGE
 %
@@ -65,7 +65,7 @@ saveMat = p.Results.saveMat;
 noPrompts = p.Results.noPrompts;
 
 % Session information
-session = bz_getSession('basepath',basepath);
+session = getSession('basepath',basepath);
 basename = session.general.name;
 aux_input_path = fullfile(basepath, 'auxiliary.dat');
 accel_output_path = fullfile(basepath, [basename '.accel.mat']);
@@ -93,7 +93,7 @@ end
 
 % Check validity of target sampling rate
 if samplingRate > fs_lfp
-    error('samplingRate must be smaller than lfp sampling rate, which is %d.\nType ''help bz_getIntanAccel'' for more.', fs_lfp)
+    error('samplingRate must be smaller than lfp sampling rate, which is %d.\nType ''help getIntanAccel'' for more.', fs_lfp)
 end
 
 % Get the auxiliary channels that are active
@@ -141,7 +141,7 @@ end
 
 % Load auxiliary data file - downsample to rate of LFP while doing so
 disp('Loading auxiliary.dat binary file...')
-aux_data = bz_LoadBinary(aux_input_path, 'nchannels', n_active_channels, 'channels', 1:n_active_channels, 'frequency', fs_wide, 'precision', 'uint16', 'downsample', round(fs_wide / fs_lfp));
+aux_data = loadBinary(aux_input_path, 'nchannels', n_active_channels, 'channels', 1:n_active_channels, 'frequency', fs_wide, 'precision', 'uint16', 'downsample', round(fs_wide / fs_lfp));
 aux_timestamps = [0 : 1/fs_lfp : (length(aux_data)-1)/fs_lfp]';
 
 % Compute acceleration vector 
@@ -196,7 +196,7 @@ accel.lowpass                         = lowpass;
 accel.units                           = 'V';
 accel.behaviorinfo.description        = 'accelerometer from Intan auxiliary dat file';
 accel.behaviorinfo.acquisitionsystem  = 'Intan';
-accel.behaviorinfo.processingfunction = 'bz_getIntanAccel.m';
+accel.behaviorinfo.processingfunction = 'getIntanAccel.m';
 
 % Save struct if prompted by user
 if saveMat

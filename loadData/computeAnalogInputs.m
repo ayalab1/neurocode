@@ -90,8 +90,9 @@ analogInp.samplingRate = fs_analog;
 analogInp.inputChannels = active_channels;
 
 if saveMat
-    savepath = [fileinfo.folder, 'analogInput.mat'];
-    basename = bz_BasenameFromBasepath(savepath);
+    %savepath = [fileinfo.folder, 'analogInput.mat'];
+    savepath = fileinfo.folder;
+    basename = basenameFromBasepath(savepath);
     save(fullfile(savepath, [basename '.analogInput.behavior.mat']),'analogInp','-v7.3')
 end
     

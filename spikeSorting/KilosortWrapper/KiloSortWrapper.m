@@ -57,6 +57,10 @@ elseif ~exist(fullfile(basepath,[basename,'.dat']))
     return
 end
 
+%% Creates a channel map file
+disp('Creating ChannelMapFile')
+createChannelMapFile_KSW(basepath,basename,'staggered');
+
 %% Loading configurations
 %K%XMLFilePath = fullfile(basepath, [basename '.xml']);
 

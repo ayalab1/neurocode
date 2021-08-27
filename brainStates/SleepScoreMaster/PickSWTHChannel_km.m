@@ -115,7 +115,7 @@ end
 
 %% Pick channels to use
 
-session = getSession();
+session = getSession('basepath',fullfile(datasetfolder,recordingname));
 
 %Remove spike groups requirement DL9/3/19 - returned 12/11/19...
 %Should make this optional - move to SSM main f'n

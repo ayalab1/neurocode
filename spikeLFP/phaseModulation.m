@@ -58,6 +58,7 @@ addParameter(p,'plotting',true,@islogical)
 addParameter(p,'numBins',180,@isnumeric)
 addParameter(p,'powerThresh',2,@isnumeric)
 addParameter(p,'saveMat',false,@islogical)
+addParameter(p,'basepath',[],@isstr)
 
 parse(p,varargin{:})
 
@@ -68,6 +69,7 @@ plotting = p.Results.plotting;
 numBins = p.Results.numBins;
 powerThresh = p.Results.powerThresh;
 saveMat = p.Results.saveMat;
+basepath = p.Results.basepath;
 
 %% Get phase for every time point in LFP
 switch lower(method)
@@ -190,8 +192,8 @@ for a = 1:length(spikes.times)
         
         %% plotting
         if plotting
-            if ~exist('PhaseModulationFig','dir')
-                mkdir('PhaseModulationFig');
+            if ~exist(fullfile(basepath,'PhaseModulationFig')','dir')
+                mkdir(fullfile(basepath,'PhaseModulationFig'));
             end
             h(end+1) = figure;
             hax = subplot(1,2,1);
@@ -205,7 +207,7 @@ for a = 1:length(spikes.times)
             hold on;
             plot([0:360],cos(pi/180*[0:360])*0.05*max(phasedistros(:,a))+0.95*max(phasedistros(:,a)),'color',[.7 .7 .7])
             set(h(end),'name',['PhaseModPlotsForCell' num2str(a)]);
-            print(fullfile('PhaseModulationFig',['PhaseModPlotsForCell' num2str(a)]),'-dpng','-r0');
+            print(fullfile(basepath,'PhaseModulationFig',['PhaseModPlotsForCell' num2str(a)]),'-dpng','-r0');
         end
     end
 end
@@ -248,7 +250,7 @@ PhaseLockingData.UID = spikes.UID;
 PhaseLockingData.sessionName = spikes.sessionName;
 
 if saveMat
-    save([lfp.Filename(1:end-4) '.PhaseLockingData.cellinfo.mat'],'PhaseLockingData');
+    save([basepath,filesep,lfp.Filename(1:end-4) '.PhaseLockingData.cellinfo.mat'],'PhaseLockingData');
 end
 
 end

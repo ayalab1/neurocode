@@ -103,7 +103,7 @@ if ~isempty(chInfo)
     SpkGrps = chInfo.one.AnatGrps;
     Fs = chInfo.lfpSR;
     lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
-    lfpFile = [lfpFile.folder filesep lfpFile.name];
+    lfpFile = [basepath filesep lfpFile(1).name];
 end
 % sessionInfo = bz_getSessionInfo(basePath,'noPrompts',noPrompts); % now using the updated version
 % switch fromDat

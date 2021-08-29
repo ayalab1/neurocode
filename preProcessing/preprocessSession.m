@@ -110,11 +110,12 @@ cd(basepath);
 
 disp('Concatenate session folders...');
 concatenateDats();
-% NEED TO FIX MergePoints.foldernames or revert to original ConcatenateDats
+
 
 %% Process additional inputs
 
 % Analog input
+    % check the two different fucntions for delaing with analog inputs and proably rename them
 if analogInputs
     if  ~isempty(analogChannels)
         analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true);
@@ -178,9 +179,10 @@ if spikeSort
     kilosortFolder = KiloSortWrapper('SSD_path','E:');
     PhyAutoClustering(strcat(basepath,filesep,kilosortFolder));
 end
+
 %% Get tracking positions 
 if getPos
-    getSessionTracking('optitrack',true);
+    getSessionTracking('optitrack',false);
 end
 
 %% Summary -  NOT WELL IMPLEMENTED YET

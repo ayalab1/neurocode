@@ -1,6 +1,6 @@
 
-function [ica] = RunIca(varargin)
-% [ica] = RunIca(varargin)
+function [ica] = doICA(varargin)
+% [ica] = doICA(varargin)
 %
 % Perform Independent Component Analysis (ICA) decomposition of input data 
 % using the logistic infomax ICA algorithm of Bell & Sejnowski (1995) with 

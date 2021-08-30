@@ -314,12 +314,22 @@ def load_ripples_events(basepath):
 
     # make data frame of known fields 
     df = pd.DataFrame()
-    df['start'] = data['ripples']['timestamps'][0][0][:,0]
-    df['stop'] = data['ripples']['timestamps'][0][0][:,1]
+    try:
+        df['start'] = data['ripples']['timestamps'][0][0][:,0]
+        df['stop'] = data['ripples']['timestamps'][0][0][:,1]
+    except:
+        df['start'] = data['ripples']['times'][0][0][:,0]
+        df['stop'] = data['ripples']['times'][0][0][:,1]
+
     df['peaks'] = data['ripples']['peaks'][0][0]
-    df['amplitude'] = data['ripples']['amplitude'][0][0]
-    df['duration'] = data['ripples']['duration'][0][0]
-    df['frequency'] = data['ripples']['frequency'][0][0]
+    try:
+        df['amplitude'] = data['ripples']['amplitude'][0][0]
+        df['duration'] = data['ripples']['duration'][0][0]
+        df['frequency'] = data['ripples']['frequency'][0][0]
+    except:
+        df['amplitude'] = np.nan
+        df['duration'] = np.nan
+        df['frequency'] = np.nan
     
     try:
         df['detectorName'] = data['ripples']['detectorinfo'][0][0]['detectorname'][0][0][0]

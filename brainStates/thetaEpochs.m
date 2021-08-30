@@ -6,9 +6,8 @@ function [SleepState] = thetaEpochs(basepath)
 
 % F.Sharif 2020  
 
-[~,recordingname] = fileparts(basepath);
-savefolder =basepath;
-sleepstatepath = fullfile(savefolder,[recordingname,'.SleepState.states.mat']);
+basename = basenameFromBasepath(basepath);
+sleepstatepath = fullfile(basepath,[basename,'.SleepState.states.mat']);
 load(sleepstatepath)
 
 thratio = SleepState.detectorinfo.detectionparms.SleepScoreMetrics.thratio;
@@ -30,6 +29,7 @@ SleepState.idx.theta_epochs.statenames{9} = 'nonTHETA';
 [INT] = bz_IDXtoINT(SleepState.idx.theta_epochs);
 SleepState.ints.THETA = INT.THETAstate;
 SleepState.ints.nonTHETA = INT.nonTHETAstate;
+
 save(sleepstatepath,'SleepState');            
 end
 

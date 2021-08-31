@@ -1,4 +1,4 @@
-function [EMGFromLFP] = bz_EMGFromLFP(basepath,varargin)
+function [EMGFromLFP] = bz_EMGFromLFP_km(basepath,varargin)
 % USAGE
 % [EMGCorr] = bz_EMGCorrFromLFP(basePath)
 %
@@ -96,15 +96,21 @@ if exist(matfilename,'file') && ~overwrite
 end
 display('Calculating EMGFromLFP from High Frequency LFP Correlation')
 
+load(fullfile(basepath,[recordingname,'.session.mat']))
+nChannels = session.extracellular.nChannels;
+SpkGrps = session.extracellular.spikeGroups.channels;
+Fs = session.extracellular.srLfp;
+lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
+lfpFile = [basepath filesep lfpFile(1).name];
 
 %% get basics about.lfp/lfp file
-if ~isempty(chInfo)
-    nChannels = chInfo.nChannel;
-    SpkGrps = chInfo.one.AnatGrps;
-    Fs = chInfo.lfpSR;
-    lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
-    lfpFile = [basepath filesep lfpFile(1).name];
-end
+% if ~isempty(chInfo)
+%     nChannels = chInfo.nChannel;
+%     SpkGrps = chInfo.one.AnatGrps;
+%     Fs = chInfo.lfpSR;
+%     lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
+%     lfpFile = [basepath filesep lfpFile(1).name];
+% end
 % sessionInfo = bz_getSessionInfo(basePath,'noPrompts',noPrompts); % now using the updated version
 % switch fromDat
 %     case false

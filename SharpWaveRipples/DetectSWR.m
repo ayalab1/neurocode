@@ -235,7 +235,8 @@ end
 mfname = mfilename;
 % 1) fileabase
 % user might have input an absolute or relative path
-Filebase = bz_BasenameFromBasepath(basepath);
+Filebase = basenameFromBasepath(basepath);
+Filebase = fullfile(basepath,Filebase);
 [pathname, filename, extname] = fileparts(Filebase);
 if isempty(pathname)
     pathname = pwd;
@@ -250,14 +251,13 @@ if isempty(extname)
                '\trelevant files must be in the current directory.\n'],mfname);
     end
 else
-    filechk = dir(Filebase);
+    filechk = dir(basepath);
     if isempty(filechk)
         error(['%s: incompatible format for 1st argument (Filebase)\n', ...
                '\tIf user supplied a relative path, the .xml and all\n', ...
                '\trelevant files must be in the current directory.\n'],mfname);
     end
 end
-Filebase = [pathname filesep filename];
 
 % Read in xml of file parameters
 fprintf(1, 'Loading XML file...\n');
@@ -1204,7 +1204,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Filter pyramidal lfp in ripple band and get the envelope
-lfpfilt = bz_Filter(lfp(:,1),'passband',ripBP,'filter','fir1');
+lfpfilt = bz_Filter(lfp(:,1),'passband',ripBP,'filter','fir1','nyquist',SR/2);
 signEnv = 2*lfpfilt.*lfpfilt;
 envelope = sgolayfilt(signEnv,4,101);
 envelope = abs(sqrt(envelope));
@@ -1232,13 +1232,27 @@ end
 % Keep ripples whose computed troughs are inside the start and end timestamps
 idxsIn = find(TsTrough>SWR_valid.Ts(:,2) & TsTrough<SWR_valid.Ts(:,3));
 
-
+% Compute instantaneous phase and amplitude
+h = hilbert(lfpfilt);
+phase = angle(h);
+amplitude = abs(h);
+unwrapped = unwrap(phase);
+% Compute instantaneous frequency
+frequency = bz_Diff(medfilt1(unwrapped,12),[0:length(lfpfilt)-1]'/SR,'smooth',0);
+frequency = frequency/(2*pi);
+    
 %%%%%%%%%%%%%%%%%%%%%%%
 %%% GENERATE OUTPUT %%%
 %%%%%%%%%%%%%%%%%%%%%%%
 % 1) swr detections
 % - Start and end timestamps of each SWR
 SWR.timestamps = SWR_valid.Ts(idxsIn,[2 3])/SR;
+% Duration
+SWR.duration = SWR.timestamps(:,2) - SWR.timestamps(:,1);
+% amplitude at trough
+SWR.amplitude = amplitude(TsTrough(idxsIn));
+% Frequency at trough
+SWR.frequency = frequency(TsTrough(idxsIn));
 % - Peak power of ripple timestamp of each SWR
 SWR.peaks = TsTrough(idxsIn)/SR; %SWR_valid.Ts(:,1)/SR;
 % - Peak power values of each SWR

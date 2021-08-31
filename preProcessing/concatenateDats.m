@@ -1,5 +1,5 @@
-function ConcatenateDats(varargin)
-% bz_ConcatenateDats - Concatenate raw .dat files found in a session folder
+function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
+% concatenateDats - Concatenate raw .dat files found in a session folder
 % - for intan type recordings 
 % 
 % ALGORITHM OUTLINE: looks for .dat files in a folder (or in subfolders) to
@@ -36,7 +36,7 @@ function ConcatenateDats(varargin)
 %
 %  USAGE
 %
-%    ConcatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
+%    concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
 %
 %  INPUTS
 %
@@ -53,25 +53,25 @@ function ConcatenateDats(varargin)
 %  OUTPUT
 %     Operates on files in specified folder.  No output variable
 %
-%  EXAMPLES
-%      Can be called directly or via bz_PreprocessExtracellEphysSession.m
 %
-% Brendon Watson 2017
-% Antonio FR, 2018
-% kathryn mcclain 2020
+% Copyright (C) 2017 by Brendon Watson
+% Modified by Antonio FR, 2018
 
 
 %% Handling inputs
 % basic session name and and path
-p = inputParser;
-addParameter(p,'basepath',cd,@isstr)
+if ~exist('basepath','var')
+    basepath = cd;
+end
+basename = basenameFromBasepath(basepath);
 
-parse(p,varargin{:})
-basepath = p.Results.basepath;
+if ~exist('deleteoriginaldatsbool','var')
+    deleteoriginaldatsbool = 0;
+end
+if ~exist('sortFiles','var')
+    sortFiles = 0;
+end
 
-%% Get session info
-session = getSession('basepath',basepath); 
-basename = session.general.name;
 
 %% If the dats are already merged quit
 if exist(fullfile(basepath,[basename,'.dat']),'file')
@@ -79,119 +79,278 @@ if exist(fullfile(basepath,[basename,'.dat']),'file')
     return
 end
 
-%% check location of each file and what to concat
-files = dir([basepath,filesep,'*\*.dat']);
-datFolders = {files.folder};
-datTypes = {files.name};
-subfolders = unique(datFolders);
-%sort subfolders
-subTimes = cell2mat(cellfun(@(X) str2num(X(end-5:end)),subfolders,'UniformOutput',false));
-[~,subOrder] = sort(subTimes);
-subfolders = subfolders(subOrder);
+%% Find all .dat paths in subfolders 
 
-types = unique(datTypes);
-nSubfolders = length(subfolders);
-nTypes = length(types);
+otherdattypes = {'analogin';'digitalin';'auxiliary';'time';'supply'};
+bad_otherdattypes = [];
+for odidx = 1:length(otherdattypes)
+    %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
+    newpaths.(otherdattypes{odidx}) = fullfile(basepath,[otherdattypes{odidx}, '.dat']);
+end
 
-fileCheck = zeros(nTypes,nSubfolders);
-for subIdx = 1:nSubfolders
-    for typeIdx = 1:nTypes
-        match = strcmp(datFolders,subfolders(subIdx))&strcmp(datTypes,types(typeIdx));
-        fileCheck(typeIdx,subIdx) = find(match);
+d = dir(basepath);
+datpaths = {};
+datsizes.amplifier = [];
+recordingnames = {};
+rcount = 0; %Count of good subfolders
+for a = 1:length(d)
+    %look in each subfolder
+    if d(a).isdir 
+        %Check for amplifier.dat or subfolderbaseName.dat 
+        if exist(fullfile(basepath,d(a).name,[d(a).name,'.dat']),'file')
+            ampfile = fullfile(basepath,d(a).name,[d(a).name,'.dat']);
+        elseif exist(fullfile(basepath,d(a).name,'amplifier_analogin_auxiliary_int16.dat'),'file')%Luke Sjulson's Modified code to record all 16bit signals in one file
+            ampfile = fullfile(basepath,d(a).name,'amplifier_analogin_auxiliary_int16.dat');
+        else
+            ampfile = fullfile(basepath,d(a).name,'amplifier.dat');
+        end
+        
+        if exist(ampfile,'file')
+            rcount = rcount+1;
+            datpaths.amplifier{rcount} = ampfile;
+            t = dir(ampfile);
+            datsizes.amplifier(rcount) = t.bytes;
+            recordingnames{rcount} = d(a).name;
+
+            for odidx = 1:length(otherdattypes)%loop through other .dat types found here
+               % eval([otherdattypes{odidx} 'datpaths{rcount} = fullfile(basepath,recordingnames{rcount},''' otherdattypes{odidx} '.dat'');'])
+                datpaths.(otherdattypes{odidx}){rcount} = fullfile(basepath,recordingnames{rcount},[otherdattypes{odidx} '.dat']);
+                %eval(['d2 = dir(' otherdattypes{odidx} 'datpaths.amplifier{rcount});'])
+                d2 = dir(datpaths.(otherdattypes{odidx}){rcount});
+                if isempty(d2)
+                    bad_otherdattypes(odidx) = 1;
+                else
+                    %eval([otherdattypes{odidx} 'datsizes(rcount) = d2(1).bytes;'])
+                    datsizes.(otherdattypes{odidx})(rcount) = d2(1).bytes;
+                end
+            end
+        end
+    end
+end
+otherdattypes(find(bad_otherdattypes)) = [];%if there weren't analogin or digitalin in some recording
+if isempty(datpaths.amplifier)
+    disp('No .dats found in subfolders.  Exiting concatenateDats.')
+    return
+end
+
+%% Get the XML
+try 
+    %Look for xml/sessionInfo in topfolder
+    %sessionInfo = getSessionInfo(basepath,'noPrompts',true);
+    load([basename '.session.mat']); % Peter's sessionInfo
+catch
+    %If none exists, look for xml in any of the subpaths
+    disp('No .xml or .sessionInfo in top folder, trying subfolders')
+    for ff = 1:length(recordingnames)
+        try
+            sessionInfo = LoadParameters(fullfile(basepath,recordingnames{ff}));
+            xmlfilename = fullfile(sessionInfo.session.path,[sessionInfo.session.name,'.xml']);
+            [SUCCESS,MESSAGE,MESSAGEID] = copyfile(...
+                xmlfilename,...
+                fullfile(basepath,[basename,'.xml']),'f');
+            display(['Copied xml from ',recordingnames{ff}])
+            break
+        catch
+        end
     end
 end
 
-typesToConcat = find(sum(fileCheck~=0,2)==nSubfolders);
-if isempty(typesToConcat)
-    disp('Nothing to concatenate')
+%% Sort files according to time of recording
+
+if sortFiles
+    try
+        names2sort = cellfun(@(X) str2num(X(end-5:end)),recordingnames,'UniformOutput',false);
+        names2sort = cell2mat(names2sort);
+        disp('Assuming the last 6 digits reflect recording time.')
+        %disp('Don''t like it? Write in some new options for sorting.')
+    catch
+        disp('Last 6 digits not numeric... sorting alphabetically')
+    end
+
+    [~,I] = sort(names2sort);
+    recordingnames = recordingnames(I);
+    datpaths.amplifier = datpaths.amplifier(I);
+    datsizes.amplifier = datsizes.amplifier(I);
+    for odidx = 1:length(otherdattypes)
+        datpaths.(otherdattypes{odidx}) = datpaths.(otherdattypes{odidx})(I);
+        datsizes.(otherdattypes{odidx}) = datsizes.(otherdattypes{odidx})(I);
+    end
+
+%     % save txt with order of files to concatenate (moved to events.mat)
+%     fid = fopen(fullfile(basepath,'concatORDER.txt'),'w');
+%     for idx = 1:length(I)
+%         fprintf(fid,[recordingnames{idx} '\n']);
+%     end
+%     fclose(fid);
 end
 
 %% Concatenate
-clear sizecheck
-for i = 1:length(typesToConcat)
-    type = types{typesToConcat(i)};
-    if strcmp(type,'amplifier.dat')
-        newPath = [basepath,filesep,basename,'.dat'];
+%     cs = strjoin(datpaths.amplifier);
+%     catstring = ['! cat ', cs, ' > ',fullfile(basepath,[basename,'.dat'])];
+% 
+%     % for some reason have to cd to supradirectory 
+%     origdir = cd;
+%     cd (basepath)
+%     eval([catstring])
+%     cd (origdir)
+newdatpath = fullfile(basepath,[basename,'.dat']);
+if isunix
+    cs = strjoin(datpaths.amplifier);
+    catstring = ['! cat ', cs, ' > ',newdatpath];
+elseif ispc  
+    if length(datpaths.amplifier)>1
+        for didx = 1:length(datpaths.amplifier)-1
+            datpathsplus{didx} = [datpaths.amplifier{didx} ' +'];
+        end
+        %Last file string shouldn't end with '+'
+        datpathsplus{length(datpaths.amplifier)} = [datpaths.amplifier{length(datpaths.amplifier)}];
     else
-        newPath = [basepath,filesep,type];
+        datpathsplus = datpaths.amplifier;
     end
+    cs = strjoin(datpathsplus);
+    catstring = ['! copy /b ', cs, ' ',newdatpath];
+end
+
+% action
+disp('Concatenating Amplifier Dats... be patient')
+eval(catstring)%execute concatention
     
-    oldPaths = cell(nSubfolders,1);
-    for j = 1:nSubfolders
-        oldPaths{j} = [subfolders{j},filesep,type];
-    end
-    
+%% Check that size of resultant .dat is equal to the sum of the components
+%     t = dir(fullfile(basepath,[basename,'.dat']));
+%     if t.bytes ~= sum(recordingbytes)
+%         error('dat size not right')
+%         return
+%     end
+% 
+%     save(fullfile(basepath,[basename '_DatInfo.mat']),'recordingbytes','recordingnames')
+t = dir(newdatpath);
+if t.bytes ~= sum(datsizes.amplifier)
+    error('New .dat size not right.  Exiting')
+    return
+else
+    sizecheck.amplifier = true;
+    disp('Primary .dats concatenated and size checked')
+end
+
+%% save times of each individual file concatenated
+%moved to events.mat
+% filesT(1) = datsizes.amplifier(1)/2;
+% for d = 2:length(datsizes.amplifier)
+%     filesT(d) = filesT(d-1)+datsizes.amplifier(d)/2;
+%     
+% end
+% 
+% save(fullfile(basepath,'filesT'),'filesT');
+
+%% Also concatenate the other .dats
+disp('Concatenating Other Dats..... continue to be patient')
+for odidx = 1:length(otherdattypes)
+
     if isunix
-        cs = strjoin(oldPaths);
-        catstring = ['! cat ', cs, ' > ',newPath];
+        cs = strjoin(datpaths.(otherdattypes{odidx}));
+        catstring = ['! cat ', cs, ' > ',newpaths.(otherdattypes{odidx})];
     elseif ispc%As of 4/9/2017 - never tested
-        cs = strjoin(oldPaths, ' + ');
-        catstring = ['! copy /b ', cs, ' ',newPath];
+        if length(datpaths.(otherdattypes{odidx}))>1
+            for didx = 1:length(datpaths.(otherdattypes{odidx}))
+                datpathsplus{didx} = [datpaths.(otherdattypes{odidx}){didx} '+'];
+            end
+        else
+            datpathsplus = datpaths.(otherdattypes{odidx});
+        end
+        cs = strjoin(datpathsplus);
+        catstring = ['! copy /b ', cs, ' ',newpaths.(otherdattypes{odidx})];
     end
 
+    
     eval(catstring)%execute concatenation
 
     % Check that size of resultant .dat is equal to the sum of the components
-    newFile = dir(newPath);
-    newSize = newFile.bytes;
-    oldSize = sum([files(fileCheck(typesToConcat(i),:)).bytes]);
-    if newSize==oldSize
-        disp([type ' concatenated and size checked'])
-        sizecheck.(type(1:end-4))= true;
+    t = dir(newpaths.(otherdattypes{odidx}));
+    if t.bytes ~= sum(datsizes.(otherdattypes{odidx}))
+        error(['New ' otherdattypes{odidx} '.dat size not right.  Exiting after .dats converted.  Not deleting'])
+        deleteoriginaldatsbool = 0;
+        sizecheck.(otherdattypes{odidx}) = false;
     else
-        error('New .dat size not right')
+        sizecheck.(otherdattypes{odidx}) = true;
+        disp([otherdattypes{odidx} ' concatenated and size checked'])
     end
-    
 end
 
-%% Calculate merge points
-timeInd = find(strcmp(types,'time.dat'));
 
-if isempty(timeInd) || sum(fileCheck(timeInd,:)~=0)~=nSubfolders
-    disp('Not enough time files so merge points no go')
-else
+%% Get time points from the time.dat
+%Use the timestamps from time.dat to get the sort order
+%Number of samples in time.dat. First timepoint, last timepoint
+%Convert from number of samples to recording time of start/ends
+for ff = 1:length(datpaths.time)
     
-    firstLastTimePoints = zeros(nSubfolders,2);
-    transitiontimes_samp = zeros(nSubfolders,1);
-    for i = 1:nSubfolders
-        relFile = files(fileCheck(timeInd,i));
-        f = fopen([relFile.folder,filesep,relFile.name],'r');
-        % Determine total number of samples in file
-        fileStart = ftell(f);
-        
-        %Read the first time point
-        firsttimepoint = fread(f,1,'int32');
-        status = fseek(f,-4,'eof'); %int32 = 4 bytes
-        lasttimepoint = fread(f,1,'int32');
-        fileStop = ftell(f);
-        
-        firstLastTimePoints(i,:) = [firsttimepoint lasttimepoint];
-        numsamples(i) = fileStop./4;
-        if i==1
-            transitiontimes_samp = firstLastTimePoints(i,:);
-        else
-            transitiontimes_samp(i,:) = firstLastTimePoints(i,:)+transitiontimes_samp(i-1,2)+1;
+	f = fopen(datpaths.time{ff},'r'); 
+    % Determine total number of samples in file
+    fileStart = ftell(f);
+    
+    %Read the first time point
+    firsttimepoint = fread(f,1,'int32');
+    status = fseek(f,-4,'eof'); %int32 = 4 bytes
+    lasttimepoint = fread(f,1,'int32');
+    fileStop = ftell(f);
+    
+    firstlasttimepoints(ff,:) = [firsttimepoint lasttimepoint];
+    numsamples(ff) = fileStop./4;
+    if ff==1
+        transitiontimes_samp = firstlasttimepoints(ff,:);
+    else
+        transitiontimes_samp(ff,:) = firstlasttimepoints(ff,:)+transitiontimes_samp(ff-1,2)+1;
+    end
+end
+
+try 
+disp(['Calculating merge times based on wideband samplingRate of ',num2str(session.extracellular.sr),'Hz.'])
+transitiontimes_sec = transitiontimes_samp./session.extracellular.sr; %convert to seconds
+catch
+disp(['Calculating merge times based on wideband samplingRate of ',num2str(sessionInfo.rates.wideband),'Hz.'])
+transitiontimes_sec = transitiontimes_samp./sessionInfo.rates.wideband; %convert to seconds    
+end
+
+%% Make the events.mat file that saves all the merge information
+
+eventsfilename = fullfile(basepath,[basename,'.MergePoints.events.mat']);
+
+MergePoints.timestamps = transitiontimes_sec;
+MergePoints.timestamps_samples = transitiontimes_samp;
+MergePoints.firstlasttimpoints_samples = firstlasttimepoints;
+MergePoints.foldernames = recordingnames;
+MergePoints.filesmerged = datpaths;
+MergePoints.filesizes = datsizes;
+MergePoints.sizecheck = sizecheck;
+MergePoints.detectorinfo.detectorname = 'concatenateDats';
+MergePoints.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
+
+%Saving SleepStates
+save(eventsfilename,'MergePoints');
+
+
+%% Delete original dats, if that option is chosen
+if deleteoriginaldatsbool
+    %Put in user confirmation here.... are they sure they want to delete
+    %the dats?
+    %for other .dats
+    for odidx = 1:length(otherdattypes)
+        eval(['tdatpaths = ' otherdattypes{odidx} 'datpaths;']);
+        for didx = 1:length(tdatpaths)
+            if isunix 
+                eval(['! rm ' tdatpaths{didx}])
+            elseif ispc%As of 4/9/2017 - never tested
+                eval(['! del ' tdatpaths{didx}])
+            end
         end
     end
-    
-    transitiontimes_sec = transitiontimes_samp./session.extracellular.sr; %convert to seconds
-    
-    % Make the events.mat file that saves all the merge information
-    
-    eventsfilename = fullfile(basepath,[basename,'.MergePoints.events.mat']);
-    
-    MergePoints.timestamps = transitiontimes_sec;
-    MergePoints.timestamps_samples = transitiontimes_samp;
-    MergePoints.firstlasttimpoints_samples = firstLastTimePoints;
-    MergePoints.foldernames = subfolders;
-    MergePoints.filesmerged = files;
-    MergePoints.sizecheck = sizecheck;
-    MergePoints.detectorinfo.detectorname = 'concatenateDats';
-    MergePoints.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
-    
-    %Saving SleepStates
-    save(eventsfilename,'MergePoints');
+    %for main .dat
+    for didx = 1:length(datpaths.amplifier)
+        if isunix 
+            eval(['! rm ' datpaths.amplifier{didx}])
+        elseif ispc%As of 4/9/2017 - never tested
+            eval(['! del ' datpaths.amplifier{didx}])
+        end
+    end
 end
-
 
 

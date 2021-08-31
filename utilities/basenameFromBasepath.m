@@ -19,4 +19,11 @@ function basename = basenameFromBasepath(basepath)
 if strcmp(basepath(end),filesep);
     basepath = basepath(1:end-1);
 end
+% if there are dots in the filename take that last folder
+if contains(basepath,'.')
+    parts = strsplit(basepath,filesep);
+    basename = parts{end};
+    return
+end
 [~,basename] = fileparts(basepath);
+end

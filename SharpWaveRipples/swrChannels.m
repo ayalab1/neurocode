@@ -1,161 +1,159 @@
-function [swrCh] = swrChannels(varargin)
 
-% swrCh = swrChannels('basepath',basepath)
-% Function to automatically determined the best channles for SWR detection:
-% ripple channel, sharp-wave channel and noise channel 
+function rippleChannels = swrChannels(varargin)
+% rippleChannel = swrChannels(varargin)
 
-% INPUTS
-%   <options>                     optional list of property-value pairs (see table below)
-%   basepath                      - Basepath for experiment. It contains all session
-%                                   folders. If not provided takes pwd.
-%   Manual                        - Correct final output manually . Default false
-%   ripples_peaks_timestamps      - input ripples peaks timestamps if already exist, 
-%                                   otherwise code calculate ripples peaks timestamps 
+% Find ripple channel of interest (ripple, SWP and noise channels)
 
-% OUTPUTS                          
-%   <swrCh>                       - tag Deep_Sup channelines
-%                                 - tag Ripple_Channel
-%                                 - tag Sharpwave_Channel
-%                                 - tag Noise_Channel 
+% INPUT
+%   <options>       optional list of property-value pairs (see table below)
+%   basepath        Basepath containing...
+%   discardShanks   Default [].
+%   probesNumber    Default 1.
+%   noPrompts       Default, true
+%   saveMat         Default, true.
+%   force           Default, false
+%
+%   F.Sharif 2020. Converted to buzcode from Channel_Info by MV.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-% F.Sharif 2020
 
 %% Defaults and Parms
-
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstr); 
-addParameter(p,'Manual',false,@islogical);
-addParameter(p,'ripples_peaks_timestamps',[],@isnumeric);
-
+addParameter(p,'basepath',pwd,@isfolder);
+addParameter(p,'discardShanks',[],@isnumeric);
+addParameter(p,'probesNumber',1,@isnumeric);
+addParameter(p,'noPrompts',true,@islogical);
+addParameter(p,'saveMat',true,@islogical);
+addParameter(p,'force',true,@islogical);
 parse(p,varargin{:});
-basepath = p.Results.basepath;
-Manual = p.Results.Manual;
-ripples_peaks_timestamps = p.Results.ripples_peaks_timestamps;
+basePath = p.Results.basepath;
+discardShanks = p.Results.discardShanks;
+probesNumber = p.Results.probesNumber;
+noPrompts = p.Results.noPrompts;
+saveMat = p.Results.saveMat;
+force = p.Results.force;
 
-if ~exist('basepath') || isempty(basepath)
-    basepath = uigetdir; 
+prevPath = pwd;
+cd(basePath);
+
+filename = dir('*.channelinfo.ripples.mat');
+if ~isempty(filename) && ~force
+    disp('Ripple channel already detected! Loading file.');
+    load(filename.name);
+    return
 end
-cd(basepath);
 
-%%
-%session = bz_getSession('basepath',basepath);
-basename = bz_BasenameFromBasepath(pwd);
-load([basename '.session.mat']);
-[~,recordingname] = fileparts(basepath);
-Anatomical_groups=session.extracellular.electrodeGroups;
-nShank = session.extracellular.nElectrodeGroups; 
+% main code (Channel_Info)
+[parameters] = LoadParameters(basePath);
+Anatomical_groups=parameters.AnatGrps;
+disp('Reading .XML /  Anatomical Groups ')
+disp('...                                  ')
+
 
 SHANKS=[];
-    for shankIdx=1:nShank
-        
-        tempChannels = Anatomical_groups.channels{shankIdx};
-        tempChannels(ismember(tempChannels,session.channelTags.Bad.channels)) = [];
-        SHANKS{shankIdx}= tempChannels;
-        disp(['Group ' num2str(shankIdx) ' = '  '[' num2str(SHANKS{shankIdx}) ']' ]);
-    end
-    
-    
-    if length(SHANKS)> 9
-        disp('...                                  ')
-        disp('There are more than 1 prob in this recording session')
-        Seperate_Probs=input('Do you like to find individual refrence channel for each prob?  (if yes press 1 else press 0) ');
-        if Seperate_Probs==1
-            GroupsNumber_User=input('insert .XML groups numbers (Shank numbers) belong to prob1 .ex [1:8] or [ 1 2 3 ...]')
-            CorticalChannel_included=input('Are cortical cahnnels included in the above groups (if yes press 1 else press 0) ');
-            if CorticalChannel_included==0
-                CorticalChannel_User=input('What are cortical channels needed to be merged to this prob .ex [128 129 ...] ');
-                CorticalChannel_User=CorticalChannel_User;
-            else
-                CorticalChannel_User=[];
-            end
+for GroupsNumber=1:size(Anatomical_groups,2)
+    SHANKS{GroupsNumber}= Anatomical_groups(1, GroupsNumber).Channels;
+    disp(['Group ' num2str(GroupsNumber) ' = '  '[' num2str(SHANKS{1,GroupsNumber}) ']' ]);
+end
 
-        end
-    else
-        Seperate_Probs=-1;
-        disp('                                ')
-        disp('1 probs is detectted')
-        disp('                                ')
-        disp('                                ')
-    end
+channelnumber_correction = 1;
 
-
-SHANKS_PerProb=[];
+if length(SHANKS)> 9 | probesNumber > 1
+    disp('...                                  ')
+    disp('There are more than 1 prob in this recording session')
+    Seperate_Probs=input('Do you like to find individual refrence channel for each prob?  (if yes press 1 else press 0) ');
     if Seperate_Probs==1
-        for i=1:length(GroupsNumber_User)
-            SHANKS_PerProb{1,i}= SHANKS{1,GroupsNumber_User(i)};
-            disp(['NewGroup ' num2str(i) ' = '  '[' num2str(SHANKS_PerProb{1,i}) ']' ])
+        GroupsNumber_User=input('insert .XML groups numbers (Shank numbers) belong to prob1 .ex [1:8] or [ 1 2 3 ...]')
+        CorticalChannel_included=input('Are cortical cahnnels included in the above groups (if yes press 1 else press 0) ');
+        if CorticalChannel_included==0
+            CorticalChannel_User=input('What are cortical channels needed to be merged to this prob .ex [128 129 ...] ')
+        else
+            CorticalChannel_User=[];
         end
-        if isempty(CorticalChannel_User)==0
-            SHANKS_PerProb{1,i+1}=CorticalChannel_User;
-            disp(['NewGroup ' num2str(i+1) ' = '  '[' num2str(SHANKS_PerProb{1,i+1}) ']' ])
-        end
-    else
-        for i=1:length(SHANKS)
-            SHANKS_PerProb{1,i}= SHANKS{1,i};
-        end
+
     end
+else
+    Seperate_Probs=-1;
+    disp('                                ')
+    disp('1 probs is detectted')
+    disp('                                ')
+    disp('                                ')
+end
+    
+SHANKS_PerProb=[];
+if Seperate_Probs==1
+    for i=1:length(GroupsNumber_User)
+        SHANKS_PerProb{1,i}= SHANKS{1,GroupsNumber_User(i)}+channelnumber_correction;
+        disp(['NewGroup ' num2str(i) ' = '  '[' num2str(SHANKS_PerProb{1,i}) ']' ])
+    end
+    if isempty(CorticalChannel_User)==0
+        SHANKS_PerProb{1,i+1}=CorticalChannel_User+channelnumber_correction;
+        disp(['NewGroup ' num2str(i+1) ' = '  '[' num2str(SHANKS_PerProb{1,i+1}) ']' ])
+    end
+else
+    for i=1:length(SHANKS)
+        SHANKS_PerProb{1,i}= SHANKS{1,i}+channelnumber_correction;
+        disp(['NewGroup ' num2str(i) ' = '  '[' num2str(SHANKS_PerProb{1,i}) ']' ])
+    end
+end
 clear SHANKS
 SHANKS=SHANKS_PerProb;
-mkdir ('Ripple_Profile')
+
+for ii = 1:length(discardShanks)
+    SHANKS(discardShanks) = [];
+end
 
 %% Calculate Signal to noise ratio in all of the channels ##################
 
 Ripple_window_start=120;
 Ripple_window_end=180;
-[lfp] = bz_GetLFP('all');
-lfp.channels = lfp.channels+1; % ANTONIO - change ch number to base 1
-LfpSamplingrate = lfp.samplingRate;
-[bbb aaa]=butter(4,[Ripple_window_start Ripple_window_end]/LfpSamplingrate*2,'bandpass');
+[lfp] = getLFP('all');
+[bbb aaa]=butter(4,[Ripple_window_start Ripple_window_end]/lfp.samplingRate*2,'bandpass');
 
-Refrence_chan=zeros(nShank,3);
+Refrence_chan=[];
 % Not Necessary, only for test ############################################
 Signal2Noise=[];
 StandDev=[];
 % #########################################################################
 
+    for shk=1:length(SHANKS)
 
-for shk=1:length(SHANKS)
-    
-    SNR = zeros(length(SHANKS{shk}),1);
-    for CH=1:length(SHANKS{shk})
-        lfpCol = find(lfp.channels==SHANKS{shk}(CH));
-        filt = FiltFiltM(bbb,aaa,single(lfp.data(:,lfpCol))); %Note! Note!Note! Note!Note! Note!Note! Note! channel index starting from 0
-        Amp = fastrms(filt,15);
-        % Calculate signal to noise ratio #################################
-        Amp_Sort=sort(Amp);
-        percen=(1e-3)/100;
-        Alpha=floor(length(Amp_Sort)*percen);
-        minAmp=mean(Amp_Sort(1:Alpha));
-        maxAmp=mean(Amp_Sort(end-Alpha:end));
-        SNR(CH) = 10.*log((maxAmp-minAmp)./std(Amp));
-        
-        % Not Necessary, only for test ####################################
-        Signal2Noise=[Signal2Noise;SNR(CH)];
-        StandDev=[StandDev;1./std(Amp)];
-        % #################################################################
+        clear var ChannelsPerShank SNR
+
+        for CH=1:length(SHANKS{shk})
+
+            filt = filtfilt(bbb,aaa,double(lfp.data(:,SHANKS{shk}(CH))));
+            Amp = fastrms(filt,15);
+            % Calculate signal to noise ratio #################################
+            Amp_Sort=sort(Amp);
+            percen=(1e-3)/100;
+            Alpha=floor(length(Amp_Sort)*percen);
+            minAmp=mean(Amp_Sort(1:Alpha));
+            maxAmp=mean(Amp_Sort(end-Alpha:end));
+            SNR(CH) = 10.*log((maxAmp-minAmp)./std(Amp));
+
+            % Not Necessary, only for test ####################################
+            Signal2Noise=[Signal2Noise;SNR(CH)];
+            StandDev=[StandDev;1./std(Amp)];
+            % #################################################################
+        end
+
+        SNR=SNR./max(SNR);
+        [minVals, locs] = min(SNR);
+        Refrence_chan(shk,:) = [minVals locs SHANKS{shk}(locs)];
+
     end
-    
-    SNR=SNR./max(SNR);
-    [minSNR, minSNRloc] = min(SNR);
-    Refrence_chan(shk,:) = [minSNR minSNRloc SHANKS{shk}(minSNRloc)];
-    
-end
 
-[~,RefrenceShank]=min(Refrence_chan(:,1));
-RefrenceRippleChannel_test=Refrence_chan(RefrenceShank,3);
+[~,RefrenceShnak]=min(Refrence_chan(:,1));
+RefrenceRippleChannel_test=Refrence_chan(RefrenceShnak,3);
 disp(['Reference Ripple Channel for test is : ' num2str(RefrenceRippleChannel_test) ]);
 
 %% Get Ripple
-      Win=70;     
-
-    if isempty(ripples_peaks_timestamps) ==1
-        
-        [ripples] = bz_FindRipples(basepath,RefrenceRippleChannel_test-1);        
-        % Removing short startting and the end ripples
-        ripples.peaks = ripples.peaks(ripples.peaks*LfpSamplingrate>Win+1 & ripples.peaks*LfpSamplingrate<length(lfp.timestamps)-Win+1);
-        ripples_peaks_timestamps=ripples.peaks;
-        
-    end
+[ripples] = findRipples(basePath,RefrenceRippleChannel_test);
+Win=70;
+LfpSamplingrate = lfp.samplingRate;
+% Removing short startting and the end ripples
+ripples.peaks = ripples.peaks(ripples.peaks*LfpSamplingrate>Win+1 & ripples.peaks*LfpSamplingrate<length(lfp.timestamps)-Win+1);
 
 %% Calculate Ripple power ##################################################
 
@@ -164,33 +162,33 @@ Ripples_Power=[];
 Ripples_Power_Matrix=[];
 Ripples_CSD=[];
 
-    for shk=1:length(SHANKS)
+for shk=1:length(SHANKS)
 
-        for CH=1:length(SHANKS{shk})
+    for CH=1:length(SHANKS{shk})
 
-            clear var All_Ripple_Avg  ripple_ave Power
+        clear var All_Ripple_Avg  ripple_ave Power
 
-            eeg=single(lfp.data(:,SHANKS{1, shk}(CH))); %Note! Note!Note! Note!Note! Note!Note! Note! channel index starting from 0
+        eeg=single(lfp.data(:,SHANKS{1, shk}(CH)));
 
-            for i = 1:size(ripples_peaks_timestamps,1)
-                ripple_ave(i,:) = eeg(round(ripples_peaks_timestamps(i)*LfpSamplingrate)-Win:round(ripples_peaks_timestamps(i)*LfpSamplingrate)+Win,:);
-            end
-
-            All_Ripple_Avg=double(mean(ripple_ave));
-
-            Frq=120:180;
-            scale=frq2scal(Frq,LfpSamplingrate);
-            S=cwt(All_Ripple_Avg,scale,'morl');
-            g_baseline= (envelop(S.*S))';
-            Power=mean(g_baseline(50:100,:),2);
-
-            Rippl_Matrix{1,shk}(CH,:)=All_Ripple_Avg;
-            Ripples_Power=[Ripples_Power; mean(Power) SHANKS{1,shk}(CH)] ;
-            Ripples_Power_Matrix{1,shk}(CH,:)=Power;
-            Ripples_CSD{1,shk}(CH,:)=[sum(diff(smooth1D(All_Ripple_Avg(50:70),10),2)) sum(diff(smooth1D(All_Ripple_Avg(70:100),10),2)) SHANKS{1,shk}(CH) ];
+        for i = 1:size(ripples.peaks,1)
+            ripple_ave(i,:) = eeg(round(ripples.peaks(i)*LfpSamplingrate)-Win:round(ripples.peaks(i)*LfpSamplingrate)+Win,:);
         end
 
+        All_Ripple_Avg=double(mean(ripple_ave));
+
+        Frq=120:180;
+        scale=frq2scal(Frq,LfpSamplingrate);
+        S=cwt(All_Ripple_Avg,scale,'morl');
+        g_baseline= (envelop(S.*S))';
+        Power=mean(g_baseline(50:100,:),2);
+
+        Rippl_Matrix{1,shk}(CH,:)=All_Ripple_Avg;
+        Ripples_Power=[Ripples_Power; mean(Power) SHANKS{1,shk}(CH)] ;
+        Ripples_Power_Matrix{1,shk}(CH,:)=Power;
+        Ripples_CSD{1,shk}(CH,:)=[sum(diff(smooth1D(All_Ripple_Avg(50:70),10),2)) sum(diff(smooth1D(All_Ripple_Avg(70:100),10),2)) SHANKS{1,shk}(CH) ];
     end
+
+end
 
 %% find Deep and superficial channels ######################################
 
@@ -198,33 +196,32 @@ Deep_Sup=[];
 con_sum_all=[];
 con_direction_all=[];
 
-    for shk=1:size(SHANKS,2)
-        clear Reversal_channel
-        con_direction=Ripples_CSD{1,shk}(:,1).*Ripples_CSD{1,shk}(:,2);
-        con_sum=Ripples_CSD{1,shk}(:,1)+Ripples_CSD{1,shk}(:,2);
-        con_sum_all=[con_sum_all;con_sum Ripples_CSD{1,shk}(:,3)];
-        con_direction_all=[con_direction_all; con_direction Ripples_CSD{1,shk}(:,3)];
-        nd=find(con_direction<0);
-        ndx=find(con_sum<0);
-        Deep_Sup{1,shk}(:,2)=SHANKS{1,shk};
+for shk=1:size(SHANKS,2)
+    clear Reversal_channel
+    con_direction=Ripples_CSD{1,shk}(:,1).*Ripples_CSD{1,shk}(:,2);
+    con_sum=Ripples_CSD{1,shk}(:,1)+Ripples_CSD{1,shk}(:,2);
+    con_sum_all=[con_sum_all;con_sum Ripples_CSD{1,shk}(:,3)];
+    con_direction_all=[con_direction_all; con_direction Ripples_CSD{1,shk}(:,3)];
+    nd=find(con_direction<0);
+    ndx=find(con_sum<0);
 
-        if isempty(nd)==0
-            Reversal_channel=nd(end);
-            Deep_Sup{1,shk}(1:Reversal_channel,1)=Reversal_channel-(1:Reversal_channel);
-            if Reversal_channel< size(SHANKS{1,shk},2)
-                Deep_Sup{1,shk}(Reversal_channel:size(SHANKS{1,shk},2),1)=Reversal_channel-(Reversal_channel:size(SHANKS{1,shk},2));
-            end       
-        elseif isempty(ndx)==0
-            Reversal_channel=ndx(end);
-            Deep_Sup{1,shk}(1:Reversal_channel,1)=Reversal_channel-(1:Reversal_channel);
-            if Reversal_channel< size(SHANKS{1,shk},2)
-                Deep_Sup{1,shk}(Reversal_channel:size(SHANKS{1,shk},2),1)=Reversal_channel-(Reversal_channel:size(SHANKS{1,shk},2));
-            end
-        else
-            Deep_Sup{1,shk}(:,1)=-(1:size(SHANKS{1,shk},2));
+    if isempty(nd)==0
+        Reversal_channel=nd(end);
+        Deep_Sup{1,shk}(1:Reversal_channel,1)=Reversal_channel-(1:Reversal_channel);
+        if Reversal_channel< size(SHANKS{1,shk},2)
+            Deep_Sup{1,shk}(Reversal_channel+1:size(SHANKS{1,shk},2),1)=Reversal_channel-(Reversal_channel+1:size(SHANKS{1,shk},2));
+        end       
+    elseif isempty(ndx)==0
+        Reversal_channel=ndx(end);
+        Deep_Sup{1,shk}(1:Reversal_channel,1)=Reversal_channel-(1:Reversal_channel);
+        if Reversal_channel< size(SHANKS{1,shk},2)
+            Deep_Sup{1,shk}(Reversal_channel+1:size(SHANKS{1,shk},2),1)=Reversal_channel-(Reversal_channel+1:size(SHANKS{1,shk},2));
         end
-
+    else
+        Deep_Sup{1,shk}(:,1)=-(1:size(SHANKS{1,shk},2));
     end
+
+end
 
 %%
 % Assigning  ripple , SWR , and noise channel #############################
@@ -237,9 +234,11 @@ noise_chnl=con_direction_all(nd_noise,2);
 
 [~,nd_SWR]=max(con_sum_all(:,1));
 SWR_chnl=con_sum_all(nd_SWR,2);
+
 %% 1-Plot ripple layout
 
-figure('position',[200 115 1300 500])
+figure('position',[200 115 1300 800])
+subplot(4,1,[1:3])
 Sh_spacing=200;
 chan_spacing=800;
 ylabel_p=[];
@@ -256,7 +255,7 @@ for shk=1:length(SHANKS)
         Ripple_Y=Rippl_Matrix{shk}(CH,:)-(CH-1)*chan_spacing;
         Ripple_X=[1:length(Ripple_Y)]+(shk-1)*Sh_spacing;
         
-        SD=Deep_Sup{shk}(CH,1);
+        SD=Deep_Sup{shk}(CH);
      
         % Deep sup layer Colors ###########################################
         if SD <0
@@ -291,20 +290,15 @@ for shk=1:length(SHANKS)
         %Type test number #################################################
         hold on
     end
-    
-    
 end
 
 set(gca,'YTick',[])
 set(gca,'visible','off')
 set(gca,'color','w')
 
-cd Ripple_Profile
-saveas(gcf,'1.fig')
-cd ..
-
 %% 2-Plot Signal to noise ratio in all of the channels
-figure('position',[200 700 500 270])
+% figure('position',[200 700 500 270])
+subplot(4,3,10)
 Sh_spacing=1;
 chan_spacing=.5;
 yticks_p=[];
@@ -350,23 +344,20 @@ axis ij
 title('XML-Anatomical Groups Number','fontsize', 10)
 box('off')
 
-cd Ripple_Profile
-saveas(gcf,'2.fig')
-cd ..
+%% 3-Plot Ripple-noise correlation
 
-%% 3-Plot Ripple-nise correlation
-
-    a=[];
-    a=Ripples_Power(:,1);
-    a=a./max(a);
-    b=[];
-    b=Signal2Noise(:,1);
-    b=b./max(b);
-    [r,p]=corrcoef(a,b);
-    R=r(1,2);
-    P=p(1,2);
+a=[];
+a=Ripples_Power(:,1);
+a=a./max(a);
+b=[];
+b=Signal2Noise(:,1);
+b=b./max(b);
+[r,p]=corrcoef(a,b);
+R=r(1,2);
+P=p(1,2);
     
-figure('position',[700 700 300 270])
+% figure('position',[700 700 300 270])
+subplot(4,3,11)
 plot(a,b,'ok','linewidth',3)
 hold on;
 h = lsline;
@@ -375,27 +366,24 @@ xlabel('Ripple power')
 ylabel('SNR')
 title (['r = ' num2str(R) ['    pval = ' num2str(P)]] )
 
-cd Ripple_Profile
-saveas(gcf,'3.png')
-cd ..
-
 %% 4-plot Power layout
 colmn=size(Ripples_Power_Matrix,2);
-    for i=1:colmn
-        ChannelNumber(i)=size(Ripples_Power_Matrix{1, i},1);
-    end
-    rows=max(ChannelNumber);
-    Ripple_length=size(Ripples_Power_Matrix{1, 1},2);
-    Power_Matrix=zeros(rows,colmn*Ripple_length);
+for i=1:colmn
+    ChannelNumber(i)=size(Ripples_Power_Matrix{1, i},1);
+end
+rows=max(ChannelNumber);
+Ripple_length=size(Ripples_Power_Matrix{1, 1},2);
+Power_Matrix=zeros(rows,colmn*Ripple_length);
 
-    for shk=1:colmn
-        begin_ndx=(shk-1)*Ripple_length+1;
-        end_ndx=shk*Ripple_length;
-        rows_number=ChannelNumber(shk);
-        Power_Matrix(1:rows_number,begin_ndx:end_ndx)= Ripples_Power_Matrix{1, shk};
-    end
+for shk=1:colmn
+    begin_ndx=(shk-1)*Ripple_length+1;
+    end_ndx=shk*Ripple_length;
+    rows_number=ChannelNumber(shk);
+    Power_Matrix(1:rows_number,begin_ndx:end_ndx)= Ripples_Power_Matrix{1, shk};
+end
 
-figure('position',[1000 700 500 270])
+% figure('position',[1000 700 500 270])
+subplot(4,3,12)
 imagesc(Power_Matrix)
 text(1,1,'1','color','w')
 colormap jet
@@ -404,56 +392,33 @@ ylabel('Channels')
 set(gca,'YTick',[])
 set(gca,'XTick',[])
 
-cd Ripple_Profile
-saveas(gcf,'4.png')
-cd ..
-
-%%
-swrCh.Deep_Sup=Deep_Sup;
-
-    if Manual==true
-    
-
-            disp('                                ')
-            disp('                                ')
-            disp(['Ripple_Channel=' num2str(Rip_chnl) ' Sharpwave_Channel=' num2str(SWR_chnl) '  Noise_Chnnel='  num2str(noise_chnl) ]);
-            disp('                                ')
-            disp('                                ')
-            Bout_2 = input(sprintf('Do you like the selected channels?  (if yes press 1 else press any key)   '));
-            disp('                                ')
-            disp('                                ')
-
-                if Bout_2==1        
-                    disp('Done!')
-                    swrCh.ripple=Rip_chnl;
-                    swrCh.sharpwave=SWR_chnl;
-                    swrCh.noise=noise_chnl;
-                else
-
-                    Bout_3 = input(sprintf('Insert Ripple,Swr,and noise as : [Ripple_Chnnel# Swr_Chnnel# noise_Chnnel#]'));
-                    disp(['Ripple_Channel=' num2str(Bout_3(1)) ' Sharpwave_Channel=' num2str(Bout_3(2)) '  noise_Chnnel=' num2str(Bout_3(3)) ])
-                    disp('Done!')
-                    swrCh.ripple=Bout_3(1);
-                    swrCh.sharpwave=Bout_3(2);
-                    swrCh.noise=Bout_3(3);       
-                end
-        
-            
-        
+if ~noPrompts
+    Bout_2 = input(sprintf('Do you like the selected channels?  (if yes press 1 else press any key)   '));
+    if Bout_2==1
+        disp(['Ripple_Channel=' num2str(Rip_chnl) ' Sharpwave_Channel=' num2str(SWR_chnl) '  Noise_Chnnel='  num2str(noise_chnl) ])
+        disp('Done!')
     else
-     
-            swrCh.ripple=Rip_chnl;
-            swrCh.sharpwave=SWR_chnl;
-            swrCh.noise=noise_chnl;  
-            disp('Done!')
+
+        Bout_3 = input(sprintf('Insert Ripple,Swr,and noise as : [Ripple_Chnnel# Swr_Chnnel# noise_Chnnel#]'));
+        disp(['Ripple_Channel=' num2str(Bout_3(1)) ' Sharpwave_Channel=' num2str(Bout_3(2)) '  noise_Chnnel=' num2str(Bout_3(3)) ])
     end
-     
-save([recordingname '.swrCh.mat'],  'swrCh')
-
-
 end
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+rippleChannels.Ripple_Channel=Rip_chnl;
+rippleChannels.Sharpwave_Channel=SWR_chnl;
+rippleChannels.Noise_Channel=noise_chnl;
+rippleChannels.Deep_Sup=Deep_Sup;
+
+if saveMat
+    disp('Saving results...');
+    filename = split(pwd,filesep); filename = filename{end};
+    save([filename '.channelinfo.ripples.mat'],'rippleChannels');
+end
+    
+
+cd(prevPath);
+end
+
 %% Additional functions
 
 function [maxsind, maxsvalues] = LocalMaxima(x)

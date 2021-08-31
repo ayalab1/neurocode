@@ -103,7 +103,7 @@ if ~isempty(chInfo)
     SpkGrps = chInfo.one.AnatGrps;
     Fs = chInfo.lfpSR;
     lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
-    lfpFile = [lfpFile.folder filesep lfpFile.name];
+    lfpFile = [basepath filesep lfpFile(1).name];
 end
 % sessionInfo = bz_getSessionInfo(basePath,'noPrompts',noPrompts); % now using the updated version
 % switch fromDat
@@ -196,10 +196,10 @@ end
  
 switch fromDat
     case false
-        lfp = bz_LoadBinary(lfpFile ,'nChannels',nChannels,'channels',xcorr_chs,...
+        lfp = LoadBinary(lfpFile ,'nChannels',nChannels,'channels',xcorr_chs,...
             'start',restrict(1),'duration',diff(restrict),'frequency',Fs); %read and convert to mV    
     case true
-        lfp = bz_LoadBinary(datFile ,'nChannels',nChannels,'channels',xcorr_chs,...
+        lfp = LoadBinary(datFile ,'nChannels',nChannels,'channels',xcorr_chs,...
             'start',restrict(1),'duration',diff(restrict),'frequency',datFs,...
             'downsample',datFs./Fs); %read and convert to mV  
 end

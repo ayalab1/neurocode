@@ -1,5 +1,5 @@
 
-function [events] = eventSpikingTreshold(events,spikes,varargin)
+function [events] = eventSpikingTreshold(events,varargin)
 % Descriptive and mean/median difference analysis, with serveral plot
 % options.
 % 
@@ -38,19 +38,13 @@ winSize = p.Results.winSize;
 eventSize = p.Results.eventSize;
 figOpt = p.Results.figOpt;
 
-prevPath = pwd;
-cd(basepath);
-
 % 
 if isempty(spikes)
     spikes = loadSpikes;
 end
 [spikemat] = bz_SpktToSpkmat(spikes, 'dt',0.01,'overlap',6);
 sSpkMat = zscore(sum(spikemat.data,2)/size(spikemat.data,2));
-% sSpkMat = mean(zscore(spikemat.data,[],1),2);
-clear eventPopResponse
 
-tic
 toCheck = find(events.peaks+winSize<spikemat.timestamps(end));
 sizeResponse = length(int32(1:winSize*2/(mean(diff(spikemat.timestamps)))-1));
 eventPopResponse = zeros(length(toCheck),sizeResponse);
@@ -63,7 +57,6 @@ parfor ii = 1: length(toCheck)
         eventPopResponse(ii,:) = temp(int32(1:sizeResponse));
     end
 end
-toc
 
 t_event = linspace(-winSize,winSize,size(eventPopResponse,2));
 eventResponse = zeros(size(events.peaks));
@@ -72,10 +65,11 @@ eventResponse(toCheck) = mean(eventPopResponse(:,t_event>-eventSize & t_event<ev
 
 % 
 validEvents = find(eventResponse>spikingThreshold);
-events.timestamps = events.timestamps(validEvents,:);
-try 
-    events.peaks = events.peaks(validEvents,:);
-    events.peakNormedPower = events.peakNormedPower(validEvents,:);
+n_rips = size(events.timestamps,1);
+for f = fields(events)'
+    if size(events.(f{1}),1) == n_rips
+        events.(f{1}) = events.(f{1})(validEvents,:);
+    end
 end
 events.eventSpikingParameters.spikingThreshold = spikingThreshold;
 events.eventSpikingParameters.winSize = winSize;
@@ -102,5 +96,4 @@ if figOpt
     end
 end
 
-cd(prevPath);
 end

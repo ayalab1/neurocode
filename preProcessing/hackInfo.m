@@ -29,7 +29,11 @@ if newForm && ~useOld
     out.OGformat = 'new';
     out.nChannel = session.extracellular.nChannels;
     out.one.channels = 1:out.nChannel;
-    out.one.badChannels = session.channelTags.Bad.channels;
+    try
+        out.one.badChannels = session.channelTags.Bad.channels;
+    catch
+        out.one.badChannels = [];
+    end
     out.zero.channels = out.one.channels-1;
     out.zero.badChannels = out.one.badChannels-1;
     out.nShank = session.extracellular.nElectrodeGroups;

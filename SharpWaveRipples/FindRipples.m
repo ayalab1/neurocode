@@ -22,7 +22,7 @@ function [ripples] = FindRipples(varargin)
 %    OR
 %
 %    basepath       path to a single session to run findRipples on
-%    channel      	Ripple channel to use for detection (0-indexed, a la neuroscope)
+%    channel      	Ripple channel to use for detection (1-indexed)
 %
 %    =========================================================================
 %     Properties    Values
@@ -72,7 +72,6 @@ function [ripples] = FindRipples(varargin)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-warning('this function is under development and may not work... yet')
 
 % Default values
 p = inputParser;
@@ -88,28 +87,40 @@ addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
+addParameter(p,'basepath',[],@isstr)
+addParameter(p,'EMGFromLFP',[],@isstruct)
 
 if isstr(varargin{1})  % if first arg is basepath
-    addRequired(p,'basepath',@isstr)
-    addRequired(p,'channel',@isnumeric)    
+    addParameter(p,'channel',@isnumeric)    
     parse(p,varargin{:})
-    basename = bz_BasenameFromBasepath(p.Results.basepath);
+    basename = basenameFromBasepath(p.Results.basepath);
     basepath = p.Results.basepath;
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
-    lfp = bz_GetLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
-    signal = bz_Filter(double(lfp.data),'filter','butter','passband',passband,'order', 3);
+    lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
+    signal = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
     timestamps = lfp.timestamps;
+
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP
     addRequired(p,'lfp',@isnumeric)
     addRequired(p,'timestamps',@isnumeric)
     parse(p,varargin{:})
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
-    signal = bz_Filter(double(p.Results.lfp),'filter','butter','passband',passband,'order', 3);
+    basepath = p.Results.basepath;
+    EMGFromLFP = p.Results.EMGFromLFP;
     timestamps = p.Results.timestamps;
-    basepath = pwd;
-    basename = bz_BasenameFromBasepath(basepath);
+    
+    % package into struct for bz_Filter, so we can return struct
+    samples.samplingRate = p.Results.frequency;
+    samples.data = double(p.Results.lfp);
+    samples.timestamps = timestamps;
+    signal = bz_Filter(samples,'filter','butter','passband',passband,'order',3);
+    
+    if ~exist('basepath','var')
+        basepath = pwd;
+    end
+    basename = basenameFromBasepath(basepath);
 end
 
 % assign parameters (either defaults or given)
@@ -132,7 +143,7 @@ plotType = p.Results.plotType;
 windowLength = frequency/frequency*11;
 
 % Square and normalize signal
-squaredSignal = signal.^2;
+squaredSignal = signal.data.^2;
 % squaredSignal = abs(opsignal);
 window = ones(windowLength,1)/windowLength;
 keep = [];
@@ -211,7 +222,7 @@ end
 % Detect negative peak position for each ripple
 peakPosition = zeros(size(thirdPass,1),1);
 for i=1:size(thirdPass,1)
-	[minValue,minIndex] = min(signal(thirdPass(i,1):thirdPass(i,2)));
+	[minValue,minIndex] = min(signal.data(thirdPass(i,1):thirdPass(i,2)));
 	peakPosition(i) = minIndex + thirdPass(i,1) - 1;
 end
 
@@ -283,7 +294,7 @@ if strcmp(show,'on')
   if plotType == 1
 	figure;
 	if ~isempty(noise)
-		MultiPlotXY([timestamps signal],[timestamps squaredSignal],...
+		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],...
             [timestamps normalizedSquaredSignal],[timestamps squaredNoise],...
             [timestamps squaredNoise],[timestamps normalizedSquaredNoise]);
 		nPlots = 6;
@@ -292,7 +303,7 @@ if strcmp(show,'on')
 		subplot(nPlots,1,6);
   		ylim([0 highThresholdFactor*1.1]);
 	else
-		MultiPlotXY([timestamps signal],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
+		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
 %  		MultiPlotXY(time,signal,time,squaredSignal,time,normalizedSquaredSignal);
 		nPlots = 3;
 		subplot(nPlots,1,3);
@@ -368,6 +379,16 @@ else
     ripples.noise.peaks = [];
     ripples.noise.peakNormedPower = [];
 end
+
+% Compute instantaneous frequency
+unwrapped = unwrap(signal.phase);
+frequency = bz_Diff(medfilt1(unwrapped,12),signal.timestamps,'smooth',0);
+frequency = frequency/(2*pi);
+
+ripples.amplitude = interp1(signal.timestamps,signal.amp,ripples.peaks,'linear');
+ripples.frequency = interp1(signal.timestamps,frequency,ripples.peaks,'linear');
+ripples.duration = ripples.timestamps(:,2) - ripples.timestamps(:,1);
+
 
 %The detectorinto substructure
 detectorinfo.detectorname = 'bz_FindRipples';

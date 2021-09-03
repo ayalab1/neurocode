@@ -1,4 +1,4 @@
-function preprocessSpikes(session) 
+% function preprocessSpikes(session) 
 % This is a wrapper to concantenate the basic spike related functions,
 % meant to be run right after the manual clustering
 
@@ -27,6 +27,31 @@ function preprocessSpikes(session)
 %% To only load spike times for futher analysis
     [spikeT] = importSpikes('spikes',spikes,'UID',[]);
     
-    
+%% To load multiple sessions into CellExplorer
+% After you have multiple sessions spike sorted and processed, you can open
+% them all in cell explorer.
+
+% assuming your current directory is (../project/animal/session), this will 
+% cd to project level (for example: A:\Data\GirardeauG)
+cd('..\..')
+
+% make this current directory into variable
+data_path = pwd;
+
+% look for all the cell_metrics.cellinfo.mat files 
+files = dir([data_path,'\**\*.cell_metrics.cellinfo.mat']);
+
+% pull out basepaths and basenames
+for i = 1:length(files)
+    basepath{i} = files(i).folder;
+    basename{i} = basenameFromBasepath(files(i).folder);
 end
+
+% load all cell metrics
+cell_metrics = loadCellMetricsBatch('basepaths',basepath,'basenames',basename);
+
+% pull up gui to inspect all units in your project
+cell_metrics = CellExplorer('metrics',cell_metrics);
+
+% end
 

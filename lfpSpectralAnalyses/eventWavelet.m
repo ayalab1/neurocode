@@ -120,7 +120,7 @@ lfp_avg = nanmean(lfp_temp,3);
 if whitening
 %     temp = WhitenSignal( lfp.data', [], 0 )'; %  NEED TO MAKE BUZCODE FUNCTION
 %     lfp.data = int16(temp'); clear temp;
-    lfpwhiten = bz_whitenLFP(lfp);
+    lfpwhiten = whitenLFP(lfp);
     lfp.data = lfpwhiten.data; clear temp;    
 end
 
@@ -146,7 +146,7 @@ for i = 1:length(events)
     eventWin(i,2) = lfp.timestamps(events(i)+twin(2));
 end
 
-wavespec = bz_WaveSpec(lfp,'intervals',eventWin,'frange',frange,'nfreqs',nfreqs,'roundfreqs',roundfreqs,...
+wavespec = WaveSpec(lfp,'intervals',eventWin,'frange',frange,'nfreqs',nfreqs,'roundfreqs',roundfreqs,...
             'nfreqs',nfreqs,'ncyc',ncyc,'fvector',fvector,'space',space);
 
 % Pull out individual wavelet spectrograms

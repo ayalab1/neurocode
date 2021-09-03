@@ -220,10 +220,10 @@ useSPW = p.Results.useSPW;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% IF RIPPLES ALREADY FOUND %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-sessionInfo = bz_getSessionInfo(basepath, 'noPrompts', noPrompts);
-if exist([sessionInfo.FileName '.ripples.events.mat'],'file') && ~forceDetect
+sessionInfo = getSession;
+if exist([sessionInfo.general.name '.ripples.events.mat'],'file') && ~forceDetect
     disp('Ripples already detected! Loading file...');
-    load([sessionInfo.FileName '.ripples.events.mat']);
+    load([sessionInfo.general.name '.ripples.events.mat']);
     return
 end
 

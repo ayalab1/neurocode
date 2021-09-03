@@ -2,7 +2,7 @@
 %% Ripple analysis pipeline
 % This is a wrapper to concatenate all functions to perform basic ripple analysis in a single session
 % run it from session folder
-basename = bz_BasenameFromBasepath(pwd);
+basename = basenameFromBasepath(pwd);
 
 %% 0- Pre processing
 %   - Detection of sleep states and theta epochs is done in bz_PreprocessSession
@@ -26,7 +26,7 @@ end
 
 %%
     % refine ripple detection using spiking level
-    ripples = eventSpikingTreshold(ripples,spikes,'spikingThreshold',0.5); 
+    ripples = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.5); 
 
     % plot wavelet to check detection quality 
     mkdir('Ripple_Profile');
@@ -44,9 +44,9 @@ end
     
 % plot behaviour (optional)
     clearvars;
-    basename = bz_BasenameFromBasepath(pwd);
+    basename = basenameFromBasepath(pwd);
     load([basename '.behavEpochs.mat']);
-    bz_thetaEpochs(pwd);
+    thetaEpochs(pwd);
     
     Plot_recording_States(pwd);  
     saveas(gcf,[basename '.states.png']);
@@ -63,11 +63,11 @@ end
     
 %% 4- Separate ripples by task epochs
 clearvars;
-basename = bz_BasenameFromBasepath(pwd);
+basename = basenameFromBasepath(pwd);
 load([basename '.behavEpochs.mat']);
 load([basename '.ripples.events.mat']);
 load([basename '.swrCh.mat']);
-lfpRip = bz_GetLFP(swrCh.ripple-1);
+lfpRip = getLFP(swrCh.ripple);
 
 inputLabels={'behavEpochs.int.pre','behavEpochs.int.task','behavEpochs.int.post'};
 outputLabels={'SWRepochs.pre','SWRepochs.task','SWRepochs.post'};
@@ -101,7 +101,7 @@ for epochs= 1:3
     if numel(peaks) > 100
         peaks = peaks(1:100);
     end
-    [wavT,lfpT]=bz_eventWavelet(lfpRip,peaks,'twin',[0.1 0.1],'plotWave',false,'plotLFP',false);
+    [wavT,lfpT]= eventWavelet(lfpRip,peaks,'twin',[0.1 0.1],'plotWave',false,'plotLFP',false);
     wavAvg{epochs} = wavT; lfpAvg{epochs} = lfpT; clear lfpT wavT;
     
     subplot(1,3,epochs);
@@ -191,7 +191,7 @@ for states = 1:3
     clear var stateMatrix M
     eval( ['stateMatrix=' inputLabels{states} ';']);
    if ~isempty(stateMatrix)
-      M = bz_getRipSpikes('spikes',spikes,'events',stateMatrix  ,'saveMat',false); 
+      M = getRipSpikes('spikes',spikes,'events',stateMatrix  ,'saveMat',false); 
       eval([outputLabels{states} '=M;']);
    else
       eval([outputLabels{states} '=[];']); 
@@ -208,7 +208,7 @@ for states=1:3
     clear var stateMatrix M
     if ~isempty(eval([inputLabels{states}]))
         eval(['stateMatrix=' inputLabels{states} ';']);
-        M =bz_unitSWRmetrics(stateMatrix);
+        M = unitSWRmetrics(stateMatrix);
         eval([outputLabels{states} '=M;']);
     else
         eval([outputLabels{states} '=[];']);    

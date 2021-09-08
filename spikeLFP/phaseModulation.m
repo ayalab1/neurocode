@@ -74,9 +74,9 @@ basepath = p.Results.basepath;
 %% Get phase for every time point in LFP
 switch lower(method)
     case ('hilbert')
-
+        
         [b a] = butter(3,[passband(1)/(samplingRate/2) passband(2)/(samplingRate/2)],'bandpass'); % order 3
-%         [b a] = cheby2(4,20,passband/(samplingRate/2));
+        %         [b a] = cheby2(4,20,passband/(samplingRate/2));
         filt = FiltFiltM(b,a,double(lfp.data(:,1)));
         power = fastrms(filt,ceil(samplingRate./passband(1)));  % approximate power is frequency band
         hilb = hilbert(filt);
@@ -177,12 +177,12 @@ for a = 1:length(spikes.times)
         spkphases{a} = nan;
     else
         spkphases{a} = lfpphase(ceil(s*samplingRate));
-
-
-%         cum_spkphases = vertcat(cum_spkphases, spkphases{a});
-
-
-    %% Gather binned counts and stats (incl Rayleigh Test)
+        
+        
+        %         cum_spkphases = vertcat(cum_spkphases, spkphases{a});
+        
+        
+        %% Gather binned counts and stats (incl Rayleigh Test)
         [phasedistros(:,a),phasebins,ps]=CircularDistribution(spkphases{a},'nBins',numBins);
         phasestats.m(a) = mod(ps.m,2*pi);
         phasestats.r(a) = ps.r;
@@ -242,13 +242,16 @@ PhaseLockingData = v2struct(phasedistros,phasebins,...
     phasestats,spkphases,...
     detectorName, detectorParams);
 try
-PhaseLockingData.region = spikes.region;
+    PhaseLockingData.region = spikes.region;
 catch
-PhaseLockingData.region = [];
+    PhaseLockingData.region = [];
 end
 PhaseLockingData.UID = spikes.UID;
-PhaseLockingData.sessionName = spikes.sessionName;
-
+try
+    PhaseLockingData.sessionName = spikes.sessionName;
+catch
+    PhaseLockingData.sessionName = spikes.basename;
+end
 if saveMat
     save([basepath,filesep,lfp.Filename(1:end-4) '.PhaseLockingData.cellinfo.mat'],'PhaseLockingData');
 end

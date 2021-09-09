@@ -109,7 +109,7 @@ end
 cd(basepath);
 
 disp('Concatenate session folders...');
-concatenateDats();
+concatenateDats(pwd,0,1);
 
 
 %% Process additional inputs
@@ -142,7 +142,7 @@ end
 
 %% Make LFP
 
-LFPfromDat(pwd,'outFs',1250,'useGPU',true);
+LFPfromDat(pwd,'outFs',1250,'useGPU',false);
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer
 

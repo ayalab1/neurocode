@@ -81,8 +81,8 @@ padding = p.Results.padding;
 saveMat = p.Results.saveMat;
 
 % Get session info
-basename = bz_BasenameFromBasepath(basepath);
-load([basepath filesep basename '.sessionInfo.mat']);
+basename = basenameFromBasepath(basepath);
+load([basepath filesep basename '.session.mat']);
 
 % Default events, UIDs and spikes
 if isempty(spikes)

@@ -48,11 +48,13 @@ function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
 %    sortFiles               - boolean denoting whether to sort files according 
 %                              to time of recording (1) or
 %                              not (0) and thus sort them alphabetically 
-%                              Default = 0.
+%                              Default = 1.
 %
 %  OUTPUT
 %     Operates on files in specified folder.  No output variable
 %
+%  EXAMPLES
+%      Can be called directly or via bz_PreprocessExtracellEphysSession.m
 %
 % Copyright (C) 2017 by Brendon Watson
 % Modified by Antonio FR, 2018
@@ -69,7 +71,7 @@ if ~exist('deleteoriginaldatsbool','var')
     deleteoriginaldatsbool = 0;
 end
 if ~exist('sortFiles','var')
-    sortFiles = 0;
+    sortFiles = 1;
 end
 
 
@@ -129,14 +131,14 @@ for a = 1:length(d)
 end
 otherdattypes(find(bad_otherdattypes)) = [];%if there weren't analogin or digitalin in some recording
 if isempty(datpaths.amplifier)
-    disp('No .dats found in subfolders.  Exiting concatenateDats.')
+    disp('No .dats found in subfolders.  Exiting bz_ConcatenateDats.')
     return
 end
 
 %% Get the XML
 try 
     %Look for xml/sessionInfo in topfolder
-    %sessionInfo = getSessionInfo(basepath,'noPrompts',true);
+    %sessionInfo = bz_getSessionInfo(basepath,'noPrompts',true);
     load([basename '.session.mat']); % Peter's sessionInfo
 catch
     %If none exists, look for xml in any of the subpaths
@@ -321,7 +323,7 @@ MergePoints.foldernames = recordingnames;
 MergePoints.filesmerged = datpaths;
 MergePoints.filesizes = datsizes;
 MergePoints.sizecheck = sizecheck;
-MergePoints.detectorinfo.detectorname = 'concatenateDats';
+MergePoints.detectorinfo.detectorname = 'bz_ConcatenateDats';
 MergePoints.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
 
 %Saving SleepStates

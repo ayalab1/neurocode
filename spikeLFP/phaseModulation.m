@@ -167,7 +167,7 @@ for a = 1:length(spikes.times)
     bools = InIntervals(spikes.times{a},intervals);
     s =spikes.times{a}(bools);
     %     s = spikes{a};
-    if isempty(s)
+    if isempty(s) || length(s) < 50 
         phasedistros(:,a) = zeros(numBins,1);
         phasestats.m(a) = nan;
         phasestats.r(a) = nan;

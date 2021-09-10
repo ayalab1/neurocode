@@ -25,7 +25,7 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'winSize',.5);
 addParameter(p,'figOpt',true,@islogical);
 addParameter(p,'method','std');
-addParameter(p,'stdThreshold',2);
+addParameter(p,'stdThreshold',10);
 
 
 parse(p,varargin{:});
@@ -39,7 +39,7 @@ prevPath = pwd;
 cd(basepath);
 
 %
-lfp = bz_GetLFP(events.detectorinfo.detectionchannel);
+lfp = getLFP(events.detectorinfo.detectionchannel);
 
 disp('Computing ripples std...');
 stdEvents = [];

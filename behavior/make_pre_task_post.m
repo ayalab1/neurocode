@@ -1,5 +1,9 @@
 function [intstimestamps_samples,intstimestamps] = make_pre_task_post(basePath,session_sequence)
-% generate pre/task/post interval
+% generate pre/task/post structure
+
+% session_sequence: type of sub-sessions in order of recording. 1=
+% preSleep, 2= task, 3=postSleep
+
 % Farnaz
 
 % Example :
@@ -55,13 +59,13 @@ else
           
 end    
 
-    intstimestamps_samples.pre_NoneMerged=pre_idx_s;
-    intstimestamps_samples.task_NoneMerged=task_idx_s;
-    intstimestamps_samples.post_NoneMerged=post_idx_s;
+    intstimestamps_samples.pre_NonMerged=pre_idx_s;
+    intstimestamps_samples.task_NonMerged=task_idx_s;
+    intstimestamps_samples.post_NonMerged=post_idx_s;
     
-    intstimestamps.pre_NoneMerged=pre_idx;
-    intstimestamps.task_NoneMerged=task_idx;
-    intstimestamps.post_NoneMerged=post_idx;
+    intstimestamps.pre_NonMerged=pre_idx;
+    intstimestamps.task_NonMerged=task_idx;
+    intstimestamps.post_NonMerged=post_idx;
     
     intstimestamps_samples.pre=[pre_idx_s(1,1) pre_idx_s(end,2)];
     intstimestamps_samples.task=[task_idx_s(1,1) task_idx_s(end,2)];

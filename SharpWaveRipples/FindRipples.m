@@ -87,7 +87,7 @@ addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
-addParameter(p,'basepath',[],@isstr)
+addParameter(p,'basepath',pwd,@isstr)
 addParameter(p,'EMGFromLFP',[],@isstruct)
 
 if isstr(varargin{1})  % if first arg is basepath
@@ -243,7 +243,7 @@ disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
 bad = [];
 if ~isempty(noise)
     if length(noise) == 1 % you gave a channel number
-       noiselfp = bz_GetLFP(p.Results.noise,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
+       noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
        squaredNoise = bz_Filter(double(noiselfp.data),'filter','butter','passband',passband,'order', 3).^2;
     else
             
@@ -269,7 +269,7 @@ if ~isempty(noise)
 end
     %% lets try to also remove EMG artifact?
 if EMGThresh
-    sessionInfo = bz_getSessionInfo(basepath,'noprompts',true);
+    sessionInfo = bz_getSessionInfo(basepath,'noprompts',true); %NEED TO CHANGE 
     EMGfilename = fullfile(basepath,[sessionInfo.FileName '.EMGFromLFP.LFP.mat']);
     if exist(EMGfilename)
         load(EMGfilename)   %should use a bz_load script here

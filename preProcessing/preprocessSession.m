@@ -92,7 +92,7 @@ end
 %% Make SessionInfo
 % ID bad channels at this point. automating it would be good
 
-session = sessionTemplate(pwd,'showGUI',true); %
+session = sessionTemplate(pwd,'showGUI',false); %
 save([basename '.session.mat'],'session');
 
 %% Fill missing dat files of zeros

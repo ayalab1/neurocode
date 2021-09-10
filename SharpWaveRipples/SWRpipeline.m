@@ -13,9 +13,9 @@ basename = basenameFromBasepath(pwd);
 %% 2 - SWR detection
 
     % preferred method
-     ripples = bz_DetectSWR([swrCh.ripple swrCh.sharpwave],'saveMat',true);
+     ripples = DetectSWR([swrCh.ripple swrCh.sharpwave],'saveMat',true);
      % only use this is you don't have sharp-wave
-     ripples = bz_FindRipples(basepath,swrCh.ripple,'noise',swrCh.noise,'saveMat',true);
+     ripples = FindRipples(basepath,swrCh.ripple,'noise',swrCh.noise,'saveMat',true);
 
 % optional steps     
      

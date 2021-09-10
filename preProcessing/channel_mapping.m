@@ -22,8 +22,11 @@ function channel_mapping(varargin)
 %       anatomical map csv may be need after as many channels will be
 %       unknown if the cell counts are low.
 %
-% Note: if you make a manual edit in the .csv, make sure to run this
-% function again to propagate that change to basename.session
+% Note: 
+% * if you make a manual edit in the .csv, make sure to run this
+%       function again to propagate that change to basename.session. 
+% * Likewise, if you manually edit basename.session via gui_session, run
+%       this function again to update the .csv
 %
 %
 % Ryan H 2021
@@ -45,7 +48,6 @@ pull_from_cell_metrics = p.Results.pull_from_cell_metrics;
 save_session = p.Results.save_session;
 session = p.Results.session;
 show_gui_session = p.Results.show_gui_session;
-
 
 % get the basename and load your basename.session if none was provided
 basename = basenameFromBasepath(basepath);
@@ -71,6 +73,7 @@ if pull_from_cell_metrics
 end
 
 % pull from csv that has been already been generated
+pull_from_session = false;
 if ~pull_from_cell_metrics
     [anatomical_map,pull_from_session] = get_anatomical_map_csv(basepath,...
         anatomical_map);
@@ -104,6 +107,7 @@ end
 
 if fig
     generateChannelMap1(session,anatomical_map,channel_map)
+    exportgraphics(gcf,fullfile(basepath,'anatomical_map.png'),'Resolution',150)
 end
 
 if show_gui_session

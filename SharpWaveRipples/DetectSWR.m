@@ -1264,6 +1264,35 @@ SWR.stdev = [thresSDrip(2) thresSDswD(2)];
 SWR.SwMax  = SWR_valid.SwMax(idxsIn);
 SWR.RipMax = SWR_valid.RipMax(idxsIn);
 
+%Write event file: Generate Output and Write out Event file
+if EVENTFILE
+    rippleFiles = dir('*.R*.evt');
+    if isempty(rippleFiles)
+        fileN = 1;
+    else
+        %set file index to next available value\
+        pat = '.R[0-9].';
+        fileN = 0;
+        for ii = 1:length(rippleFiles)
+            token  = regexp(rippleFiles(ii).name,pat);
+            val    = str2double(rippleFiles(ii).name(token+2:token+4));
+            fileN  = max([fileN val]);
+        end
+        fileN = fileN + 1;
+    end
+    fid = fopen(sprintf('%s%s%s.R%02d.evt',pathname,filesep,filename,fileN),'w');
+
+    % convert detections to milliseconds
+    SWR_final   = SWR_valid.Ts*(1000/SR);
+    fprintf(1,'Writing event file ...\n');
+    for ii = 1:size(SWR_final,1)
+        fprintf(fid,'%9.1f\tstart\n',SWR_final(ii,2));
+        fprintf(fid,'%9.1f\tpeak\n',SWR_final(ii,1));
+        fprintf(fid,'%9.1f\tstop\n',SWR_final(ii,3));
+    end
+    fclose(fid);
+end
+
 % 3) analysis params
 params.filename     = filename;
 params.Channels     = Channels;

@@ -26,7 +26,7 @@ addParameter(p,'noPrompts',true,@islogical);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',true,@islogical);
 parse(p,varargin{:});
-basePath = p.Results.basepath;
+basepath = p.Results.basepath;
 discardShanks = p.Results.discardShanks;
 probesNumber = p.Results.probesNumber;
 noPrompts = p.Results.noPrompts;
@@ -34,7 +34,7 @@ saveMat = p.Results.saveMat;
 force = p.Results.force;
 
 prevPath = pwd;
-cd(basePath);
+cd(basepath);
 
 filename = dir('*.channelinfo.ripples.mat');
 if ~isempty(filename) && ~force
@@ -44,19 +44,20 @@ if ~isempty(filename) && ~force
 end
 
 % main code (Channel_Info)
-[parameters] = LoadParameters(basePath);
-Anatomical_groups=parameters.AnatGrps;
+basename = basenameFromBasepath(basepath);
+load([basename '.session.mat']);
+Anatomical_groups=session.extracellular.electrodeGroups.channels;
 disp('Reading .XML /  Anatomical Groups ')
 disp('...                                  ')
 
 
 SHANKS=[];
 for GroupsNumber=1:size(Anatomical_groups,2)
-    SHANKS{GroupsNumber}= Anatomical_groups(1, GroupsNumber).Channels;
+    SHANKS{GroupsNumber}= cell2mat(Anatomical_groups(1, GroupsNumber));
     disp(['Group ' num2str(GroupsNumber) ' = '  '[' num2str(SHANKS{1,GroupsNumber}) ']' ]);
 end
 
-channelnumber_correction = 1;
+channelnumber_correction = 0;
 
 if length(SHANKS)> 9 | probesNumber > 1
     disp('...                                  ')
@@ -149,7 +150,7 @@ RefrenceRippleChannel_test=Refrence_chan(RefrenceShnak,3);
 disp(['Reference Ripple Channel for test is : ' num2str(RefrenceRippleChannel_test) ]);
 
 %% Get Ripple
-[ripples] = findRipples(basePath,RefrenceRippleChannel_test);
+[ripples] = FindRipples(basepath,RefrenceRippleChannel_test);
 Win=70;
 LfpSamplingrate = lfp.samplingRate;
 % Removing short startting and the end ripples

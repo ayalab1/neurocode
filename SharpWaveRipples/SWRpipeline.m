@@ -7,7 +7,7 @@ basename = basenameFromBasepath(pwd);
 %   - Spikes and cell_metrics are extraction in preprocessSpikes (after manual clustering)
 
 %% 1 - Automatic estimation of best channels for swr detection
-   swrCh = swrChannels('basepath',basepath,'Manual',true);
+   swrCh = swrChannels('basepath',basepath);
    % this code often doesn't work well if you have dentate gyrus channels 
    
 %% 2 - SWR detection

@@ -87,14 +87,13 @@ addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
-addParameter(p,'basepath',pwd,@isstr)
 addParameter(p,'EMGFromLFP',[],@isstruct)
 
 if isstr(varargin{1})  % if first arg is basepath
-    addParameter(p,'channel',@isnumeric)    
+    addRequired(p, 'basepath',@isstr);
+    addRequired(p,'channel',@isnumeric) 
     parse(p,varargin{:})
     basename = basenameFromBasepath(p.Results.basepath);
-    basepath = p.Results.basepath;
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
     lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
@@ -269,12 +268,13 @@ if ~isempty(noise)
 end
     %% lets try to also remove EMG artifact?
 if EMGThresh
-    sessionInfo = bz_getSessionInfo(basepath,'noprompts',true); %NEED TO CHANGE 
-    EMGfilename = fullfile(basepath,[sessionInfo.FileName '.EMGFromLFP.LFP.mat']);
+    basepath = p.Results.basepath
+    sessionInfo = getSession('basepath',basepath); %NEED TO CHANGE 
+    EMGfilename = fullfile(basepath,[sessionInfo.general.name '.EMGFromLFP.LFP.mat']);
     if exist(EMGfilename)
         load(EMGfilename)   %should use a bz_load script here
     else
-        [EMGFromLFP] = bz_EMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
+        [EMGFromLFP] = bz_EMGFromLFP_km(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
     end
     excluded = logical(zeros(size(ripples,1),1));
     for i = 1:size(ripples,1)
@@ -391,7 +391,7 @@ ripples.duration = ripples.timestamps(:,2) - ripples.timestamps(:,1);
 
 
 %The detectorinto substructure
-detectorinfo.detectorname = 'bz_FindRipples';
+detectorinfo.detectorname = 'FindRipples';
 detectorinfo.detectiondate = today;
 detectorinfo.detectionintervals = restrict;
 detectorinfo.detectionparms = p.Results;

@@ -36,6 +36,7 @@ addParameter(p,'basepath',pwd) % path to folder
 addParameter(p,'fig',false) % simple debugging/summary figs
 addParameter(p,'save_csv',true) % save output to basepath
 addParameter(p,'pull_from_cell_metrics',false) % to populate map from cell_metrics
+addParameter(p,'force_cell_metric_overwrite',false) % will bypass the warning if .session already has regions
 addParameter(p,'save_session',true) % save session to basepath
 addParameter(p,'session',[])
 addParameter(p,'show_gui_session',false)
@@ -45,6 +46,7 @@ basepath = p.Results.basepath;
 fig = p.Results.fig;
 save_csv = p.Results.save_csv;
 pull_from_cell_metrics = p.Results.pull_from_cell_metrics;
+force_cell_metric_overwrite = p.Results.force_cell_metric_overwrite;
 save_session = p.Results.save_session;
 session = p.Results.session;
 show_gui_session = p.Results.show_gui_session;
@@ -69,7 +71,9 @@ if pull_from_cell_metrics
     anatomical_map = get_region_from_cell_metrics(basepath,...
         basename,...
         channel_map,...
-        anatomical_map);
+        anatomical_map,...
+        session,...
+        force_cell_metric_overwrite);
 end
 
 % pull from csv that has been already been generated
@@ -148,7 +152,21 @@ end
 function anatomical_map = get_region_from_cell_metrics(basepath,...
                                                         basename,...
                                                         channel_map,...
-                                                        anatomical_map)
+                                                        anatomical_map,...
+                                                        session,...
+                                                        force_cell_metric_overwrite)
+if ~force_cell_metric_overwrite                                                    
+    if isfield(session,'brainRegions')
+        warning('Careful, basename.session already has brainRegions field, you may by overwriting')
+        disp(session.brainRegions)
+        continue_ = input('type 1 to continue:   ');
+    else
+        continue_ = 1;
+    end
+    if continue_ ~= 1
+        return
+    end
+end
 load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']))
 for i = 1:length(cell_metrics.maxWaveformCh1)
     anatomical_map(channel_map == cell_metrics.maxWaveformCh1(i)) =...

@@ -216,8 +216,8 @@ end
 function generateChannelMap1(session,anatomical_map,channel_map)
 channel_map_vec = channel_map(:);
 anatomical_map_vec = anatomical_map(:);
-channel_map_vec = channel_map_vec(~cellfun('isempty',anatomical_map_vec));
-anatomical_map_vec = anatomical_map_vec(~cellfun('isempty',anatomical_map_vec));
+anatomical_map_vec = anatomical_map_vec(~isnan(channel_map_vec));
+channel_map_vec = channel_map_vec(~isnan(channel_map_vec));
 anatomical_map_vec(contains(anatomical_map_vec,'Unknown')) = {''};
 
 for i = 1:length(anatomical_map_vec)

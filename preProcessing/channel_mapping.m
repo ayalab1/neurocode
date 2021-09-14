@@ -202,7 +202,9 @@ anatomical_map_vec = anatomical_map_vec(nonempty_idx);
 channel_map_vec = channel_map_vec(nonempty_idx);
 
 % iter through each region and add to session
-for region = unique(anatomical_map_vec)'
+regions = unique(anatomical_map_vec);
+regions = regions(~cellfun('isempty',regions));
+for region = regions'
     session.brainRegions.(region{1}).channels =...
         channel_map_vec(contains(anatomical_map_vec,region))';
     % add electrode groups

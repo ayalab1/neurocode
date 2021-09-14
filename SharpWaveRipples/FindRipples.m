@@ -34,7 +34,7 @@ function [ripples] = FindRipples(varargin)
 %     'minDuration' min ripple duration. Keeping this input nomenclature for backwards
 %                   compatibility
 %     'restrict'    interval used to compute normalization (default = all)
-%     'SR'   sampling rate (in Hz) (default = 1250Hz)
+%     'SR'          sampling rate (in Hz) (default = 1250Hz)
 %     'stdev'       reuse previously computed stdev
 %     'show'        plot results (default = 'off')
 %     'noise'       noisy unfiltered channel used to exclude ripple-

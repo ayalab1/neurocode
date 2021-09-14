@@ -34,7 +34,7 @@ function [ripples] = FindRipples(varargin)
 %     'minDuration' min ripple duration. Keeping this input nomenclature for backwards
 %                   compatibility
 %     'restrict'    interval used to compute normalization (default = all)
-%     'frequency'   sampling rate (in Hz) (default = 1250Hz)
+%     'SR'   sampling rate (in Hz) (default = 1250Hz)
 %     'stdev'       reuse previously computed stdev
 %     'show'        plot results (default = 'off')
 %     'noise'       noisy unfiltered channel used to exclude ripple-
@@ -44,7 +44,9 @@ function [ripples] = FindRipples(varargin)
 %                   (default = [130 200])
 %     'EMGThresh'   0-1 threshold of EMG to exclude noise
 %     'saveMat'     logical (default=false) to save in buzcode format
-%     'plotType'   1=original version (several plots); 2=only raw lfp
+%     'EVENTFILE'   logical (default=true) to save a .evt file for viewing
+%                   in Neuroscope
+%     'plotType'    1=original version (several plots); 2=only raw lfp
 %    =========================================================================
 %
 % OUTPUT
@@ -78,13 +80,14 @@ p = inputParser;
 addParameter(p,'thresholds',[2 4],@isnumeric)
 addParameter(p,'durations',[30 300],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
-addParameter(p,'frequency',1250,@isnumeric)
+addParameter(p,'SR',1250,@isnumeric)
 addParameter(p,'stdev',[],@isnumeric)
 addParameter(p,'show','off',@isstr)
 addParameter(p,'noise',[],@ismatrix)
 addParameter(p,'passband',[100 250],@isnumeric)
 addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
+addParameter(p,'EVENTFILE',true,@islogical);
 addParameter(p,'minDuration',20,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
 addParameter(p,'EMGFromLFP',[],@isstruct)
@@ -111,7 +114,7 @@ elseif isnumeric(varargin{1}) % if first arg is filtered LFP
     timestamps = p.Results.timestamps;
     
     % package into struct for bz_Filter, so we can return struct
-    samples.samplingRate = p.Results.frequency;
+    samples.samplingRate = p.Results.SR;
     samples.data = double(p.Results.lfp);
     samples.timestamps = timestamps;
     signal = bz_Filter(samples,'filter','butter','passband',passband,'order',3);
@@ -123,7 +126,7 @@ elseif isnumeric(varargin{1}) % if first arg is filtered LFP
 end
 
 % assign parameters (either defaults or given)
-frequency = p.Results.frequency;
+SR = p.Results.SR;
 show = p.Results.show;
 restrict = p.Results.restrict;
 sd = p.Results.stdev;
@@ -134,12 +137,14 @@ minInterRippleInterval = p.Results.durations(1);
 maxRippleDuration = p.Results.durations(2);
 minRippleDuration = p.Results.minDuration;
 plotType = p.Results.plotType;
+saveMat = p.Results.saveMat;
+EVENTFILE = p.Results.EVENTFILE;
 
 %% filter and calculate noise
 
 
 % Parameters
-windowLength = frequency/frequency*11;
+windowLength = SR/SR*11;
 
 % Square and normalize signal
 squaredSignal = signal.data.^2;
@@ -181,7 +186,7 @@ else
 end
 
 % Merge ripples if inter-ripple period is too short
-minInterRippleSamples = minInterRippleInterval/1000*frequency;
+minInterRippleSamples = minInterRippleInterval/1000*SR;
 secondPass = [];
 ripple = firstPass(1,:);
 for i = 2:size(firstPass,1)
@@ -417,6 +422,43 @@ if p.Results.saveMat
     save(fullfile(basepath, [basename '.ripples.events.mat']),'ripples')
 end
 
+%Create .evt file
+if EVENTFILE
+    
+    Filebase = basenameFromBasepath(basepath);
+    Filebase = fullfile(basepath,Filebase);
+    [pathname, filename, extname] = fileparts(Filebase);
+    if isempty(pathname)
+        pathname = pwd;
+    end
+    
+    rippleFiles = dir('*.R*.evt');
+    if isempty(rippleFiles)
+        fileN = 1;
+    else
+        %set file index to next available value\
+        pat = '.R[0-9].';
+        fileN = 0;
+        for ii = 1:length(rippleFiles)
+            token  = regexp(rippleFiles(ii).name,pat);
+            val    = str2double(rippleFiles(ii).name(token+2:token+4));
+            fileN  = max([fileN val]);
+        end
+        fileN = fileN + 1;
+    end
+    fid = fopen(sprintf('%s%s%s.R%02d.evt',pathname,filesep,filename,fileN),'w');
+    % convert detections to milliseconds
+    SWR_start   = ripples.timestamps(:,1).*(1000);
+    SWR_peak    = ripples.peaks.*(1000);
+    SWR_end     = ripples.timestamps(:,2).*(1000);
+    fprintf(1,'Writing event file ...\n');
+    for ii = 1:size(SWR_peak)
+        fprintf(fid,'%9.1f\tstart\n',SWR_start(ii));
+        fprintf(fid,'%9.1f\tpeak\n',SWR_peak(ii));
+        fprintf(fid,'%9.1f\tstop\n',SWR_end(ii));
+    end
+    fclose(fid);
+end
 
 function y = Filter0(b,x)
 

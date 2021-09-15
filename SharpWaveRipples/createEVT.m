@@ -61,6 +61,13 @@ if check_r
     swr_e = ripples.timestamps(:,2);
 end
 
+% Validate inputs by checking timestamps are correctly ordered
+if (swr_s(1)>=swr_p(1))||(swr_s(1)>=swr_e(1))||(swr_p(1)>=swr_e(1))
+    error('Please validate that the timestamps are correctly ordered: start, peak, end');
+else
+    disp('Input timestamps have been successfully validated');
+end
+
 % .evt file should be in ms - convert accordingly
 if unit == "s"
     swr_s = swr_s.*1000;

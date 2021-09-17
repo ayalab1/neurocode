@@ -224,7 +224,7 @@ for i = 1:length(anatomical_map_vec)
     label{i} = [anatomical_map_vec{i},' ',num2str(channel_map_vec(i))];
 end
 
-chanMap = generateChannelMap(session);
+chanMap = generateChannelMap(session,'reorder',false);
 chanCoords.x = chanMap.xcoords(:);
 chanCoords.y = chanMap.ycoords(:);
 chanCoords.source = chanMap.source;

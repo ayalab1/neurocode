@@ -27,7 +27,8 @@ function channel_mapping(varargin)
 %       function again to propagate that change to basename.session. 
 % * Likewise, if you manually edit basename.session via gui_session, run
 %       this function again to update the .csv
-%
+% * If you run ProcessCellMetrics after this, it will incorporate brain
+%       region for every cell
 %
 % Ryan H 2021
 

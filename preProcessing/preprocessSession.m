@@ -177,7 +177,7 @@ end
 %% Kilosort concatenated sessions
 if spikeSort
     kilosortFolder = KiloSortWrapper('SSD_path','E:');
-    PhyAutoClustering(strcat(basepath,filesep,kilosortFolder));
+    PhyAutoClustering(kilosortFolder);
 end
 
 %% Get tracking positions 

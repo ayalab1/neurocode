@@ -8,7 +8,7 @@ function [spikeT] = importSpikes(varargin)
 %    UID             -vector subset of UID's to load. Default: all.
 
 % These inputs requiere CellExplorer cell_metrics pre calculated. NOT IMPLEMENTED YET
-%    region          -string region ID to load neurons from specific region
+%    brainRegion     -string region ID to load neurons from specific region
 %    cellType        -cell type to load
 
 % OUTPUT
@@ -27,21 +27,23 @@ function [spikeT] = importSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'region','',@isstr); 
+addParameter(p,'brainRegion','',@isstr); 
+addParameter(p,'cellType','',@isstr); 
 addParameter(p,'UID',[],@isvector);
-addParameter(p,'spikes',[],@isstruct); % Load existing spikes structure 
-addParameter(p,'session',[],@isstruct); % A buzsaki lab session struct
+addParameter(p,'spikes',[],@isstruct);  
+addParameter(p,'session',[],@isstruct);  
 
 parse(p,varargin{:})
 basepath = p.Results.basepath;
-region = p.Results.region;
+region = p.Results.brainRegion;
+type = p.Results.cellType;
 UID = p.Results.UID;
 spikes = p.Results.spikes;
 session = p.Results.session;
 
 %% Load spikes 
 cd(basepath);
-basename = bz_BasenameFromBasepath(pwd);
+basename = basenameFromBasepath(pwd);
 
 if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) 
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
@@ -52,7 +54,40 @@ if ~isempty(UID)
    spikeT.UID = spikes.UID(UID);
    spikeT.times = spikes.times(UID);
 end
-   spikeT.sessionName = spikes.sessionName;
+
+if ~isempty(region) && ~isempty(type)
+   load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
+   spikeT.UID = []; spikeT.times = [];
+   for i = 1:numel(cell_metrics.brainRegion)
+       if strcmp(cell_metrics.brainRegion{i},region) && ...
+          strcmp(cell_metrics.putativeCellType{i},type)  
+          spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
+          spikeT.times = cat(2,spikeT.times,spikes.times(i));
+       end
+       spikeT.brainRegion = region;
+       spikeT.cellTypes = type;
+   end
+elseif ~isempty(region) && isempty(type)
+   load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
+   spikeT.UID = []; spikeT.times = [];
+   for i = 1:numel(cell_metrics.brainRegion)
+       if strcmp(cell_metrics.brainRegion{i},region)  
+          spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
+          spikeT.times = cat(2,spikeT.times,spikes.times(i));
+       end
+       spikeT.brainRegion = region;
+   end    
+elseif isempty(region) && ~isempty(type)
+   load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
+   spikeT.UID = []; spikeT.times = [];
+   for i = 1:numel(cell_metrics.brainRegion)
+       if strcmp(cell_metrics.putativeCellType{i},type)  
+          spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
+          spikeT.times = cat(2,spikeT.times,spikes.times(i));
+       end
+        spikeT.cellTypes = type;
+   end    
+end
 
 end
 

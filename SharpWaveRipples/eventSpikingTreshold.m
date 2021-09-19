@@ -88,9 +88,9 @@ if figOpt
 
     subplot(1,3,3)
     hold on
-    plot(eventResponse(idx),1:length(eventPopResponse)); 
-    plot([spikingThreshold spikingThreshold], [1 length(eventPopResponse)],'r');
-    xlabel('Response (SD)'); ylim([1 length(eventPopResponse)]); set(gca,'YDir','normal','TickDir','out');
+    plot(eventResponse(idx),1:size(eventPopResponse,1)); 
+    plot([spikingThreshold spikingThreshold], [1 size(eventPopResponse,1)],'r');
+    xlabel('Response (SD)'); ylim([1 size(eventPopResponse,1)]); set(gca,'YDir','normal','TickDir','out');
     try 
         saveas(gcf,'SummaryFigures\eventSpikingThreshold.png');
     end

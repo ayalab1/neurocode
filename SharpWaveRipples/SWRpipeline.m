@@ -21,10 +21,18 @@ basename = basenameFromBasepath(pwd);
      
     % refine ripple detection using spiking level
     ripples = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.5); 
-
+    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,'SWRmua.png');
+    
     % remove very large amplitude events (likely artifacts)
     ripples = removeArtifactsFromEvents(ripples,'stdThreshold',10);
     
+    % restrict ripples to certain intervals (e.g. NREM sleep)
+    load([basename '.SleepState.states.mat']);
+    ripples = eventIntervals(ripples,SleepState.ints.NREMstate,1);
+    
+    % save a .evt file to inspect in Neuroscope 
+    createEVT(ripples);
+
     % plot wavelet to check detection quality 
     mkdir('Ripple_Profile');
     lfpRip = getLFP(swrCh.ripple);

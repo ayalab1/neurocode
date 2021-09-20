@@ -102,7 +102,8 @@ if isstr(varargin{1})  % if first arg is basepath
     lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
     signal = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
     timestamps = lfp.timestamps;
-
+    basepath = p.Results.basepath;
+            
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP
     addRequired(p,'lfp',@isnumeric)
     addRequired(p,'timestamps',@isnumeric)

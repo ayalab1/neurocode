@@ -34,7 +34,7 @@ function channel_mapping(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd) % path to folder
-addParameter(p,'fig',false) % simple debugging/summary figs
+addParameter(p,'fig',true) % simple debugging/summary figs
 addParameter(p,'save_csv',true) % save output to basepath
 addParameter(p,'pull_from_cell_metrics',false) % to populate map from cell_metrics
 addParameter(p,'force_cell_metric_overwrite',false) % will bypass the warning if .session already has regions

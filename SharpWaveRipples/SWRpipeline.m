@@ -7,15 +7,15 @@ basename = basenameFromBasepath(pwd);
 %   - Spikes and cell_metrics are extraction in preprocessSpikes (after manual clustering)
 
 %% 1 - Automatic estimation of best channels for swr detection
-   swrCh = swrChannels('basepath',basepath);
+   swrCh = swrChannels('basepath',pwd);
    % this code often doesn't work well if you have dentate gyrus channels 
    
 %% 2 - SWR detection
 
     % preferred method
-     ripples = DetectSWR([swrCh.ripple swrCh.sharpwave],'saveMat',true);
+     ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel],'saveMat',true);
      % only use this is you don't have sharp-wave
-     ripples = FindRipples(basepath,swrCh.ripple,'noise',swrCh.noise,'saveMat',true);
+%      ripples2 = FindRipples(pwd,swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
 
 % optional steps     
      
@@ -27,7 +27,7 @@ basename = basenameFromBasepath(pwd);
     
     % plot wavelet to check detection quality 
     mkdir('Ripple_Profile');
-    lfpRip = getLFP(swrCh.ripple);
+    lfpRip = getLFP(swrCh.Ripple_Channel);
     [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(1:500),'twin',[0.1 0.1]);
     saveas(gcf,['swrWaveletSample.png']);
     
@@ -41,7 +41,7 @@ basename = basenameFromBasepath(pwd);
     outputLabels={'SWRepochs.pre','SWRepochs.task','SWRepochs.post'};
 
     SWRepochs=[];
-for epochs= 1:7 
+for epochs= 1:3
             eval(['stateInterval=' inputLabels{epochs} ]);
             if ~isempty(stateInterval)
             clear var tmp1 St;

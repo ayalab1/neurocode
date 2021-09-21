@@ -114,7 +114,7 @@ disp('Concatenate session folders...');
 concatenateDats(pwd,0,1);
 
 
-%% Process additional inputs
+%% Process additional inputs - CHECK FOR OUR LAB
 
 % Analog input
     % check the two different fucntions for delaing with analog inputs and proably rename them
@@ -148,7 +148,7 @@ LFPfromDat(pwd,'outFs',1250,'useGPU',false);
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer
 
-%% Clean data
+%% Clean data  - CHECK FOR OUR LAB
 % Remove stimulation artifacts
 if cleanArtifacts && analogInputs
     [pulses] = getAnalogPulses(analogInp,'analogCh',analogChannels);

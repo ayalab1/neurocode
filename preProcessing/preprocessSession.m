@@ -47,6 +47,7 @@ addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'getPos',true,@islogical);
 addParameter(p,'removeNoise',true,@islogical);
 addParameter(p,'runSummary',false,@islogical);
+addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 
 % addParameter(p,'pullData',[],@isdir); To do... 
 parse(p,varargin{:});
@@ -65,6 +66,7 @@ spikeSort = p.Results.spikeSort;
 getPos = p.Results.getPos;
 removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
+SSD_path = p.Results.SSD_path;
 
 if ~exist('basepath')
     error('path provided does not exist')
@@ -176,7 +178,7 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path','E:');
+    kilosortFolder = KiloSortWrapper(SSD_path);
     PhyAutoClustering(kilosortFolder);
 end
 

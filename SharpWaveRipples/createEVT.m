@@ -80,12 +80,7 @@ elseif unit == "min"
 end
 
 % Set file name standards
-Filebase = basenameFromBasepath(basepath);
-Filebase = fullfile(basepath,Filebase);
-[pathname, filename, extname] = fileparts(Filebase);
-if isempty(pathname)
-    pathname = pwd;
-end
+filename = basenameFromBasepath(basepath);
 
 % Check if there is an existing .evt file in the current directory
 rippleFiles = dir('*.R*.evt');
@@ -104,7 +99,7 @@ else
 end
 
 % Open the appropriately created new file
-fid = fopen(sprintf('%s%s%s.R%02d.evt',pathname,filesep,filename,fileN),'w');
+fid = fopen(sprintf('%s%s%s.R%02d.evt',basepath,filesep,filename,fileN),'w');
 
 fprintf(1,'Writing event file ...\n');
 

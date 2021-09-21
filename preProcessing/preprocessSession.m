@@ -25,6 +25,7 @@ function  preprocessSession(varargin)
 
 %  TO DO:
 %   - Improve auto-clustering routine 
+%   - Test cleaning and removing artifacts routines
 
 % write file to keep track of 
 
@@ -145,6 +146,7 @@ end
 %% Make LFP
 
 LFPfromDat(pwd,'outFs',1250,'useGPU',false);
+
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer
 
@@ -178,7 +180,7 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper(SSD_path);
+    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
     PhyAutoClustering(kilosortFolder);
 end
 

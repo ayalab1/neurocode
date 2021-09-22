@@ -114,7 +114,7 @@ spkEventTimes.padding = padding;
 % 1. Absolute and relative time of spikes by unit and by ripple
 for unit = 1:length(spikes.UID)
     if UIDs(unit)
-        for event = 1:length(timestamps)
+        for event = 1:size(timestamps,1)
             % Start and end of ripple
             tini = timestamps(event,1) - padding;
             tend = timestamps(event,2) + padding;
@@ -139,7 +139,7 @@ for unit = 1:length(spikes.UID)
 end
 
 % 3. Absolute and relative time of spikes by ripple
-for event = 1:length(timestamps)
+for event = 1:size(timestamps,1)
     spkEventTimes.EventAbs{event} = [];
     spkEventTimes.EventRel{event} = [];
     for unit = 1:length(spikes.UID)

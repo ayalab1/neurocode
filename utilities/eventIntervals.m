@@ -19,7 +19,7 @@ function eventInt = eventIntervals(events,intervals,collapse)
         load(intervals);
     end
     
-    for i = 1:size(intervals)
+    for i = 1:size(intervals,1)
         tmp = InIntervals(getfield(events,fields{1,1}),intervals(i,:)); % this function needs to be compiled
         timestampField = getfield(events,fields{1,1});
         eventInt{i}.timestamps = timestampField(tmp==1,:);
@@ -27,7 +27,8 @@ function eventInt = eventIntervals(events,intervals,collapse)
             if size(getfield(events, fields{j,1}),1) == size(getfield(events,fields{1,1}),1)
                 tempArr = getfield(events, fields{j,1});
                 eventInt{i}.(fields{j,1}) = tempArr(tmp==1,:); 
-            elseif size(getfield(events, fields{j,1}),2) == 2
+            elseif size(getfield(events, fields{j,1}),1) == size(getfield(events,fields{1,1}),1) &&...
+                    size(getfield(events, fields{j,1}),2) > 1
                 newTmp = InIntervals(getfield(events,fields{j,1}),intervals(i,:));
                 tempArr = getfield(events, fields{j,1});
                 eventInt{i}.(fields{j,1}) = tempArr(newTmp==1,:); 

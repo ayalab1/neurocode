@@ -82,7 +82,7 @@ if figOpt
     figure
     subplot(1,3,[1 2])
     hold on
-    imagesc(t_event,1:length(eventPopResponse),eventPopResponse(idx,:),[-3 3]); colormap(jet);
+    imagesc(t_event,1:length(eventPopResponse),eventPopResponse(idx,:),[-3 3]);
     plot([t_event([1 end])], length(find(eventResponse<spikingThreshold))* ones(2,1) ,'r','LineWidth',1); axis tight;
     ylabel('Events'); xlabel('Time (s)'); set(gca,'YDir','normal','TickDir','out');
 

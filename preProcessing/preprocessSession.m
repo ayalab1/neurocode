@@ -184,7 +184,7 @@ if spikeSort
     PhyAutoClustering(kilosortFolder);
 end
 
-%% Get tracking positions 
+%% Get tracking positions - TO FIX
 if getPos
     getSessionTracking('optitrack',false);
 end

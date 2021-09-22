@@ -74,7 +74,10 @@ fs_lfp  = session.extracellular.srLfp;
 
 % If auxiliary file not find, crash with grace
 if 2 ~= exist(aux_input_path, 'file')
-    error('auxiliary.dat file not found in basepath - cannot extract accelerometer')
+%     error('auxiliary.dat file not found in basepath - cannot extract accelerometer')
+    disp('auxiliary.dat file not found in basepath - cannot extract accelerometer')
+    accel=[];
+    return
 end
 
 % If file exists, return its contents

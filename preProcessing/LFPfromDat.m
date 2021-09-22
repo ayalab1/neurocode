@@ -133,9 +133,7 @@ nbChunks = floor(nBytes/(nbChan*sizeInBytes*chunksize));
 %% GET LFP FROM DAT
 
 if exist([basepath '\' basename '.lfp'])
-    
     fprintf('LFP file already exists \n')
-
 else
 fidI = fopen(fdat, 'r');
 fprintf('Extraction of LFP begun \n')

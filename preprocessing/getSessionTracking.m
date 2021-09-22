@@ -93,7 +93,7 @@ if ~(optitrack)
 
     %% Find subfolder recordings
     cd(basepath);
-    [sessionInfo] = getSessionInfo(basepath, 'noPrompts', true);
+    [sessionInfo] = getSession(basepath, 'noPrompts', true);
     %C = strsplit(sessionInfo.session.name,'_');
     %sess = dir(strcat(C{1},'_',C{2},'*')); % get session files
     if exist([basepath filesep strcat(sessionInfo.session.name,'.MergePoints.events.mat')],'file')

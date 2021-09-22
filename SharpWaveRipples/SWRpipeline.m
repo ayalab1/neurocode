@@ -16,7 +16,7 @@ basename = basenameFromBasepath(pwd);
      ripples = DetectSWR([swrCh.ripple swrCh.sharpwave],'saveMat',true);
      % only use this is you don't have sharp-wave
      ripples = FindRipples(basepath,swrCh.ripple,'noise',swrCh.noise,'saveMat',true);
-
+     
 % optional steps     
      
     % refine ripple detection using spiking level
@@ -26,6 +26,10 @@ basename = basenameFromBasepath(pwd);
     % remove very large amplitude events (likely artifacts)
     ripples = removeArtifactsFromEvents(ripples,'stdThreshold',10);
     
+    % Add ripples to cell metrics. ProcessCellMetrics will locate newly created .events file
+    load(fullfile(basepath,[basename,'.session.mat']))
+    cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false);
+
     % restrict ripples to certain intervals (e.g. NREM sleep)
     load([basename '.SleepState.states.mat']);
     ripples = eventIntervals(ripples,SleepState.ints.NREMstate,1);

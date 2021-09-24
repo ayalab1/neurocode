@@ -27,7 +27,6 @@ function  preprocessSession(varargin)
 %   - Improve auto-clustering routine 
 %   - Test cleaning and removing artifacts routines
 
-% write file to keep track of 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -91,9 +90,14 @@ end
 
 % Check info.rhd
 % (assumes this will be the same across subsessions)
+rhdFile = checkFile('fileType','.rhd','searchSubdirs',true);
+rhdFile = rhdFile(1);
+if ~(strcmp(rhdFile.folder,basepath)&&strcmp(rhdFile.name(1:end-4),basename))
+    copyfile([rhdFile.folder,filesep,rhdFile.name],[basepath,filesep,basename,'.rhd'])
+end
 
 %% Make SessionInfo
-% ID bad channels at this point. automating it would be good
+% Manually ID bad channels at this point. automating it would be good
 
 session = sessionTemplate(pwd,'showGUI',false); %
 save([basename '.session.mat'],'session');
@@ -108,27 +112,26 @@ if fillMissingDatFiles
     end
 end
 %% Concatenate sessions
-
 cd(basepath);
 
 disp('Concatenate session folders...');
 concatenateDats(pwd,0,1);
 
-
 %% Process additional inputs - CHECK FOR OUR LAB
 
-% Analog input
+% Analog inputs
     % check the two different fucntions for delaing with analog inputs and proably rename them
-if analogInputs
+if analogInputs 
     if  ~isempty(analogChannels)
-        analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true);
+       % this function has problems
+        analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true,'fs',session.extracellular.sr);
     else
-        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true); 
+        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr); 
     end
 end
 % analog pulses ... 
 
-% Digital input
+% Digital inputs
 if digitalInputs
     if ~isempty(digitalChannels)
         % need to change to only include specified channels

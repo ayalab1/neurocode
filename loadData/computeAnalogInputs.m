@@ -44,7 +44,7 @@ if isempty(infofile) % look in subdirectories
     end
 end
 if isempty(infofile)
-    error('Cannot find info.ehd file')
+    error('Cannot find info.rhd file')
 end
 
 % Getting relevant info

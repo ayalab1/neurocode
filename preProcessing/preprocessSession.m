@@ -123,14 +123,14 @@ concatenateDats(pwd,0,1);
     % check the two different fucntions for delaing with analog inputs and proably rename them
 if analogInputs 
     if  ~isempty(analogChannels)
-       % this function has problems
         analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true,'fs',session.extracellular.sr);
     else
         analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr); 
     end
 end
 % analog pulses ... 
-
+    [pulses] = getAnalogPulses;
+    
 % Digital inputs
 if digitalInputs
     if ~isempty(digitalChannels)

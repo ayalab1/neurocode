@@ -1,6 +1,7 @@
 function analogInp = computeAnalogInputs(varargin)
-% add downsampling
-%%% Process inputs
+% write documentation and change name
+% TODO: add downsampling
+%%  Process inputs
 p = inputParser;
 
 addParameter(p,'analogCh', [], @isnumeric)
@@ -26,7 +27,7 @@ if fileinfo.bytes == 0
     error('Analog input file empty');
 end
 
-%%% Get info from info.rhd file
+%% Get info from info.rhd file
 
 % Finding file
 infofile = ls('*.rhd');
@@ -50,7 +51,9 @@ end
 % Getting relevant info
 intaninfo = read_Intan_Info_Wrapper(infofile);
 n_active_channels = length(intaninfo.board_adc_channels);
-active_channels = intaninfo.board_adc_channels.native_order;
+for i = 1:n_active_channels
+    active_channels(i) = intaninfo.board_adc_channels(i).native_order;
+end
 if isempty(analogCh)
     wantedInds = 1:length(active_channels);
 elseif sum(ismember(analogCh,active_channels))<length(analogCh)
@@ -62,14 +65,14 @@ else
     end
 end
 
-%%% Read the analog data
+%% Read the analog data
 num_samples = fileinfo.bytes/(n_active_channels*2);
 fid = fopen(filename,'r');
 data = fread(fid, [n_active_channels, num_samples], 'uint16');
 fclose(fid);
 data = data(wantedInds,:);
 
-%%% Put together output data structure
+%% Put together output data structure
 try % temporary solution
 fs_analog = intaninfo.frequency_parameters.board_adc_sample_rate;
 fs_lfp = intaninfo.frequency_parameters.amplifier_sample_rate;

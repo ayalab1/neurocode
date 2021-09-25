@@ -17,7 +17,7 @@ function [pulses] = getAnalogPulses(varargin)
 % manualThr     Check manually threslhold amplitude (default, false)
 % groupPulses   Group manually train of pulses (default, false)
 % basepath      Path with analog data files to get pulses from.
-%
+% minDur        pulses with shorter duration than this are removed
 %
 % OUTPUTS
 %               pulses - events struct with the following fields
@@ -44,6 +44,7 @@ addParameter(p,'manualThr',false,@islogical);
 addParameter(p,'groupPulses',false,@islogical);
 addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'useGPU',true,@islogical);
+addParameter(p,'minDur',[],@isnumeric);
 
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
@@ -90,7 +91,7 @@ if isempty(f) || f.bytes == 0                                              % if 
     end
     
     if isempty(analogCh)
-        error('No posible to run bz_getAnalogPulses from Intan Buzsaki Ed with no analogCh inputs!');
+        error('No posible to run getAnalogPulses from Intan Buzsaki Ed with no analogCh inputs!');
     else 
         analogCh = analogCh+1; % 0 to 1 index
     end
@@ -289,6 +290,18 @@ if ~isempty(pul) % if no pulses, not save anything...
     
     [~, idx] = sort(pulses.intsPeriods(:,1));
     pulses.intsPeriods = pulses.intsPeriods(idx,:);
+    
+    % remove pulses that are too short (noise)
+    if minDur
+        ind = find(pulses.duration > minDur);
+        
+        pulses.timestamps = pulses.timestamps(ind,:);
+        pulses.amplitude = pulses.amplitude(ind,:);
+        pulses.duration = pulses.duration(ind,:);
+        pulses.eventGroupID = pulses.eventGroupID(ind,:);
+        pulses.analogChannel = pulses.analogChannel(ind,:);
+        % need to deal with intsPeriods
+    end
     
     disp('Saving locally...');
     save([filetarget '.pulses.events.mat'],'pulses');

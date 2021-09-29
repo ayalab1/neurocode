@@ -350,3 +350,64 @@ def load_ripples_events(basepath):
     df['animal'] = path_components[-3]
 
     return df
+
+
+def load_theta_rem_shift(basepath):
+    """
+    load_theta_rem_shift: loads matlab structure from get_rem_shift.m
+    """
+    try:
+        filename = glob.glob(basepath+os.sep+'*theta_rem_shift.mat')[0]
+    except:
+        # warnings.warn("file does not exist")
+        return pd.DataFrame(),np.nan
+
+    # check if saved file exists
+    if not os.path.exists(filename):
+        # warnings.warn("file does not exist")
+        return pd.DataFrame(),np.nan
+
+    data = sio.loadmat(filename)
+
+    df = pd.DataFrame()
+
+    df["circ_dist"] = data['rem_shift_data']['circ_dist'][0][0][0]
+    df["rem_shift"] = data['rem_shift_data']['rem_shift'][0][0][0]
+    df["non_rem_shift"] = data['rem_shift_data']['non_rem_shift'][0][0][0]
+    
+    # rem metrics
+    df["m_rem"] = data['rem_shift_data']['PhaseLockingData_rem'][0][0]['phasestats'][0][0]['m'][0][0][0]
+    df["r_rem"] = data['rem_shift_data']['PhaseLockingData_rem'][0][0]['phasestats'][0][0]['r'][0][0][0]
+    df["k_rem"] = data['rem_shift_data']['PhaseLockingData_rem'][0][0]['phasestats'][0][0]['k'][0][0][0]
+    df["p_rem"] = data['rem_shift_data']['PhaseLockingData_rem'][0][0]['phasestats'][0][0]['p'][0][0][0]
+    df["mode_rem"] = data['rem_shift_data']['PhaseLockingData_rem'][0][0]['phasestats'][0][0]['mode'][0][0][0]
+    
+    # wake metrics
+    df["m_wake"] = data['rem_shift_data']['PhaseLockingData_wake'][0][0]['phasestats'][0][0]['m'][0][0][0]
+    df["r_wake"] = data['rem_shift_data']['PhaseLockingData_wake'][0][0]['phasestats'][0][0]['r'][0][0][0]
+    df["k_wake"] = data['rem_shift_data']['PhaseLockingData_wake'][0][0]['phasestats'][0][0]['k'][0][0][0]
+    df["p_wake"] = data['rem_shift_data']['PhaseLockingData_wake'][0][0]['phasestats'][0][0]['p'][0][0][0]
+    df["mode_wake"] = data['rem_shift_data']['PhaseLockingData_wake'][0][0]['phasestats'][0][0]['mode'][0][0][0]
+
+
+    def get_distros(data,state):
+        return np.vstack(data['rem_shift_data'][state][0][0]['phasedistros'][0][0].T)
+
+    def get_spikephases(data,state):
+        return data['rem_shift_data'][state][0][0]['spkphases'][0][0][0]
+
+    # add to dictionary 
+    data_dict = {
+                    "rem": 
+                    {
+                        "phasedistros": get_distros(data,'PhaseLockingData_rem'),
+                        "spkphases":get_spikephases(data,'PhaseLockingData_rem')
+                    },
+                    "wake":
+                    {
+                        'phasedistros': get_distros(data,'PhaseLockingData_wake'),
+                        "spkphases":get_spikephases(data,'PhaseLockingData_wake')
+                    }
+                }
+
+    return df,data_dict

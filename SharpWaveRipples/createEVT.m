@@ -61,6 +61,10 @@ if (unit ~= "min")&&(unit ~= "s")&&(unit ~= "ms")
     error('Please enter a valid input for unit: [min, s, ms]');
 end
 
+if length(saveName) > 1
+    error('saveName must be a single character');
+end
+
 % Assign start, end, and peak arrays accordingly if structure
 if check_r
     swr_s = ripples.timestamps(:,1);

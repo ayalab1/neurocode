@@ -157,7 +157,7 @@ if save_evts
     end
     
 %     SaveEvents([basename '_' name '.HSE.evt'],events1);
-    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2), 'saveName', 'HSE');
+    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2), 'saveName', 'H');
 end
 
 % DS2peakIDCs = round(DS2triad(:,2)*1250);

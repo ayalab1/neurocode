@@ -165,7 +165,7 @@ doPlot = p.Results.doPlot;
 saveMat = p.Results.saveMat;
 
 % Get session info
-basename = bz_BasenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath);
 % load([basepath filesep basename '.sessionInfo.mat']);
 % Load default spkEventTimes
 if isempty(spkEventTimes)

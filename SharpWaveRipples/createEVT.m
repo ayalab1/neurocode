@@ -1,7 +1,9 @@
 function createEVT(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Used to create a .evt file from a generic ripple structure produced by
-% various other analysis scripts
+% various other analysis scripts. Note that this has also been adapted to
+% pull timestamps from other non-ripple structures, so long as the naming
+% convention (timestamps, peaks) is maintained. 
 % 
 % 
 % INPUT
@@ -19,6 +21,8 @@ function createEVT(varargin)
 %   basepath      path to a single session to run
 %   unit          unit of time which is used for these timestamps. Valid 
 %                 inputs include [min, s, or ms]
+%   saveName      option for variability of the .evt file name. This will
+%                 save as [basename].[saveName][#evt].evt (ie day6.R01.evt)
 %
 % OUTPUT
 %   None - message in command window will indicate successful formation of
@@ -29,6 +33,7 @@ function createEVT(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); %basepath to access
 addParameter(p,'unit',"s",@isstr); %unit for event epoch times
+addParameter(p,'saveName', 'R', @isstr); %save name
 
 % Determine input type and require inputs accordingly
 if isstruct(varargin{1})
@@ -50,6 +55,8 @@ end
 % Assign parameters to variables accordingly
 basepath = p.Results.basepath;
 unit = p.Results.unit;
+saveName = p.Results.saveName;
+
 if (unit ~= "min")&&(unit ~= "s")&&(unit ~= "ms")
     error('Please enter a valid input for unit: [min, s, ms]');
 end
@@ -83,12 +90,12 @@ end
 filename = basenameFromBasepath(basepath);
 
 % Check if there is an existing .evt file in the current directory
-rippleFiles = dir('*.R*.evt');
+rippleFiles = dir(['*.' saveName '*.evt']);
 if isempty(rippleFiles)
     fileN = 1;
 else
     % Set file index to next available value
-    pat = '.R[0-9].';
+    pat = ['.' saveName '[0-9].'];
     fileN = 0;
     for ii = 1:length(rippleFiles)
         token  = regexp(rippleFiles(ii).name,pat);
@@ -99,7 +106,7 @@ else
 end
 
 % Open the appropriately created new file
-fid = fopen(sprintf('%s%s%s.R%02d.evt',basepath,filesep,filename,fileN),'w');
+fid = fopen(sprintf(['%s%s%s.' saveName '%02d.evt'],basepath,filesep,filename,fileN),'w');
 
 fprintf(1,'Writing event file ...\n');
 

@@ -57,6 +57,7 @@ analogCh = p.Results.analogCh;
 groupPulses = p.Results.groupPulses;
 basepath = p.Results.basepath;
 useGPU = p.Results.useGPU;
+minDur = p.Results.minDur;
 
 prevPath = pwd;
 cd(basepath);

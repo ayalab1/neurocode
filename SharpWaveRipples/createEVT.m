@@ -23,6 +23,10 @@ function createEVT(varargin)
 %                 inputs include [min, s, or ms]
 %   saveName      option for variability of the .evt file name. This will
 %                 save as [basename].[saveName][#evt].evt (ie day6.R01.evt)
+%   tVal          set as False to override the timestamp validation. This 
+%                 is useful for when the user would like to input fewer 
+%                 time arrays (ie no peak) and chooses the start time to 
+%                 fill this slot. 
 %
 % OUTPUT
 %   None - message in command window will indicate successful formation of
@@ -34,6 +38,7 @@ p = inputParser;
 addParameter(p,'basepath',pwd,@isstr); %basepath to access
 addParameter(p,'unit',"s",@isstr); %unit for event epoch times
 addParameter(p,'saveName', 'R', @isstr); %save name
+addParameter(p,'tVal', 'True', @islogical); %use timestamp validation
 
 % Determine input type and require inputs accordingly
 if isstruct(varargin{1})
@@ -56,6 +61,7 @@ end
 basepath = p.Results.basepath;
 unit = p.Results.unit;
 saveName = p.Results.saveName;
+tVal = p.Results.tVal;
 
 if (unit ~= "min")&&(unit ~= "s")&&(unit ~= "ms")
     error('Please enter a valid input for unit: [min, s, ms]');
@@ -73,10 +79,12 @@ if check_r
 end
 
 % Validate inputs by checking timestamps are correctly ordered
-if (swr_s(1)>=swr_p(1))||(swr_s(1)>=swr_e(1))||(swr_p(1)>=swr_e(1))
-    error('Please validate that the timestamps are correctly ordered: start, peak, end');
-else
-    disp('Input timestamps have been successfully validated');
+if tVal
+    if (swr_s(1)>=swr_p(1))||(swr_s(1)>=swr_e(1))||(swr_p(1)>=swr_e(1))
+        error('Please validate that the timestamps are correctly ordered: start, peak, end');
+    else
+        disp('Input timestamps have been successfully validated');
+    end
 end
 
 % .evt file should be in ms - convert accordingly

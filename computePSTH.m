@@ -115,6 +115,7 @@ if plots
     plot(time,mean(PSTH_out')+std(PSTH_out'),'--b');hold on; 
     plot(time,mean(PSTH_out')-std(PSTH_out'),'--b');hold on;
     xline(0,'--k');hold on; ylabel('mod. index');
+    title(eventName)
     subplot(2,1,2)
     imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))',[-3 3]), xlabel('time'), ylabel('units');hold on;
     xline(0,'--k');hold on;    

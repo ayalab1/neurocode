@@ -10,7 +10,7 @@ function PSTH = computePSTH(event,spikes,varargin)
 % 
 % Dependencies: CCG
 
-% AntonioFR, 10/21 based on Peter Petersen's calc_PSTH
+% AntonioFR, 10/21. Based on Peter Petersen's calc_PSTH
 
 p = inputParser;
 
@@ -110,7 +110,13 @@ if plots
     %[~,index2] = sort(modulationIndex,'descend');
     [~,index3] = sort(modulationPeakResponseTime);    
     figure,
-    imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))',[-3 3]),  title('PSTH'), xlabel('time'), ylabel('units');hold on;
+    subplot(2,1,1);
+    plot(time,mean(PSTH_out')','LineWidth',2); hold on; 
+    plot(time,mean(PSTH_out')+std(PSTH_out'),'--b');hold on; 
+    plot(time,mean(PSTH_out')-std(PSTH_out'),'--b');hold on;
+    xline(0,'--k');hold on; ylabel('mod. index');
+    subplot(2,1,2)
+    imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))',[-3 3]), xlabel('time'), ylabel('units');hold on;
     xline(0,'--k');hold on;    
     
 end

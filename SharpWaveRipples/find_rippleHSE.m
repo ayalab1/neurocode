@@ -13,7 +13,7 @@ interval = p.Results.interval;
 save_evt = p.Results.save_evt;
 save_fig = p.Results.save_fig;
 
-basename = bz_BasenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath);
 
 %% (1) find highly sychronized events (HSE)
 % check if the HSE file exist,if not call find_HSE

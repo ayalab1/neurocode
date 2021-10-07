@@ -1,6 +1,7 @@
 %% Ripple analysis pipeline
 % This is a wrapper to concatenate all functions to perform basic ripple analysis in a single session
-basename = basenameFromBasepath(pwd);
+basepath = pwd;
+basename = basenameFromBasepath(basepath);
 
 %% 0- Pre processing
 %   - Initial preprocessin and detection of sleep states is done in preprocessSession

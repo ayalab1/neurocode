@@ -11,7 +11,7 @@ basepath = p.Results.basepath;
 fileType = p.Results.fileType;
 
 %% Get session info
-session = bz_getSession('basepath',basepath); % Peter's sessionInfo
+session = getSession('basepath',basepath); % Peter's sessionInfo
 basename = session.general.name;
 ampNch = session.extracellular.nChannels;
 

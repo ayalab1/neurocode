@@ -1258,7 +1258,7 @@ SWR.peaks = TsTrough(idxsIn)/SR; %SWR_valid.Ts(:,1)/SR;
 % - Peak power values of each SWR
 SWR.peakNormedPower = [];
 % - Name of this function
-SWR.detectorName = 'bz_DetectSWR';
+SWR.detectorName = 'DetectSWR';
 % - Standard deviation used to threshold ripple power
 SWR.stdev = [thresSDrip(2) thresSDswD(2)];
 SWR.SwMax  = SWR_valid.SwMax(idxsIn);

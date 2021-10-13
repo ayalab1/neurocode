@@ -1264,6 +1264,32 @@ SWR.stdev = [thresSDrip(2) thresSDswD(2)];
 SWR.SwMax  = SWR_valid.SwMax(idxsIn);
 SWR.RipMax = SWR_valid.RipMax(idxsIn);
 
+% Make sure all ripple epochs are unique.
+% check start ts
+[~,unique_idx,~] = unique(SWR.timestamps(:,1));
+SWR.timestamps = SWR.timestamps(unique_idx,:);
+SWR.duration = SWR.duration(unique_idx,:);
+SWR.amplitude = SWR.amplitude(unique_idx,:);
+SWR.frequency = SWR.frequency(unique_idx,:);
+SWR.peaks = SWR.peaks(unique_idx,:);
+SWR.SwMax = SWR.SwMax(unique_idx,:);
+SWR.RipMax = SWR.RipMax(unique_idx,:);
+SWR_valid.Ts = SWR_valid.Ts(unique_idx,:);
+SWR_valid.SwMax = SWR_valid.SwMax(unique_idx,:);
+SWR_valid.RipMax = SWR_valid.RipMax(unique_idx,:);
+% check peak ts
+[~,unique_idx,~] = unique(SWR.peaks);
+SWR.timestamps = SWR.timestamps(unique_idx,:);
+SWR.duration = SWR.duration(unique_idx,:);
+SWR.amplitude = SWR.amplitude(unique_idx,:);
+SWR.frequency = SWR.frequency(unique_idx,:);
+SWR.peaks = SWR.peaks(unique_idx,:);
+SWR.SwMax = SWR.SwMax(unique_idx,:);
+SWR.RipMax = SWR.RipMax(unique_idx,:);
+SWR_valid.Ts = SWR_valid.Ts(unique_idx,:);
+SWR_valid.SwMax = SWR_valid.SwMax(unique_idx,:);
+SWR_valid.RipMax = SWR_valid.RipMax(unique_idx,:);
+
 %Write event file: Generate Output and Write out Event file
 if EVENTFILE
     rippleFiles = dir('*.R*.evt');

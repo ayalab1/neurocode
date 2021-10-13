@@ -4,7 +4,7 @@ basepath = pwd;
 basename = basenameFromBasepath(basepath);
 
 %% 0- Pre processing
-%   - Initial preprocessin and detection of sleep states is done in preprocessSession
+%   - Initial preprocessing and detection of sleep states is done in preprocessSession
 %   - Spikes and cell_metrics are extraction in preprocessSpikes (after manual clustering)
 
 %% 1 - Automatic estimation of best channels for swr detection
@@ -42,7 +42,7 @@ basename = basenameFromBasepath(basepath);
     mkdir('Ripple_Profile');
     lfpRip = getLFP(swrCh.ripple);
     [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(1:500),'twin',[0.1 0.1]);
-    saveas(gcf,['swrWaveletSample.png']);
+    saveas(gcf,['Ripple_Profile\swrWaveletSample.png']);
     
 %% 3- Separate ripples by task epochs     
     % creat pre/task/post structure. Need to be improved

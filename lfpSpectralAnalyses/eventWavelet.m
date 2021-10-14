@@ -195,7 +195,7 @@ if plotWave
    contourf(wavAvg.timestamps*1000,wavAvg.freqs,wavAvg.data',30,'LineColor','none');hold on;
    set(gca,'YScale','log');
    ylim([wavespec.freqs(1) wavespec.freqs(end)]);
-   colormap jet;
+   colormap parula;
    xlabel('time (ms)'); ylabel('frequency (Hz)');
     
 end

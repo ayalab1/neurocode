@@ -330,11 +330,17 @@ def load_ripples_events(basepath):
         df['amplitude'] = np.nan
         df['duration'] = np.nan
         df['frequency'] = np.nan
-    
+     
     try:
         df['detectorName'] = data['ripples']['detectorinfo'][0][0]['detectorname'][0][0][0]
     except:
         df['detectorName'] = data['ripples']['detectorName'][0][0][0]
+
+    # find ripple channel
+    try:
+        df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['Channels'][0][0][0][0]
+    except:
+        df['ripple_channel'] = data['ripples']['detectorParams'][0][0]['channel'][0][0][0][0]
 
     dt = data['ripples'].dtype
     if "eventSpikingParameters" in dt.names:

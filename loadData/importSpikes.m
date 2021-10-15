@@ -45,8 +45,7 @@ session = p.Results.session;
 channel = p.Results.channel;
 
 %% Load spikes 
-cd(basepath);
-basename = basenameFromBasepath(pwd);
+basename = basenameFromBasepath(basepath);
 
 if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) 
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))

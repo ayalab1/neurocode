@@ -17,12 +17,12 @@ function  plotEventRaster(event,basepath,spikes,lfpChan,tag)
 if isempty(basepath)
     basepath= pwd;
 end
-basename = basenameFromBasepath(pwd);
-load([basename '.session.mat']);
-load([basename '.cell_metrics.cellinfo.mat']);
+basename = basenameFromBasepath(basepath);
+load(fullfile(basepath,[basename '.session.mat']));
+load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']));
 
 if isempty(spikes)
-   load([basename '.spikes.cellinfo.mat']);
+    load(fullfile(basepath,[basename '.spikes.cellinfo.mat']));
 end
 
 sr = session.extracellular.sr;
@@ -36,7 +36,7 @@ end
 %% plot lfp
 if ~isempty(lfpChan)
     
-    lfp = getLFP(lfpChan,'intervals',event);
+    lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
     % add option to filter LFP
     
     figure;

@@ -77,7 +77,7 @@ placeFieldStats = p.Results.placeFieldStats;
 UIDs = p.Results.UIDs;
 
 % Get session info
-basename = bz_BasenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath);
 load([basepath filesep basename '.sessionInfo.mat']);
 % Default firingMapsAvg
 if isempty(firingMaps)

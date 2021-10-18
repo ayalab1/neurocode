@@ -70,7 +70,7 @@ if isempty(channel)
        load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
        spikeT.UID = []; spikeT.times = [];
        for i = 1:numel(cell_metrics.brainRegion)
-           if strcmp(cell_metrics.brainRegion{i},region) && ...
+           if contains(cell_metrics.brainRegion{i},region) && ...
               strcmp(cell_metrics.putativeCellType{i},type)  
               spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
               spikeT.times = cat(2,spikeT.times,spikes.times(i));
@@ -82,7 +82,7 @@ if isempty(channel)
        load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
        spikeT.UID = []; spikeT.times = [];
        for i = 1:numel(cell_metrics.brainRegion)
-           if strcmp(cell_metrics.brainRegion{i},region)  
+           if contains(cell_metrics.brainRegion{i},region)  
               spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
               spikeT.times = cat(2,spikeT.times,spikes.times(i));
            end
@@ -104,7 +104,7 @@ else
        load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
        spikeT.UID = []; spikeT.times = [];
        for i = 1:numel(cell_metrics.brainRegion)
-           if strcmp(cell_metrics.brainRegion{i},region) && ...
+           if contains(cell_metrics.brainRegion{i},region) && ...
               strcmp(cell_metrics.putativeCellType{i},type)
                 if ~isempty(find(setUn==i))
                   spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
@@ -118,7 +118,7 @@ else
        load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
        spikeT.UID = []; spikeT.times = [];
        for i = 1:numel(cell_metrics.brainRegion)
-           if strcmp(cell_metrics.brainRegion{i},region)  
+           if contains(cell_metrics.brainRegion{i},region)  
                if ~isempty(find(setUn==i))
                   spikeT.UID = cat(2,spikeT.UID,spikes.UID(i));
                   spikeT.times = cat(2,spikeT.times,spikes.times(i));

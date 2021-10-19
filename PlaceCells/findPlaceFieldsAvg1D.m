@@ -23,7 +23,7 @@ function [placeFieldStats] = findPlaceFieldsAvg1D(varargin)
 %                   are considered spurious and ignored (default = 0.05)
 %     'maxSize'     fields larger than this percentage of the maze size 
 %                   are considered noise and ignored (default = 0.50)
-%     'maxSize'     fields with maximum Firing Rate closer to the edges less
+%     'sepEdge'     fields with maximum Firing Rate closer to the edges less
 %                   than this percentage of the maze size are ignored
 %                   (default = 0.0)
 %                   are considered noise and ignored (default = 0.50)
@@ -96,7 +96,7 @@ parse(p,varargin{:});
 basepath = p.Results.basepath;
 firingMaps = p.Results.firingMapsAvg;
 % Get session info
-basename = bz_BasenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath);
 load([basepath filesep basename '.sessionInfo.mat']);
 % Default firingMapsAvg
 if isempty(firingMaps)

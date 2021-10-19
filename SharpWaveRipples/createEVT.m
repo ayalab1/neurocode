@@ -27,6 +27,7 @@ function createEVT(varargin)
 %                 is useful for when the user would like to input fewer 
 %                 time arrays (ie no peak) and chooses the start time to 
 %                 fill this slot. 
+%   savePath      full path to save files to
 %
 % OUTPUT
 %   None - message in command window will indicate successful formation of
@@ -39,6 +40,7 @@ addParameter(p,'basepath',pwd,@isstr); %basepath to access
 addParameter(p,'unit',"s",@isstr); %unit for event epoch times
 addParameter(p,'saveName', 'R', @isstr); %save name
 addParameter(p,'tVal', 'True', @islogical); %use timestamp validation
+addParameter(p,'savePath',pwd,@isstr); %place to save files
 
 % Determine input type and require inputs accordingly
 if isstruct(varargin{1})
@@ -62,6 +64,7 @@ basepath = p.Results.basepath;
 unit = p.Results.unit;
 saveName = p.Results.saveName;
 tVal = p.Results.tVal;
+savePath = p.Results.savePath;
 
 if (unit ~= "min")&&(unit ~= "s")&&(unit ~= "ms")
     error('Please enter a valid input for unit: [min, s, ms]');
@@ -102,7 +105,9 @@ end
 filename = basenameFromBasepath(basepath);
 
 % Check if there is an existing .evt file in the current directory
+oldPath = cd(savePath);
 rippleFiles = dir(['*.' saveName '*.evt']);
+cd(oldPath);
 if isempty(rippleFiles)
     fileN = 1;
 else
@@ -118,7 +123,7 @@ else
 end
 
 % Open the appropriately created new file
-fid = fopen(sprintf(['%s%s%s.' saveName '%02d.evt'],basepath,filesep,filename,fileN),'w');
+fid = fopen(sprintf(['%s%s%s.' saveName '%02d.evt'],savePath,filesep,filename,fileN),'w');
 
 fprintf(1,'Writing event file ...\n');
 

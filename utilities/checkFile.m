@@ -63,7 +63,7 @@ elseif isempty(filename) && ~isempty(fileTypes)
                 file_tmp{i} = [file_tmp{i}; subFile];
             end
         if ~isempty(file_tmp{i})
-            file = [file; subFile];
+            file = [file_tmp{i}; subFile];
             return
         end
     end

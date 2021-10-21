@@ -1,4 +1,4 @@
-function file = checkFile2(varargin)
+function file = checkFile(varargin)
 
 % Checks that file exists and returns proper basepath and filename
 % intpus (optional):

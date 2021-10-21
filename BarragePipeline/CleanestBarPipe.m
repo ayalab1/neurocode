@@ -19,10 +19,10 @@ save([savePath 'allpyr.cellinfo.mat'], 'spikes');
 %% Run with presaved metrics
 disp('starting');
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
-% note_all = ["CA1" "CA2" "All pyr"];
-% file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
-note_all = ["CA2"];
-file_n = ['CA2pyr'];
+note_all = ["CA1" "CA2" "All pyr"]; %change these based on the parameters to run
+file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
+% note_all = ["CA2"];
+% file_n = ['CA2pyr'];
 % load(strcat(basepath,'.',basename,'cell_metrics.cellinfo.mat'));
 % note_all = ["CA2 and bursty CA3"];
 % file_n = ['CA2CA3'];
@@ -32,29 +32,27 @@ file_n = ['CA2pyr'];
 %     barCh(i) = findBarCh(cell_metrics.maxWaveformCh1, spikes.times, spikes.UID);
 % end
 
-% note_all = ["CA2"];
-% file_n = ['CA2pyr'];
 load([savePath 'HSEfutEVT.mat']);
 runLast = size(evtSave,1);
 % WaitMessage = parfor_wait(length(note_all),'Waitbar',true);
-for i = 1:length(note_all)
+parfor i = 1:length(note_all)
     runNum = runLast+i;
     spikes = load([savePath file_n(i,:) '.cellinfo.mat']);
     spikes = spikes.spikes;
-%     nSigma = ratMet.nSigma;
-    nSigma = 1.75; %+-1.5 => [-0.5 1.5]
-%     tSepMax = ratMet.tSepMax;
-    tSepMax = 1;
-%     mindur = ratMet.mindur;
-    mindur = 0.3;
-%     maxdur = ratMet.maxdur;
-    maxdur = 15;
-%     lastmin = ratMet.lastmin;
-    lastmin = 0.4;
-    sstd = 1;
-    estd = 1;
-%     EMGThresh = ratMet.EMGThresh;
-    EMGThresh = 1.1;
+    nSigma = ratMet.nSigma;
+%     nSigma = 1.75; %+-1.5 => [-0.5 1.5]
+    tSepMax = ratMet.tSepMax;
+%     tSepMax = 1;
+    mindur = ratMet.mindur;
+%     mindur = 0.3;
+    maxdur = ratMet.maxdur;
+%     maxdur = 15;
+    lastmin = ratMet.lastmin;
+%     lastmin = 0.4;
+    sstd = ratMet.sstd;
+    estd = ratMet.estd;
+    EMGThresh = ratMet.EMGThresh;
+%     EMGThresh = 1.1;
 % DO NOT use loadspkhist if running multiple different spike files
     save_evts = false;
     neuro2 = false;

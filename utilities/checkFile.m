@@ -11,7 +11,6 @@ function file = checkFile(varargin)
 %   file - matlab file struct
 %
 % kathryn mcclain 2020
-% updated by aza 2021
 
 p = inputParser;
 addParameter(p,'filename',[],@ischar)
@@ -57,7 +56,6 @@ if isempty(filename) && ~isempty(fileType)
         error(['Cant find file of type: ',fileType,' in this location: ',basepath])
     end
 elseif isempty(filename) && ~isempty(fileTypes)
-    found_files=[];
     for i =1:length(fileTypes)
         file_tmp{i} = dir([basepath,filesep,'*',fileTypes{i}]);
             if searchSubdirs
@@ -65,14 +63,8 @@ elseif isempty(filename) && ~isempty(fileTypes)
                 file_tmp{i} = [file_tmp{i}; subFile];
             end
         if ~isempty(file_tmp{i})
-            found_files=cat(1,found_files,i);
-        end
-    end
-    if isempty(found_files)
-        error(['Cant find any of these files in this location: ',basepath]);
-    else
-        for i=1:length(found_files)
-            file{i}=file_tmp{found_files(i)};
+            file = [file; subFile];
+            return
         end
     end
 else

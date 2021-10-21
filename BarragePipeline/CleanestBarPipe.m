@@ -31,9 +31,12 @@ file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
 %     load([savePath file_n(i,:) '.cellinfo.mat']);
 %     barCh(i) = findBarCh(cell_metrics.maxWaveformCh1, spikes.times, spikes.UID);
 % end
-
-load([savePath 'HSEfutEVT.mat']);
-runLast = size(evtSave,1);
+if exist([savePath 'HSEfutEVT.mat'])
+    load([savePath 'HSEfutEVT.mat']);
+    runLast = size(evtSave,1);
+else
+    runLast = 0;
+end
 % WaitMessage = parfor_wait(length(note_all),'Waitbar',true);
 parfor i = 1:length(note_all)
     runNum = runLast+i;

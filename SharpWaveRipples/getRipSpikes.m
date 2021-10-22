@@ -61,7 +61,6 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %    =========================================================================
 %
 %    Antonio FR, 2017
-%    Converted to buzcode format: Andrea Navas-Olive, 2019
 
 % Parse inputs 
 p = inputParser;
@@ -156,7 +155,7 @@ for event = 1:size(timestamps,1)
     spkEventTimes.EventRel{event} = sortrows(spkEventTimes.EventRel{event}')';
 end
 
-% Save
+% 4. Save
 if saveMat
    save(fullfile(basepath, [basename '.spkEventTimes.mat'],'spkEventTimes')); 
 end

@@ -3,7 +3,7 @@ function [unitRip] = unitSWRmetrics(ripSpk,varargin)
 %
 %   INPUTS
 %
-%   ripSpk      buzcode ripple structure from bz_getRipSpikes
+%   ripSpk      buzcode ripple structure from getRipSpikes
 %   baseFR      vector with baseline firing rates per unit. Optional, to caculate ripple gain
 %
 %   OUTPUTS
@@ -43,6 +43,14 @@ end
 % mean all ripples
 for unit = 1:length(ripSpk.UnitAbs)
     unitRip.FRall(unit,1) = length(ripSpk.UnitAbs{unit})/sum(ripSpk.EventDuration);
+end
+% population mean all ripples
+for rip = 1:length(ripSpk.EventAbs)
+    tmp=0;
+    for unit = 1:length(ripSpk.UnitAbs)
+        tmp=tmp+length(ripSpk.UnitEventAbs{unit,rip});
+    end
+    unitRip.FRpopulation(rip,1) = tmp/sum(ripSpk.EventDuration);
 end
 % mean all ripples in which unit fired
 for unit = 1:length(ripSpk.UnitAbs)

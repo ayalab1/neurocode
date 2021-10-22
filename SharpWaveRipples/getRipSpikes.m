@@ -1,10 +1,12 @@
 function [spkEventTimes] = getRipSpikes(varargin)
 %
-%    [SpkEventTimes] = getRipSpikes(varargin)
+%    [spkEventTimes] = getRipSpikes(varargin)
 % Saves spike times of all units inside given events in different ways:
-%   1. Absolute and relative time of spikes by unit and by event
+%   1. Absolute and relative time of spikes by unit and by event or
+%      nonevent period
 %   2. Absolute and relative time of spikes by unit
-%   3. Absolute and relative time of spikes by ripple
+%   3. Absolute and relative time of spikes by event
+%   4. Absolute and relative time of spikes outside events
 %
 % INPUTS
 %
@@ -31,32 +33,60 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %                   and 0s for units to be discarded.(M: number of units)
 %     'padding'     additional time before and after ripple end to still search for spikes. 
 %                   (default is 0.05 sec)
+%     'savePath'    Definition of the path to save the output structure
+%                   (default: pwd)
 %     'saveMat'   	Saves file, logical (default: true) 
 %
 %    =========================================================================
 %
 % OUTPUTS
 %
-% spkEventTimes structure with the followin fields:
+% spkEventTimes structure with the following fields:
 %
 %    =========================================================================
-%     Properties    Values
+%     Properties        Values
 %    -------------------------------------------------------------------------
-%	  .UnitEventAbs	 MxN cell matrix. In each cell, absolute times of
-%                    spikes for that particular unit and event
-%	  .UnitEventRel	 MxN cell matrix. In each cell, relative times of
-%                    spikes (relative to the starting time of events) for 
-%                    that particular unit and event
-%	  .UnitAbs		 1xM cell matrix. In each cell, absolute times of
-%                    spikes for that particular unit across all events
-%	  .UnitRel		 1xM cell matrix. In each cell, relative times of
-%                    spikes for that particular unit across all events
-%	  .EventAbs		 2xN cell matrix. In the first row, absolute times of
-%                    spikes for that particular event across all units. In
-%                    the second row, the UID associated to the above spike
-%	  .EventRel		 2xN cell matrix. In the first row, relative times of
-%                    spikes for that particular event across all units. In
-%                    the second row, the UID associated to the above spike
+%     .padding          Value of padding used
+%     .EventDuration    Nx1 double. Contains the duration of each event
+%     .NonEventDur      (N+1)x1 double. Contains the duration of each 
+%                       interval between events.
+%	  .UnitEventAbs     MxN cell matrix. In each cell, absolute times of
+%                       spikes for that particular unit and event
+%	  .UnitEventRel     MxN cell matrix. In each cell, relative times of
+%                       spikes (relative to the starting time of events)  
+%                       for that particular unit and event
+%     .UnitNonEventAbs  Mx(N+1) cell matrix. In each cell, absolute times
+%                       of spikes for that particular unit and intermittent
+%                       period between events.
+%     .UnitNonEventRel  Mx(N+1) cell matrix. In each cell, relative times
+%                       of spikes for that particular unit and intermittent
+%                       period between events.
+%	  .UnitAbs          1xM cell matrix. In each cell, absolute times of
+%                       spikes for that particular unit across all events
+%	  .UnitRel          1xM cell matrix. In each cell, relative times of
+%                       spikes for that particular unit across all events
+%     .UnitNonAbs       1xM cell matrix. In each cell, absolute times of
+%                       spikes for that particular unit across all
+%                       non-event periods.
+%     .UnitNonRel       1xM cell matrix. In each cell, relative times of
+%                       spikes for that particular unit across all
+%                       non-event periods.
+%	  .EventAbs         2xN cell matrix. In the first row, absolute times 
+%                       of spikes for that particular event across all 
+%                       units. In the second row, the UID associated to the 
+%                       above spike
+%	  .EventRel         2xN cell matrix. In the first row, relative times 
+%                       of spikes for that particular event across all 
+%                       units. In the second row, the UID associated to the
+%                       above spike
+%     .NonEventAbs      2x(N+1) cell matrix. In the first row, absolute
+%                       times of spikes for that particular period between
+%                       events, across all units. In the second row, the
+%                       UID associated to the above spike. 
+%     .NonEventRel      2x(N+1) cell matrix. In the first row, relative
+%                       times of spikes for that particular period between
+%                       events, across all units. In the second row, the
+%                       UID associated to the above spike.
 %
 %    =========================================================================
 %
@@ -69,6 +99,7 @@ addParameter(p,'events',[], @(x) isnumeric(x) || isstruct(x));
 addParameter(p,'spikes',{},@isstruct);
 addParameter(p,'UIDs',[],@islogical);
 addParameter(p,'padding',0.05,@isnumeric);
+addParameter(p,'savePath',pwd,@isstr);
 addParameter(p,'saveMat', true, @islogical);
 
 parse(p,varargin{:});
@@ -77,13 +108,16 @@ events = p.Results.events;
 spikes = p.Results.spikes;
 UIDs = p.Results.UIDs;
 padding = p.Results.padding;
+savePath = p.Results.savePath;
 saveMat = p.Results.saveMat;
 
 % Get session info
 basename = basenameFromBasepath(basepath);
 load([basepath filesep basename '.session.mat']);
+sesEpoch = session.epochs{end};
+sesEnd = sesEpoch.stopTime;
 
-% Default events, UIDs and spikes
+% Default events, UIDs, and spikes
 if isempty(spikes)
     spikes = load([basepath filesep basename '.spikes.cellinfo.mat']);
     spikes = spikes.spikes;
@@ -95,6 +129,7 @@ if isempty(events)
     events = load([basepath filesep basename '.ripples.events.mat']);
     events = events.ripples;
 end
+
 % Starting and ending timestamps
 if isnumeric(events)
     timestamps = events;
@@ -110,21 +145,31 @@ end
 spkEventTimes = {};
 spkEventTimes.padding = padding;
 
-% 1. Absolute and relative time of spikes by unit and by ripple
+% 1. Absolute and relative time of spikes by unit and by event (or nonevent
+%    period)
 for unit = 1:length(spikes.UID)
     if UIDs(unit)
         for event = 1:size(timestamps,1)
             % Start and end of ripple
-            tini = timestamps(event,1) - padding;
-            tend = timestamps(event,2) + padding;
-            spkEventTimes.EventDuration(event,1) = tend-tini;
+            tini(event) = timestamps(event,1) - padding;
+            tend(event) = timestamps(event,2) + padding;
+            spkEventTimes.EventDuration(event,1) = tend(event)-tini(event);
             % Spikes of this unit within this ripple interval
             tsUnitEvent = spikes.times{unit};
-            tsUnitEvent = tsUnitEvent(tsUnitEvent>=tini & tsUnitEvent<=tend);
+            tsUnitEvent = tsUnitEvent(tsUnitEvent>=tini(event) & tsUnitEvent<=tend(event));
             % Absolute time of spikes by unit and by ripple
             spkEventTimes.UnitEventAbs{unit,event} = tsUnitEvent';
             % Relative time of spikes by unit and by ripple to ripple start
-            spkEventTimes.UnitEventRel{unit,event} = tsUnitEvent' - tini;
+            spkEventTimes.UnitEventRel{unit,event} = tsUnitEvent' - tini(event);
+        end
+        tini(size(timestamps,1)+1) = sesEnd;
+        tend = [0 tend];
+        for event = 1:length(tini)
+            spkUnit = spikes.times{unit};
+            spkEventTimes.NonEventDur(event,1) = tini(event)-tend(event);
+            tsUnitNonEvent = spkUnit(spkUnit<tini(event) & spkUnit>tend(event));
+            spkEventTimes.UnitNonEventAbs{unit,event} = tsUnitNonEvent';
+            spkEventTimes.UnitNonEventRel{unit,event} = tsUnitNonEvent' - tend(event);
         end
     end
 end
@@ -134,6 +179,8 @@ for unit = 1:length(spikes.UID)
     if UIDs(unit)
         spkEventTimes.UnitAbs{unit} = cell2mat(spkEventTimes.UnitEventAbs(unit,:));
         spkEventTimes.UnitRel{unit} = cell2mat(spkEventTimes.UnitEventRel(unit,:));
+        spkEventTimes.UnitNonAbs{unit} = cell2mat(spkEventTimes.UnitNonEventAbs(unit,:));
+        spkEventTimes.UnitNonRel{unit} = cell2mat(spkEventTimes.UnitNonEventRel(unit,:));
     end
 end
 
@@ -155,10 +202,27 @@ for event = 1:size(timestamps,1)
     spkEventTimes.EventRel{event} = sortrows(spkEventTimes.EventRel{event}')';
 end
 
-% 4. Save
-if saveMat
-   save(fullfile(basepath, [basename '.spkEventTimes.mat'],'spkEventTimes')); 
+% 4. Absolute and relative time of spikes by nonevent periods
+for event = 1:size(spkEventTimes.NonEventDur,1)
+    spkEventTimes.NonEventAbs{event} = [];
+    spkEventTimes.NonEventRel{event} = [];
+    for unit = 1:length(spikes.UID)
+        if UIDs(unit)
+            spkEventTimes.NonEventAbs{event} = [ spkEventTimes.NonEventAbs{event}, ...
+                                        [cell2mat(spkEventTimes.UnitNonEventAbs(unit,event)); ...
+                                         cell2mat(spkEventTimes.UnitNonEventAbs(unit,event))*0+spikes.UID(unit)] ];
+            spkEventTimes.EventRel{event} = [ spkEventTimes.NonEventRel{event}, ...
+                                         [cell2mat(spkEventTimes.UnitNonEventRel(unit,event)); ...
+                                          cell2mat(spkEventTimes.UnitNonEventRel(unit,event))*0+spikes.UID(unit)] ];
+        end
+    end
+    spkEventTimes.NonEventAbs{event} = sortrows(spkEventTimes.NonEventAbs{event}')';
+    spkEventTimes.NonEventRel{event} = sortrows(spkEventTimes.NonEventRel{event}')';
 end
 
+% 5. Save
+if saveMat
+   save(strcat(savePath,'\',basename,'.spkEventTimes.mat'),'spkEventTimes');
+end
 
 end

@@ -91,14 +91,14 @@ for a = 1:length(d)
 end
 otherdattypes(find(bad_otherdattypes)) = [];%if there weren't analogin or digitalin in some recording
 if isempty(datpaths.amplifier)
-    disp('No .dats found in subfolders.  Exiting bz_ConcatenateDats.')
+    disp('No .dats found in subfolders.  Exiting ConcatenateDats.')
     return
 end
 
 %% Get the XML
 try 
     %Look for xml/sessionInfo in topfolder
-    %sessionInfo = bz_getSessionInfo(basepath,'noPrompts',true);
+    %sessionInfo = getSessionInfo(basepath,'noPrompts',true);
     load([basename '.session.mat']); % Peter's sessionInfo
 catch
     %If none exists, look for xml in any of the subpaths
@@ -198,7 +198,7 @@ MergePoints.foldernames = recordingnames;
 MergePoints.filesmerged = datpaths;
 MergePoints.filesizes = datsizes;
 MergePoints.sizecheck = sizecheck;
-MergePoints.detectorinfo.detectorname = 'bz_ConcatenateDats';
+MergePoints.detectorinfo.detectorname = 'ConcatenateDats';
 MergePoints.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
 
 

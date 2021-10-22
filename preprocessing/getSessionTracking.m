@@ -93,11 +93,11 @@ if ~(optitrack)
 
     %% Find subfolder recordings
     cd(basepath);
-    [sessionInfo] = getSession(basepath, 'noPrompts', true);
+    [sessionInfo] = getSession('basepath',basepath);
     %C = strsplit(sessionInfo.session.name,'_');
     %sess = dir(strcat(C{1},'_',C{2},'*')); % get session files
-    if exist([basepath filesep strcat(sessionInfo.session.name,'.MergePoints.events.mat')],'file')
-        load(strcat(sessionInfo.session.name,'.MergePoints.events.mat'));
+    if exist([basepath filesep strcat(sessionInfo.general.name,'.MergePoints.events.mat')],'file')
+        load(strcat(sessionInfo.general.name,'.MergePoints.events.mat'));
         count = 1;
         for ii = 1:size(MergePoints.foldernames,2)
             %if sess(ii).isdir && ~isempty(dir([basepath filesep sess(ii).name filesep '*Basler*avi']))

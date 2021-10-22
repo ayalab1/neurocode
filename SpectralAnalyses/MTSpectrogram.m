@@ -8,7 +8,7 @@ function [spectrogram,t,f] = MTSpectrogram(lfp,varargin)
 %
 %    [spectrogram,t,f] = MTSpectrogram(lfp,<options>)
 %
-%    lfp            unfiltered LFP <a href="matlab:help samples">samples</a> (one channel).
+%    lfp            unfiltered LFP (one channel each): [timestamps lfp]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================

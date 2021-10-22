@@ -6,7 +6,7 @@ function [coherogram,phase,t,f] = MTCoherogram(lfp1,lfp2,varargin)
 %
 %    [coherogram,phase,t,f] = MTCoherogram(lfp1,lfp2,<options>)
 %
-%    lfp1,lfp2      unfiltered LFP <a href="matlab:help samples">samples</a> (one channel each).
+%    lfp1,lfp2      unfiltered LFP (one channel each): [timestamps lfp]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================

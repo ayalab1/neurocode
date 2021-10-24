@@ -302,7 +302,7 @@ end
 % digital_in legend: 1. Basler, 2. maze LEd, 3. Left Alternation, 4.Righ
 % Alternation, 5. Home Delay, 6. Is alternation forzed?
 if isempty(bazlerTtl)
-    digitalIn = bz_getDigitalIn;
+    digitalIn = getDigitalIn;
     bazlerTtl = digitalIn.timestampsOn{1};
 end
 

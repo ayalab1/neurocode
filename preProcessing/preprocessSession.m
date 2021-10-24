@@ -129,7 +129,7 @@ if analogInputs
     end
 end
 % analog pulses ... 
-    [pulses] = getAnalogPulses; % need to add extra step to remove short pulses (noise)
+    [pulses] = getAnalogPulses('samplingRate',session.extracellular.sr); 
     
 % Digital inputs
 if digitalInputs

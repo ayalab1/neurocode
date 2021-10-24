@@ -336,11 +336,18 @@ def load_ripples_events(basepath):
     except:
         df['detectorName'] = data['ripples']['detectorName'][0][0][0]
 
-    # find ripple channel
+    # find ripple channel (this can be in several places depending on the file)
     try:
         df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['Channels'][0][0][0][0]
     except:
-        df['ripple_channel'] = data['ripples']['detectorParams'][0][0]['channel'][0][0][0][0]
+        try:
+            df['ripple_channel'] = data['ripples']['detectorParams'][0][0]['channel'][0][0][0][0]
+        except:
+            try:
+                df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['channel'][0][0][0][0]
+            except:
+                df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['ripple_channel'][0][0][0][0]
+
 
     dt = data['ripples'].dtype
     if "eventSpikingParameters" in dt.names:

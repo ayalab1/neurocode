@@ -18,6 +18,7 @@ addParameter(p,'basepath',pwd,@ischar)
 addParameter(p,'fileType',[],@ischar)
 addParameter(p,'fileTypes',[],@iscell)
 addParameter(p,'searchSubdirs',true,@islogical)
+addParameter(p,'searchSuperdirs',true,@islogical)
 
 parse(p,varargin{:})
 filename = p.Results.filename;
@@ -25,6 +26,7 @@ basepath = p.Results.basepath;
 fileType = p.Results.fileType;
 fileTypes = p.Results.fileTypes;
 searchSubdirs = p.Results.searchSubdirs;
+searchSuperdirs = p.Results.searchSuperdirs;
 
 if ~isempty(fileType) && ~isempty(fileTypes)
     error('Why dont you put everything inside fileTypes...')
@@ -48,9 +50,22 @@ end
 
 if isempty(filename) && ~isempty(fileType)
     file = dir([basepath,filesep,'*',fileType]);
-    if searchSubdirs
+    if isempty(file) && searchSubdirs
         subFile = dir([basepath,filesep,'*',filesep,'*',fileType]);
         file = [file; subFile];
+        if ~isempty(file)
+            warning(['Found file of type: ',fileType,' in subdirectory']);
+        end
+    end
+    if isempty(file) && searchSuperdirs
+        mydir  = pwd;
+        idcs   = strfind(mydir,'\');
+        newdir = mydir(1:idcs(end)-1);
+        superFile = dir([newdir,filesep,'*',fileType]);
+        file = [file; superFile];
+        if ~isempty(file)
+            warning(['Found file of type: ',fileType,' in parent directory']);
+        end
     end
     if isempty(file)
         error(['Cant find file of type: ',fileType,' in this location: ',basepath])
@@ -75,9 +90,22 @@ else
     if searchSubdirs
         subFile = dir([basepath,filesep,'*',filesep,filename]);
         file = [file; subFile];
+        if ~isempty(file)
+            warning(['Found file of type: ',fileType,' in subdirectory']);
+        end
+    end
+    if isempty(file) && searchSuperdirs
+        mydir  = pwd;
+        idcs   = strfind(mydir,'\');
+        newdir = mydir(1:idcs(end)-1);
+        superFile = dir([newdir,filesep,'*',fileType]);
+        file = [file; superFile];
+        if ~isempty(file)
+            warning(['Found file of type: ',fileType,' in parent directory']);
+        end
     end
     if isempty(file)
-        error(['Cant find file: ',filename,' in this location: ',basepath])
+        error(['Cant find file: ',filename,' in this location or near: ',basepath])
     end
 end
 end

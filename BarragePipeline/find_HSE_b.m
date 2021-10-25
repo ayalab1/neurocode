@@ -155,7 +155,8 @@ if EMGThresh
     sessionInfo = getSession('basepath',basepath); %NEED TO CHANGE 
     EMGfilename = fullfile(basepath,[sessionInfo.general.name '.EMGFromLFP.LFP.mat']);
     if exist(EMGfilename)
-        load(EMGfilename)   %should use a bz_load script here
+        EMGFromLFPvar = load(EMGfilename);   %should use a bz_load script here
+        EMGFromLFPvar = EMGFromLFPvar.EMGFromLFP;
     else
         [EMGFromLFPvar] = EMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
     end

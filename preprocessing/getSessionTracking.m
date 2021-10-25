@@ -1,5 +1,5 @@
 
-function [behavior] = getSessionTracking(varargin)
+function [tracking] = getSessionTracking(varargin)
 %
 % Gets position trackign for each sub-session and concatenate all of them so they are 
 % aligned with LFP and spikes. Default is recording with Basler, and requiere avi videos 
@@ -117,8 +117,8 @@ if ~(optitrack)
     
     %% Concatenate and sync timestamps
     ts = []; subSessions = []; maskSessions = [];
-    if exist([basepath filesep strcat(sessionInfo.session.name,'.MergePoints.events.mat')],'file')
-        load(strcat(sessionInfo.session.name,'.MergePoints.events.mat'));
+    if exist([basepath filesep strcat(sessionInfo.general.name,'.MergePoints.events.mat')],'file')
+        load(strcat(sessionInfo.general.name,'.MergePoints.events.mat'));
         for ii = 1:length(trackFolder)
             if strcmpi(MergePoints.foldernames{trackFolder(ii)},tempTracking{ii}.folder)
                 sumTs = tempTracking{ii}.timestamps + MergePoints.timestamps(trackFolder(ii),1);
@@ -184,21 +184,21 @@ if optitrack
     data = vertcat(trackData.file(:).data);
     timestamps = vertcat(trackData.file(:).timestamps);
     
-    behavior = struct();
-    behavior.timestamps = timestamps;
-    behavior.frameCount = data(:,1);
+    tracking = struct();
+    tracking.timestamps = timestamps;
+    tracking.frameCount = data(:,1);
     
-    behavior.orientation.rx = data(:,3);
-    behavior.orientation.ry = data(:,4);
-    behavior.orientation.rz = data(:,5);
-    behavior.orientation.rw = data(:,6);
+    tracking.orientation.rx = data(:,3);
+    tracking.orientation.ry = data(:,4);
+    tracking.orientation.rz = data(:,5);
+    tracking.orientation.rw = data(:,6);
     
-    behavior.position.x = data(:,7);
-    behavior.position.y = data(:,8);
-    behavior.position.z = data(:,9);
+    tracking.position.x = data(:,7);
+    tracking.position.y = data(:,8);
+    tracking.position.z = data(:,9);
     
     if size(data,2)==10
-        behavior.errorPerMarker = data(:,10);
+        tracking.errorPerMarker = data(:,10);
     end
     
 end
@@ -206,7 +206,7 @@ end
 %% save tracking 
 session = getSession('basepath',basepath);
 if saveMat
-    save([basepath filesep session.general.name '.behavior.mat'],'behavior');
+    save([basepath filesep session.general.name '.Tracking.behavior.mat'],'tracking');
 end
 
 end

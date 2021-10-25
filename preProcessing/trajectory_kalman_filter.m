@@ -74,11 +74,11 @@ if (nargin < 6)
     R = eye(2);
 end
 % Chop off any missing data in the start of session
-n = length(posx);
-lastmissing = min(find(isfinite(posx))) - 1;
-posx = posx(lastmissing+1:end);
-posy = posy(lastmissing+1:end);
-post = post(lastmissing+1:end);
+ n = length(posx);
+% lastmissing = min(find(isfinite(posx))) - 1;
+% posx = posx(lastmissing+1:end);
+% posy = posy(lastmissing+1:end);
+% post = post(lastmissing+1:end);
 % Run Kalman filter on the remaining samples
 missing = zeros(n,1);
 missing(isnan(posx)) = 1;

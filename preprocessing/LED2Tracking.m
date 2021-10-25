@@ -18,6 +18,7 @@ function [tracking] = LED2Tracking(aviFile,varargin)
 %   roiTracking    - 2 x R, where 1C is x and 2C is y. By default it
 %                   considers the whole video. With the option 'manual' allows to draw
 %                   a ROI.
+%   fs             - video sampling rate, default = 30 Hz
 %   roiLED         - 2 x R, where 1C is x and 2C is y.
 %   convFact       - Spatial conversion factor (cm/px). If not provide,
 %                   normalize maze size.
@@ -353,7 +354,7 @@ elseif abs(length(x)-length(bazlerTtl)) > 15 * 1 && size(digitalIn.timestampsOn,
     close(f1);
     bazlerTtl = bazlerTtl(1:length(x));
 else
-    keyboard;
+%    keyboard;
     error('Frames do not match for more than 5 seconds!! Trying to sync LED pulses');
     if length(digitalIn.timestampsOn{2}) == length(sync_signal)
          disp('Using sync LED pulses...');

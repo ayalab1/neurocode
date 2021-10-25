@@ -34,7 +34,7 @@ if exist('ch') ~= 1
 end
 
 p = inputParser;
-addParameter(p,'fs',30000,@isnumeric)
+addParameter(p,'fs',[],@isnumeric)
 addParameter(p,'offset',0,@isnumeric)
 addParameter(p,'filename',[],@isstring)
 addParameter(p,'periodLag',5,@isnumeric)

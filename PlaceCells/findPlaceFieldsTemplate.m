@@ -156,8 +156,8 @@ end
 figure;
 for c = 1:length(firingMaps.rateMaps{1})
     subplot(1,length(firingMaps.rateMaps{1}),c);
-    colorL = colormap(jet(length(placeFieldTemplate.Peak{1})));
-    for i = 1:length(placeFieldTemplate.Peak{1})
+    colorL = colormap(jet(length(placeFieldTemplate.Peak{c})));
+    for i = 1:length(placeFieldTemplate.Peak{c})
         unit = placeFieldTemplate.Peak{c}(i,3);
         plot(ZeroToOne(firingMaps.rateMaps{unit}{c}),'color',colorL(i,:));hold on;
     end

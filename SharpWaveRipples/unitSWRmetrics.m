@@ -1,4 +1,4 @@
-function [unitRip] = unitSWRmetrics(ripSpk,varargin)
+function [unitRip] = unitSWRmetrics(ripSpk,spikes,varargin)
 %        [unitRip] = unitSWRmetrics(ripSpk)
 %
 %   INPUTS
@@ -17,10 +17,7 @@ function [unitRip] = unitSWRmetrics(ripSpk,varargin)
 %       nSpkAll         number of spikes for each unit during events
 %       nSpkParticip    number of spikes during events where the cell fired
 %       nSpkEvent       number of spikes during each event
-%       nSpkNonEvent    number of spikes outside each event
 %       FRevent         firing rate within each event
-%       FRnonEvent      firing rate outside each event
-%       FRavgNon        average firing rate outside events
 %       FRavgEvent      average firing rate outside events
 %       
 %
@@ -63,12 +60,7 @@ end
 for unit = 1:length(ripSpk.UnitAbs)
     unitRip.FRparticip(unit,1) = mean(nonzeros(unitRip.FReach(unit,:)));
 end
-% outside of events
-for unit = 1:length(ripSpk.UnitNonAbs)
-    for rip = 1:length(ripSpk.NonEventAbs)
-        unitRip.FReachNon(unit,rip) = length(ripSpk.UnitNonEventAbs{unit,rip})/ripSpk.NonEventDur(rip);
-    end
-end
+
 %% Gain
 if baseFR
     % in each ripple
@@ -89,11 +81,22 @@ end
 
 %% n spikes
 % in each ripple
+nUnitEvt = zeros(length(ripSpk.EventAbs),1);
+unitUID = cell(length(ripSpk.EventAbs),1);
 for unit = 1:length(ripSpk.UnitAbs)
     for rip = 1:length(ripSpk.EventAbs)
         unitRip.nSpkEach(unit,rip) = length(ripSpk.UnitEventAbs{unit,rip});
+        unitTemp = unitUID{rip};
+        if ~unitRip.nSpkEach(unit,rip)
+            nUnitEvt(rip) = nUnitEvt(rip)+1;
+            unitTemp(end+1) = spikes.UID(unit);
+        end 
+        unitUID{rip} = unitTemp;
     end
 end
+unitRip.nUnitEvt = nUnitEvt;    
+unitRip.unitUID = unitUID;
+   
 % mean all ripples
 for unit = 1:length(ripSpk.UnitAbs)
     unitRip.nSpkAll(unit,1) = mean((unitRip.nSpkEach(unit,:)));
@@ -110,26 +113,4 @@ for rip = 1:length(ripSpk.EventAbs)
     unitRip.FRevent = unitRip.nSpkEvent/ripSpk.EventDuration(rip);
 end
 
-%% n spikes non
-% outside each ripple
-for unit = 1:length(ripSpk.UnitNonAbs)
-    for rip = 1:length(ripSpk.NonEventAbs)
-        unitRip.nSpkEachNon(unit,rip) = length(ripSpk.UnitNonEventAbs{unit,rip});
-    end
-end
-% mean all ripples
-for unit = 1:length(ripSpk.UnitNonAbs)
-    unitRip.nSpkAllNon(unit,1) = mean((unitRip.nSpkEachNon(unit,:)));
-end
-% mean all ripples in which unit fired
-for unit = 1:length(ripSpk.UnitNonAbs)
-    unitRip.nSpkParticipNon(unit,1) = mean(nonzeros(unitRip.nSpkEachNon(unit,:)));
-end
-% mean all units each event
-unitRip.nSpkNonEvent = sum(unitRip.nSpkEachNon,1)';
-
-% mean FR per event
-for rip = 1:length(ripSpk.NonEventAbs)
-    unitRip.FRnonEvent = unitRip.nSpkNonEvent/ripSpk.NonEventDur(rip);
-end
 end

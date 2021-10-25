@@ -2,11 +2,9 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %
 %    [spkEventTimes] = getRipSpikes(varargin)
 % Saves spike times of all units inside given events in different ways:
-%   1. Absolute and relative time of spikes by unit and by event or
-%      nonevent period
+%   1. Absolute and relative time of spikes by unit and by event
 %   2. Absolute and relative time of spikes by unit
 %   3. Absolute and relative time of spikes by event
-%   4. Absolute and relative time of spikes outside events
 %
 % INPUTS
 %
@@ -48,29 +46,15 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %    -------------------------------------------------------------------------
 %     .padding          Value of padding used
 %     .EventDuration    Nx1 double. Contains the duration of each event
-%     .NonEventDur      (N+1)x1 double. Contains the duration of each 
-%                       interval between events.
 %	  .UnitEventAbs     MxN cell matrix. In each cell, absolute times of
 %                       spikes for that particular unit and event
 %	  .UnitEventRel     MxN cell matrix. In each cell, relative times of
 %                       spikes (relative to the starting time of events)  
 %                       for that particular unit and event
-%     .UnitNonEventAbs  Mx(N+1) cell matrix. In each cell, absolute times
-%                       of spikes for that particular unit and intermittent
-%                       period between events.
-%     .UnitNonEventRel  Mx(N+1) cell matrix. In each cell, relative times
-%                       of spikes for that particular unit and intermittent
-%                       period between events.
 %	  .UnitAbs          1xM cell matrix. In each cell, absolute times of
 %                       spikes for that particular unit across all events
 %	  .UnitRel          1xM cell matrix. In each cell, relative times of
 %                       spikes for that particular unit across all events
-%     .UnitNonAbs       1xM cell matrix. In each cell, absolute times of
-%                       spikes for that particular unit across all
-%                       non-event periods.
-%     .UnitNonRel       1xM cell matrix. In each cell, relative times of
-%                       spikes for that particular unit across all
-%                       non-event periods.
 %	  .EventAbs         2xN cell matrix. In the first row, absolute times 
 %                       of spikes for that particular event across all 
 %                       units. In the second row, the UID associated to the 
@@ -79,14 +63,6 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %                       of spikes for that particular event across all 
 %                       units. In the second row, the UID associated to the
 %                       above spike
-%     .NonEventAbs      2x(N+1) cell matrix. In the first row, absolute
-%                       times of spikes for that particular period between
-%                       events, across all units. In the second row, the
-%                       UID associated to the above spike. 
-%     .NonEventRel      2x(N+1) cell matrix. In the first row, relative
-%                       times of spikes for that particular period between
-%                       events, across all units. In the second row, the
-%                       UID associated to the above spike.
 %
 %    =========================================================================
 %
@@ -115,7 +91,11 @@ saveMat = p.Results.saveMat;
 basename = basenameFromBasepath(basepath);
 load([basepath filesep basename '.session.mat']);
 sesEpoch = session.epochs{end};
-sesEnd = sesEpoch.stopTime;
+if isfield(sesEpoch,'stopTime')
+    sesEnd = sesEpoch.stopTime;
+else
+    sesEnd = max(cat(1,spikes.times{:}));
+end
 
 % Default events, UIDs, and spikes
 if isempty(spikes)
@@ -145,8 +125,7 @@ end
 spkEventTimes = {};
 spkEventTimes.padding = padding;
 
-% 1. Absolute and relative time of spikes by unit and by event (or nonevent
-%    period)
+% 1. Absolute and relative time of spikes by unit and by event
 for unit = 1:length(spikes.UID)
     if UIDs(unit)
         for event = 1:size(timestamps,1)
@@ -162,15 +141,6 @@ for unit = 1:length(spikes.UID)
             % Relative time of spikes by unit and by ripple to ripple start
             spkEventTimes.UnitEventRel{unit,event} = tsUnitEvent' - tini(event);
         end
-        tini(size(timestamps,1)+1) = sesEnd;
-        tend = [0 tend];
-        for event = 1:length(tini)
-            spkUnit = spikes.times{unit};
-            spkEventTimes.NonEventDur(event,1) = tini(event)-tend(event);
-            tsUnitNonEvent = spkUnit(spkUnit<tini(event) & spkUnit>tend(event));
-            spkEventTimes.UnitNonEventAbs{unit,event} = tsUnitNonEvent';
-            spkEventTimes.UnitNonEventRel{unit,event} = tsUnitNonEvent' - tend(event);
-        end
     end
 end
 
@@ -179,8 +149,6 @@ for unit = 1:length(spikes.UID)
     if UIDs(unit)
         spkEventTimes.UnitAbs{unit} = cell2mat(spkEventTimes.UnitEventAbs(unit,:));
         spkEventTimes.UnitRel{unit} = cell2mat(spkEventTimes.UnitEventRel(unit,:));
-        spkEventTimes.UnitNonAbs{unit} = cell2mat(spkEventTimes.UnitNonEventAbs(unit,:));
-        spkEventTimes.UnitNonRel{unit} = cell2mat(spkEventTimes.UnitNonEventRel(unit,:));
     end
 end
 
@@ -202,25 +170,8 @@ for event = 1:size(timestamps,1)
     spkEventTimes.EventRel{event} = sortrows(spkEventTimes.EventRel{event}')';
 end
 
-% 4. Absolute and relative time of spikes by nonevent periods
-for event = 1:size(spkEventTimes.NonEventDur,1)
-    spkEventTimes.NonEventAbs{event} = [];
-    spkEventTimes.NonEventRel{event} = [];
-    for unit = 1:length(spikes.UID)
-        if UIDs(unit)
-            spkEventTimes.NonEventAbs{event} = [ spkEventTimes.NonEventAbs{event}, ...
-                                        [cell2mat(spkEventTimes.UnitNonEventAbs(unit,event)); ...
-                                         cell2mat(spkEventTimes.UnitNonEventAbs(unit,event))*0+spikes.UID(unit)] ];
-            spkEventTimes.EventRel{event} = [ spkEventTimes.NonEventRel{event}, ...
-                                         [cell2mat(spkEventTimes.UnitNonEventRel(unit,event)); ...
-                                          cell2mat(spkEventTimes.UnitNonEventRel(unit,event))*0+spikes.UID(unit)] ];
-        end
-    end
-    spkEventTimes.NonEventAbs{event} = sortrows(spkEventTimes.NonEventAbs{event}')';
-    spkEventTimes.NonEventRel{event} = sortrows(spkEventTimes.NonEventRel{event}')';
-end
 
-% 5. Save
+% 4. Save
 if saveMat
    save(strcat(savePath,'\',basename,'.spkEventTimes.mat'),'spkEventTimes');
 end

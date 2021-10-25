@@ -1,4 +1,4 @@
-function [spkhist spkmean spkstd] = spkRtHist(allspk, tSmooth, binsz)
+function [spkhist spkmean spkstd ts] = spkRtHist(allspk, tSmooth, binsz)
     %% Get spike rate over time (primarily used for HSE_b)
     %quick fix for if we remove some units based on region or cell type prior to loading in
     ts = 0:binsz:allspk(end); %bins for sorting spikes

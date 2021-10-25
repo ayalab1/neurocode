@@ -19,10 +19,10 @@ save([savePath 'allpyr.cellinfo.mat'], 'spikes');
 %% Run with presaved metrics
 disp('starting');
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
-note_all = ["CA1" "CA2" "All pyr"]; %change these based on the parameters to run
-file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
-% note_all = ["CA2"];
-% file_n = ['CA2pyr'];
+% note_all = ["CA1" "CA2" "All pyr"]; %change these based on the parameters to run
+% file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
+note_all = ["CA2"];
+file_n = ['CA2pyr'];
 % load(strcat(basepath,'.',basename,'cell_metrics.cellinfo.mat'));
 % note_all = ["CA2 and bursty CA3"];
 % file_n = ['CA2CA3'];
@@ -38,7 +38,7 @@ else
     runLast = 0;
 end
 % WaitMessage = parfor_wait(length(note_all),'Waitbar',true);
-parfor i = 1:length(note_all)
+for i = 1:length(note_all)
     runNum = runLast+i;
     spikes = load([savePath file_n(i,:) '.cellinfo.mat']);
     spikes = spikes.spikes;
@@ -52,10 +52,11 @@ parfor i = 1:length(note_all)
 %     maxdur = 15;
     lastmin = ratMet.lastmin;
 %     lastmin = 0.4;
-    sstd = ratMet.sstd;
+%     sstd = ratMet.sstd;
+    sstd = 3.5;
     estd = ratMet.estd;
     EMGThresh = ratMet.EMGThresh;
-%     EMGThresh = 1.1;
+%     EMGThresh = 0;
 % DO NOT use loadspkhist if running multiple different spike files
     save_evts = false;
     neuro2 = false;
@@ -96,7 +97,7 @@ current_peak = evtSave{trial,2};
 createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
 
 %% Create Neuroscope2 file for past events
-trial = 62;
+trial = 8;
 HSEn2.timestamps = evtSave{trial,1};
 HSEn2.peaktimes = evtSave{trial,2};
 save([basename '.HSE.events.mat'], 'HSEn2');
@@ -240,9 +241,9 @@ end
 
 %5452.148
 load('Y:\SMproject\AZ1\day13\Barrage_Files\day13.CA2pyr.cellinfo.mat');
-timepoints = [30.75];
+timepoints = 30265;
 estd = 1;
-sstd = 1;
+sstd = 3.5;
 % timepoints = [1040.819];
 nSigma = 1.75;
 for i = 1:length(timepoints);

@@ -33,6 +33,7 @@ function [spkEventTimes] = getRipSpikes(varargin)
 %                   (default is 0.05 sec)
 %     'savePath'    Definition of the path to save the output structure
 %                   (default: pwd)
+%     'saveNum'     Detection number to save as
 %     'saveMat'   	Saves file, logical (default: true) 
 %
 %    =========================================================================
@@ -76,6 +77,7 @@ addParameter(p,'spikes',{},@isstruct);
 addParameter(p,'UIDs',[],@islogical);
 addParameter(p,'padding',0.05,@isnumeric);
 addParameter(p,'savePath',pwd,@isstr);
+addParameter(p,'saveNum',0,@isnumeric);
 addParameter(p,'saveMat', true, @islogical);
 
 parse(p,varargin{:});
@@ -85,6 +87,7 @@ spikes = p.Results.spikes;
 UIDs = p.Results.UIDs;
 padding = p.Results.padding;
 savePath = p.Results.savePath;
+saveNum = p.Results.saveNum;
 saveMat = p.Results.saveMat;
 
 % Get session info
@@ -173,7 +176,11 @@ end
 
 % 4. Save
 if saveMat
-   save(strcat(savePath,'\',basename,'.spkEventTimes.mat'),'spkEventTimes');
+    if (saveNum~=0)
+        save(strcat(savePath,'\',basename,'.',num2str(saveNum),'.spkEventTimes.mat'),'spkEventTimes');
+    else
+        save(strcat(savePath,'\',basename,'.spkEventTimes.mat'),'spkEventTimes');
+    end
 end
 
 end

@@ -250,8 +250,10 @@ pos = pos * convFact;                                   % cm or normalized
 art = find(sum(abs(diff(pos))>artifactThreshold,2))+1;  % remove artefacs as movement > 10cm/frame
 pos(art,:) = NaN;
 
-xt = linspace(0,size(pos,1)/fs,size(pos,1));            % kalman filter
-[t,x,y,vx,vy,ax,ay] = trajectory_kalman_filter(pos(:,1)',pos(:,2)',xt,0);
+xt = linspace(0,size(pos,1)/fs,size(pos,1));            
+% kalman filter is not working - NEED TO BE FIXED
+% [t,x,y,vx,vy,ax,ay] = trajectory_kalman_filter(pos(:,1)',pos(:,2)',xt,0);
+x=pos(:,1);y=pos(:,2); t=xt;
 art = find(sum(abs(diff([x y]))>artifactThreshold,2))+1;
 art = [art - 2 art - 1 art art + 1 art + 2];
 x(art(:)) = NaN; y(art(:)) = NaN;

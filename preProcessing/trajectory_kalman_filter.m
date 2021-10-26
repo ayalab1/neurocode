@@ -79,6 +79,7 @@ end
 % posx = posx(lastmissing+1:end);
 % posy = posy(lastmissing+1:end);
 % post = post(lastmissing+1:end);
+
 % Run Kalman filter on the remaining samples
 missing = zeros(n,1);
 missing(isnan(posx)) = 1;

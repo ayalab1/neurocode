@@ -1,4 +1,9 @@
 function varargout = read_Intan_Info_Wrapper(filename, varargin)
+% varargout = read_Intan_Info_Wrapper(filename, varargin)
+% read Intan board data from info.rhd file 
+
+% AntonioFR, 2021
+
 
 p = inputParser;
 
@@ -6,15 +11,10 @@ addParameter(p,'returnStruct',true,@islogical)
 parse(p,varargin{:});
 returnStruct = p.Results.returnStruct;
 
-try % temporary solution, need to figure out whats the problem
 [amplifier_channels, notes, aux_input_channels, spike_triggers,...
-board_dig_in_channels, board_adc_channels, supply_voltage_channels, frequency_parameters ] =...    
-read_Intan_RHD2000_file([],filename);
-catch 
-[amplifier_channels, notes, aux_input_channels, spike_triggers,...
-board_dig_in_channels, board_adc_channels, supply_voltage_channels, frequency_parameters ] =...    
+board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...    
 read_Intan_RHD2000_file_bz;
-end
+
 
 if returnStruct
     data.amplifier_channels = amplifier_channels;

@@ -1,7 +1,8 @@
-function [amplifier_channels, notes, aux_input_channels, spike_triggers, board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels ]...
+function [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+    board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels ]...
     =  read_Intan_RHD2000_file_bz
 
-% read_Intan_RHD2000_file
+% read_Intan_RHD2000_file_bz
 %
 % Version 2.01, 11 October 2017
 %

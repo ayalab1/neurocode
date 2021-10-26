@@ -127,10 +127,11 @@ if analogInputs
     else
         analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr); 
     end
-end
-% analog pulses ... 
-    [pulses] = getAnalogPulses('samplingRate',session.extracellular.sr); 
     
+% analog pulses ... 
+    [pulses] = getAnalogPulses('samplingRate',session.extracellular.sr);     
+end
+   
 % Digital inputs
 if digitalInputs
     if ~isempty(digitalChannels)

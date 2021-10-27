@@ -31,20 +31,24 @@ baseFR = p.Results.baseFR;
 
 %% Prob of participation
 % for each unit
+temp = zeros(length(ripSpk.UnitAbs),length(ripSpk.EventAbs));
 for unit = 1:length(ripSpk.UnitAbs)
     for rip = 1:length(ripSpk.EventAbs)
-        if ~isempty(ripSpk.UnitEventAbs{unit,rip})
-            temp(unit,rip) = 1;
-        else
-            temp(unit,rip) = 0;
-        end
+        temp(unit,rip) = ~isempty(ripSpk.UnitEventAbs{unit,rip});
     end
 end
 unitRip.particip = sum(temp,2)/size(temp,2);
 
 % for each event (n cells)
-unitRip.nCellsEvent = (sum(temp,1)/size(temp,1))'; clear temp;
-
+unitRip.nCellsEvent = (sum(temp,1))';
+% get participating UIDs
+nCellsEventUID = cell(size(temp,2),1);
+temp = logical(temp);
+for i = 1:size(temp,2)
+    nCellsEventUID{i} = spikes.UID(temp(:,i));
+end
+unitRip.nCellsEventUID = nCellsEventUID;    
+clear temp;
 %% Firing rates
 % in each ripple
 for unit = 1:length(ripSpk.UnitAbs)

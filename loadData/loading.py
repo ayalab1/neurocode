@@ -424,3 +424,43 @@ def load_theta_rem_shift(basepath):
                 }
 
     return df,data_dict
+
+
+def load_SleepState_states(basepath):
+    """ 
+    loader of SleepState.states.mat
+
+    returns dict of structures contents.
+
+    TODO: extract more from file, this extracts the basics for now.
+
+    """
+    filename = glob.glob(os.path.join(basepath,'*.SleepState.states.mat'))[0]
+    
+    # check if saved file exists
+    if not os.path.exists(filename):
+        warnings.warn("file does not exist")
+        return 
+
+    # load cell_metrics file
+    data = sio.loadmat(filename)
+
+    # get epoch id
+    wake_id = np.where(data["SleepState"]["idx"][0][0]["statenames"][0][0][0] == "WAKE")[0][0]+1
+    rem_id = np.where(data["SleepState"]["idx"][0][0]["statenames"][0][0][0] == "REM")[0][0]+1
+    nrem_id = np.where(data["SleepState"]["idx"][0][0]["statenames"][0][0][0] == "NREM")[0][0]+1
+
+    # get states and timestamps vectors
+    states = data["SleepState"]["idx"][0][0]["states"][0][0]
+    timestamps = data["SleepState"]["idx"][0][0]["timestamps"][0][0]
+
+    # set up dict
+    dict_ = {"wake_id": wake_id, "rem_id": rem_id, "nrem_id": nrem_id,
+        "states": states, "timestamps": timestamps}
+
+    # iter through states and add to dict   
+    dt = data["SleepState"]["ints"][0][0].dtype
+    for dn in dt.names:
+        dict_[dn] = data["SleepState"]["ints"][0][0][dn][0][0]
+
+    return dict_

@@ -119,11 +119,11 @@ end
 if ~loadspkhist
     if remRip
         allspk = remSWR(basepath, basename, spikes);
-        [spkhist,spkmean,spkstd] = spkRtHist(allspk, tSmooth, binsz);
+        [spkhist,spkmean,spkstd] = spkRtHist(allspk, 'tSmooth', tSmooth, 'binsz', binsz);
     else
         allspk = cat(1,spikes.times{:});
         allspk = sort(allspk);
-        [spkhist,spkmean,spkstd] = spkRtHist(allspk, tSmooth, binsz);
+        [spkhist,spkmean,spkstd] = spkRtHist(allspk, 'tSmooth', tSmooth, 'binsz', binsz);
     end
 else
     if remRip

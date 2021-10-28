@@ -5,10 +5,6 @@
 %
 %
 % TO DO LIST:
-% -- Create folders and files for saving the metrics run from this (likely
-%    should be something in a central location, notated then by animal and
-%    day)
-% -- Create a folder with plots notated in the name by animal and day
 % -- Integrate python to create nicer plots
 % -- Actually write code for the metrics
 
@@ -18,7 +14,7 @@
 close all
 savePath = ('Z:\home\Lindsay\Barrage\');
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
-ses = paths(16); %can change this to an iteratable variable for mass runs
+ses = paths(end); %can change this to an iteratable variable for mass runs
 cd(ses);
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
@@ -62,7 +58,7 @@ cellProp.ISIavg = ISIavg;
 
 % Plotting
 figure('Position', get(0, 'Screensize'));
-plot(1:length(ISIavg), ISIavg*1e3, '.');
+plot(spikes.UID, ISIavg*1e3, '.');
 xlabel('Unit #');
 ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell');
@@ -75,7 +71,7 @@ saveas(gcf,[plotPath saveSchem '.ISIavg.png']);
 %     regIDs(i) = regID(pI(i));
 %     cellIDs(i) = cellID(pI(i));
 % end 
-plotSubs(1:length(ISIavg), ISIavg*1e3, regID, cellID);
+plotSubs(spikes.UID, ISIavg*1e3, regID, cellID);
 xlabel('Unit #');
 ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell by type');
@@ -142,22 +138,21 @@ for i = 1:length(regBox)
     boxg = [boxg; boxC{i}];
 end
 figure('Position', get(0, 'Screensize'));  
-% boxplot(boxx*1000, boxg,'symbol', ''); %use symbol '' to suppress outliers
-boxplot(boxx*1000, boxg);
+% boxplot(boxx, boxg,'symbol', ''); %use symbol '' to suppress outliers
+boxplot(boxx, boxg);
 useName = unique(boxg);
 nameInd = ismember(1:length(check),useName);
 presentIND = find(nameInd==1);
 presentName = convertStringsToChars(check(nameInd));
 xticklabels(presentName);
-title('Box plot per region, outliers cut off');
-ylabel('ISI (ms)');
+title('ISI per region, outliers cut off');
+ylabel('ISI (s)');
 xlabel('Region');
-ylim([-1000 7000]);
+ylim([-1 7]);
 saveas(gcf,[plotPath saveSchem '.ISIboxReg.png']);
 
-
-
-% Summary box plot per region and per type
+cumMet.boxxISI = boxx;
+cumMet.boxgISI = boxg;
 
 if ~showPlt
     close all
@@ -176,13 +171,13 @@ cellProp.FR = FR;
 cellProp.avgFR = avgFR;
 
 figure('Position', get(0, 'Screensize'));
-plot(1:length(avgFR), avgFR, '.');
+plot(spikes.UID, avgFR, '.');
 title('Average Firing Rate');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
 saveas(gcf,[plotPath saveSchem '.avgFR.png']);
 
-plotSubs(1:length(avgFR), avgFR, regID, cellID);
+plotSubs(spikes.UID, avgFR, regID, cellID);
 title('Average Firing Rate by Type');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
@@ -194,11 +189,50 @@ end
 
 %% [1.4] Burst Index per cell
 binssum = 6; %6ms
-burstIndex = NaN(length(spikes.times),1);
-for i = 1:length(spikes.times)
-    burstIndex(i) = sum(ISIc(1:binssum,i))/sum(ISIc(:,i));
-end
+burstIndex = sum(ISIc(1:binssum,:),1)./sum(ISIc,1);
 cellProp.burstIndex = burstIndex;
+
+plotSubs(spikes.UID, burstIndex, regID, cellID);
+title('Burst Index by Cell Type');
+ylabel('Burst Index');
+xlabel('Unit Number');
+saveas(gcf,[plotPath saveSchem '.burstIndSort.png']);
+
+% Box plot
+regBox = cell(length(presentIND),1);
+boxB = cell(length(presentIND),1);
+for i = 1:length(presentIND)
+    [keep] = includeType(regID,presentIND(i)+1);
+    inds = find(keep==1);
+    temp = [];
+    for j = 1:length(inds)
+        temp = [temp; burstIndex(inds(j))];
+    end
+    regBox{i} = temp;
+    boxB{i} = (i)*ones(length(temp),1);
+end
+boxx = [];
+boxg = [];
+for i = 1:length(regBox)
+    boxx = [boxx; regBox{i}];
+    boxg = [boxg; boxB{i}];
+end
+figure('Position', get(0, 'Screensize'));  
+boxplot(boxx, boxg);
+xticklabels(presentName);
+title('Burstiness Index per region');
+ylabel('Burst Index');
+xlabel('Region');
+saveas(gcf,[plotPath saveSchem '.BurstBox.png']);
+
+cumMet.boxxBurst = boxx;
+cumMet.boxgBurst = boxg;
+
+
+if ~showPlt
+    close all
+end
+
 
 %% [1.5] Cell SAVE
 save(strcat(specPath,basename,'.props.mat'),'cellProp', '-v7.3');
@@ -367,6 +401,9 @@ xlabel('Region');
 ylim([-5 105]);
 saveas(gcf,[plotPath saveSchem '.PercEvtBox.png']);
 
+cumMet.boxxPerc = boxx;
+cumMet.boxgPerc = boxg;
+
 if ~showPlt
     close all
 end
@@ -393,7 +430,7 @@ saveas(gcf,[plotPath saveSchem '.avgSpkUn.png']);
 barProp.avgSpkUn = avgSpkUn;
 
 % By region
-plotSubs(1:length(avgSpkUn), avgSpkUn, regID, cellID);
+plotSubs(spikes.UID, avgSpkUn, regID, cellID);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
@@ -445,6 +482,9 @@ title('Average number of spikes per event per region');
 ylabel('# Spikes');
 xlabel('Region');
 saveas(gcf,[plotPath saveSchem '.avgSpkBox.png']);
+
+cumMet.boxxAvgSpk = boxx;
+cumMet.boxgAvgSpk = boxg;
 
 if ~showPlt
     close all
@@ -514,9 +554,12 @@ figure('Position', get(0, 'Screensize'));
 boxplot(boxx, boxg);
 xticklabels(presentName);
 title('Average Firing Rate per event per region');
-ylabel('# Spikes');
+ylabel('Firing Rate (Hz)');
 xlabel('Region');
 saveas(gcf,[plotPath saveSchem '.avgFRBox.png']);
+
+cumMet.boxxAvgFR = boxx;
+cumMet.boxgAvgFR = boxg;
 
 if ~showPlt
     close all
@@ -538,8 +581,8 @@ if ~showPlt
 end
 
 %% [2.6] Population SAVE
-save(strcat(specPath,basename,'.props.mat'),'barProp', '-v7.3');
-
+save(strcat(specPath,saveSchem,'.props.mat'),'barProp', '-v7.3');
+save(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat'),'cumMet', '-v7.3');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% [3.5] Participation per cell (extra) - similar to 3.2
@@ -623,7 +666,7 @@ function plotSubs(x, y, regID, cellID, line)
 if nargin < 5
     line = '';
 end
-color = ['m';'b';'g';'r';'c';'k'];
+color = ['m';'g';'b';'r';'c';'k'];
 type = ['*';'^';'o'];
 
 figure('Position', get(0, 'Screensize'))
@@ -636,8 +679,8 @@ for i = 1:length(cellID)
     end
 end
 h = zeros(8, 1);
-h(1) = plot(NaN,NaN,'b');
-h(2) = plot(NaN,NaN,'g');
+h(1) = plot(NaN,NaN,'g');
+h(2) = plot(NaN,NaN,'b');
 h(3) = plot(NaN,NaN,'r');
 h(4) = plot(NaN,NaN,'c');
 h(5) = plot(NaN,NaN,'k');

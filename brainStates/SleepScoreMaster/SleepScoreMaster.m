@@ -1,4 +1,4 @@
-function SleepState = SleepScoreMaster_km(basepath,varargin)
+function SleepState = SleepScoreMaster(basepath,varargin)
 %SleepScoreMaster(basePath,<options>)
 %This is the master function for sleep state scoring.
 %

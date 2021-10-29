@@ -12,8 +12,9 @@ end
 savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 
 %% New set of spikes if needed
-spikes = importSpikes('brainRegion', 'CA2', 'cellType', 'Pyramidal Cell');
-% spikes = importSpikes('cellType', 'Pyramidal Cell');
+% spikes = importSpikes('brainRegion', 'CA2', 'cellType', 'Pyramidal Cell');
+spikes = [];
+spikes = importSpikes('cellType', 'Pyramidal Cell');
 save([savePath 'allpyr.cellinfo.mat'], 'spikes');
     
 %% Run with presaved metrics
@@ -21,8 +22,8 @@ disp('starting');
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
 % note_all = ["CA1" "CA2" "All pyr"]; %change these based on the parameters to run
 % file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
-note_all = ["CA2"];
-file_n = ['CA2pyr'];
+note_all = ["CA2" "All pyr"];
+file_n = ['CA2pyr'; 'allpyr'];
 % load(strcat(basepath,'.',basename,'cell_metrics.cellinfo.mat'));
 % note_all = ["CA2 and bursty CA3"];
 % file_n = ['CA2CA3'];
@@ -44,14 +45,14 @@ for i = 1:length(note_all)
     spikes = spikes.spikes;
     nSigma = ratMet.nSigma;
 %     nSigma = 1.75; %+-1.5 => [-0.5 1.5]
-    tSepMax = ratMet.tSepMax;
-%     tSepMax = 1;
-    mindur = ratMet.mindur;
-%     mindur = 0.3;
+%     tSepMax = ratMet.tSepMax;
+    tSepMax = 0.005;
+%     mindur = ratMet.mindur;
+    mindur = 0.01;
     maxdur = ratMet.maxdur;
 %     maxdur = 15;
-    lastmin = ratMet.lastmin;
-%     lastmin = 0.4;
+%     lastmin = ratMet.lastmin;
+    lastmin = 0.01;
 %     sstd = ratMet.sstd;
     sstd = 3.5;
     estd = ratMet.estd;
@@ -85,7 +86,7 @@ for i = 1:length(note_all)
 % WaitMessage.Send;
 end
 load([savePath 'HSEmetrics.mat']);
-barSumFigs(HSEmetrics);
+% barSumFigs(HSEmetrics);
 % WaitMessage.Destroy
 % NeuroScope2
 
@@ -97,7 +98,7 @@ current_peak = evtSave{trial,2};
 createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
 
 %% Create Neuroscope2 file for past events
-trial = 8;
+trial = 12;
 HSEn2.timestamps = evtSave{trial,1};
 HSEn2.peaktimes = evtSave{trial,2};
 save([basename '.HSE.events.mat'], 'HSEn2');

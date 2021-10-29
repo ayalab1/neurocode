@@ -5,8 +5,12 @@
 %
 %
 % TO DO LIST:
+% -- Clean up and sort functions
+%    -- BoxPlot
+%    -- 
 % -- Integrate python to create nicer plots
-% -- Actually write code for the metrics
+% -- Implement sleep states***
+% -- Implement ripple comparisons
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -20,7 +24,7 @@ basepath = pwd;
 basename = basenameFromBasepath(basepath);
 animName = animalFromBasepath(basepath);
 % Load in session information
-load([basename '.spikes.cellinfo.mat']);
+load(['Barrage_Files\' basename '.allpyr.cellinfo.mat']);
 load([basename '.cell_metrics.cellinfo.mat']);
 load([basename '.session.mat']);
 showPlt = 0;
@@ -41,16 +45,17 @@ saveSchem = basename;
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
 end
-[regID cellID] = getSubs(cell_metrics);
+[regID, cellID] = getSubs(cell_metrics);
 cellProp.regID = regID;
 cellProp.cellID = cellID;
 
 %% [1.1] ISI per unit
 % Distribution
-[ISI,ISIc,t] = ISIGrams(spikes.times, spikes.UID, 1/1000, 100);
+[ISI,ISIc,t] = ISIGrams(spikes.times, spikes.UID, 1/1000, 1000);
 cellProp.ISI = ISI;
 cellProp.ISIhistT = t;
 cellProp.ISIhist = ISIc;
+ISIavg = NaN(length(ISI),1);
 for i = 1:length(ISI)
     ISIavg(i) = mean(ISI{i});
 end
@@ -58,20 +63,27 @@ cellProp.ISIavg = ISIavg;
 
 % Plotting
 figure('Position', get(0, 'Screensize'));
-plot(spikes.UID, ISIavg*1e3, '.');
-xlabel('Unit #');
-ylabel('Log of avg ISI (ms)');
-title('Average ISI per cell');
-set(gca, 'YScale', 'log')
-saveas(gcf,[plotPath saveSchem '.ISIavg.png']);
+plot(t*1e3,sum(ISIc,2));
+xlabel('Log of ISI (ms)');
+ylabel('Count');
+xlim([0 1000]);
+title('Distribution of ISIs in Log scale');
+set(gca, 'XScale', 'log')
+saveas(gcf,[plotPath saveSchem '.ISIdistLog.png']);
+
+cumMet.ISIx = t*1e3;
+cumMet.ISIy = sum(ISIc,2);
+
+% figure('Position', get(0, 'Screensize'));
+% plot(spikes.UID, ISIavg, '.');
+% xlabel('Unit #');
+% ylabel('Log of avg ISI (ms)');
+% title('Average ISI per cell');
+% set(gca, 'YScale', 'log')
+% saveas(gcf,[plotPath saveSchem '.ISIavg.png']);
 
 % By type plotting
-% [ISIs, pI] = sort(ISIavg);
-% for i = 1:length(ISIs)
-%     regIDs(i) = regID(pI(i));
-%     cellIDs(i) = cellID(pI(i));
-% end 
-plotSubs(spikes.UID, ISIavg*1e3, regID, cellID);
+plotSubs(spikes.UID, ISIavg*1e3, regID, cellID, spikes.UID);
 xlabel('Unit #');
 ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell by type');
@@ -100,7 +112,7 @@ hold off
 saveas(gcf,[plotPath saveSchem '.ISIdist.png']);
 
 % Per cell with type designations
-plotSubs(t*1000, ISIc, regID, cellID, '-');
+plotSubs(t*1000, ISIc, regID, cellID, spikes.UID, '-');
 xlim([t(1)*1000 t(end)*1000]);
 title('Histogram of ISIs by cell type and region');
 ylabel('Count');
@@ -108,7 +120,7 @@ xlabel('ISI (ms)');
 saveas(gcf,[plotPath saveSchem '.ISIdistSort.png']);
 
 % Per cell with type designations, shortened
-plotSubs(t*1000, ISIc, regID, cellID, '-');
+plotSubs(t*1000, ISIc, regID, cellID, spikes.UID, '-');
 xlim([t(1)*1000 20]);
 title('Histogram of ISIs by cell type and region');
 ylabel('Count');
@@ -119,10 +131,13 @@ saveas(gcf,[plotPath saveSchem '.ISIdistSortShort.png']);
 check = ["CA1" "CA2" "CA3" "CTX" "DG"]; %this is embedded in getSubs()
 regBox = cell(length(check),1);
 boxC = cell(length(check),1);
-for i = 2:(length(check)+1)
-    if find(regID==i, 1)
-        [keep] = includeType(regID,i);
-        inds = find(keep==1);
+for i = 2:(length(check)+1) %shift because regID=1 is unknown
+    if find(regID==i, 1) %if region is present
+        [keep] = includeType(regID,i); %pull from ALL cells, need to check they're actually in our spike subset
+        % now we have a logical index of which regions fit our region from the FULL recording
+        % We only want to keep those indices which are found within spikes.UID
+        indsTemp = find(keep==1);
+        [~,~,inds] = intersect(indsTemp,spikes.UID);
         temp = [];
         for j = 1:length(inds)
             temp = [temp; ISI{inds(j)}];
@@ -170,14 +185,14 @@ end
 cellProp.FR = FR;
 cellProp.avgFR = avgFR;
 
-figure('Position', get(0, 'Screensize'));
-plot(spikes.UID, avgFR, '.');
-title('Average Firing Rate');
-ylabel('Firing Rate (Hz)');
-xlabel('Unit Number');
-saveas(gcf,[plotPath saveSchem '.avgFR.png']);
+% figure('Position', get(0, 'Screensize'));
+% plot(spikes.UID, avgFR, '.');
+% title('Average Firing Rate');
+% ylabel('Firing Rate (Hz)');
+% xlabel('Unit Number');
+% saveas(gcf,[plotPath saveSchem '.avgFR.png']);
 
-plotSubs(spikes.UID, avgFR, regID, cellID);
+plotSubs(spikes.UID, avgFR, regID, cellID, spikes.UID);
 title('Average Firing Rate by Type');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
@@ -192,7 +207,7 @@ binssum = 6; %6ms
 burstIndex = sum(ISIc(1:binssum,:),1)./sum(ISIc,1);
 cellProp.burstIndex = burstIndex;
 
-plotSubs(spikes.UID, burstIndex, regID, cellID);
+plotSubs(spikes.UID, burstIndex, regID, cellID, spikes.UID);
 title('Burst Index by Cell Type');
 ylabel('Burst Index');
 xlabel('Unit Number');
@@ -203,7 +218,8 @@ regBox = cell(length(presentIND),1);
 boxB = cell(length(presentIND),1);
 for i = 1:length(presentIND)
     [keep] = includeType(regID,presentIND(i)+1);
-    inds = find(keep==1);
+    indsTemp = find(keep==1);
+    [~,~,inds] = intersect(indsTemp,spikes.UID);
     temp = [];
     for j = 1:length(inds)
         temp = [temp; burstIndex(inds(j))];
@@ -252,7 +268,7 @@ if ~exist(plotPath)
 end
 load([basepath '\Barrage_Files\' basename '.HSEfutEVT.mat']);
 load([basepath '\Barrage_Files\' basename '.HSEmetrics.mat']);
-detection = 8; %%%%% need to pick the detection we want
+detection = 12; %%%%% need to pick the detection we want
 saveSchem = strcat(basename,'.',num2str(detection));
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
@@ -269,15 +285,15 @@ save(strcat(specPath,saveSchem,'.unitBar.mat'),'unitBar', '-v7.3');
 barProp.untPerEvt = unitBar.nCellsEvent;
 barProp.untPerEvtID = unitBar.nCellsEventUID;
 
-[sortCell] = sort(unitBar.nCellsEvent,'descend');
-figure('Position', get(0, 'Screensize'));
-bar(1:length(sortCell),sortCell);
-title('Number of units per event');
-xlabel('Event # (sorted descending)');
-ylabel('Number of Units');
-saveas(gcf,[plotPath saveSchem '.untPerEvt.png']);
+% [sortCell] = sort(unitBar.nCellsEvent,'descend');
+% figure('Position', get(0, 'Screensize'));
+% bar(1:length(sortCell),sortCell);
+% title('Number of units per event');
+% xlabel('Event # (sorted descending)');
+% ylabel('Number of Units');
+% saveas(gcf,[plotPath saveSchem '.untPerEvt.png']);
 
-[~,edges,bins] = histcounts(spkEventTimes.EventDuration,25);
+[~,edges,bins] = histcounts(spkEventTimes.EventDuration);
 durCount = zeros(max(bins),1);
 binct = zeros(max(bins),1);
 for i = 1:length(bins)
@@ -306,7 +322,6 @@ if ~showPlt
 end
 
 %% [2.2] % units from different subregions active during these events
-
 regPerc = zeros(length(presentIND),length(unitBar.nCellsEventUID));
 for i = 1:length(unitBar.nCellsEventUID) %iterate through each event
     temp = [];
@@ -422,7 +437,7 @@ for i = 1:size(unitBar.nSpkEach,1)
     end
 end
 figure('Position', get(0, 'Screensize')); 
-plot(avgSpkUn);
+plot(spikes.UID, avgSpkUn);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
@@ -430,7 +445,7 @@ saveas(gcf,[plotPath saveSchem '.avgSpkUn.png']);
 barProp.avgSpkUn = avgSpkUn;
 
 % By region
-plotSubs(spikes.UID, avgSpkUn, regID, cellID);
+plotSubs(spikes.UID, avgSpkUn, regID, cellID,spikes.UID);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
@@ -440,9 +455,9 @@ saveas(gcf,[plotPath saveSchem '.avgSpkUnSort.png']);
 avgSpkEvt = NaN(size(unitBar.nSpkEach,2),1);
 for i = 1:size(unitBar.nSpkEach,2)
     avgSpkEvt(i) = sum(unitBar.nSpkEach(:,i));
-    tempCnt = length(find(unitBar.nSpkEach(:,i)~=0));
-    if tempCnt
-        avgSpkEvt(i) = avgSpkEvt(i)/tempCnt;
+    tempCnt(i) = length(find(unitBar.nSpkEach(:,i)~=0));
+    if tempCnt(i)
+        avgSpkEvt(i) = avgSpkEvt(i)/tempCnt(i);
     else
         avgSpkEvt(i) = 0;
     end
@@ -456,12 +471,38 @@ title('Average # of spikes per event from active units');
 saveas(gcf,[plotPath saveSchem '.avgSpkEvt.png']);
 barProp.avgSpkEvt = avgSpkEvt;
 
+% Sort by event duration
+[~,edges,bins] = histcounts(spkEventTimes.EventDuration);
+durCount = zeros(max(bins),1);
+durSum = zeros(max(bins),1);
+binct = zeros(max(bins),1);
+for i = 1:length(bins)
+    durCount(bins(i)) = durCount(bins(i))+sum(unitBar.nSpkEach(:,i));
+    durSum(bins(i)) = durSum(bins(i)) + tempCnt(i);
+end
+for i = 1:length(durSum)
+    if durSum(i) == 0
+        durSum(i) = 1;
+    end
+end
+durAvg = durCount./durSum;
+for i = 1:length(edges)-1
+    durX(i) = edges(i) + ((edges(i+1)-edges(i))/2);
+end
+figure('Position', get(0, 'Screensize')); 
+bar(durX,durAvg);
+xlabel('Event Duration (s)');
+ylabel('Average # of Spikes');
+title('Average # of spikes per event from active units by event duration');
+saveas(gcf,[plotPath saveSchem '.avgSpkEvtDur.png']);
+
 % Grouped bar plot per region (want to do this, maybe with python?)
 regBox = cell(length(presentIND),1);
 boxC = cell(length(presentIND),1);
 for i = 1:length(presentIND)
     [keep] = includeType(regID,presentIND(i)+1);
-    inds = find(keep==1);
+    indsTemp = find(keep==1);
+    [~,~,inds] = intersect(indsTemp,spikes.UID);
     temp = [];
     for j = 1:length(inds)
         temp = [temp; avgSpkUn(inds(j))];
@@ -504,7 +545,7 @@ for i = 1:size(unitBar.FReach,1)
     end
 end
 figure('Position', get(0, 'Screensize')); 
-plot(avgFRUn);
+plot(spikes.UID,avgFRUn);
 xlabel('Unit #');
 ylabel('Average Firing Rate');
 title('Average Firing Rate during events when the unit is active');
@@ -515,9 +556,9 @@ barProp.avgFRUn = avgFRUn;
 avgFREvt = NaN(size(unitBar.FReach,2),1);
 for i = 1:size(unitBar.FReach,2)
     avgFREvt(i) = sum(unitBar.FReach(:,i));
-    tempCnt = length(find(unitBar.FReach(:,i)~=0));
-    if tempCnt
-        avgFREvt(i) = avgFREvt(i)/tempCnt;
+    tempCnt(i) = length(find(unitBar.FReach(:,i)~=0));
+    if tempCnt(i)
+        avgFREvt(i) = avgFREvt(i)/tempCnt(i);
     else
         avgFREvt(i) = 0;
     end
@@ -531,12 +572,38 @@ title('Average Firing Rate per event from active units');
 saveas(gcf,[plotPath saveSchem '.avgFREvt.png']);
 barProp.avgFREvt = avgFREvt;
 
+% Sort by event duration
+[~,edges,bins] = histcounts(spkEventTimes.EventDuration);
+durCount = zeros(max(bins),1);
+durSum = zeros(max(bins),1);
+binct = zeros(max(bins),1);
+for i = 1:length(bins)
+    durCount(bins(i)) = durCount(bins(i))+sum(unitBar.FReach(:,i));
+    durSum(bins(i)) = durSum(bins(i)) + tempCnt(i);
+end
+for i = 1:length(durSum)
+    if durSum(i) == 0
+        durSum(i) = 1;
+    end
+end
+durAvg = durCount./durSum;
+for i = 1:length(edges)-1
+    durX(i) = edges(i) + ((edges(i+1)-edges(i))/2);
+end
+figure('Position', get(0, 'Screensize')); 
+bar(durX,durAvg);
+xlabel('Event Duration (s)');
+ylabel('Average FR of Spikes');
+title('Average FR of spikes per event from active units by event duration');
+saveas(gcf,[plotPath saveSchem '.avgFREvtDur.png']);
+
 % Grouped bar plot per region (want to do this, maybe with python?)
 regBox = cell(length(presentIND),1);
 boxC = cell(length(presentIND),1);
 for i = 1:length(presentIND)
     [keep] = includeType(regID,presentIND(i)+1);
-    inds = find(keep==1);
+    indsTemp = find(keep==1);
+    [~,~,inds] = intersect(indsTemp,spikes.UID);
     temp = [];
     for j = 1:length(inds)
         temp = [temp; avgFRUn(inds(j))];
@@ -571,8 +638,8 @@ evtDur = histc(spkEventTimes.EventDuration,bins);%distribute counts per time bin
 % duration2plot=smooth(duration2plot,'sgolay',3);%smooth if you want
 figure('Position', get(0, 'Screensize')); 
 plot(bins, evtDur./sum(evtDur));%normalize per the total n of events
-title('Barrage Duration normalized to number of events');
-ylabel('Normalized Barrage Count');
+title('Event Duration normalized to number of events');
+ylabel('Normalized Event Count');
 xlabel('Event duration (s)');
 saveas(gcf,[plotPath saveSchem '.evtDur.png']);
 
@@ -602,34 +669,24 @@ save(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat
 
 %% [APPENDIX]
 %%%%%%% FUNCTIONS %%%%%%%
-function [regID cellID] = getSubs(cell_metrics)
+function [regID,cellID] = getSubs(cell_metrics)
 regions = cat(1,cell_metrics.brainRegion{:});
 regID = ones(length(regions),1);
 check = ["CA1" "CA2" "CA3" "CTX" "DG"];
-regYes = zeros(length(check),length(regions));
 
-for i = 1:size(regYes,1)
-    for j = 1:size(regYes,2)
+for i = 1:length(check)
+    for j = 1:length(regions)
         if contains(regions(j,:),convertStringsToChars(check(i)))
             regID(j) = (i+1);
         end
     end
 end
 
-for i = 1:length(cell_metrics.putativeCellType)
-    cellType(i) = convertCharsToStrings(cell_metrics.putativeCellType{i});
-end
-cellID = ones(length(cellType),1);
-check = ["Pyramidal" "Interneuron"];
-cellYes = zeros(length(check),length(cellType));
-
-for i = 1:size(cellYes,1)
-    for j = 1:size(cellYes,2)
-        if contains(cellType(j),convertStringsToChars(check(i)))
-            cellID(j) = (i+1);
-        end
-    end
-end
+cellID = ones(length(cell_metrics.putativeCellType),1);
+inds = ismember(1:length(cellID),cell_metrics.tags.P);
+cellID(inds) = 2;
+inds = ismember(1:length(cellID),cell_metrics.tags.N);
+cellID(inds) = 3;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [nx, ny] = excludeType(x, y, ID, ex)
@@ -662,8 +719,8 @@ for i = 1:length(ID)
 end
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function plotSubs(x, y, regID, cellID, line)
-if nargin < 5
+function plotSubs(x, y, regID, cellID, UIDs, line)
+if nargin < 6
     line = '';
 end
 color = ['m';'g';'b';'r';'c';'k'];
@@ -672,10 +729,13 @@ type = ['*';'^';'o'];
 figure('Position', get(0, 'Screensize'))
 hold on
 for i = 1:length(cellID)
-    if isempty(line)
-        plot(x(i), y(i), cat(1,color(regID(i)),type(cellID(i))));
-    else
-        plot(x, y(:,i), cat(1,color(regID(i)),type(cellID(i)),line));
+    ind = find(UIDs==i,1);
+    if ~isempty(ind)
+        if isempty(line)
+            plot(x(ind), y(ind), cat(1,color(regID(i)),type(cellID(i))));
+        else
+            plot(x, y(:,ind), cat(1,color(regID(i)),type(cellID(i)),line));
+        end
     end
 end
 h = zeros(8, 1);
@@ -687,5 +747,5 @@ h(5) = plot(NaN,NaN,'k');
 h(6) = plot(NaN,NaN,'k^');
 h(7) = plot(NaN,NaN,'ko');
 h(8) = plot(NaN,NaN,'*m');
-legend(h, 'CA1','CA2','CA3','CTX','DG','Pyramidal','Interneuron','Unknown', 'Location', 'eastoutside');
+legend(h, 'CA1','CA2','CA3','CTX','DG','+Mod','-Mod','Unknown', 'Location', 'eastoutside');
 end

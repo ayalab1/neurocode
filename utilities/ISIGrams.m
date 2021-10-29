@@ -18,20 +18,22 @@ function [ISIs, n, t] = ISIGrams(Res, Clu, BinSize, nBins)
 if (nargin<3) BinSize = 1e-3; end;
 if (nargin<4) nBins = 100; end;
 
-nCells = max(Clu);
+nCells = length(Clu); %if we are taking a subset of cells, won't have the same number of cells as the max UID value
 
 n = zeros(nBins+1, nCells);
 
 BinEdges = (0:nBins) * BinSize;
 t = ((0:nBins-1) + 0.5)' * BinSize;
-ISIs = cell(max(Clu), 1);
+ISIs = cell(nCells, 1);
 
-for Cell=1:nCells
-    if length(Res{(Clu==Cell)})>=10 %minimum number of spikes
-        ISIs{Cell} = diff(Res{(Clu==Cell)});
-        n(:,Cell) = histc(ISIs{Cell}, BinEdges);
-    else
-        n(:,Cell) = zeros(length(BinEdges),1);
+for Cell=1:max(Clu)
+    if ismember(Cell, Clu)
+        if length(Res{(Clu==Cell)})>=10 %find where spikes.UIDs = our iteration
+            ISIs{(Clu==Cell)} = diff(Res{(Clu==Cell)});
+            n(:,(Clu==Cell)) = histc(ISIs{(Clu==Cell)}, BinEdges);
+        else
+            n(:,(Clu==Cell)) = zeros(length(BinEdges),1);
+        end
     end
 end
 

@@ -14,6 +14,9 @@ if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))
 end
 savePath = ('Z:\home\Lindsay\Barrage\');
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
+
+ISI_x = [];
+ISI_y = [];
 ISI_boxx = [];
 ISI_boxg = [];
 burst_boxx = [];
@@ -42,6 +45,10 @@ for p = 16
     if (label==combine)||(combine=="both")
         load(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat'));
 
+        %% Cell level ISI distribution
+        ISI_x = [cumMet.ISIx]; %this should be the same for everything?
+        ISI_y = sum([ISI_y,cumMet.ISIy],2);
+        
         %% Cell level ISI box plot
         ISI_boxx = [ISI_boxx cumMet.boxxISI];
         ISI_boxg = [ISI_boxg cumMet.boxgISI];
@@ -71,6 +78,27 @@ presentIND = find(nameInd==1);
 presentName = convertStringsToChars(check(nameInd));
 
 %% Plotting 
+
+% Cell level ISI dist
+% [ISI,ISIc,t] = ISIGrams(spikes.times, spikes.UID, 1/1000, 1000);
+% cellProp.ISI = ISI;
+% cellProp.ISIhistT = t;
+% cellProp.ISIhist = ISIc;
+% ISIavg = NaN(length(ISI),1);
+% for i = 1:length(ISI)
+%     ISIavg(i) = mean(ISI{i});
+% end
+% cellProp.ISIavg = ISIavg;
+
+
+figure('Position', get(0, 'Screensize'));
+plot(ISI_x,ISI_y);
+xlabel('Log of ISI (ms)');
+ylabel('Count');
+title('Distribution of ISIs in Log scale');
+set(gca, 'XScale', 'log')
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.ISIdistCum.png']);
+
 % Cell level ISI
 figure('Position', get(0, 'Screensize'));
 boxplot(ISI_boxx, ISI_boxg);

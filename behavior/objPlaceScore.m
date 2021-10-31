@@ -24,7 +24,7 @@ if ~exist('fs','var')
     fs = 20000;
 end    
 if ~exist('timeTh','var')
-    timeTh = [300 300];
+    timeTh = [600 600];
 end  
 
 %% order individual ses

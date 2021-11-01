@@ -2,12 +2,12 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 
 % USAGE
 % [firingMaps] = firingMapAvg(positions,spikes,varargin)
-% Calculates averaged firing map for a set of linear postions 
+% Calculates averaged firing map for a set of linear postions
 %
 % INPUTS
 %
 %   spikes    - buzcode format .cellinfo. struct with the following fields
-%               .times 
+%               .times
 %   positions - [t x y ] or [t x] position matrix or
 %               cell with several of these matrices (for different conditions)
 %      or
@@ -30,7 +30,7 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 %                 	    will be clipped to 'maxGap' to compute the occupancy map
 %                 	    (default = 0.100 s)
 %     'orderKalmanVel'	order of Kalman Velocity Filter (default 2)
-%     'saveMat'   		- logical (default: false) that saves firingMaps file
+%     'saveMat'   		- logical (default: true) that saves firingMaps file
 %     'CellInspector'  	- logical (default: false) that creates an otuput
 %                   	compatible with CellInspector
 
@@ -59,6 +59,7 @@ addParameter(p,'CellInspector',false,@islogical);
 addParameter(p,'mode','discard',@isstr);
 addParameter(p,'maxDistance',5,@isnumeric);
 addParameter(p,'orderKalmanVel',2,@isnumeric);
+addParameter(p,'basepath',2,@ischar);
 
 parse(p,varargin{:});
 smooth = p.Results.smooth;
@@ -71,22 +72,23 @@ CellInspector = p.Results.CellInspector;
 mode = p.Results.mode;
 maxDistance = p.Results.maxDistance;
 order = p.Results.orderKalmanVel;
+basepath = p.Results.basepath;
 
 % number of conditions
-  if iscell(positions)
-     conditions = length(positions); 
-  elseif isvector(positions)
-     conditions = 1;
+if iscell(positions)
+    conditions = length(positions);
+elseif isvector(positions)
+    conditions = 1;
+    
+end
+%%% TODO: conditions label
 
-  end
-  %%% TODO: conditions label
-  
 %% Calculate
 % Erase positions below speed threshold
 for iCond = 1:size(positions,2)
     % Compute speed
     post = positions{iCond}(:,1);
-    % - 1D 
+    % - 1D
     if size(positions{iCond},2)==2
         posx = positions{iCond}(:,2);
         [~,~,~,vx,vy,~,~] = KalmanVel(posx,posx*0,post,order);
@@ -118,30 +120,34 @@ end
 
 % inherit required fields from spikes cellinfo struct
 firingMaps.UID = spikes.UID;
-firingMaps.sessionName = spikes.sessionName;
+firingMaps.sessionName = basepath;
 try
-firingMaps.region = spikes.region; 
+    firingMaps.region = spikes.region;
 catch
-   %warning('spikes.region is missing') 
+    %warning('spikes.region is missing')
 end
 
 firingMaps.params.smooth = smooth;
 firingMaps.params.minTime = minTime;
 firingMaps.params.nBins = nBins;
+firingMaps.params.x = map{1, 1}{1, 1}.x;
+firingMaps.params.y = map{1, 1}{1, 1}.y;
 firingMaps.params.maxGap = maxGap;
 firingMaps.params.mode = mode;
 firingMaps.params.maxDistance = maxDistance;
 
 for unit = 1:length(spikes.times)
     for c = 1:conditions
-    firingMaps.rateMaps{unit,1}{c} = map{unit}{c}.z;
-    firingMaps.countMaps{unit,1}{c} = map{unit}{c}.count;
-    firingMaps.occupancy{unit,1}{c} = map{unit}{c}.time;
+        firingMaps.rateMaps{unit,1}{c} = map{unit}{c}.z;
+        firingMaps.countMaps{unit,1}{c} = map{unit}{c}.count;
+        firingMaps.occupancy{unit,1}{c} = map{unit}{c}.time;
     end
 end
 
 if saveMat
-   save([firingMaps.sessionName '.firingMapsAvg.cellinfo.mat'],'firingMaps'); 
+    save(fullfile(firingMaps.sessionName,...
+        [basenameFromBasepath(firingMaps.sessionName),...
+        '.firingMapsAvg.cellinfo.mat']),'firingMaps');
 end
 
 end

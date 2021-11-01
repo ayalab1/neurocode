@@ -25,7 +25,7 @@ function [unitRip] = unitSWRmetrics(ripSpk,spikes,varargin)
 %   Antonio FR, 8/2020
 
 p = inputParser;
-addParameter(p,'baseFR',[])
+addOptional(p,'baseFR',[])
 parse(p,varargin{:})
 baseFR = p.Results.baseFR;
 

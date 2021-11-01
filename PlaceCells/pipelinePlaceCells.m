@@ -17,6 +17,7 @@
 save([basename '.firingMapsAvg.cellinfo.mat'],'firingMaps');
 
 %% 1.1- Save struct for cell explorer (you can display ratemaps in cell explorer)
+% Optimized for only 1d, though 2d works too
 ratemap = firingMaps;
 for i = 1:length(ratemap.rateMaps)
     ratemap.map{i} = ratemap.rateMaps{i}{1};

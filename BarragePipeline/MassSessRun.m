@@ -3,37 +3,42 @@
 % Pick blocks based on what you need
 
 % Just run rats or mice together for ease to start
-paths = ["AB4\day03";"AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
-    "AYA6\day17"; "AYA6\day19"; "AYA6\day20";...
-    "AYA7\day19"; "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
-    "AYA7\day27"; "AYA7\day30"]; %not all but a lot to start
+paths = ["AB1\day1"; "AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
+    "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
+    "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
+    "AYA7\day27"; "AYA7\day30"; "AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
+    "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
+% No classifications:
+% ["AYA9\day12"; "AYA10\day31";
+
+% DONE:
+% ["AB1\day1"; "AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
+%     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
+%     "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
+%     "AYA7\day27"; "AYA7\day30"; "AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
+%     "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
     
-%done: "AB4\day03";"AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
-%     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; 
-%"AYA6\day21"; 'AYA9\day12', 'AYA9\day15', 'AYA9\day16', 'AYA9\day17',
-%'AYA9\day20' "AYA6\day24";...
 main = 'Z:\Data\AYAold\';
 
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
 bigSave = 'Z:\home\Lindsay\Barrage\ratPaths.mat'; %change to mouse, potentially - change below as well
-cumSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
+comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
 ifHSE = 0;
-ifAnalysis = 0;
-ifCum = 0;
-if ifHSE
-    for p = 1:length(paths)
-        cd(strcat(main,paths(p)));
-        curPath = convertStringsToChars(paths(p));
-        basepath = strcat(main,curPath);
-        basename = basenameFromBasepath(basepath);
+ifAnalysis = 1;
+ifCum = 1;
+for p = 1:length(paths)
+    cd(strcat(main,paths(p)));
+    curPath = convertStringsToChars(paths(p));
+    basepath = strcat(main,curPath);
+    basename = basenameFromBasepath(basepath);
 
-        if ~exist(strcat(basepath,'\','Barrage_Files'))
-            mkdir('Barrage_Files');
-        end
+    if ~exist(strcat(basepath,'\','Barrage_Files'))
+        mkdir('Barrage_Files');
+    end
 
-        savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
-
+    savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
+    if ifHSE    
         %% New set of spikes
         note_all = [];
         nac = 1;
@@ -70,11 +75,11 @@ if ifHSE
             spikes = load([savePath file_n(i,:) '.cellinfo.mat']);
             spikes = spikes.spikes;
             nSigma = ratMet.nSigma;
-            tSepMax = ratMet.tSepMax;
-            mindur = ratMet.mindur;
+            tSepMax = 0.005;
+            mindur = 0.01;
             maxdur = ratMet.maxdur;
-            lastmin = ratMet.lastmin;
-            sstd = ratMet.sstd;
+            lastmin = 0.01;
+            sstd = 3.5;
             estd = ratMet.estd;
             EMGThresh = ratMet.EMGThresh;
             save_evts = false;
@@ -88,15 +93,17 @@ if ifHSE
                                 'save_evts',save_evts,'neuro2',neuro2,'runNum',runNum);
         end
         load(bigSave);
-        ratPaths(end+1) = strcat(main,paths(p));
-        save(bigSave, 'ratPaths');
-        load(cumSave);
-        combinedPaths(end+1) = strcat(main,paths(p)); 
-        save(cumSave, 'combinedPaths');
+        temp_path = length(paths_save);
+        paths_save(temp_path+1) = strcat(main,paths(p));
+        save(bigSave, 'paths_save');
+        combinedPaths = load(comSave);
+        temp_path = length(paths_save);
+        paths_save(temp_path+1) = strcat(main,paths(p)); 
+        save(comSave, 'paths_save');
         
-        if ifAnalysis
-            BarAnalysis;
-        end
+    end
+    if ifAnalysis
+        BarAnalysis(strcat(main,paths(p)));
     end
 end
 

@@ -13,12 +13,11 @@
 % -- Implement ripple comparisons
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+function BarAnalysis(ses)
 %% [STEP 0] Settings
 close all
 savePath = ('Z:\home\Lindsay\Barrage\');
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
-ses = paths(end); %can change this to an iteratable variable for mass runs
 cd(ses);
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
@@ -249,8 +248,62 @@ if ~showPlt
     close all
 end
 
+%% [1.5] Average burst length by region
+burstEvts = cell(size(ISI,1),1);
+avgBurstSz = NaN(size(ISI,1),1);
+for i = 1:size(ISI,1)
+    evtstart = spikes.times{i};
+    evtstart = evtstart(1:length(evtstart)-1);
+    evtstop = spikes.times{i};
+    evtstop = evtstop(2:end);
+    evtdur = evtstop-evtstart;
+    evtpeak = evtstart + (evtdur/2);
+    evtamp = zeros(length(evtstart),1);
+    flagConc = (evtdur <= (6/1000));
+    [start, stop, dur,~] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
+    burstEvts{i} = [start; stop];
+    avgBurstSz(i) = sum(dur)/length(dur);
+end
 
-%% [1.5] Cell SAVE
+% Plotting
+% Box plot
+regBox = cell(length(presentIND),1);
+boxB = cell(length(presentIND),1);
+for i = 1:length(presentIND)
+    [keep] = includeType(regID,presentIND(i)+1);
+    indsTemp = find(keep==1);
+    [~,~,inds] = intersect(indsTemp,spikes.UID);
+    temp = [];
+    for j = 1:length(inds)
+        temp = [temp avgBurstSz(inds(j))];
+    end
+    regBox{i} = temp';
+    boxB{i} = (i)*ones(length(temp),1);
+end
+boxx = [];
+boxg = [];
+for i = 1:length(regBox)
+    boxx = [boxx; regBox{i}];
+    boxg = [boxg; boxB{i}];
+end
+figure('Position', get(0, 'Screensize'));  
+boxplot(boxx, boxg);
+xticklabels(presentName);
+title('Avg number of spikes per burst per region');
+ylabel('Burst Length (# spikes)');
+xlabel('Region');
+saveas(gcf,[plotPath saveSchem '.BurstSzBox.png']);
+
+cellProp.burstSz = avgBurstSz;
+cellProp.burstEvts = burstEvts;
+cumMet.boxxBurstSz = boxx;
+cumMet.boxgBurstSz = boxg;
+
+if ~showPlt
+    close all
+end
+
+%% [1.6] Cell SAVE
 save(strcat(specPath,basename,'.props.mat'),'cellProp', '-v7.3');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -268,7 +321,7 @@ if ~exist(plotPath)
 end
 load([basepath '\Barrage_Files\' basename '.HSEfutEVT.mat']);
 load([basepath '\Barrage_Files\' basename '.HSEmetrics.mat']);
-detection = 12; %%%%% need to pick the detection we want
+detection = find(HSEmetrics.Notes == "All pyr",1,'last');
 saveSchem = strcat(basename,'.',num2str(detection));
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
@@ -296,6 +349,7 @@ barProp.untPerEvtID = unitBar.nCellsEventUID;
 [~,edges,bins] = histcounts(spkEventTimes.EventDuration);
 durCount = zeros(max(bins),1);
 binct = zeros(max(bins),1);
+durX = [];
 for i = 1:length(bins)
     durCount(bins(i)) = durCount(bins(i))+unitBar.nCellsEvent(i);
 end
@@ -667,85 +721,4 @@ save(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat
 % xlabel('Sorted Unit # (descending participation)');
 % hold off
 
-%% [APPENDIX]
-%%%%%%% FUNCTIONS %%%%%%%
-function [regID,cellID] = getSubs(cell_metrics)
-regions = cat(1,cell_metrics.brainRegion{:});
-regID = ones(length(regions),1);
-check = ["CA1" "CA2" "CA3" "CTX" "DG"];
-
-for i = 1:length(check)
-    for j = 1:length(regions)
-        if contains(regions(j,:),convertStringsToChars(check(i)))
-            regID(j) = (i+1);
-        end
-    end
-end
-
-cellID = ones(length(cell_metrics.putativeCellType),1);
-inds = ismember(1:length(cellID),cell_metrics.tags.P);
-cellID(inds) = 2;
-inds = ismember(1:length(cellID),cell_metrics.tags.N);
-cellID(inds) = 3;
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [nx, ny] = excludeType(x, y, ID, ex)
-nx = []; ny = []; nc = 1; flg = 0;
-for i = 1:length(ID)
-    for j=1:length(ex)
-        if ID(i) == ex(j)
-            flg = flg+1;
-        end
-    end
-    if ~flg
-        nx(nc) = x(i);
-        ny(nc) = y(i);
-        nc = nc+1;
-    end
-    flg = 0;
-end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [keep] = includeType(ID, inc)
-keep = zeros(length(ID),1); flg = 0;
-for i = 1:length(ID)
-    for j=1:length(inc)
-        if ID(i) == inc(j)
-            flg = flg+1;
-        end
-    end
-    keep(i) = logical(flg);
-    flg = 0;
-end
-end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function plotSubs(x, y, regID, cellID, UIDs, line)
-if nargin < 6
-    line = '';
-end
-color = ['m';'g';'b';'r';'c';'k'];
-type = ['*';'^';'o'];
-
-figure('Position', get(0, 'Screensize'))
-hold on
-for i = 1:length(cellID)
-    ind = find(UIDs==i,1);
-    if ~isempty(ind)
-        if isempty(line)
-            plot(x(ind), y(ind), cat(1,color(regID(i)),type(cellID(i))));
-        else
-            plot(x, y(:,ind), cat(1,color(regID(i)),type(cellID(i)),line));
-        end
-    end
-end
-h = zeros(8, 1);
-h(1) = plot(NaN,NaN,'g');
-h(2) = plot(NaN,NaN,'b');
-h(3) = plot(NaN,NaN,'r');
-h(4) = plot(NaN,NaN,'c');
-h(5) = plot(NaN,NaN,'k');
-h(6) = plot(NaN,NaN,'k^');
-h(7) = plot(NaN,NaN,'ko');
-h(8) = plot(NaN,NaN,'*m');
-legend(h, 'CA1','CA2','CA3','CTX','DG','+Mod','-Mod','Unknown', 'Location', 'eastoutside');
 end

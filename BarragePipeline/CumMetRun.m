@@ -21,6 +21,8 @@ ISI_boxx = [];
 ISI_boxg = [];
 burst_boxx = [];
 burst_boxg = [];
+burstSz_boxx = [];
+burstSz_boxg = [];
 perc_boxx = [];
 perc_boxg = [];
 avgSpk_boxx = [];
@@ -30,7 +32,7 @@ avgFR_boxg = [];
 
 % for p = 1:length(paths)
 for p = 16
-    ses = paths(p); %can change this to an iteratable variable for mass runs
+    ses = paths_save(p); %can change this to an iteratable variable for mass runs
     cd(ses);
     basepath = pwd;
     basename = basenameFromBasepath(basepath);
@@ -56,6 +58,10 @@ for p = 16
         %% Cell level burst index
         burst_boxx = [burst_boxx cumMet.boxxBurst];
         burst_boxg = [burst_boxg cumMet.boxgBurst];
+        
+        %% Cell level burst spike count
+        burstSz_boxx = [burstSz_boxx cumMet.boxxburstSz];
+        burstSz_boxg = [burstSz_boxg cumMet.boxgburstSz];
         
         %% Population Level Percent of Units in Events
         perc_boxx = [perc_boxx cumMet.boxxPerc];
@@ -97,7 +103,7 @@ xlabel('Log of ISI (ms)');
 ylabel('Count');
 title('Distribution of ISIs in Log scale');
 set(gca, 'XScale', 'log')
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.ISIdistCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.ISIdistCum.png']);
 
 % Cell level ISI
 figure('Position', get(0, 'Screensize'));
@@ -107,7 +113,7 @@ title('ISI per region, outliers cut off');
 ylabel('ISI (s)');
 xlabel('Region');
 ylim([-1 7]);
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.ISIboxCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.ISIboxCum.png']);
 
 % Cell Level Burst Index
 figure('Position', get(0, 'Screensize'));
@@ -116,7 +122,10 @@ xticklabels(presentName);
 title('Burst Index per region');
 ylabel('Burst Index');
 xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.BurstBoxCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.BurstBoxCum.png']);
+
+% Cell level Burst Size
+
 
 %
 figure('Position', get(0, 'Screensize'));
@@ -125,7 +134,7 @@ xticklabels(presentName);
 title('Percent of units making up event per region');
 ylabel('Percent of units');
 xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.PercUntsCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.PercUntsCum.png']);
 
 %
 figure('Position', get(0, 'Screensize'));
@@ -134,7 +143,7 @@ xticklabels(presentName);
 title('Average number of spikes per event per region');
 ylabel('Number of spikes');
 xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.AvgSpkCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.AvgSpkCum.png']);
 
 %
 figure('Position', get(0, 'Screensize'));
@@ -143,7 +152,7 @@ xticklabels(presentName);
 title('Average Firing Rate per event per region');
 ylabel('Firing Rate (Hz)');
 xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.AvgFRCum.png']);
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.AvgFRCum.png']);
 
 % cumMet.boxxISI
 % cumMet.boxgISI
@@ -159,4 +168,6 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(label) '.Avg
 % 
 % cumMet.boxxAvgFR
 % cumMet.boxgAvgFR
+close all
+
 end

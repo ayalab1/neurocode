@@ -3,28 +3,29 @@
 % Pick blocks based on what you need
 
 % Just run rats or mice together for ease to start
-paths = ["AB1\day1"; "AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
-    "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
-    "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
-    "AYA7\day27"; "AYA7\day30"; "AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
-    "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
+
+paths = ["AZ1\day13"];
+
 % No classifications:
 % ["AYA9\day12"; "AYA10\day31";
 
 % DONE:
+% main: "Z:\Data\AYAold\"
 % ["AB1\day1"; "AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
 %     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
 %     "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
 %     "AYA7\day27"; "AYA7\day30"; "AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
 %     "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
+% main: "Y:\SMproject\";
+% ["AZ1\day13"];
     
-main = 'Z:\Data\AYAold\';
+main = 'Y:\SMproject\';
 
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
-bigSave = 'Z:\home\Lindsay\Barrage\ratPaths.mat'; %change to mouse, potentially - change below as well
+bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
 comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
-ifHSE = 0;
+ifHSE = 1;
 ifAnalysis = 1;
 ifCum = 1;
 for p = 1:length(paths)
@@ -38,7 +39,7 @@ for p = 1:length(paths)
     end
 
     savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
-    if ifHSE    
+    if ifHSE 
         %% New set of spikes
         note_all = [];
         nac = 1;
@@ -92,9 +93,10 @@ for p = 1:length(paths)
                                 'Notes',notes,'sstd',sstd,'estd',estd,...
                                 'save_evts',save_evts,'neuro2',neuro2,'runNum',runNum);
         end
+
         load(bigSave);
-        temp_path = length(paths_save);
-        paths_save(temp_path+1) = strcat(main,paths(p));
+        temp_path = size(paths_save,1);
+        paths_save = [paths_save; strcat(main,paths(p))];
         save(bigSave, 'paths_save');
         combinedPaths = load(comSave);
         temp_path = length(paths_save);

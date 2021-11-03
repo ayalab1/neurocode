@@ -44,9 +44,14 @@ saveSchem = basename;
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
 end
-[regID, cellID] = getSubs(cell_metrics);
+[regID, modID, regKey, modKey] = getSubs(cell_metrics);
 cellProp.regID = regID;
-cellProp.cellID = cellID;
+cellProp.modID = modID;
+cellProp.regKey = regKey;
+cellProp.modKey = modKey;
+
+%% [1.0] Sort cells by subtype
+
 
 %% [1.1] ISI per unit
 % Distribution
@@ -72,17 +77,14 @@ saveas(gcf,[plotPath saveSchem '.ISIdistLog.png']);
 
 cumMet.ISIx = t*1e3;
 cumMet.ISIy = sum(ISIc,2);
-
-% figure('Position', get(0, 'Screensize'));
-% plot(spikes.UID, ISIavg, '.');
-% xlabel('Unit #');
-% ylabel('Log of avg ISI (ms)');
-% title('Average ISI per cell');
-% set(gca, 'YScale', 'log')
-% saveas(gcf,[plotPath saveSchem '.ISIavg.png']);
+cumMet.ISIc = ISIc;
+cumMet.regID = regID;
+cumMet.modID = modID;
+cumMet.regKey = regKey;
+cumMet.modKey = modKey;
 
 % By type plotting
-plotSubs(spikes.UID, ISIavg*1e3, regID, cellID, spikes.UID);
+plotSubs(spikes.UID, ISIavg*1e3, regID, modID, spikes.UID);
 xlabel('Unit #');
 ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell by type');
@@ -111,7 +113,7 @@ hold off
 saveas(gcf,[plotPath saveSchem '.ISIdist.png']);
 
 % Per cell with type designations
-plotSubs(t*1000, ISIc, regID, cellID, spikes.UID, '-');
+plotSubs(t*1000, ISIc, regID, modID, spikes.UID, '-');
 xlim([t(1)*1000 t(end)*1000]);
 title('Histogram of ISIs by cell type and region');
 ylabel('Count');
@@ -119,7 +121,7 @@ xlabel('ISI (ms)');
 saveas(gcf,[plotPath saveSchem '.ISIdistSort.png']);
 
 % Per cell with type designations, shortened
-plotSubs(t*1000, ISIc, regID, cellID, spikes.UID, '-');
+plotSubs(t*1000, ISIc, regID, modID, spikes.UID, '-');
 xlim([t(1)*1000 20]);
 title('Histogram of ISIs by cell type and region');
 ylabel('Count');
@@ -191,7 +193,7 @@ cellProp.avgFR = avgFR;
 % xlabel('Unit Number');
 % saveas(gcf,[plotPath saveSchem '.avgFR.png']);
 
-plotSubs(spikes.UID, avgFR, regID, cellID, spikes.UID);
+plotSubs(spikes.UID, avgFR, regID, modID, spikes.UID);
 title('Average Firing Rate by Type');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
@@ -206,7 +208,7 @@ binssum = 6; %6ms
 burstIndex = sum(ISIc(1:binssum,:),1)./sum(ISIc,1);
 cellProp.burstIndex = burstIndex;
 
-plotSubs(spikes.UID, burstIndex, regID, cellID, spikes.UID);
+plotSubs(spikes.UID, burstIndex, regID, modID, spikes.UID);
 title('Burst Index by Cell Type');
 ylabel('Burst Index');
 xlabel('Unit Number');
@@ -250,6 +252,7 @@ end
 
 %% [1.5] Average burst length by region
 burstEvts = cell(size(ISI,1),1);
+burstLen = cell(size(ISI,1),1);
 avgBurstSz = NaN(size(ISI,1),1);
 for i = 1:size(ISI,1)
     evtstart = spikes.times{i};
@@ -260,9 +263,17 @@ for i = 1:size(ISI,1)
     evtpeak = evtstart + (evtdur/2);
     evtamp = zeros(length(evtstart),1);
     flagConc = (evtdur <= (6/1000));
-    [start, stop, dur,~] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
-    burstEvts{i} = [start; stop];
-    avgBurstSz(i) = sum(dur)/length(dur);
+    [start, stop, ~,~,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
+    keep_burst = find(numCat > 1);
+    burstEvts{i} = [start(keep_burst); stop(keep_burst)];
+%     tempLen = [];
+%     for j = 1:length(start)
+%         samples = Restrict(spikes.times{i}, [start(j) stop(j)]);
+%         tempLen = [tempLen length(samples)];
+%     end
+    
+    avgBurstSz(i) = sum(numCat(keep_burst))/length(numCat(keep_burst));
+    burstLen{i} = numCat(keep_burst);
 end
 
 % Plotting
@@ -289,15 +300,108 @@ end
 figure('Position', get(0, 'Screensize'));  
 boxplot(boxx, boxg);
 xticklabels(presentName);
-title('Avg number of spikes per burst per region');
+title('Average number of spikes per burst per region');
 ylabel('Burst Length (# spikes)');
 xlabel('Region');
 saveas(gcf,[plotPath saveSchem '.BurstSzBox.png']);
 
 cellProp.burstSz = avgBurstSz;
 cellProp.burstEvts = burstEvts;
+cellProp.burstLen = burstLen;
 cumMet.boxxBurstSz = boxx;
 cumMet.boxgBurstSz = boxg;
+
+if ~showPlt
+    close all
+end
+
+%% More burst metrics
+% Organize
+res_cell = cell(length(unique(regID)),length(unique(modID)));
+indiType = cell(length(unique(regID)),length(unique(modID)));
+%sort into cell types
+for i = 1:length(burstLen) 
+    for j = 1:size(res_cell,1)
+        regInd = find(regID == j);
+        for k = 1:size(res_cell,2)
+            modInd = find(modID == k);
+            [~,~,useIt] = intersect(regInd,modInd); %pull indices in modInd
+            for m = 1:length(useIt)
+                useInd = find(spikes.UID==modInd(useIt(m)),1);
+                if ~isempty(find(spikes.UID==modInd(useIt(m)),1))
+                    res_cell{j,k} = [res_cell{j,k} burstLen{useInd}];
+                    indiType{j,k}{m} = burstLen{useInd};
+                end
+            end
+        end
+    end
+end 
+
+cellProp.res_cell = res_cell;
+cellProp.indiType = indiType;
+
+% Plot
+figure('Position', get(0, 'Screensize'));
+title('Histograms of burst length per region types');
+c = 1;
+i = 1;
+if size(res_cell,2)>2
+    c = 2;
+end
+for r = 1:(size(res_cell,1))
+    subplot(size(res_cell,1),2,i); hist(res_cell{r,c},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
+    i=i+1;
+    subplot(size(res_cell,1),2,i); hist(res_cell{r,c+1},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
+    i=i+1;
+end
+hold off;
+saveas(gcf,[plotPath saveSchem '.BurstLenHist.png']);
+
+cumMet.burstCnt = res_cell;
+
+figure('Position', get(0, 'Screensize'));
+title('Number of bursts per region and type with more than 4 spikes');
+c = 1;
+i = 1;
+if size(res_cell,2)>2
+    c = 2;
+end
+for r = 1:(size(res_cell,1))
+    subplot(size(res_cell,1),2,i); bar(sum(res_cell{r,c}>4)/length(res_cell{r,c}));hold on;ylim([0 0.2]);title(strcat(regKey(1,r),' ',modKey(1,c)));
+    i=i+1;
+    subplot(size(res_cell,1),2,i); bar(sum(res_cell{r,c+1}>4)/length(res_cell{r,c+1}));hold on;ylim([0 0.2]);title(strcat(regKey(1,r),' ',modKey(1,c+1)));
+    i=i+1;
+end
+hold off;
+saveas(gcf,[plotPath saveSchem '.BurstLenThresh.png']);
+
+figure('Position', get(0, 'Screensize')); 
+title('Spread of Burst Lengths per Cell Type');
+c = 1;
+i = 1;
+if size(res_cell,2)>2
+    c = 2;
+end
+for r = 1:(size(res_cell,1))
+    plot_sc = [];
+    for j = 1:length(indiType{r,c})
+        plot_sc(j,:) = hist(indiType{r,c}{j},[2:2:10])/sum(hist(indiType{r,c}{j},[2:2:10]));
+    end
+    subplot(size(res_cell,1),2,i); imagesc(plot_sc,[0 0.05]);hold on;title(strcat(regKey(1,r),' ',modKey(1,c)));
+    i=i+1;
+    if r == (size(res_cell,1))
+        ylabel('Cell #');
+        xlabel('Burst length');
+    end
+    plot_sc = [];
+    for j = 1:length(indiType{r,c+1})
+        plot_sc(j,:) = hist(indiType{r,c+1}{j},10)/sum(hist(indiType{r,c+1}{j},10));
+    end
+    subplot(size(res_cell,1),2,i); imagesc(plot_sc,[0 0.05]);hold on;title(strcat(regKey(1,r),' ',modKey(1,c+1)));
+    i=i+1;
+end
+hold off;
+saveas(gcf,[plotPath saveSchem '.BurstLenSC.png']);
 
 if ~showPlt
     close all
@@ -458,8 +562,8 @@ saveas(gcf,[plotPath saveSchem '.untPercentDur.png']);
 boxx = [];
 boxg = [];
 for i = 1:size(regPerc,1)
-    boxx = [boxx; regPerc(i,:)];
-    boxg = [boxg; i*ones(size(regPerc,2),1)];
+    boxx = [boxx regPerc(i,:)];
+    boxg = [boxg (i*ones(size(regPerc,2),1))'];
 end
 figure('Position', get(0, 'Screensize'));  
 boxplot(boxx, boxg);
@@ -499,7 +603,7 @@ saveas(gcf,[plotPath saveSchem '.avgSpkUn.png']);
 barProp.avgSpkUn = avgSpkUn;
 
 % By region
-plotSubs(spikes.UID, avgSpkUn, regID, cellID,spikes.UID);
+plotSubs(spikes.UID, avgSpkUn, regID, modID,spikes.UID);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
@@ -711,10 +815,10 @@ save(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat
 % [particip, pI] = sort(unitMet.particip, 'descend');
 % for i = 1:length(particip)
 %     regIDs(i) = regID(pI(i));
-%     cellIDs(i) = cellID(pI(i));
+%     modIDs(i) = modID(pI(i));
 % end 
 % 
-% plotSubs(1:length(particip),particip, regIDs, cellIDs);
+% plotSubs(1:length(particip),particip, regIDs, modIDs);
 % ylim([0 1]);
 % title('Fraction of participation per unit');
 % ylabel('Fraction of parcipation (max 1)');

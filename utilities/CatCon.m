@@ -1,4 +1,4 @@
-function [start, stop, dur, peak] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc)
+function [start, stop, dur, peak, numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Concatenation with Condition function
 % This function is to be used in conjunction with the find_HSE_b code. For
@@ -25,6 +25,9 @@ function [start, stop, dur, peak] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagC
 % dur:          An updated array of event durations after concatenation
 % peak:         An updated array of peak times of the events after
 %               concatenation
+% numCat:       Array containing the number of events concatenated within
+%               each new event. Useful for tracking burst length if
+%               concatenating ISIs. 
 %
 % Lindsay Karaba, 2021, AYA Lab
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -32,8 +35,10 @@ function [start, stop, dur, peak] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagC
 concHSE_start = [];
 concHSE_stop = [];
 concHSE_peak = [];
+concHSE_count = [];
 cHSE = 1;
 catting = 0; %are we in the process of concatenating - to start, no
+catCnt = 1;
     
 for i = 1:length(evtstart)-1 % iterate through start times
     if ~catting %if we are not already concatenating, we need to set our next start time
@@ -41,12 +46,14 @@ for i = 1:length(evtstart)-1 % iterate through start times
         tempPeak = [];
         tempPeak(1,1) = evtpeak(i);
         tempPeak(2,1) = evtamp(i);
+        catCnt = 1;
     end
     %check if we should be concatenating or if we should stop
     if flagConc(i) %are we flagging the next set to keep 
         catting = 1;
         tempPeak(1, end+1) = evtpeak(i); %we might double count but that's okay
         tempPeak(2, end) = evtamp(i);
+        catCnt = catCnt + 1;
     else
         catting = 0;
         tempPeak(1, end+1) = evtpeak(i); %we might double count but that's okay
@@ -55,6 +62,7 @@ for i = 1:length(evtstart)-1 % iterate through start times
         maxPeak = [];
         maxPeak = find(tempPeak(2,:) == max(tempPeak(2,:)));
         concHSE_peak(cHSE) = tempPeak(1,maxPeak(1));
+        concHSE_count(cHSE) = catCnt;
         cHSE = cHSE+1;
     end
 end
@@ -66,6 +74,7 @@ if length(concHSE_stop) < length(concHSE_start)
     maxPeak = [];
     maxPeak = find(tempPeak(2,:) == max(tempPeak(2,:)));
     concHSE_peak(cHSE) = tempPeak(1,maxPeak(1));
+    concHSE_count(cHSE) = catCnt;
     cHSE = cHSE+1;
 end
 
@@ -73,5 +82,6 @@ start = concHSE_start;
 stop = concHSE_stop;
 dur = stop-start;
 peak = concHSE_peak;
+numCat = concHSE_count;
 
 end

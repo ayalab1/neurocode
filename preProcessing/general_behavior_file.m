@@ -10,7 +10,7 @@ function behavior = general_behavior_file(varargin)
 % Ryan H 2021
 
 p=inputParser;
-addParameter(p,'basepath',pwd); % single or many basepaths
+addParameter(p,'basepath',pwd); % single or many basepaths in cell array or uses pwd
 addParameter(p,'fs',39.0625); % behavioral tracking sample rate (will detect fs for newer datasets)
 addParameter(p,'force_overwrite',false); % overwrite previously saved data (will remove custom fields)
 addParameter(p,'force_run',true); % run even if animal.behavior already exists

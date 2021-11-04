@@ -464,3 +464,73 @@ def load_SleepState_states(basepath):
         dict_[dn] = data["SleepState"]["ints"][0][0][dn][0][0]
 
     return dict_
+
+def load_animal_behavior(basepath):
+    """
+    load_animal_behavior loads basename.animal.behavior.mat files created by general_behavior_file.m
+    The output is a pandas data frame with [time,x,y,z,linerized,speed,acceleration,trials,epochs]
+
+    Ryan H 2021
+    """
+
+    filename = glob.glob(os.path.join(basepath,'*.animal.behavior.mat'))[0]
+
+    # check if saved file exists
+    if not os.path.exists(filename):
+        warnings.warn("file does not exist")
+        return 
+
+    def extract_epochs(data):
+        startTime = [ep['startTime'][0][0][0][0] for ep in data['behavior']['epochs'][0][0][0] if len(ep[0]) > 0]
+        stopTime = [ep['stopTime'][0][0][0][0] for ep in data['behavior']['epochs'][0][0][0] if len(ep[0]) > 0]
+        name = [ep['name'][0][0][0] for ep in data['behavior']['epochs'][0][0][0] if len(ep[0]) > 0]
+
+        epochs = pd.DataFrame()
+        epochs['name'] = name
+        epochs['startTime'] = startTime
+        epochs['stopTime'] = stopTime
+        return epochs
+
+    # load cell_metrics file
+    data = sio.loadmat(filename)
+
+    trials = data['behavior']['trials'][0][0]
+    
+    epochs = extract_epochs(data)
+
+    df = pd.DataFrame()
+    try:
+        df['time'] = data['behavior']['time'][0][0][0]
+    except:
+        warnings.warn("no tracking data")
+        return pd.DataFrame()
+        
+    try:
+        df['x'] = data['behavior']['position'][0][0]['x'][0][0][0]
+    except:
+        df['x'] = np.nan
+    try:
+        df['y'] = data['behavior']['position'][0][0]['y'][0][0][0]
+    except:
+        df['y'] = np.nan
+    try:
+        df['z'] = data['behavior']['position'][0][0]['z'][0][0][0]
+    except:
+        df['z'] = np.nan
+    try:
+        df['linerized'] = data['behavior']['position'][0][0]['linerized'][0][0][0]
+    except:
+        df['linerized'] = np.nan
+
+    df['speed'] = data['behavior']['speed'][0][0][0]
+    df['acceleration'] = data['behavior']['acceleration'][0][0][0]
+
+    for t in range(trials.shape[0]):
+        idx = (df.time >= trials[t,0]) & (df.time <= trials[t,1])
+        df.loc[idx,'trials'] = t
+
+    for t in range(epochs.shape[0]):
+        idx = (df.time >= epochs.startTime.iloc[t]) & (df.time <= epochs.stopTime.iloc[t])
+        df.loc[idx,'epochs'] = epochs.name.iloc[t] 
+
+    return df

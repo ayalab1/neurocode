@@ -5,7 +5,8 @@ function behavior = general_behavior_file(varargin)
 % This was writed to standardize xy coordinates and trials in several older data sets
 % This is not the cleanest code, but takes care of most cases
 %
-% check extract_tracking below to preview methods
+% check extract_tracking below to preview methods. Can be further
+% customized.
 %
 % Ryan H 2021
 
@@ -303,6 +304,21 @@ else
     warning('write another loader here')
     return
 end
+
+% trials can sometimes have extra columns
+if size(trials,2) > 2
+    trials = trials(:,1:2);
+end
+% to help find if trials are index instead of sec
+isaninteger = @(x)isfinite(x) & x==floor(x);
+% check if trials are integers, if so, they are index instead of sec
+if all(isaninteger(trials)) & ~isempty(trials)
+    trials = t(trials);
+end
+% if the max trial is greater than the available time, they are index
+% if max(trials(:))-max(t) > 10 & all(isaninteger(trials)) & ~isempty(trials)
+%     trials = t(trials);
+% end
 
 % get velocity
 try

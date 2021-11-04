@@ -22,8 +22,8 @@ disp('starting');
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
 % note_all = ["CA1" "CA2" "All pyr"]; %change these based on the parameters to run
 % file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
-note_all = ["CA2" "All pyr"];
-file_n = ['CA2pyr'; 'allpyr'];
+note_all = ["CA1" "CA2" "All pyr"];
+file_n = ['CA1pyr'; 'CA2pyr'; 'allpyr'];
 % load(strcat(basepath,'.',basename,'cell_metrics.cellinfo.mat'));
 % note_all = ["CA2 and bursty CA3"];
 % file_n = ['CA2CA3'];
@@ -46,13 +46,13 @@ for i = 1:length(note_all)
     nSigma = ratMet.nSigma;
 %     nSigma = 1.75; %+-1.5 => [-0.5 1.5]
 %     tSepMax = ratMet.tSepMax;
-    tSepMax = 0.005;
+    tSepMax = 0.75;
 %     mindur = ratMet.mindur;
-    mindur = 0.01;
+    mindur = 0.3;
     maxdur = ratMet.maxdur;
 %     maxdur = 15;
-%     lastmin = ratMet.lastmin;
-    lastmin = 0.01;
+    lastmin = ratMet.lastmin;
+%     lastmin = 0.01;
 %     sstd = ratMet.sstd;
     sstd = 3.5;
     estd = ratMet.estd;
@@ -91,7 +91,7 @@ load([savePath 'HSEmetrics.mat']);
 % NeuroScope2
 
 %% Create EVT for past events
-trial = 14;
+trial = 38;
 load([savePath 'HSEfutEVT.mat']);
 current_time = evtSave{trial,1};
 current_peak = evtSave{trial,2};
@@ -242,7 +242,7 @@ end
 
 %5452.148
 load('Y:\SMproject\AZ1\day13\Barrage_Files\day13.CA2pyr.cellinfo.mat');
-timepoints = 30265;
+timepoints = 8923.412;
 estd = 1;
 sstd = 3.5;
 % timepoints = [1040.819];
@@ -255,7 +255,7 @@ for i = 1:length(timepoints);
 
     allspk = cat(1,spikes.times{:});
     allspk = sort(allspk);
-    [spkhist spkmean spkstd] = spkRtHist(allspk, tSmooth, binsz);
+    [spkhist spkmean spkstd] = spkRtHist(allspk);
     spkTimes = ((1:length(spkhist))*binsz)-binsz;
 
     difspk = spkTimes-timepoint;

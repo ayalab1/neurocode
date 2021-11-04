@@ -14,6 +14,10 @@
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function BarAnalysis(ses)
+if nargin <1
+    warning('No session path input, defaulting to current folder');
+    ses = pwd;
+end
 %% [STEP 0] Settings
 close all
 savePath = ('Z:\home\Lindsay\Barrage\');
@@ -78,10 +82,6 @@ saveas(gcf,[plotPath saveSchem '.ISIdistLog.png']);
 cumMet.ISIx = t*1e3;
 cumMet.ISIy = sum(ISIc,2);
 cumMet.ISIc = ISIc;
-cumMet.regID = regID;
-cumMet.modID = modID;
-cumMet.regKey = regKey;
-cumMet.modKey = modKey;
 
 % By type plotting
 plotSubs(spikes.UID, ISIavg*1e3, regID, modID, spikes.UID);
@@ -266,11 +266,6 @@ for i = 1:size(ISI,1)
     [start, stop, ~,~,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
     keep_burst = find(numCat > 1);
     burstEvts{i} = [start(keep_burst); stop(keep_burst)];
-%     tempLen = [];
-%     for j = 1:length(start)
-%         samples = Restrict(spikes.times{i}, [start(j) stop(j)]);
-%         tempLen = [tempLen length(samples)];
-%     end
     
     avgBurstSz(i) = sum(numCat(keep_burst))/length(numCat(keep_burst));
     burstLen{i} = numCat(keep_burst);
@@ -317,8 +312,8 @@ end
 
 %% More burst metrics
 % Organize
-res_cell = cell(length(unique(regID)),length(unique(modID)));
-indiType = cell(length(unique(regID)),length(unique(modID)));
+res_cell = cell(max(unique(regID)),max(modID));
+indiType = cell(max(unique(regID)),max(modID));
 %sort into cell types
 for i = 1:length(burstLen) 
     for j = 1:size(res_cell,1)
@@ -342,6 +337,7 @@ cellProp.indiType = indiType;
 
 % Plot
 figure('Position', get(0, 'Screensize'));
+hold on;
 title('Histograms of burst length per region types');
 c = 1;
 i = 1;
@@ -349,9 +345,9 @@ if size(res_cell,2)>2
     c = 2;
 end
 for r = 1:(size(res_cell,1))
-    subplot(size(res_cell,1),2,i); hist(res_cell{r,c},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
+    subplot(size(res_cell,1),2,i); histogram(res_cell{r,c},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
     i=i+1;
-    subplot(size(res_cell,1),2,i); hist(res_cell{r,c+1},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
+    subplot(size(res_cell,1),2,i); histogram(res_cell{r,c+1},[2:2:10]);hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
     i=i+1;
 end
 hold off;
@@ -360,6 +356,7 @@ saveas(gcf,[plotPath saveSchem '.BurstLenHist.png']);
 cumMet.burstCnt = res_cell;
 
 figure('Position', get(0, 'Screensize'));
+hold on;
 title('Number of bursts per region and type with more than 4 spikes');
 c = 1;
 i = 1;
@@ -376,6 +373,7 @@ hold off;
 saveas(gcf,[plotPath saveSchem '.BurstLenThresh.png']);
 
 figure('Position', get(0, 'Screensize')); 
+hold on;
 title('Spread of Burst Lengths per Cell Type');
 c = 1;
 i = 1;
@@ -395,7 +393,7 @@ for r = 1:(size(res_cell,1))
     end
     plot_sc = [];
     for j = 1:length(indiType{r,c+1})
-        plot_sc(j,:) = hist(indiType{r,c+1}{j},10)/sum(hist(indiType{r,c+1}{j},10));
+        plot_sc(j,:) = hist(indiType{r,c+1}{j},[2:2:10])/sum(hist(indiType{r,c+1}{j},[2:2:10]));
     end
     subplot(size(res_cell,1),2,i); imagesc(plot_sc,[0 0.05]);hold on;title(strcat(regKey(1,r),' ',modKey(1,c+1)));
     i=i+1;
@@ -511,8 +509,6 @@ if ismember(2,presentIND)
     for i = 1:length(regSortCA2)
         for j = 1:length(presentIND)
             regSort(j,i) = regPerc(j,(rI(i)));
-            regSort(j,i) = regPerc(j,(rI(i)));
-            regSort(j,i) = regPerc(j,(rI(i)));
         end
     end
     figure('Position', get(0, 'Screensize'));
@@ -558,7 +554,6 @@ legend(presentName, 'Location', 'eastoutside');
 saveas(gcf,[plotPath saveSchem '.untPercentDur.png']);
 
 % Summary box plot per region
-
 boxx = [];
 boxg = [];
 for i = 1:size(regPerc,1)

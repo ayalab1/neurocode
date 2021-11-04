@@ -8,7 +8,10 @@
 % Let's do this separately from BarAnalysis and use the session list to
 % remake as we go. Data is already there, just concatenating and plotting
 function CumMetRun(combine)
-if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))
+if nargin < 1
+    combine = "both";
+end
+if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))||(nargin < 1)
     warning('Must choose mouse, rat, or both. Defaulting to both');
     combine = "both";
 end
@@ -32,10 +35,8 @@ burstSz_boxg = [];
 burstLen = cell(6,3);
 perc_boxx = [];
 perc_boxg = [];
-avgSpk_boxx = [];
-avgSpk_boxg = [];
-avgFR_boxx = [];
-avgFR_boxg = [];
+spkSC = cell(6,2);
+FRsc = cell(6,2);
 
 for p = 1:size(paths_save,1)
 % for p = 1:2
@@ -83,8 +84,8 @@ for p = 1:size(paths_save,1)
         burst_boxg = [burst_boxg; cumMet.boxgBurst];
         
         %% Cell level burst spike count
-        burstSz_boxx = [burstSz_boxx; cumMet.boxxBurstSz];
-        burstSz_boxg = [burstSz_boxg; cumMet.boxgBurstSz];
+        burstSz_boxx = [burstSz_boxx; cumMet.boxxAvgBurstSz];
+        burstSz_boxg = [burstSz_boxg; cumMet.boxgAvgBurstSz];
         
         %% Cell level histogram of burst spike lengths
         for r = 1:size(burstLen,1)
@@ -100,34 +101,22 @@ for p = 1:size(paths_save,1)
         perc_boxg = [perc_boxg cumMet.boxgPerc];
 
         %% Population Level Avg Spike per Unit
-        avgSpk_boxx = [avgSpk_boxx; cumMet.boxxAvgSpk];
-        avgSpk_boxg = [avgSpk_boxg; cumMet.boxgAvgSpk];
+        for r = 1:size(spkSC,1)
+            for m = 1:size(spkSC,2)
+                spkSC{r,m} = [spkSC{r,m}; cumMet.cumSpk{r,m}];
+            end
+        end
 
         %% Population Level Avg FR per Unit
-        avgFR_boxx = [avgFR_boxx; cumMet.boxxAvgFR];
-        avgFR_boxg = [avgFR_boxg; cumMet.boxgAvgFR];
+        for r = 1:size(FRsc,1)
+            for m = 1:size(FRsc,2)
+                FRsc{r,m} = [FRsc{r,m}; cumMet.cumFR{r,m}];
+            end
+        end
     end 
 end
 
-check = ["CA1" "CA2" "CA3" "CTX" "DG"];
-useName = unique(ISI_boxg);
-nameInd = ismember(1:length(check),useName);
-presentIND = find(nameInd==1);
-presentName = convertStringsToChars(check(nameInd));
-
 %% Plotting 
-
-% Cell level ISI dist
-% [ISI,ISIc,t] = ISIGrams(spikes.times, spikes.UID, 1/1000, 1000);
-% cellProp.ISI = ISI;
-% cellProp.ISIhistT = t;
-% cellProp.ISIhist = ISIc;
-% ISIavg = NaN(length(ISI),1);
-% for i = 1:length(ISI)
-%     ISIavg(i) = mean(ISI{i});
-% end
-% cellProp.ISIavg = ISIavg;
-
 
 figure('Position', get(0, 'Screensize'));
 plot(ISI_x,ISI_y);
@@ -135,17 +124,23 @@ xlabel('Log of ISI (ms)');
 ylabel('Count');
 title('Distribution of ISIs in Log scale');
 set(gca, 'XScale', 'log')
+xlim([min(ISI_x) 10E3]);
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.ISIdistCum.png']);
 
 % Cell level type ISI log distributions
 figure('Position', get(0, 'Screensize'));
 title('Log(ISI) of per region types');
+hold on;
 c = 2;
 i = 1;
 for r = 1:(size(ISI_c,1))
     subplot(size(ISI_c,1),2,i); plot(ISI_x, ISI_c{r,c});hold on;title(strcat(cumMet.regKey(1,r),' P'));
+    xlim([0 500]);
+    set(gca, 'XScale', 'log')
     i=i+1;
     subplot(size(ISI_c,1),2,i); plot(ISI_x, ISI_c{r,c+1});hold on; title(strcat(cumMet.regKey(1,r),' N'));
+    xlim([0 500]);
+    set(gca, 'XScale', 'log')
     i=i+1;
 end
 hold off;
@@ -154,7 +149,7 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.I
 % Cell level ISI
 figure('Position', get(0, 'Screensize'));
 boxplot(ISI_boxx, ISI_boxg);
-xticklabels(presentName);
+xticklabels(cumMet.regKey(1,:));
 title('ISI per region, outliers cut off');
 ylabel('ISI (s)');
 xlabel('Region');
@@ -164,7 +159,7 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.I
 % Cell Level Burst Index
 figure('Position', get(0, 'Screensize'));
 boxplot(burst_boxx, burst_boxg);
-xticklabels(presentName);
+xticklabels(cumMet.regKey(1,:));
 title('Burst Index per region');
 ylabel('Burst Index');
 xlabel('Region');
@@ -173,7 +168,7 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.B
 % Cell level Burst Size
 figure('Position', get(0, 'Screensize'));
 boxplot(burstSz_boxx, burstSz_boxg);
-xticklabels(presentName);
+xticklabels(cumMet.regKey(1,:));
 title('Burst Size per region');
 ylabel('Burst Size (# spikes)');
 xlabel('Region');
@@ -185,9 +180,9 @@ title('Histograms of burst length per region types');
 c = 2; %we don't care about unknown modulations
 i = 1;
 for r = 1:(size(burstLen,1))
-    subplot(size(burstLen,1),2,i); hist(burstLen{r,c},[2:2:10])/sum(hist(burstLen{r,c},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' P'));
+    subplot(size(burstLen,1),2,i); histogram(burstLen{r,c},[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' P'));
     i=i+1;
-    subplot(size(burstLen,1),2,i); hist(burstLen{r,c+1},[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' N'));
+    subplot(size(burstLen,1),2,i); histogram(burstLen{r,c+1},[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' N'));
     i=i+1;
 end
 hold off;
@@ -196,29 +191,49 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.B
 %
 figure('Position', get(0, 'Screensize'));
 boxplot(perc_boxx, perc_boxg);
-xticklabels(presentName);
+xticklabels(cumMet.regKey(1,:));
 title('Percent of units making up event per region');
 ylabel('Percent of units');
 xlabel('Region');
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.PercUntsCum.png']);
 
-%
+% We're gonna make this a histogram rather than sc
 figure('Position', get(0, 'Screensize'));
-boxplot(avgSpk_boxx, avgSpk_boxg);
-xticklabels(presentName);
-title('Average number of spikes per event per region');
-ylabel('Number of spikes');
-xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.AvgSpkCum.png']);
+i = 1;
+for r = 1:size(spkSC,1)
+    subplot(size(spkSC,1),2,i); hist(spkSC{r,1},[2:2:10])/sum(hist(spkSC{r,1},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
+    xticks([1 2 3 4 5]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    i = i+1;
+    if r == size(spkSC,1)
+        ylabel('Normalized Count');
+        xlabel('# spikes');
+    end
+    subplot(size(spkSC,1),2,i); hist(spkSC{r,2},[2:2:10])/sum(hist(spkSC{r,2},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
+    xticks([1 2 3 4 5]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    i = i+1;
+end
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.SpkHistCum.png']);
 
 %
 figure('Position', get(0, 'Screensize'));
-boxplot(avgFR_boxx, avgFR_boxg);
-xticklabels(presentName);
-title('Average Firing Rate per event per region');
-ylabel('Firing Rate (Hz)');
-xlabel('Region');
-saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.AvgFRCum.png']);
+i = 1;
+for r = 1:size(FRsc,1)
+    subplot(size(FRsc,1),2,i); hist(FRsc{r,1},[2:2:10])/sum(hist(FRsc{r,1},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
+    xticks([1 2 3 4 5]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    i = i+1;
+    if r == size(FRsc,1)
+        ylabel('Normalized Count');
+        xlabel('FR');
+    end
+    subplot(size(FRsc,1),2,i); hist(FRsc{r,2},[2:2:10])/sum(hist(FRsc{r,2},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
+    xticks([1 2 3 4 5]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    i = i+1;
+end
+saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.FRHistCum.png']);
 
 close all
 

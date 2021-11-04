@@ -79,7 +79,6 @@ if iscell(positions)
     conditions = length(positions);
 elseif isvector(positions)
     conditions = 1;
-    
 end
 %%% TODO: conditions label
 
@@ -120,7 +119,11 @@ end
 
 % inherit required fields from spikes cellinfo struct
 firingMaps.UID = spikes.UID;
-firingMaps.sessionName = spikes.sessionName;
+try
+    firingMaps.sessionName = spikes.sessionName; % does not always exist in spikes
+catch
+    firingMaps.sessionName = basenameFromBasepath(basepath);
+end
 try
     firingMaps.region = spikes.region;
 catch
@@ -145,7 +148,7 @@ for unit = 1:length(spikes.times)
 end
 
 if saveMat
-    save(fullfile(pwd,...
+    save(fullfile(basepath,...
         [basenameFromBasepath(firingMaps.sessionName),...
         '.firingMapsAvg.cellinfo.mat']),'firingMaps');
 end

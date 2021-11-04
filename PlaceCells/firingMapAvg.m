@@ -59,7 +59,7 @@ addParameter(p,'CellInspector',false,@islogical);
 addParameter(p,'mode','discard',@isstr);
 addParameter(p,'maxDistance',5,@isnumeric);
 addParameter(p,'orderKalmanVel',2,@isnumeric);
-addParameter(p,'basepath',2,@ischar);
+addParameter(p,'basepath',pwd,@ischar);
 
 parse(p,varargin{:});
 smooth = p.Results.smooth;
@@ -120,7 +120,7 @@ end
 
 % inherit required fields from spikes cellinfo struct
 firingMaps.UID = spikes.UID;
-firingMaps.sessionName = basepath;
+firingMaps.sessionName = spikes.sessionName;
 try
     firingMaps.region = spikes.region;
 catch
@@ -145,7 +145,7 @@ for unit = 1:length(spikes.times)
 end
 
 if saveMat
-    save(fullfile(firingMaps.sessionName,...
+    save(fullfile(pwd,...
         [basenameFromBasepath(firingMaps.sessionName),...
         '.firingMapsAvg.cellinfo.mat']),'firingMaps');
 end

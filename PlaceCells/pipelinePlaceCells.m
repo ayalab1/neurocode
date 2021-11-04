@@ -12,9 +12,14 @@
 
 % 0- Linearize maze positions and get trial structure
 
+%% Loading posTrials & spikes
+load('posTrials.mat')
+basename = basenameFromBasepath(pwd);
+load(fullfile(pwd,[basename,'.spikes.cellinfo.mat']))
+
 %% 1-Calculate firing maps
 [firingMaps] = firingMapAvg(posTrials,spikes);
-save([basename '.firingMapsAvg.cellinfo.mat'],'firingMaps');
+% save([basename '.firingMapsAvg.cellinfo.mat'],'firingMaps');
 
 %% 1.1- Save struct for cell explorer (you can display ratemaps in cell explorer)
 % Optimized for only 1d, though 2d works too
@@ -29,7 +34,7 @@ save([basename '.ratemap.firingRateMap.mat'],'ratemap');
 
 %% 2- Detect (average) place fields
 [placeFieldStats] = findPlaceFieldsAvg1D('firingMaps',firingMaps,'minPeak',1,'sepEdge',0.04);
-save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
+% save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 
 % 2.1 alternative to detect place fields 2D
 for i = 1:length(firingMaps.rateMaps)
@@ -44,7 +49,7 @@ save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 
 %% 3- Calculate template of place fields in the maze (for decoding, etc.)
 [placeFieldTemplate] = findPlaceFieldsTemplate('placeFieldStats',placeFieldStats,'firingMaps',firingMaps);
-save([basename '.placeFieldTemplate.mat'],'placeFieldTemplate');
+% save([basename '.placeFieldTemplate.mat'],'placeFieldTemplate');
 
 %% 4- Phase precession - NOT CHECKED
 % theta phase

@@ -55,13 +55,15 @@ save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 % theta phase
 lfp = getLFP(refCh);
 theta = bz_Filter(lfp,'passband',[5 15]);
+count = 0;
+
 % boundaries of each PF
 for i=1:numel(spikes.UID) %
     for j=1:2
-        for k=1:length(stats{i}{j}.peak)
-            if stats{i}{j}.peak(k) ~= 0
-                boundaries{i}{j}(k,1)= curve{i}{j}.x(stats{i}{j}.fieldX(k,1));
-                boundaries{i}{j}(k,2)= curve{i}{j}.x(stats{i}{j}.fieldX(k,2));
+        for k=1:length(placeFieldStats.mapStats{i}{j}.peak)
+            if placeFieldStats.mapStats{i}{j}.peak(k) ~= 0
+                boundaries{i}{j}(k,1)= firingMaps.params.x(placeFieldStats.mapStats{i}{j}.fieldX(k,1));
+                boundaries{i}{j}(k,2)= firingMaps.params.x(placeFieldStats.mapStats{i}{j}.fieldX(k,2));
             else
                 boundaries{i}{j}(k,1)= NaN;
                 boundaries{i}{j}(k,2)= NaN;
@@ -69,13 +71,15 @@ for i=1:numel(spikes.UID) %
         end
     end
 end
+
+phases = [theta.timestamps, theta.phase];
 % calculate phase precession
 for i=1:numel(spikes.UID)
     for j=1:2
-        for k=1:length(stats{i}{j}.x) %size(boundaries{i}{j},1)
-            if ~isnan (stats{i}{j}.x(k))%(boundaries{i}{j}(k,1)) % for each PF not removed
+        for k=1:length(placeFieldStats.mapStats{i}{j}.x) % number of place fields
+            if ~isnan(placeFieldStats.mapStats{i}{j}.x(k))%(boundaries{i}{j}(k,1)) % for each PF not removed
                 count=count+1;
-                [dataPP{count},statsPP{count}] = PhasePrecession(posTrials{j},spikes.times{i},theta.phase,'boundaries',boundaries{i}{j}(k,:));
+                [dataPP{count},statsPP{count}] = PhasePrecession(posTrials{j},spikes.times{i},phases,'boundaries',boundaries{i}{j}(k,:));
                 PlotPhasePrecession(dataPP{count},statsPP{count});
             end
         end

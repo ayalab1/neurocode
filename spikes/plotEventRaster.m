@@ -1,4 +1,4 @@
-function  plotEventRaster(event,basepath,spikes,lfpChan,tag)
+function  plotEventRaster(event,varargin)
 %
 %   Plot spike raster for invidual events (such as ripples), sorting cells
 %   by firign order and color code them according to diverse features
@@ -13,10 +13,23 @@ function  plotEventRaster(event,basepath,spikes,lfpChan,tag)
 %   Antonio FR, 10/21. FUNCTION STILL IN PROGRESS
 
 %% inputs
-% NEED TO ADD PROPER INPUT PARSING
-if isempty(basepath)
-    basepath= pwd;
-end
+p = inputParser;
+addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'spikes',[],@isstruct);
+addParameter(p,'lfpChan',[],@isnumeric);
+addParameter(p,'tag','brainRegion',@isstr);
+addParameter(p,'tag2','cellType',@isstr);
+addParameter(p,'savePath',pwd,@isstr);
+addParameter(p,'evtNum',[],@isnumeric);
+parse(p,varargin{:});
+basepath = p.Results.basepath;
+spikes = p.Results.spikes;
+lfpChan = p.Results.lfpChan;
+tag = p.Results.tag;
+tag2 = p.Results.tag2;
+savePath = p.Results.savePath;
+evtNum = p.Results.evtNum;
+
 basename = basenameFromBasepath(basepath);
 load(fullfile(basepath,[basename '.session.mat']));
 load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']));
@@ -82,21 +95,41 @@ for e = 1:size(event,1)
             rasterID(count,:) = rasterIDo(i,:);
         end
     end
-    
     subplot(2,size(event,1),e+size(event,1));
-    for i = 1:size(raster,1)
-        for j = 1:size(raster,2)
-            if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
-                scatter(raster(i,j),i,'.k');hold on;
-                clear y;
-            elseif raster(i,j) > 0  strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)});
-                scatter(raster(i,j),i,'vk','filled');hold on;
-                clear y;
+    hold on;
+    yticks([1:length(rasterID)]);
+    yticklabels(num2str(rasterID(:)));
+    if strcmp('cellType',tag2)
+        for i = 1:size(raster,1)
+            for j = 1:size(raster,2)
+                if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
+                    scatter(raster(i,j),i,'.k');hold on;
+                    clear y;
+                elseif raster(i,j) > 0  strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)});
+                    scatter(raster(i,j),i,'vk','filled');hold on;
+                    clear y;
+                end
             end
         end
+        xlim([t(1) t(end)]);ylim([0 size(raster,1)+1]);
+        clear rasterT temp firstSpk raster a b
+    elseif strcmp('ripMod',tag2)
+        for i = 1:size(raster,1)
+            for j = 1:size(raster,2)
+                if raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.N)
+                    scatter(raster(i,j),i,'.k');hold on;
+                    clear y;
+                elseif raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.P)
+                    scatter(raster(i,j),i,'vk','filled');hold on;
+                    clear y;
+                end
+            end
+        end
+        xlim([t(1) t(end)]);ylim([0 size(raster,1)+1]);
+        clear rasterT temp firstSpk raster a b
+    else
+        error('cellType and ripMod are the only two secondary tags currently implemented');
     end
-    xlim([t(1) t(end)]);ylim([0 size(raster,1)+1]);
-    clear rasterT temp firstSpk raster a b
     
 end
 
@@ -146,14 +179,28 @@ switch(tag)
             subplot(2,size(event,1),e+size(event,1));
             for i = 1:size(raster,1)
                 for j = 1:size(raster,2)
-                    if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
-                        br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
-                        scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
-                        clear y;
-                    elseif raster(i,j) > 0  strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)});
-                        br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
-                        scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
-                        clear y;
+                    if strcmp('cellType',tag2)
+                        if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
+                            br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
+                            clear y;
+                        elseif raster(i,j) > 0 && strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)})
+                            br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
+                            clear y;
+                        end
+                    elseif strcmp('ripMod',tag2)
+                        if raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.N)
+                            br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
+                            clear y;
+                        elseif (raster(i,j) > 0) && (ismember(rasterID(i),cell_metrics.tags.P))
+                            br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
+                            clear y;
+                        end
+                    else
+                        error('cellType and ripMod are the only two secondary tags currently implemented');
                     end
                 end
             end
@@ -331,14 +378,30 @@ switch(tag)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
         end
         
-    otherwise,
+    otherwise
         error(['Unknown property ']);
 end
 
-%% add saving
-
-
+% %% add saving
+oldPath = cd(savePath);
+rastFiles = dir(['*.evtRast*.evt']);
+cd(oldPath);
+if isempty(rastFiles)
+    fileN = 1;
+else
+    % Set file index to next available value
+    pat = ['.evtRast[0-9].'];
+    fileN = 0;
+    for ii = 1:length(rastFiles)
+        token  = regexp(rastFiles(ii).name,pat);
+        val    = str2double(rastFiles(ii).name(token+2:token+4));
+        fileN  = max([fileN val]);
+    end
+    fileN = fileN + 1;
 end
+saveas(gcf,[savePath '\' basename '.evtRast.' num2str(fileN) '.png']);
+end
+
 
 
 

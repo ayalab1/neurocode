@@ -52,7 +52,7 @@ if ~isempty(lfpChan)
     lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
     % add option to filter LFP
     
-    figure;
+    figure('Position', get(0, 'Screensize'));  
     for e = 1:size(event,1)
         subplot(2,size(event,1),e);
         plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
@@ -384,22 +384,27 @@ end
 
 % %% add saving
 oldPath = cd(savePath);
-rastFiles = dir(['*.evtRast*.evt']);
+rastFiles = dir(['*.rastEvt*.png']);
 cd(oldPath);
 if isempty(rastFiles)
     fileN = 1;
 else
     % Set file index to next available value
-    pat = ['.evtRast[0-9].'];
+    pat = ['.rastEvt[0-9].'];
     fileN = 0;
     for ii = 1:length(rastFiles)
         token  = regexp(rastFiles(ii).name,pat);
-        val    = str2double(rastFiles(ii).name(token+2:token+4));
+        val    = str2double(rastFiles(ii).name(token+9:token+10));
         fileN  = max([fileN val]);
     end
     fileN = fileN + 1;
 end
-saveas(gcf,[savePath '\' basename '.evtRast.' num2str(fileN) '.png']);
+if fileN < 10
+    useFileN = strcat('0',num2str(fileN));
+else
+    useFileN = num2str(fileN);
+end
+saveas(gcf,[savePath '\' basename '.rastEvt' useFileN '.png']);
 end
 
 

@@ -1341,7 +1341,7 @@ params.TRAINING     = TRAINING;
 params.DEBUG        = DEBUG;
 SWR.detectorinfo.detectionparms = params;
 SWR.detectorinfo.detectorname = 'bz_DetectSWR';
-SWR.detectorinfo.detectiondate = today('datetime');
+SWR.detectorinfo.detectiondate = datestr(datetime('now'),'dd-mmm-yyyy');
 SWR.detectorinfo.detectionintervals = Epochs;
 
 % write out log file

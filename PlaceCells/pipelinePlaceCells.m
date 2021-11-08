@@ -55,7 +55,6 @@ save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 % theta phase
 lfp = getLFP(refCh);
 theta = bz_Filter(lfp,'passband',[5 15]);
-count = 0;
 
 % boundaries of each PF
 for i=1:numel(spikes.UID) %
@@ -72,6 +71,7 @@ for i=1:numel(spikes.UID) %
     end
 end
 
+count = 0;
 phases = [theta.timestamps, theta.phase];
 % calculate phase precession
 for i=1:numel(spikes.UID)
@@ -80,9 +80,20 @@ for i=1:numel(spikes.UID)
             if ~isnan(placeFieldStats.mapStats{i}{j}.x(k))%(boundaries{i}{j}(k,1)) % for each PF not removed
                 count=count+1;
                 [dataPP{count},statsPP{count}] = PhasePrecession(posTrials{j},spikes.times{i},phases,'boundaries',boundaries{i}{j}(k,:));
-                PlotPhasePrecession(dataPP{count},statsPP{count});
             end
         end
     end
 end
+
+PP = struct; PP.dataPP = dataPP; PP.statsPP = statsPP;
+save([basename '.phasePrecession.mat'],'PP');
+
+for i=1:numel(dataPP)
+    if ~isempty(dataPP{i})
+     PlotPhasePrecession(dataPP{i},statsPP{i});
+     pause;
+     close all;
+    end
+end
+
 

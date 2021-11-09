@@ -534,3 +534,31 @@ def load_animal_behavior(basepath):
         df.loc[idx,'epochs'] = epochs.name.iloc[t] 
 
     return df
+
+def load_epoch(basepath):
+    """
+    Loads epoch info from cell explorer basename.session and stores in df
+    """
+
+    filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
+
+    # check if saved file exists
+    if not os.path.exists(filename):
+        warnings.warn("file does not exist")
+        return pd.DataFrame()
+
+    # load file
+    data = sio.loadmat(filename)
+
+    name = []
+    df_temp = pd.DataFrame()
+    df_save = pd.DataFrame()
+    for epoch in data['session']['epochs'][0][0][0]:
+        dt = epoch[0].dtype
+        for dn in dt.names:
+            df_temp[dn] = epoch[0][0][dn][0]
+        df_save = df_save.append(df_temp,ignore_index=True)
+        name.append(epoch[0]['name'][0][0])
+    df_save['name'] = name
+
+    return df_save

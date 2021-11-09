@@ -1,16 +1,19 @@
 function  plotEventRaster(event,varargin)
 %
 %   Plot spike raster for invidual events (such as ripples), sorting cells
-%   by firign order and color code them according to diverse features
+%   by firing order and color code them according to diverse features
 %   (region, cell type, etc.)
 %
 %   Inputs:
 %   event   = [start stop] in seconds for one or multiple events
+%   spikes  = structure of spike time and UID info
 %   lfpChan = channel to plot lfp (base 1)
-%   tag     = feature to color code raste. Now supporting: pyrInt, brainRegion,
-%               deepSup, REMshift
 %   loadDat = load lfp trace from .dat instead of .lfp. Default = false
-
+%   tag     = feature to color code raste. Now supporting: pyrInt, 
+%               brainRegion, deepSup, REMshift
+%   tag2    = feature for shape of the raster. Now supporting: cellType,
+%               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
+%
 %   Antonio FR, 10/21. Lindsay Karaba, 11/21
 
 %% inputs
@@ -42,6 +45,10 @@ if isempty(spikes)
     load(fullfile(basepath,[basename '.spikes.cellinfo.mat']));
 end
 
+if strcmp(tag2,'ripMod')&&~strcmp(tag,'brainRegion')
+    error('ripMod is not implemented with anything other than brainRegion color coding');
+end
+
 sr = session.extracellular.sr;
 
 pad = 0.05; % padding time
@@ -52,24 +59,28 @@ end
 
 %% plot lfp
 if ~isempty(lfpChan)
-  
+    lfp = [];
     if ~loadDat
-    lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
-    % add option to filter LFP
+        lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
+        % add option to filter LFP
+        figure('Position', get(0, 'Screensize'));  
+        for e = 1:size(event,1)
+            subplot(2,size(event,1),e);
+            plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
+        end
     elseif loadDat
-    lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
-        'channels',lfpChan,'start',event(:,1),'duration',event(:,2)-event(:,1));  
-    lfp.data = lfpdat; 
-    t = event(:,1):(1/sr):event(:,2);   lfp.timestamps = t(1:end-2)';
+        figure('Position', get(0, 'Screensize'));  
+        for e = 1:size(event,1)
+            lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
+                'channels',lfpChan,'start',event(e,1),'duration',event(e,2)-event(e,1));  
+            lfp(e).data = lfpdat; 
+            t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:end-2)';
+            subplot(2,size(event,1),e);
+            plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
+        end
     end
-    
-    figure('Position', get(0, 'Screensize'));  
-    for e = 1:size(event,1)
-        subplot(2,size(event,1),e);
-        plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
-        xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
-    end
-    
 end
 
 %% plot spike raster: pyr int

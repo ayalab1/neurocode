@@ -54,7 +54,7 @@ for p = 1:size(paths_save,1)
     end
     if (label==combine)||(combine=="both")
         load(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat'));
-        load(strcat(basepath,'\Barrage_Files\',basename,'.allpyr.cellinfo.mat'));
+        load(strcat(basepath,'\Barrage_Files\',basename,'.brstDt.cellinfo.mat'));
         %% Cell level ISI distribution
         ISI_x = [cumMet.ISIx]; %this should be the same for everything?
         ISI_y = sum([ISI_y,cumMet.ISIy],2);

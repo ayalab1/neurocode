@@ -55,6 +55,12 @@ for r = 1:size(regKey,2)
 end
 cellProp.comKey = comKey;
 
+cumMet.regID = regID;
+cumMet.modID = modID;
+cumMet.regKey = regKey;
+cumMet.modKey = modKey;
+cumMet.comKey = comKey;
+
 %% [1.0] Sort cells by subtype
 % Put list of UIDs into a structure size nReg x mMod
 UIDfull = cell(size(regKey,2),size(modKey,2));

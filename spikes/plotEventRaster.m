@@ -5,12 +5,13 @@ function  plotEventRaster(event,varargin)
 %   (region, cell type, etc.)
 %
 %   Inputs:
-%   event = [start stop] in seconds for one or multiple events
+%   event   = [start stop] in seconds for one or multiple events
 %   lfpChan = channel to plot lfp (base 1)
-%   tag = feature to color code raste. Now supporting: pyrInt, brainRegion,
-%   deepSup, REMshift
-%
-%   Antonio FR, 10/21. FUNCTION STILL IN PROGRESS
+%   tag     = feature to color code raste. Now supporting: pyrInt, brainRegion,
+%               deepSup, REMshift
+%   loadDat = load lfp trace from .dat instead of .lfp. Default = false
+
+%   Antonio FR, 10/21. Lindsay Karaba, 11/21
 
 %% inputs
 p = inputParser;
@@ -21,6 +22,8 @@ addParameter(p,'tag','brainRegion',@isstr);
 addParameter(p,'tag2','cellType',@isstr);
 addParameter(p,'savePath',pwd,@isstr);
 addParameter(p,'evtNum',[],@isnumeric);
+addParameter(p,'loadDat',false,@islogical);
+
 parse(p,varargin{:});
 basepath = p.Results.basepath;
 spikes = p.Results.spikes;
@@ -29,6 +32,7 @@ tag = p.Results.tag;
 tag2 = p.Results.tag2;
 savePath = p.Results.savePath;
 evtNum = p.Results.evtNum;
+loadDat = p.Results.loadDat;
 
 basename = basenameFromBasepath(basepath);
 load(fullfile(basepath,[basename '.session.mat']));
@@ -48,9 +52,16 @@ end
 
 %% plot lfp
 if ~isempty(lfpChan)
-    
+  
+    if ~loadDat
     lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
     % add option to filter LFP
+    elseif loadDat
+    lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
+        'channels',lfpChan,'start',event(:,1),'duration',event(:,2)-event(:,1));  
+    lfp.data = lfpdat; 
+    t = event(:,1):(1/sr):event(:,2);   lfp.timestamps = t(1:end-2)';
+    end
     
     figure('Position', get(0, 'Screensize'));  
     for e = 1:size(event,1)

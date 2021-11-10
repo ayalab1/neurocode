@@ -77,11 +77,11 @@ end
 
 
 if isempty(analogPulses)
-    analogPulses = bz_getAnalogPulses('analogCh',ledLayout.channel(ledLayout.isAnalog==1));
+    analogPulses = getAnalogPulses('analogCh',ledLayout.channel(ledLayout.isAnalog==1));
 end
 
 if isempty(digitalPulses)
-    digitalPulses = bz_getDigitalIn;
+    digitalPulses = getDigitalIn;
 end
 
 %% Collect pulses

@@ -66,17 +66,16 @@ end
 if isempty(spikes)
     spikes = loadSpikes('getWaveformsFromDat',false);
 end
-
 if isempty(analogCh)
-    pulsesAnalog = bz_getAnalogPulses;
+    pulsesAnalog = getAnalogPulses;
 else
-    pulsesAnalog = bz_getAnalogPulses('analogCh',analogCh);
+    pulsesAnalog = getAnalogPulses('analogCh',analogCh);
 end
 
 pulsesDigital.timestamps = []; pulsesDigital.digitalChannel = [];
 if ~isempty(digitalCh)
-    parameters = LoadParameters(pwd); % read xml
-    digitalIn = bz_getDigitalIn('all','fs',parameters.rates.wideband); 
+    session = getSession;
+    digitalIn = getDigitalIn('all','fs',session.extracellular.sr); 
     for ii = 1:length(digitalCh)
         pulsesDigital.timestamps = [pulsesDigital.timestamps; digitalIn.ints{digitalCh(ii)}'];
         pulsesDigital.digitalChannel = [pulsesDigital.digitalChannel; ones(size(digitalIn.ints{digitalCh(ii)},2),1) * digitalCh(ii)];

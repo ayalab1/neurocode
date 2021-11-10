@@ -180,9 +180,17 @@ title('Histograms of burst length per region types');
 c = 2; %we don't care about unknown modulations
 i = 1;
 for r = 1:(size(burstLen,1))
-    subplot(size(burstLen,1),2,i); histogram(burstLen{r,c},[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' P'));
+    if ~isempty(burstLen{r,c})
+        tempCat = [];
+        tempCat = cat(2, burstLen{r,c}{:});
+        subplot(size(burstLen,1),2,i); histogram(tempCat,[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' P'));
+    end
     i=i+1;
-    subplot(size(burstLen,1),2,i); histogram(burstLen{r,c+1},[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' N'));
+    if ~isempty(burstLen{r,c+1})
+        tempCat = [];
+        tempCat = cat(2, burstLen{r,c+1}{:});
+        subplot(size(burstLen,1),2,i); histogram(tempCat,[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' N'));
+    end
     i=i+1;
 end
 hold off;

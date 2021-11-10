@@ -11,11 +11,11 @@ load([basename '.cell_metrics.cellinfo.mat']);
 
 %% Produce spike structure
 spikes = [];
-spikes = importSpikes('brainRegion', 'CA2', 'cellType', 'Pyramidal Cell');
-save([savePath 'CA2pyr.cellinfo.mat'], 'spikes');
+spikes = importSpikes('cellType', 'Pyramidal Cell');
+save([savePath 'allpyr.cellinfo.mat'], 'spikes');
 
 %% Flag burst events
-burstThresh = 0.09;
+burstThresh = 0.095;
 burstEvts = cell(size(spikes.times,2),1);
 burstSz = cell(size(spikes.times,2),1);
 avgBurstSz = NaN(size(spikes.times,2),1);
@@ -42,8 +42,8 @@ for i = 1:size(spikes.times,2)
 end
 
 %% Get spike count info
-thresh = 6;
-normSpkThresh = 0.5;
+thresh = 7;
+normSpkThresh = 0.35;
 flag = NaN(size(spikes.times,2),1);
 checking = NaN(size(spikes.times,2),4);
 

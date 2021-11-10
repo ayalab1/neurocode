@@ -154,7 +154,10 @@ ylabel('ISI (s)');
 xlabel('Region');
 ylim([-1 7]);
 saveas(gcf,[plotPath saveSchem '.ISIboxReg.png']);    
-    
+
+cumMet.boxxISI = boxx;
+cumMet.boxgISI = boxg;
+
 % Summary box plot per region and per mod type
 c = 1;
 boxx = [];
@@ -720,6 +723,7 @@ end
 hold off;
 saveas(gcf,[plotPath saveSchem '.numSpkSC.png']);
 barProp.cumSpk = cumSpk;
+cumMet.cumSpk = cumSpk;
 if ~showPlt
     close all
 end
@@ -828,6 +832,7 @@ end
 hold off;
 saveas(gcf,[plotPath saveSchem '.numSpkSC.png']);
 barProp.cumFR = cumFR;
+cumMet.cumFR = cumFR;
 if ~showPlt
     close all
 end

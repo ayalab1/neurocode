@@ -75,7 +75,7 @@ if ~isempty(lfpChan)
             lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
                 'channels',lfpChan,'start',event(e,1),'duration',event(e,2)-event(e,1));  
             lfp(e).data = lfpdat; 
-            t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:end-2)';
+            t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:size(lfp(e).data(:,1),1))'; %sometimes the time array doesn't match?
             subplot(2,size(event,1),e);
             plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
             xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);

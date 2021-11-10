@@ -21,7 +21,7 @@ load(['Barrage_Files\' basename '.allpyr.cellinfo.mat']);
 load([basename '.cell_metrics.cellinfo.mat']);
 load([basename '.session.mat']);
 showPlt = 0;
-reRun = 0; 
+reRun = 1; 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -447,15 +447,14 @@ if ~exist(plotPath)
 end
 load([basepath '\Barrage_Files\' basename '.HSEfutEVT.mat']);
 load([basepath '\Barrage_Files\' basename '.HSEmetrics.mat']);
-detection = find(HSEmetrics.Notes == "All pyr",1,'last');
-saveSchem = strcat(basename,'.',num2str(detection));
+saveSchem = strcat(basename,'.brstDt');
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
 end
 
 %% [2.0] Initial runs
 if reRun
-    [spkEventTimes] = getRipSpikes('basepath',pwd,'events',evtSave{detection,1},'spikes',spikes,'savePath',savePath,'saveNum',detection,'padding',0,'saveMat',false);
+    [spkEventTimes] = getRipSpikes('basepath',pwd,'events',evtSave{end,1},'spikes',spikes,'savePath',savePath,'padding',0,'saveMat',false);
     save(strcat(specPath,saveSchem,'.spkEventTimes.mat'),'spkEventTimes', '-v7.3');
     [unitBar] = unitSWRmetrics(spkEventTimes,spikes);
     save(strcat(specPath,saveSchem,'.unitBar.mat'),'unitBar', '-v7.3');

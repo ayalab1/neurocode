@@ -30,9 +30,20 @@
 % Modified by aza, 2017, sas-lab
 % Adapted to neurocode by aza, 2021, still have to work on new format...
 
-function positions = detectLED(fbasename,thresh,varargin)
+function positions_out = detectLED(fbasename,thresh,varargin)
 manualROI = 0;
 debug_by_shot=0;
+samplingRate=30; %make it optional
+
+if isempty(fbasename)
+    positions_out=[];
+    return
+end
+
+% Get basler TTL (assuming that is coming from dig input 1) - make optional
+digitalIn = getDigitalIn;
+bazlerTtl = digitalIn.timestampsOn{1};
+clear digitalIn
 
 % Parse options
 for i = 1:2:length(varargin),
@@ -130,10 +141,7 @@ while ~isDone(videoObj)
         fprintf(backSp)
     end
     
-    % Display counts every 30s
-    if mod(count,900)==0
-        fprintf('%i',count)
-    end
+    fprintf('%i',count)
     
     if count~=0
         fr    = step(videoObj);
@@ -150,7 +158,7 @@ while ~isDone(videoObj)
     mask(~label)  = 0;
     
     %%% Find centroid of remaining pixels %%%
-    %make colors optional
+    %TO ADD: make colors optional to enter (in case ever green)
     
     %Red
     bw_mask = squeeze(mask(:,:,1));
@@ -232,8 +240,24 @@ end
 catch
 %    keyboard
 end
+
+[path,~,~]=fileparts(fbasename);
+while contains(path,filesep)
+    path = extractAfter(path,filesep);
+end
+
+positions_out.position.x1 = positions(:,1);positions_out.position.y1 = positions(:,2);
+positions_out.position.x2 = positions(:,3);positions_out.position.y2 = positions(:,4);
+positions_out.timestamps = bazlerTtl;
+positions_out.folder = path;
+positions_out.samplingRate = samplingRate;
+positions_out.description = '';
+
 %write result file
-dlmwrite([fbasename '.led'],positions,'\t')
+% dlmwrite([fbasename '.led'],positions_out,'\t')
+fbasename2save=fbasename(1:end-4);
+save([fbasename2save '.led'],'positions_out');
+
 
 fprintf('\n\n')
 release(videoObj)

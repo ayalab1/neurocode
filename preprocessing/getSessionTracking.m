@@ -42,7 +42,7 @@ function [tracking] = getSessionTracking(varargin)
 %   HISTORY:
 %     - Manuel Valero 2019
 %     - Added OptiTrack support: 5/20, AntonioFR (new updates from KM)
-
+%     - Modified by aza to fit ayalab current setups (Nov - 2021)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Defaults and Params
@@ -55,6 +55,8 @@ addParameter(p,'roisPath',[],@isfolder);
 addParameter(p,'saveMat',true,@islogical)
 addParameter(p,'forceReload',false,@islogical)
 addParameter(p,'optitrack',false,@islogical)
+addParameter(p,'threshold',0.15,@isnumeric)
+addParameter(p,'fs',30,@isnumeric)
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -65,6 +67,8 @@ roisPath = p.Results.roisPath;
 saveMat = p.Results.saveMat;
 forceReload = p.Results.forceReload;
 optitrack = p.Results.optitrack;
+threshold = p.Results.threshold;
+samplingRate = p.Results.fs;
 
 %% In case tracking already exists 
 if ~isempty(dir([basepath filesep '*Tracking.Behavior.mat'])) || forceReload
@@ -104,9 +108,9 @@ if ~(optitrack)
              if ~isempty(dir([basepath filesep MergePoints.foldernames{ii} filesep '*Basler*avi']))   
                 cd([basepath filesep MergePoints.foldernames{ii}]); %cd([basepath filesep sess(ii).name]);
                 fprintf('Computing tracking in %s folder \n',MergePoints.foldernames{ii});
-                 tempTracking{count}= LED2Tracking([],'convFact',convFact,'roiTracking',...
+                 tempTracking{count}= LED2Tracking([],'fs',samplingRate,'convFact',convFact,'roiTracking',...
                      roiTracking,'roiLED',roiLED,'forceReload',forceReload); % computing trajectory
-                 trackFolder(count) = ii; 
+                trackFolder(count) = ii; 
                 count = count + 1;
             end
         end
@@ -139,26 +143,29 @@ if ~(optitrack)
     end
 
     % Concatenating tracking fields...
-    x = []; y = []; folder = []; samplingRate = []; description = [];
+    x1 = []; y1 = []; x2 = []; y2 = []; folder = []; samplingRate = []; description = [];
     for ii = 1:size(tempTracking,2) 
-        x = [x; tempTracking{ii}.position.x]; 
-        y = [y; tempTracking{ii}.position.y]; 
+        x1 = [x1; tempTracking{ii}.position.x1]; 
+        y1 = [y1; tempTracking{ii}.position.y1];
+        x2 = [x2; tempTracking{ii}.position.x2]; 
+        y2 = [y2; tempTracking{ii}.position.y2];        
         folder{ii} = tempTracking{ii}.folder; 
         samplingRate = [samplingRate; tempTracking{ii}.samplingRate];  
         description{ii} = tempTracking{ii}.description;
     end
 
-    tracking.position.x = x;
-    tracking.position.y = y;
+    tracking.position.x1 = x1;
+    tracking.position.y1 = y1;
+    tracking.position.x2 = x2;
+    tracking.position.y2 = y2;    
     tracking.folders = folder;
     tracking.samplingRate = samplingRate;
     tracking.timestamps = ts;
     tracking.events.subSessions =  subSessions;
     tracking.events.subSessionsMask = maskSessions;
 
-end
 %% OptiTrack 
-if optitrack
+else
     
     % Get csv file locations
     trackingFiles = checkFile('basepath',basepath,'fileType','.csv');

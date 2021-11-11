@@ -45,8 +45,9 @@ function [tracking] = LED2Tracking(aviFile,varargin)
 %   averageFrame    - 
 %   
 %
-%   Manu Valero 2019
-% TO DO: Generalize for non-T maze behaviour
+%   aza oliva, 2021, 
+%   based on previous one from Manu Valero 2019, and  Adrien Peyrache 2015
+%   adapted to neurocode and setups in ayalab (Nov - 2021)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 %% Defaults and Parms
@@ -60,9 +61,10 @@ addParameter(p,'roiLED',[],@ismatrix);
 addParameter(p,'forceReload',false,@islogical)
 addParameter(p,'saveFrames',true,@islogical)
 addParameter(p,'verbose',false,@islogical);
-addParameter(p,'thresh',.98,@isnumeric)
+addParameter(p,'thresh',.75,@isnumeric) %0.98
 addParameter(p,'bazlerTTL',[],@isnumeric)
 addParameter(p,'saveMat',true,@islogical);
+addParameter(p,'pixelSizeEstimate',[1 30],@ismatrix);
 % addParameter(p,'RGBChannel',[],@isstr);
 
 parse(p,varargin{:});
@@ -78,6 +80,8 @@ verbose = p.Results.verbose;
 thresh = p.Results.thresh;
 bazlerTtl = p.Results.bazlerTTL;
 saveMat = p.Results.saveMat;
+pixelSizeEstimate = p.Results.pixelSizeEstimate;
+
 % RGBChannel = p.Results.RGBChannel;
 
 %% Deal with inputs
@@ -106,13 +110,14 @@ if ~exist([basepath filesep aviFile '.mat'],'file') && ~forceReload
     clear temp
     batches = 1:2000:numFrames;
     batches = [batches numFrames+1];
-    frames.r = [];
+    frames.r = [];frames.b = [];
     tic
     f = waitbar(0,'Getting frames...');
     for ii = 1:length(batches)-1
         waitbar(ii/length(batches),f)
         temp_frames = read(videoObj,[batches(ii) batches(ii+1)-1]);        % get all frames
-        frames.r = cat(3,frames.r,squeeze(temp_frames(:,:,1,:)));          % collect red, add new nested variable for blue and green if needed
+        frames.r = cat(3,frames.r,squeeze(temp_frames(:,:,1,:)));          % get red shiny pixels
+        frames.b = cat(3,frames.b,squeeze(temp_frames(:,:,2,:)));          % get red shiny pixels
     end
     close(f)
     toc
@@ -126,8 +131,8 @@ else
     load([basepath filesep aviFile '.mat'],'frames');
 end
 
-% get average frame
-average_frame = mean(frames.r,3);                                          % get average frames
+% get average frame - plot is shity some times, usually not a problem
+average_frame = mean(frames.r,3);                                          
 
 % deal with the ROI for the tracking 
 cd(basepath); cd ..; upBasepath = pwd; cd(basepath);
@@ -167,7 +172,8 @@ elseif ischar(roiLED) && strcmpi(roiLED,'manual')
     close(h1);
 end
 
-if isempty(convFact)                             % if convFact not provided, normalize to 1 along the longest axis
+% if convFact not provided, normalize to 1 along the longest axis
+if isempty(convFact)                            
     convFact = 1/max([size(frames.r,1) size(frames.r,2)]);
     artifactThreshold = Inf;
 end
@@ -198,20 +204,43 @@ if ~verbose
     f = waitbar(0,'Detecting LED position...');
     for ii = 1:size(frames.r,3)
         waitbar(ii/size(frames.r,3),f)
+        
+        %red LED
         fr = frames.r(:,:,ii).*bw;
         bin_fr = imbinarize(double(fr),thr_fr); %
-        bin_fr = bwareafilt(bin_fr,[10 300]);
+        bin_fr = bwareafilt(bin_fr,pixelSizeEstimate);
         stats_fr = regionprops(bin_fr);
-        maxBlob = find([stats_fr.Area]== max([stats_fr.Area]),1);
-        if ~isempty(maxBlob)
-            sz_fr(ii) = stats_fr(maxBlob).Area;
-            Rr_x(ii) = stats_fr(maxBlob).Centroid(1);
-            Rr_y(ii) = stats_fr(maxBlob).Centroid(2);
+        maxBlobr = find([stats_fr.Area]== max([stats_fr.Area]),1);
+        
+        %blue LED
+        fb = frames.b(:,:,ii).*bw;
+        bin_fb = imbinarize(double(fb),thr_fr); %
+        bin_fb = bwareafilt(bin_fb,pixelSizeEstimate);
+        stats_fb = regionprops(bin_fb);
+        maxBlobb = find([stats_fb.Area]== max([stats_fb.Area]),1);
+        
+        %red LED
+        if ~isempty(maxBlobr)
+            sz_fr(ii) = stats_fr(maxBlobr).Area;
+            Rr_x(ii) = stats_fr(maxBlobr).Centroid(1);
+            Rr_y(ii) = stats_fr(maxBlobr).Centroid(2);
         else
             sz_fr(ii) = NaN;
             Rr_x(ii) = NaN;
             Rr_y(ii) = NaN;
         end
+        
+        %blue LED
+        if ~isempty(maxBlobb)
+            sz_fb(ii) = stats_fb(maxBlobb).Area;
+            Rb_x(ii) = stats_fb(maxBlobb).Centroid(1);
+            Rb_y(ii) = stats_fb(maxBlobb).Centroid(2);
+        else
+            sz_fb(ii) = NaN;
+            Rb_x(ii) = NaN;
+            Rb_y(ii) = NaN;
+        end
+        
     end
     close(f)
     toc
@@ -220,15 +249,26 @@ else
     hold on
     tic
     for ii = 1:size(frames.r,3)
+        
+        %red LED
         fr = frames.r(:,:,ii).*bw;
         bin_fr = imbinarize(double(fr),thr_fr); %
-        bin_fr = bwareafilt(bin_fr,[10 300]);
+        bin_fr = bwareafilt(bin_fr,pixelSizeEstimate);
         stats_fr = regionprops(bin_fr);
-        maxBlob = find([stats_fr.Area]== max([stats_fr.Area]),1);
-        if ~isempty(maxBlob)
-            sz_fr(ii) = stats_fr(maxBlob).Area;
-            Rr_x(ii) = stats_fr(maxBlob).Centroid(1);
-            Rr_y(ii) = stats_fr(maxBlob).Centroid(2);
+        maxBlobr = find([stats_fr.Area]== max([stats_fr.Area]),1);
+        
+        %blue LED
+        fb = frames.r(:,:,ii).*bw;
+        bin_fb = imbinarize(double(fb),thr_fr); %
+        bin_fb = bwareafilt(bin_fb,pixelSizeEstimate);
+        stats_fb = regionprops(bin_fb);
+        maxBlobb = find([stats_fb.Area]== max([stats_fb.Area]),1);
+        
+        %red LED
+        if ~isempty(maxBlobr)
+            sz_fr(ii) = stats_fr(maxBlobr).Area;
+            Rr_x(ii) = stats_fr(maxBlobr).Centroid(1);
+            Rr_y(ii) = stats_fr(maxBlobr).Centroid(2);
             cla
             imagesc(fr)
             plot(Rr_x(ii),Rr_y(ii),'or')
@@ -238,33 +278,64 @@ else
             Rr_x(ii) = NaN;
             Rr_y(ii) = NaN;
         end
+        
+        %blue LED
+        if ~isempty(maxBlobb)
+            sz_fb(ii) = stats_fb(maxBlobb).Area;
+            Rb_x(ii) = stats_fb(maxBlobb).Centroid(1);
+            Rb_y(ii) = stats_fb(maxBlobb).Centroid(2);
+            cla
+            imagesc(fb)
+            plot(Rb_x(ii),Rb_y(ii),'or')
+            drawnow;
+        else
+            sz_fb(ii) = NaN;
+            Rb_x(ii) = NaN;
+            Rb_y(ii) = NaN;
+        end
+        
     end
     toc
     close(h1);
 end
 
-pos = [Rr_x; Rr_y]';
+pos_r = [Rr_x; Rr_y]';
+pos_b = [Rb_x; Rb_y]';
 
-%% postprocessing of LED position 
-pos = pos * convFact;                                   % cm or normalized
-art = find(sum(abs(diff(pos))>artifactThreshold,2))+1;  % remove artefacs as movement > 10cm/frame
-pos(art,:) = NaN;
+if isempty(find(~isnan(pos_r), 1)) && isempty(find(~isnan(pos_b), 1))
+    warning('Not finding positions... usually a problem of proper threshold to detect LED');
+end
 
-xt = linspace(0,size(pos,1)/fs,size(pos,1));            
+%% postprocessing of LED position
+
+pos1 = pos_r * convFact;                                  % cm or normalized
+pos2 = pos_b * convFact;                                  % cm or normalized
+art = find(sum(abs(diff(pos1))>artifactThreshold,2))+1;  % remove artefacs as movement > 10cm/frame
+pos1(art,:) = NaN;
+art2 = find(sum(abs(diff(pos2))>artifactThreshold,2))+1;  % remove artefacs as movement > 10cm/frame
+pos2(art,:) = NaN;
+
+xt = linspace(0,size(pos1,1)/fs,size(pos1,1));            
 % kalman filter is not working - NEED TO BE FIXED
 % [t,x,y,vx,vy,ax,ay] = trajectory_kalman_filter(pos(:,1)',pos(:,2)',xt,0);
-x=pos(:,1);y=pos(:,2); t=xt;
-art = find(sum(abs(diff([x y]))>artifactThreshold,2))+1;
+x1=pos1(:,1);y1=pos1(:,2); t=xt;
+x2=pos2(:,1);y2=pos1(:,2);
+art = find(sum(abs(diff([x1 y1]))>artifactThreshold,2))+1;
+art = find(sum(abs(diff([x2 y2]))>artifactThreshold,2))+1;
 art = [art - 2 art - 1 art art + 1 art + 2];
-x(art(:)) = NaN; y(art(:)) = NaN;
-F = fillmissing([x y],'linear');
-x = F(:,1); y = F(:,2);
+art2 = [art2 - 2 art2 - 1 art2 art2 + 1 art2 + 2];
+x1(art(:)) = NaN; y1(art(:)) = NaN;
+x2(art2(:)) = NaN; y2(art2(:)) = NaN;
+F = fillmissing([x1 y1],'linear');
+F2 = fillmissing([x2 y2],'linear');
+x1 = F(:,1); y1 = F(:,2);
+x2 = F2(:,1); y2 = F2(:,2);
 
 h2 = figure;
 hold on
 imagesc(xMaze, yMaze,average_frame); colormap gray; caxis([0 .7]);
 freezeColors;
-scatter(x,y,3,t,'filled','MarkerEdgeColor','none','MarkerFaceAlpha',.5); colormap jet
+scatter(x1,y1,3,t,'filled','MarkerEdgeColor','none','MarkerFaceAlpha',.5); colormap jet
 caxis([t(1) t(end)])
 xlabel('norm/cm'); ylabel('norm/cm'); colorbar;
 xlim(xMaze); ylim(yMaze);
@@ -310,51 +381,34 @@ if isempty(bazlerTtl)
 end
 
 % match basler frames con ttl pulses
-if length(bazlerTtl) == length(x)
+if length(bazlerTtl) == length(x1)
     disp('Number of frames match!!');
-elseif length(bazlerTtl) > length(x) && length(bazlerTtl) <= length(x) + 15 * 1 
+elseif length(bazlerTtl) > length(x1) && length(bazlerTtl) <= length(x1) + 15 * 1 
     fprintf('%3.i frames were dropped, probably at the end of the recording. Skipping... \n',...
-        length(bazlerTtl) - length(x));
-    bazlerTtl = bazlerTtl(1:length(x));
-elseif length(bazlerTtl) < length(x) && (length(x)-length(bazlerTtl)) < 30 * 4
+        length(bazlerTtl) - length(x1));
+    bazlerTtl = bazlerTtl(1:length(x1));
+elseif length(bazlerTtl) < length(x1) && (length(x1)-length(bazlerTtl)) < 30 * 4
     fprintf('%3.i video frames without TTL... Was the recording switched off before the camera?. Skipping... \n',...
-        length(x) - length(bazlerTtl));
-    x = x(1:length(bazlerTtl));
-    y = y(1:length(bazlerTtl));
+        length(x1) - length(bazlerTtl));
+    x1 = x1(1:length(bazlerTtl));
+    y1 = y1(1:length(bazlerTtl));
+    x2 = x2(1:length(bazlerTtl));
+    y2 = y2(1:length(bazlerTtl));
     vx = vx(1:length(bazlerTtl));
     vy = vy(1:length(bazlerTtl));
     ax = ax(1:length(bazlerTtl));
     ay = ay(1:length(bazlerTtl)); 
 elseif isempty(bazlerTtl)
     bazlerTtl = xt;
-elseif abs(length(x)-length(bazlerTtl)) > 15 * 1 && size(digitalIn.timestampsOn,2)> 4
+elseif abs(length(x1)-length(bazlerTtl)) > 15 * 1 && size(digitalIn.timestampsOn,2)> 4
     fprintf('%3.i frames were dropped, possibly at the beginning of the recording. Aligning timestamps to the first IR TTL... \n',...
-        length(bazlerTtl) - length(x));
+        length(bazlerTtl) - length(x1));
     f1 = figure;
     hold on
     imagesc(xMaze, yMaze,average_frame); colormap gray; caxis([0 4*mean(average_frame(:))]); axis tight
-    set(gca,'Ydir','reverse');
-   
-    lReward = digitalIn.timestampsOn{3}(1);
-    rReward = digitalIn.timestampsOn{4}(1);
-    
-    if lReward < rReward % If the animal turned left first, find the location based on the IR location
-        disp('Mouse turned left first. Mark y-position for left IR sensor...');
-        roiIR = drawpoint;
-        idx = find((y <= (roiIR.Position(2)+0.75)) & (y >= (roiIR.Position(2)- 0.75)) & x<20); %% tentative left IR location
-        timediff = lReward-bazlerTtl(idx(1));
-        % correct TTLs
-        bazlerTtl = bazlerTtl + timediff;
-    else % If the animal turned right first, find the location based on the IR location
-        disp('Mouse turned right first. Mark y-position for right IR sensor...');
-        roiIR = drawpoint;
-        idx = find((y <= (roiIR.Position(2)+0.75)) & (y >= (roiIR.Position(2)- 0.75)) & x<20); %% tentative right IR location
-        timediff = rReward-bazlerTtl(idx(1));
-        % correct TTLs
-        bazlerTtl = bazlerTtl + timediff;
-    end
-    close(f1);
+    set(gca,'Ydir','reverse');    
     bazlerTtl = bazlerTtl(1:length(x));
+    
 else
 %    keyboard;
     error('Frames do not match for more than 5 seconds!! Trying to sync LED pulses');
@@ -366,8 +420,10 @@ end
 
 [~,fbasename,~]=fileparts(pwd);
 
-tracking.position.x =x;
-tracking.position.y = y;
+tracking.position.x1 =x1;
+tracking.position.y1 = y1;
+tracking.position.x2 =x2;
+tracking.position.y2 = y2;
 tracking.position.z = [];
 tracking.description = '';
 tracking.timestamps = bazlerTtl;

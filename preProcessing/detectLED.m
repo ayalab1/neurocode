@@ -229,9 +229,9 @@ while ~isDone(videoObj)
             %setColor(h4,'yellow')
             %keyboard
             figure(2),
-            plot(positions(:,1),positions(:,2),'r')
+            plot(positions(:,1),positions(:,2),'r.')
             hold on
-            plot(positions(:,3),positions(:,4),'b')
+            plot(positions(:,3),positions(:,4),'b.')
             drawnow
         end
     end

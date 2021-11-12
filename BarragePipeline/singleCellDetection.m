@@ -43,7 +43,7 @@ end
 
 %% Get spike count info
 thresh = 7;
-normSpkThresh = 0.35;
+normSpkThresh = 0.4;
 flag = NaN(size(spikes.times,2),1);
 checking = NaN(size(spikes.times,2),4);
 
@@ -63,3 +63,4 @@ UIDkeep = spikes.UID(logical(flag));
 spikes = [];
 spikes = importSpikes('UID', UIDkeep);
 save([savePath 'brstDt.cellinfo.mat'], 'spikes');
+save([savePath 'brstDt.UIDkeep.mat'],'UIDkeep');

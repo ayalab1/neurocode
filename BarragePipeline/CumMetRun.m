@@ -91,26 +91,30 @@ for p = 1:size(paths_save,1)
         for r = 1:size(burstLen,1)
             for c = 1:size(burstLen,2)
                 if (size(cumMet.burstCnt,1)>=r)&&(size(cumMet.burstCnt,2)>=c)
-                    burstLen{r,c} = [burstLen{r,c} cumMet.burstCnt{r,c}];
+                    if ~isempty(cumMet.burstCnt{r,c})
+                        tempCat = [];
+                        tempCat = cat(2,cumMet.burstCnt{r,c}{:});
+                        burstLen{r,c} = [burstLen{r,c} tempCat];
+                    end
                 end
             end
         end
         
         %% Population Level Percent of Units in Events
-        perc_boxx = [perc_boxx cumMet.boxxPerc];
-        perc_boxg = [perc_boxg cumMet.boxgPerc];
+        perc_boxx = [perc_boxx; cumMet.boxxPerc];
+        perc_boxg = [perc_boxg; cumMet.boxgPerc];
 
         %% Population Level Avg Spike per Unit
         for r = 1:size(spkSC,1)
             for m = 1:size(spkSC,2)
-                spkSC{r,m} = [spkSC{r,m}; cumMet.cumSpk{r,m}];
+                spkSC{r,m} = [spkSC{r,m}; cumMet.cumSpk{r,m+1}];
             end
         end
 
         %% Population Level Avg FR per Unit
         for r = 1:size(FRsc,1)
             for m = 1:size(FRsc,2)
-                FRsc{r,m} = [FRsc{r,m}; cumMet.cumFR{r,m}];
+                FRsc{r,m} = [FRsc{r,m}; cumMet.cumFR{r,m+1}];
             end
         end
     end 
@@ -149,7 +153,12 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.I
 % Cell level ISI
 figure('Position', get(0, 'Screensize'));
 boxplot(ISI_boxx, ISI_boxg);
-xticklabels(cumMet.regKey(1,:));
+useIt = [];
+setBox = unique(ISI_boxg);
+for i = 1:length(setBox)
+    useIt = [useIt cumMet.regKey(1,setBox(i))];
+end
+xticklabels(useIt);
 title('ISI per region, outliers cut off');
 ylabel('ISI (s)');
 xlabel('Region');
@@ -159,7 +168,12 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.I
 % Cell Level Burst Index
 figure('Position', get(0, 'Screensize'));
 boxplot(burst_boxx, burst_boxg);
-xticklabels(cumMet.regKey(1,:));
+useIt = [];
+setBox = unique(burst_boxg);
+for i = 1:length(setBox)
+    useIt = [useIt cumMet.regKey(1,setBox(i))];
+end
+xticklabels(useIt);
 title('Burst Index per region');
 ylabel('Burst Index');
 xlabel('Region');
@@ -168,10 +182,16 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.B
 % Cell level Burst Size
 figure('Position', get(0, 'Screensize'));
 boxplot(burstSz_boxx, burstSz_boxg);
-xticklabels(cumMet.regKey(1,:));
+useIt = [];
+setBox = unique(burstSz_boxg);
+for i = 1:length(setBox)
+    useIt = [useIt cumMet.regKey(1,setBox(i))];
+end
+xticklabels(useIt);
 title('Burst Size per region');
 ylabel('Burst Size (# spikes)');
 xlabel('Region');
+ylim([0 10]);
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.BurstSzBoxCum.png']);
 
 % Cell level burst length histogram
@@ -182,13 +202,13 @@ i = 1;
 for r = 1:(size(burstLen,1))
     if ~isempty(burstLen{r,c})
         tempCat = [];
-        tempCat = cat(2, burstLen{r,c}{:});
+        tempCat = cat(2, burstLen{r,c}(:));
         subplot(size(burstLen,1),2,i); histogram(tempCat,[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' P'));
     end
     i=i+1;
     if ~isempty(burstLen{r,c+1})
         tempCat = [];
-        tempCat = cat(2, burstLen{r,c+1}{:});
+        tempCat = cat(2, burstLen{r,c+1}(:));
         subplot(size(burstLen,1),2,i); histogram(tempCat,[2:2:10]);hold on; title(strcat(cumMet.regKey(1,r),' N'));
     end
     i=i+1;
@@ -199,27 +219,39 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.B
 %
 figure('Position', get(0, 'Screensize'));
 boxplot(perc_boxx, perc_boxg);
-xticklabels(cumMet.regKey(1,:));
+useIt = [];
+setBox = unique(perc_boxg);
+for i = 1:length(setBox)
+    useIt = [useIt cumMet.regKey(1,setBox(i))];
+end
+xticklabels(useIt);
 title('Percent of units making up event per region');
 ylabel('Percent of units');
 xlabel('Region');
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.PercUntsCum.png']);
 
-% We're gonna make this a histogram rather than sc
+% We're gonna make this a histogram rather than sc (maybe later we can
+% sort by average intensity to get a nice trend or something?
 figure('Position', get(0, 'Screensize'));
 i = 1;
 for r = 1:size(spkSC,1)
-    subplot(size(spkSC,1),2,i); hist(spkSC{r,1},[2:2:10])/sum(hist(spkSC{r,1},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    if ~isempty(spkSC{r,1})
+        tempSpkSC = sum(spkSC{r,1},1)/sum(spkSC{r,1});
+        subplot(size(spkSC,1),2,i); bar(tempSpkSC);hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
+        xticks([1 2 3 4 5]);
+        xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    end
     i = i+1;
     if r == size(spkSC,1)
         ylabel('Normalized Count');
         xlabel('# spikes');
     end
-    subplot(size(spkSC,1),2,i); hist(spkSC{r,2},[2:2:10])/sum(hist(spkSC{r,2},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    if ~isempty(spkSC{r,2})
+        tempSpkSC = sum(spkSC{r,2},1)/sum(spkSC{r,2});
+        subplot(size(spkSC,1),2,i);bar(tempSpkSC);hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
+        xticks([1 2 3 4 5]);
+        xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    end
     i = i+1;
 end
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.SpkHistCum.png']);
@@ -228,17 +260,25 @@ saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.S
 figure('Position', get(0, 'Screensize'));
 i = 1;
 for r = 1:size(FRsc,1)
-    subplot(size(FRsc,1),2,i); hist(FRsc{r,1},[2:2:10])/sum(hist(FRsc{r,1},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    if ~isempty(FRsc{r,1})
+        tempFRsc = sum(FRsc{r,1},1)/sum(FRsc{r,1});
+        subplot(size(FRsc,1),2,i);bar(tempFRsc);hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,2)));
+        xticks([1:10]);
+        xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)...
+            num2str(12) num2str(14) num2str(16) num2str(18) num2str(20)});
+    end
     i = i+1;
     if r == size(FRsc,1)
         ylabel('Normalized Count');
         xlabel('FR');
     end
-    subplot(size(FRsc,1),2,i); hist(FRsc{r,2},[2:2:10])/sum(hist(FRsc{r,2},[2:2:10]));hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
+    if ~isempty(FRsc{r,2})
+        tempFRsc = sum(FRsc{r,2},1)/sum(FRsc{r,2});
+        subplot(size(FRsc,1),2,i);bar(tempFRsc);hold on; title(strcat(cumMet.regKey(1,r),' ',cumMet.modKey(1,3)));
+        xticks([1:10]);
+        xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)...
+            num2str(12) num2str(14) num2str(16) num2str(18) num2str(20)});
+    end
     i = i+1;
 end
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.FRHistCum.png']);

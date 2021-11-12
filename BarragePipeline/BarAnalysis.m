@@ -18,6 +18,7 @@ basename = basenameFromBasepath(basepath);
 animName = animalFromBasepath(basepath);
 % Load in session information
 load(['Barrage_Files\' basename '.allpyr.cellinfo.mat']);
+load(['Barrage_Files\' basename '.brstDt.UIDkeep.mat']);
 load([basename '.cell_metrics.cellinfo.mat']);
 load([basename '.session.mat']);
 showPlt = 0;
@@ -103,7 +104,7 @@ cumMet.ISIy = sum(ISIc,2);
 cumMet.ISIc = ISIc;
 
 % Plot by cells together by subtype
-plotSubs(spikes.UID, ISIavg*1e3, regID, modID, spikes.UID);
+plotSubs(spikes.UID, ISIavg*1e3, regID, modID, spikes.UID, UIDkeep);
 xlabel('Unit #');
 ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell by type');
@@ -117,7 +118,7 @@ end
 
 %% [1.2] # spikes in 10 ms windows
 % Per cell with type designations
-plotSubs(t*1000, ISIc, regID, modID, spikes.UID, '-');
+plotSubs(t*1000, ISIc, regID, modID, spikes.UID, UIDkeep, '-');
 xlim([0 500]);
 title('Distribution of ISIs by cell type and region');
 ylabel('Count');
@@ -125,7 +126,7 @@ xlabel('ISI (ms)');
 saveas(gcf,[plotPath saveSchem '.ISIdistType.png']);
 
 % Per cell with type designations, shortened
-plotSubs(t*1000, ISIc, regID, modID, spikes.UID, '-');
+plotSubs(t*1000, ISIc, regID, modID, spikes.UID, UIDkeep, '-');
 xlim([0 20]);
 title('Shortened distribution of ISIs by cell type and region');
 ylabel('Count');
@@ -200,7 +201,7 @@ cellProp.FR = FR;
 cellProp.avgFR = avgFR;
 
 % FR by type
-plotSubs(spikes.UID, avgFR, regID, modID, spikes.UID);
+plotSubs(spikes.UID, avgFR, regID, modID, spikes.UID, UIDkeep);
 title('Average Firing Rate by Type');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
@@ -216,7 +217,7 @@ burstIndex = sum(ISIc(1:binssum,:),1)./sum(ISIc,1);
 cellProp.burstIndex = burstIndex;
 
 % Plot 
-plotSubs(spikes.UID, burstIndex, regID, modID, spikes.UID);
+plotSubs(spikes.UID, burstIndex, regID, modID, spikes.UID, UIDkeep);
 title('Burst Index by Cell Type');
 ylabel('Burst Index');
 xlabel('Unit Number');
@@ -633,7 +634,7 @@ saveas(gcf,[plotPath saveSchem '.avgSpkUn.png']);
 barProp.avgSpkUn = avgSpkUn;
 
 % By region
-plotSubs(spikes.UID, avgSpkUn, regID, modID,spikes.UID);
+plotSubs(spikes.UID, avgSpkUn, regID, modID,spikes.UID, UIDkeep);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
@@ -688,7 +689,7 @@ saveas(gcf,[plotPath saveSchem '.avgSpkEvtDur.png']);
 cumSpk = cell(size(regKey,2),size(modKey,2));
 figure('Position', get(0, 'Screensize'));
 hold on;
-title('Spread of number of spikes per event per cell type');
+title('Spread of number of spikes per event per cell type (>2 spikes)');
 c = 2;
 i = 1;
 for r = 1:size(regKey,2)
@@ -696,9 +697,9 @@ for r = 1:size(regKey,2)
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c})
         tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10]));
-        tempHistNon = [tempHistNon; unitBar.nSpkEach(UIDsort{r,c}(j))];
+        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10])];
     end
-    cumSpk{r,c} = tempHistNon;
+    cumSpk{r,c} = tempHistNon; % GETTING A MASSIVE # IN BIN WITH 2 SPIKES - whyyy (naybe this is fine)
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
     xticks([1 2 3 4 5]);
     xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
@@ -711,7 +712,7 @@ for r = 1:size(regKey,2)
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c+1})
         tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10]));
-        tempHistNon = [tempHistNon; unitBar.nSpkEach(UIDsort{r,c+1}(j))];
+        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10])]; %non-normalized
     end
     cumSpk{r,c+1} = tempHistNon;
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
@@ -796,7 +797,7 @@ saveas(gcf,[plotPath saveSchem '.avgFRevtDur.png']);
 % Firing rate imageSC
 figure('Position', get(0, 'Screensize'));
 hold on;
-title('Spread of number of spikes per event per cell type');
+title('Spread of FR per event per cell type');
 c = 2;
 i = 1;
 cumFR = cell(size(regKey,2),size(modKey,2));
@@ -804,13 +805,14 @@ for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c})
-        tempHist(j,:) = hist(unitBar.FReach(UIDsort{r,c}(j),:),[5:5:25])/sum(hist(unitBar.FReach(UIDsort{r,c}(j),:),[5:5:25]));
-        tempHistNon = [tempHistNon; unitBar.FReach(UIDsort{r,c}(j),:)];
+        tempHist(j,:) = hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20])/sum(hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20]));
+        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20])];
     end
     cumFR{r,c} = tempHistNon;
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(5) num2str(10) num2str(15) num2str(20) num2str(25)});
+    xticks([1:10]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)...
+        num2str(12) num2str(14) num2str(16) num2str(18) num2str(20)});
     if r == size(resCell,1)
         ylabel('Unit');
         xlabel('Firing Rate');
@@ -819,17 +821,18 @@ for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c+1})
-        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[5:5:25])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[5:5:25]));
-        tempHistNon = [tempHistNon; unitBar.FReach(UIDsort{r,c+1}(j),:)];
+        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:20])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:20]));
+        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c+1}(j),:),[2:2:20])];
     end
     cumFR{r,c+1} = tempHistNon;
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
-    xticks([1 2 3 4 5]);
-    xticklabels({num2str(5) num2str(10) num2str(15) num2str(20) num2str(25)});
+    xticks([1:10]);
+    xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)...
+        num2str(12) num2str(14) num2str(16) num2str(18) num2str(20)});
     i = i+1;
 end
 hold off;
-saveas(gcf,[plotPath saveSchem '.numSpkSC.png']);
+saveas(gcf,[plotPath saveSchem '.FRsc.png']);
 barProp.cumFR = cumFR;
 cumMet.cumFR = cumFR;
 if ~showPlt

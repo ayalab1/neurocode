@@ -98,7 +98,8 @@ current_peak = evtSave{trial,2};
 createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
 
 %% Create Neuroscope2 file for past events
-trial = 12;
+load([savePath 'HSEfutEVT.mat']);
+trial = 266;
 HSEn2.timestamps = evtSave{trial,1};
 HSEn2.peaktimes = evtSave{trial,2};
 save([basename '.HSE.events.mat'], 'HSEn2');
@@ -247,7 +248,7 @@ estd = 1;
 sstd = 3.5;
 % timepoints = [1040.819];
 nSigma = 1.75;
-for i = 1:length(timepoints);
+for i = 1:length(timepoints)
     timepoint = timepoints(i);
     binsz = 0.001;
     tSmooth = 0.15;
@@ -255,7 +256,7 @@ for i = 1:length(timepoints);
 
     allspk = cat(1,spikes.times{:});
     allspk = sort(allspk);
-    [spkhist spkmean spkstd] = spkRtHist(allspk);
+    [spkhist,spkmean,spkstd] = spkRtHist(allspk);
     spkTimes = ((1:length(spkhist))*binsz)-binsz;
 
     difspk = spkTimes-timepoint;

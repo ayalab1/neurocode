@@ -65,6 +65,8 @@ addParameter(p,'thresh',.75,@isnumeric) %0.98
 addParameter(p,'bazlerTTL',[],@isnumeric)
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'pixelSizeEstimate',[1 30],@ismatrix);
+addParameter(p,'pulses_delta_range',0.01,@isnumeric);
+
 % addParameter(p,'RGBChannel',[],@isstr);
 
 parse(p,varargin{:});
@@ -81,6 +83,7 @@ thresh = p.Results.thresh;
 bazlerTtl = p.Results.bazlerTTL;
 saveMat = p.Results.saveMat;
 pixelSizeEstimate = p.Results.pixelSizeEstimate;
+pulses_delta_range = p.Results.pulses_delta_range;
 
 % RGBChannel = p.Results.RGBChannel;
 
@@ -373,49 +376,58 @@ else
 end
 
 %% Get basler TTL
-% digital_in legend: 1. Basler, 2. maze LEd, 3. Left Alternation, 4.Righ
-% Alternation, 5. Home Delay, 6. Is alternation forzed?
+% digital_in 1 usually camera, but propably better making this optional
 if isempty(bazlerTtl)
     digitalIn = getDigitalIn;
     bazlerTtl = digitalIn.timestampsOn{1};
+    
+    %check for extra pulses of much shorter distance than they should
+    extra_pulses = find(diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range));
+    bazlerTtl(extra_pulses)=[];
 end
 
+basler_intan_diff=length(bazlerTtl) - length(x1);
 % match basler frames con ttl pulses
-if length(bazlerTtl) == length(x1)
-    disp('Number of frames match!!');
-elseif length(bazlerTtl) > length(x1) && length(bazlerTtl) <= length(x1) + 15 * 1 
-    fprintf('%3.i frames were dropped, probably at the end of the recording. Skipping... \n',...
-        length(bazlerTtl) - length(x1));
+if (length(bazlerTtl) == length(x1)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
+    disp('N of frames match!!');
+elseif basler_intan_diff>0 && abs(basler_intan_diff)<fs
+    disp([num2str(abs(length(bazlerTtl) - length(x1))) ' of frames dont match, probably at the end of the recording']);
     bazlerTtl = bazlerTtl(1:length(x1));
-elseif length(bazlerTtl) < length(x1) && (length(x1)-length(bazlerTtl)) < 30 * 4
-    fprintf('%3.i video frames without TTL... Was the recording switched off before the camera?. Skipping... \n',...
-        length(x1) - length(bazlerTtl));
+elseif basler_intan_diff<0 && abs(basler_intan_diff)<fs
+    disp([num2str(abs(length(bazlerTtl) - length(x1))) ' of frames dont match, probably at the beggining of the recording']);
     x1 = x1(1:length(bazlerTtl));
     y1 = y1(1:length(bazlerTtl));
     x2 = x2(1:length(bazlerTtl));
     y2 = y2(1:length(bazlerTtl));
-    vx = vx(1:length(bazlerTtl));
-    vy = vy(1:length(bazlerTtl));
-    ax = ax(1:length(bazlerTtl));
-    ay = ay(1:length(bazlerTtl)); 
+elseif basler_intan_diff<0 && abs(basler_intan_diff)>fs
+    disp([num2str(abs(length(x1) - length(bazlerTtl)))...
+        ' video frames without TTL... was the recording switched off before the camera? Cutting positions accordingly...']);
+    x1 = x1(1:length(bazlerTtl));
+    y1 = y1(1:length(bazlerTtl));
+    x2 = x2(1:length(bazlerTtl));
+    y2 = y2(1:length(bazlerTtl));
+%     vx = vx(1:length(bazlerTtl));
+%     vy = vy(1:length(bazlerTtl));
+%     ax = ax(1:length(bazlerTtl));
+%     ay = ay(1:length(bazlerTtl)); 
+elseif abs(basler_intan_diff)>2*fs
+    warning('More than 2 seconds missalignment in total in this session...will adjust to the closer one...');
+    if basler_intan_diff>0
+        bazlerTtl = bazlerTtl(1:length(x1));
+    else
+        x1 = x1(1:length(bazlerTtl));
+        y1 = y1(1:length(bazlerTtl));
+        x2 = x2(1:length(bazlerTtl));
+        y2 = y2(1:length(bazlerTtl));
+%         vx = vx(1:length(bazlerTtl));
+%         vy = vy(1:length(bazlerTtl));
+%         ax = ax(1:length(bazlerTtl));
+%         ay = ay(1:length(bazlerTtl)); 
+    end
 elseif isempty(bazlerTtl)
     bazlerTtl = xt;
-elseif abs(length(x1)-length(bazlerTtl)) > 15 * 1 && size(digitalIn.timestampsOn,2)> 4
-    fprintf('%3.i frames were dropped, possibly at the beginning of the recording. Aligning timestamps to the first IR TTL... \n',...
-        length(bazlerTtl) - length(x1));
-    f1 = figure;
-    hold on
-    imagesc(xMaze, yMaze,average_frame); colormap gray; caxis([0 4*mean(average_frame(:))]); axis tight
-    set(gca,'Ydir','reverse');    
-    bazlerTtl = bazlerTtl(1:length(x));
-    
 else
-%    keyboard;
-    error('Frames do not match for more than 5 seconds!! Trying to sync LED pulses');
-    if length(digitalIn.timestampsOn{2}) == length(sync_signal)
-         disp('Using sync LED pulses...');
-         keyboard; % to do!!!
-    end
+    warning('Unnoticed problem with Camera/Intan... I would go back and check both step by step');
 end
 
 [~,fbasename,~]=fileparts(pwd);

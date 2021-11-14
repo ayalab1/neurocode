@@ -13,7 +13,8 @@ function  plotEventRaster(event,varargin)
 %               brainRegion, deepSup, REMshift
 %   tag2    = feature for shape of the raster. Now supporting: cellType,
 %               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
-%
+%   saveFig = default false
+
 %   Antonio FR, 10/21. Lindsay Karaba, 11/21
 
 %% inputs
@@ -26,6 +27,7 @@ addParameter(p,'tag2','cellType',@isstr);
 addParameter(p,'savePath',pwd,@isstr);
 addParameter(p,'evtNum',[],@isnumeric);
 addParameter(p,'loadDat',false,@islogical);
+addParameter(p,'saveFig',false,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -36,6 +38,7 @@ tag2 = p.Results.tag2;
 savePath = p.Results.savePath;
 evtNum = p.Results.evtNum;
 loadDat = p.Results.loadDat;
+saveFig = p.Results.saveFig;
 
 basename = basenameFromBasepath(basepath);
 load(fullfile(basepath,[basename '.session.mat']));
@@ -70,7 +73,7 @@ if ~isempty(lfpChan)
             xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
         end
     elseif loadDat
-        figure('Position', get(0, 'Screensize'));  
+        figure('Position',[800 400 900 500]);  
         for e = 1:size(event,1)
             lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
                 'channels',lfpChan,'start',event(e,1),'duration',event(e,2)-event(e,1));  
@@ -405,28 +408,31 @@ switch(tag)
 end
 
 % %% add saving
-oldPath = cd(savePath);
-rastFiles = dir(['*.rastEvt*.png']);
-cd(oldPath);
-if isempty(rastFiles)
-    fileN = 1;
-else
-    % Set file index to next available value
-    pat = ['.rastEvt[0-9].'];
-    fileN = 0;
-    for ii = 1:length(rastFiles)
-        token  = regexp(rastFiles(ii).name,pat);
-        val    = str2double(rastFiles(ii).name(token+9:token+10));
-        fileN  = max([fileN val]);
+if saveFig
+    oldPath = cd(savePath);
+    rastFiles = dir(['*.rastEvt*.png']);
+    cd(oldPath);
+    if isempty(rastFiles)
+        fileN = 1;
+    else
+        % Set file index to next available value
+        pat = ['.rastEvt[0-9].'];
+        fileN = 0;
+        for ii = 1:length(rastFiles)
+            token  = regexp(rastFiles(ii).name,pat);
+            val    = str2double(rastFiles(ii).name(token+9:token+10));
+            fileN  = max([fileN val]);
+        end
+        fileN = fileN + 1;
     end
-    fileN = fileN + 1;
+    if fileN < 10
+        useFileN = strcat('0',num2str(fileN));
+    else
+        useFileN = num2str(fileN);
+    end
+    saveas(gcf,[savePath '\' basename '.rastEvt' useFileN '.png']);
 end
-if fileN < 10
-    useFileN = strcat('0',num2str(fileN));
-else
-    useFileN = num2str(fileN);
-end
-saveas(gcf,[savePath '\' basename '.rastEvt' useFileN '.png']);
+
 end
 
 

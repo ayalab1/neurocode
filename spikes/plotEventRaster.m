@@ -81,6 +81,9 @@ if ~isempty(lfpChan)
         for e = 1:size(event,1)
             subplot(2,size(event,1),e);
             plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            if ~isempty(SleepState)
+				title(stateName{e});
+			end
             xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
         end
     elseif loadDat
@@ -231,20 +234,24 @@ switch(tag)
                     if strcmp('cellType',tag2)
                         if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            if isempty(br); br = 1; end
                             scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
                             clear y;
                         elseif raster(i,j) > 0 && strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)})
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            if isempty(br); br = 1; end
                             scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
                             clear y;
                         end
                     elseif strcmp('ripMod',tag2)
                         if raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.N)
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            if isempty(br); br = 1; end
                             scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
                             clear y;
                         elseif (raster(i,j) > 0) && (ismember(rasterID(i),cell_metrics.tags.P))
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
+                            if isempty(br); br = 1; end
                             scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
                             clear y;
                         end
@@ -434,7 +441,7 @@ end
 % %% add saving
 if saveFig
     oldPath = cd(savePath);
-    rastFiles = dir(['*.rastEvt*.png']);
+    rastFiles = dir(['*' animName '.' basename '.rastEvt*.png']);
     cd(oldPath);
     if isempty(rastFiles)
         fileN = 1;
@@ -454,7 +461,7 @@ if saveFig
     else
         useFileN = num2str(fileN);
     end
-    saveas(gcf,[savePath '\' basename '.rastEvt' useFileN '.png']);
+    saveas(gcf,[savePath '\' animName '.' basename '.rastEvt' useFileN '.png']);
 end
 
 end

@@ -113,8 +113,12 @@ end
 unitRip.nSpkEvent = sum(unitRip.nSpkEach,1)';
 
 % mean FR per event
-for rip = 1:length(ripSpk.EventAbs)
-    unitRip.FRevent = unitRip.nSpkEvent/ripSpk.EventDuration(rip);
-end
-
+for rip = 1:size(unitRip.nSpkEach,2)
+    tempSum = [];
+    for un = 1:size(unitRip.nSpkEach,1)
+        if unitRip.nSpkEach(un,rip) ~= 0
+            tempSum = [tempSum unitRip.nSpkEach(un,rip)];
+        end
+    end
+    unitRip.FRevent(rip) = (sum(tempSum)/length(tempSum))/ripSpk.EventDuration(rip);
 end

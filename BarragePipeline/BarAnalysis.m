@@ -689,18 +689,19 @@ saveas(gcf,[plotPath saveSchem '.avgSpkEvtDur.png']);
 cumSpk = cell(size(regKey,2),size(modKey,2));
 figure('Position', get(0, 'Screensize'));
 hold on;
-title('Spread of number of spikes per event per cell type (>2 spikes)');
+title('Spread of number of spikes per event per cell type (when it fires)');
 c = 2;
 i = 1;
 for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c})
-        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10]));
-        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c}(j),:),[2:2:10])];
+        tempUse = unitBar.nSpkEach(UIDsort{r,c}(j)) > 0;
+        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c}(j),tempUse),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c}(j),tempUse),[2:2:10]));
+        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c}(j),tempUse),[2:2:10])];
     end
     cumSpk{r,c} = tempHistNon; % GETTING A MASSIVE # IN BIN WITH 2 SPIKES - whyyy (naybe this is fine)
-    subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
+    subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.2]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
     xticks([1 2 3 4 5]);
     xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
     if r == size(regKey,1)
@@ -711,11 +712,12 @@ for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c+1})
-        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10]));
-        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:10])]; %non-normalized
+        tempUse = unitBar.nSpkEach(UIDsort{r,c+1}(j),:) > 0;
+        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),tempUse),[2:2:10])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),tempUse),[2:2:10]));
+        tempHistNon = [tempHistNon; hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),tempUse),[2:2:10])]; %non-normalized
     end
     cumSpk{r,c+1} = tempHistNon;
-    subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
+    subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.2]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));
     xticks([1 2 3 4 5]);
     xticklabels({num2str(2) num2str(4) num2str(6) num2str(8) num2str(10)});
     i = i+1;
@@ -805,8 +807,10 @@ for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c})
-        tempHist(j,:) = hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20])/sum(hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20]));
-        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c}(j),:),[2:2:20])];
+        tempUse = [];
+        tempUse = unitBar.FReach(UIDsort{r,c}(j))>0;
+        tempHist(j,:) = hist(unitBar.FReach(UIDsort{r,c}(j),tempUse),[2:2:20])/sum(hist(unitBar.FReach(UIDsort{r,c}(j),tempUse),[2:2:20]));
+        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c}(j),tempUse),[2:2:20])];
     end
     cumFR{r,c} = tempHistNon;
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c)));
@@ -821,8 +825,10 @@ for r = 1:size(regKey,2)
     tempHist = [];
     tempHistNon = [];
     for j = 1:length(UIDsort{r,c+1})
-        tempHist(j,:) = hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:20])/sum(hist(unitBar.nSpkEach(UIDsort{r,c+1}(j),:),[2:2:20]));
-        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c+1}(j),:),[2:2:20])];
+        tempUse = [];
+        tempUse = unitBar.FReach(UIDsort{r,c+1}(j))>0;
+        tempHist(j,:) = hist(unitBar.FReach(UIDsort{r,c+1}(j),tempUse),[2:2:20])/sum(hist(unitBar.FReach(UIDsort{r,c+1}(j),tempUse),[2:2:20]));
+        tempHistNon = [tempHistNon; hist(unitBar.FReach(UIDsort{r,c+1}(j),tempUse),[2:2:20])];
     end
     cumFR{r,c+1} = tempHistNon;
     subplot(size(regKey,2),2,i); imagesc(tempHist, [0 0.05]); hold on; title(strcat(regKey(1,r),' ',modKey(1,c+1)));

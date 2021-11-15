@@ -105,11 +105,11 @@ end
 savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 
 fprintf('\n');
-if (recordMetrics&loadspkhist)
+if (recordMetrics&&loadspkhist)
     warning('It is not recommended to load prior spike histogram data when recording trial metrics as the readout may not be correctly updated');
 end
 
-if ~runNum %if runNum isn't set, find out what it should be
+if (runNum==0) %if runNum isn't set, find out what it should be
     load([savePath 'HSEfutEVT.mat']);
     runNum = size(evtSave,1) + 1;
     clear evtSave

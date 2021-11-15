@@ -27,6 +27,8 @@ addParameter(p,'tag2','cellType',@isstr);
 addParameter(p,'savePath',pwd,@isstr);
 addParameter(p,'evtNum',[],@isnumeric);
 addParameter(p,'loadDat',false,@islogical);
+addParameter(p,'regions',[],@isstring);
+addParameter(p,'SleepState',[],@isstruct);
 addParameter(p,'saveFig',false,@islogical);
 
 parse(p,varargin{:});
@@ -38,9 +40,12 @@ tag2 = p.Results.tag2;
 savePath = p.Results.savePath;
 evtNum = p.Results.evtNum;
 loadDat = p.Results.loadDat;
+regions = p.Results.regions;
+SleepState = p.Results.SleepState;
 saveFig = p.Results.saveFig;
 
 basename = basenameFromBasepath(basepath);
+animName = animalFromBasepath(basepath);
 load(fullfile(basepath,[basename '.session.mat']));
 load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']));
 
@@ -58,6 +63,12 @@ pad = 0.05; % padding time
 for e = 1:size(event,1)
     event(e,1) = event(e,1)-pad;
     event(e,2) = event(e,2)+pad;
+end
+
+if ~isempty(SleepState)
+	for e = 1:size(event,1)
+		stateName{e} = getCurState(SleepState, event(e,:));
+	end
 end
 
 %% plot lfp
@@ -81,6 +92,9 @@ if ~isempty(lfpChan)
             t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:size(lfp(e).data(:,1),1))'; %sometimes the time array doesn't match?
             subplot(2,size(event,1),e);
             plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            if ~isempty(SleepState)
+				title(stateName{e});
+			end
             xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
         end
     end
@@ -163,9 +177,19 @@ switch(tag)
     case 'pyrInt'
         
     case 'brainRegion'
-        regions = unique(cell_metrics.brainRegion);
-        colors = distinguishable_colors(numel(regions));
-        
+        if isempty(regions)
+			regions = unique(cell_metrics.brainRegion);
+			colors = distinguishable_colors(numel(regions));
+		else
+			colors = ['m';'g';'b';'r';'c';'k'];
+			if length(colors) <= length(regions)
+				colors = colors(1:length(regions));
+			else
+				warning('Too many regions, defaulting to distinguishable colors');
+				regions = unique(cell_metrics.brainRegion);
+				colors = distinguishable_colors(numel(regions));
+			end
+		end
         for e = 1:size(event,1)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
             t = lfp(e).timestamps; % add alternative for no lfp

@@ -108,7 +108,7 @@ for e = 1:size(event,1)
     t = lfp(e).timestamps; % add alternative for no lfp
     
     rasterT = zeros(length(spikes.times),length(t));
-    for i = 1:length(spikes.times) % colect spk in rip
+    for i = 1:length(spikes.times) % collect spk in rip
         temp{i} = Restrict(spikes.times{i},[t(1) t(end)]);
     end
     for i = 1:length(spikes.times)
@@ -147,7 +147,7 @@ for e = 1:size(event,1)
                 if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
                     scatter(raster(i,j),i,'.k');hold on;
                     clear y;
-                elseif raster(i,j) > 0  strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)});
+                elseif raster(i,j) > 0 && strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)})
                     scatter(raster(i,j),i,'vk','filled');hold on;
                     clear y;
                 end

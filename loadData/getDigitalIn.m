@@ -59,8 +59,10 @@ end
 if isempty(filename)
     filename=dir('digitalIn.dat');
     filename = filename.name;
+elseif exist('filename','var')
+    disp(['Using input: ',filename])
 else
-    disp('No digitalIn file found...');
+    disp('No digitalIn file indicated...');
 end
 
 try [amplifier_channels, notes, aux_input_channels, spike_triggers,...

@@ -134,7 +134,7 @@ for ii = 1:length(spikes.UID)
             optogeneticResponses.rateDuringPulse(ii,jj,1) = mean(stccg(t_duringPulse,2,1));
             optogeneticResponses.rateBeforePulse(ii,jj,1) = mean(stccg(t_beforePulse,2,1));
             optogeneticResponses.rateZDuringPulse(ii,jj,1) = mean(squeeze(optogeneticResponses.responsecurveZ(ii,jj,t_duringPulse)));
-            [h, optogeneticResponses.modulationSignificanceLevel(ii,jj,1)] = kstest2(stccg(t_duringPulse,2,1),stccg(t_beforePulse,2,1));
+%            [h, optogeneticResponses.modulationSignificanceLevel(ii,jj,1)] = kstest2(stccg(t_duringPulse,2,1),stccg(t_beforePulse,2,1));
             ci = optogeneticResponses.bootsTrapCI(ii,:);
             
             % Boostrap test
@@ -158,17 +158,17 @@ for ii = 1:length(spikes.UID)
             optogeneticResponses.zscoreTest(ii,jj,1) = test;
             
             % 3 ways test. If not boostrap, it would be 2 ways.
-            if (optogeneticResponses.rateDuringPulse(ii,jj,1) > ci(2) || isnan(ci(2))) && optogeneticResponses.modulationSignificanceLevel(ii,jj,1)<0.01...
-                    && mean(optogeneticResponses.responsecurveZ(ii,jj,t_duringPulse)) > 1.96
-                test = 1;
-            elseif (optogeneticResponses.rateDuringPulse(ii,jj,1) < ci(1) || isnan(ci(1))) && optogeneticResponses.modulationSignificanceLevel(ii,jj,1)<0.01 ...
-                    && mean(optogeneticResponses.responsecurveZ(ii,jj,t_duringPulse)) < -1.96
-                test = -1;
-            else
-                test = 0;
-            end
-            optogeneticResponses.threeWaysTest(ii,jj,1) = test;
-            optogeneticResponses.channel(ii,jj,1) = channels(jj);
+%             if (optogeneticResponses.rateDuringPulse(ii,jj,1) > ci(2) || isnan(ci(2))) && optogeneticResponses.modulationSignificanceLevel(ii,jj,1)<0.01...
+%                     && mean(optogeneticResponses.responsecurveZ(ii,jj,t_duringPulse)) > 1.96
+%                 test = 1;
+%             elseif (optogeneticResponses.rateDuringPulse(ii,jj,1) < ci(1) || isnan(ci(1))) && optogeneticResponses.modulationSignificanceLevel(ii,jj,1)<0.01 ...
+%                     && mean(optogeneticResponses.responsecurveZ(ii,jj,t_duringPulse)) < -1.96
+%                 test = -1;
+%             else
+%                 test = 0;
+%             end
+             optogeneticResponses.threeWaysTest(ii,jj,1) = test;
+             optogeneticResponses.channel(ii,jj,1) = channels(jj);
         else
             optogeneticResponses.responsecurve(ii,jj,:) = nan(duration/binSize + 1,1);
             optogeneticResponses.responsecurveZ(ii,jj,:) = nan(duration/binSize + 1,1);

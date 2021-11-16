@@ -8,11 +8,13 @@ function [spikeT] = importSpikes(varargin)
 %    UID             -vector subset of UID's to load. Default: all.
 %    channel         -specific channels (neuroscope indexing) to use. Default: all
 
-% These inputs requiere CellExplorer cell_metrics pre calculated. NOT IMPLEMENTED YET
+% These inputs require CellExplorer cell_metrics pre calculated. NOT IMPLEMENTED YET
 %    brainRegion     -string region ID to load neurons from specific region
 %    cellType        -cell type to load
 %    sleepState      -string sleep state to keep spikes falling within the
-%                       specified sleep state
+%                       specified sleep state. 
+% *** If inputting multiple regions, types, or states, ensure the input 
+%     follows the format: ["State1","State2"] ***
 
 % OUTPUT
 %    spikeT - cellinfo struct with the following fields
@@ -29,10 +31,10 @@ function [spikeT] = importSpikes(varargin)
 %% Parse inputs 
 
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'brainRegion','',@isstr); 
-addParameter(p,'cellType','',@isstr); 
-addParameter(p,'sleepState','',@isstr);
+addParameter(p,'basepath',pwd,@isstring);
+addParameter(p,'brainRegion','',@isstring); 
+addParameter(p,'cellType','',@isstring); 
+addParameter(p,'sleepState','',@isstring);
 addParameter(p,'UID',[],@isvector);
 addParameter(p,'spikes',[],@isstruct);  
 addParameter(p,'session',[],@isstruct);  
@@ -56,7 +58,6 @@ if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])
 end
 
 %% Output structure
-
 spikeT.UID = spikes.UID;
 spikeT.times = spikes.times;
 
@@ -75,42 +76,48 @@ end
 
 if ~isempty(region)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
-    tempUID = []; tempTimes = [];
-    tempUID = spikes.UID(strcmp(cell_metrics.brainRegion, region));
-    tempTimes = spikes.times(strcmp(cell_metrics.brainRegion, region));
-    [~,~,useInd] = intersect(tempUID, spikeT.UID);
-    spikeT.UID = spikeT.UID(useInd);
-    spikeT.times = spikeT.times(useInd);
+    for i = 1:size(region,1)
+        tempUID = []; tempTimes = [];
+        tempUID = spikes.UID(strcmp(cell_metrics.brainRegion, region(i)));
+        tempTimes = spikes.times(strcmp(cell_metrics.brainRegion, region(i)));
+        [~,~,useInd] = intersect(tempUID, spikeT.UID);
+        spikeT.UID = spikeT.UID(useInd);
+        spikeT.times = spikeT.times(useInd);
+    end
 end
 
 if ~isempty(type)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
-    tempUID = []; tempTimes = [];
-    tempUID = spikes.UID(strcmp(cell_metrics.putativeCellType, type));
-    tempTimes = spikes.times(strcmp(cell_metrics.putativeCellType, type));
-    [~,~,useInd] = intersect(tempUID, spikeT.UID);
-    spikeT.UID = spikeT.UID(useInd);
-    spikeT.times = spikeT.times(useInd);
+    for i = 1:size(type,1)
+        tempUID = []; tempTimes = [];
+        tempUID = spikes.UID(strcmp(cell_metrics.putativeCellType, type(i)));
+        tempTimes = spikes.times(strcmp(cell_metrics.putativeCellType, type(i)));
+        [~,~,useInd] = intersect(tempUID, spikeT.UID);
+        spikeT.UID = spikeT.UID(useInd);
+        spikeT.times = spikeT.times(useInd);
+    end
 end
 
 if ~isempty(state)
     load(fullfile(basepath,[basename,'.SleepState.states.mat']));
-    if isfield(SleepState.ints, state)
-        intervals = eval(strcat('SleepState.ints.',state));
-        tempUID = spikeT.UID; tempTimes = spikeT.times; keepct = 1;
-        clear spikeT.UID spikeT.times
-        for i = 1:length(tempUID)
-            tempSpk = [];
-            tempSpk = Restrict(tempTimes{i},intervals);
-            if ~isempty(tempSpk)
-                spikeT.times{keepct} = tempSpk;
-                spikeT.UID(keepct) = tempUID(i);
-                keepct = keepct+1;
+    for i = 1:size(state,1)
+        if isfield(SleepState.ints, state(i))
+            intervals = eval(strcat('SleepState.ints.',state(i)));
+            tempUID = spikeT.UID; tempTimes = spikeT.times; keepct = 1;
+            clear spikeT.UID spikeT.times
+            for j = 1:length(tempUID)
+                tempSpk = [];
+                tempSpk = Restrict(tempTimes{j},intervals);
+                if ~isempty(tempSpk)
+                    spikeT.times{keepct} = tempSpk;
+                    spikeT.UID(keepct) = tempUID(j);
+                    keepct = keepct+1;
+                end
             end
+        else
+            disp(fieldnames(SleepState.ints));
+            error('Incorrect sleep state entered. Please choose from the above instead');
         end
-    else
-        disp(fieldnames(SleepState.ints));
-        error('Incorrect sleep state entered. Please choose from the above instead');
     end
 end        
 end

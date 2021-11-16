@@ -29,7 +29,7 @@ for i = 1:length(check)
         regCheck = regions{j};
         if contains(regCheck, check(i))
             br = convertStringsToChars(check(i));
-            spikes = importSpikes('brainRegion', br, 'cellType', 'Pyramidal Cell');
+            spikes = importSpikes('brainRegion', check(i), 'cellType', "Pyramidal Cell");
             save([savePath br 'pyr.cellinfo.mat'], 'spikes');
             PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false);
             plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'));

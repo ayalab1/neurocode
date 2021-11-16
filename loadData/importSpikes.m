@@ -82,11 +82,11 @@ if ~isempty(region)
         tempUID = []; tempTimes = [];
         tempUID = spikes.UID(strcmp(cell_metrics.brainRegion, region(i)));
         tempTimes = spikes.times(strcmp(cell_metrics.brainRegion, region(i)));
-        [~,~,useInd] = intersect(tempUID, spikeT.UID);
+        [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)
-            keepTimes{useInd(j)} = tempTimes{j};
-        end            
+            keepTimes{keepUID(j)} = tempTimes{useIndTemp(j)};
+        end             
     end
     spikeT.UID = sort(keepUID);
     spikeT.times = keepTimes;
@@ -100,10 +100,10 @@ if ~isempty(type)
         tempUID = []; tempTimes = [];
         tempUID = spikes.UID(strcmp(cell_metrics.putativeCellType, type(i)));
         tempTimes = spikes.times(strcmp(cell_metrics.putativeCellType, type(i)));
-        [~,~,useInd] = intersect(tempUID, spikeT.UID);
+        [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)
-            keepTimes{useInd(j)} = tempTimes{j};
+            keepTimes{keepUID(j)} = tempTimes{useIndTemp(j)};
         end            
     end
     spikeT.UID = sort(keepUID);

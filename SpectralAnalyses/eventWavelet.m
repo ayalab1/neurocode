@@ -1,7 +1,7 @@
 
-function [ wavAvg, lfpAvg ] = bz_eventWavelet (lfp, events, varargin)
+function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 
-% [ wavAvg, lfpAvg ] = bz_eventWavelet (lfp, events, varargin)
+% [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 % Calculates event-triggered (i.e. SWRs) wavelet spectrogram
 
 % INPUT

@@ -10,7 +10,7 @@ hold on
 for i = 1:length(cellID)
     ind = find(UIDs==i,1);
     if ~isempty(ind)
-		if ~isempty(find(used==i))
+		if ~isempty(find(used==i,1))
 			if isempty(line)
 				plot(x(ind), y(ind), cat(1,color(regID(i)),type(cellID(i))),'MarkerFaceColor',color(regID(i)));
 			else

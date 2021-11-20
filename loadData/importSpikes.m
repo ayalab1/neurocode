@@ -74,7 +74,7 @@ elseif ~isempty(channel)
     spikeT.times = spikes.times(setUn);
 end
 
-% only one region will be assigned to each celll
+% only one region will be assigned to each cell
 if ~isempty(region)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = []; keepTimes = [];

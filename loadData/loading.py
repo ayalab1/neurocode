@@ -200,6 +200,15 @@ def load_cell_metrics(basepath):
                 df[dn] = data['cell_metrics'][dn][0][0][0]
         except:
             continue
+        
+    # add column for bad label tag    
+    try:
+        bad_units = data['cell_metrics']['tags'][0][0]['Bad'][0][0][0]
+        df['bad_unit'] = [False]*df.shape[0]
+        for uid in bad_units:
+            df.loc[df.UID == uid,'bad_unit'] = True
+    except:
+        df['bad_unit'] = [False]*df.shape[0]  
 
     # add data from general metrics        
     df['basename'] = data['cell_metrics']['general'][0][0]['basename'][0][0][0]

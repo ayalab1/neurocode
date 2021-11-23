@@ -567,7 +567,10 @@ def load_epoch(basepath):
             continue
         dt = epoch[0].dtype
         for dn in dt.names:
-            df_temp[dn] = epoch[0][0][dn][0]
+            try:
+                df_temp[dn] = epoch[0][0][dn][0]
+            except:
+                df_temp[dn] = ""
         df_save = df_save.append(df_temp,ignore_index=True)
         name.append(epoch[0]['name'][0][0])
     df_save['name'] = name

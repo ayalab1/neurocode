@@ -563,6 +563,8 @@ def load_epoch(basepath):
     df_temp = pd.DataFrame()
     df_save = pd.DataFrame()
     for epoch in data['session']['epochs'][0][0][0]:
+        if len(epoch[0]) == 0:
+            continue
         dt = epoch[0].dtype
         for dn in dt.names:
             df_temp[dn] = epoch[0][0][dn][0]

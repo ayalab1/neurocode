@@ -1,28 +1,33 @@
-function [avgNspk, finSpkThresh, itNum] = pickUns(bound, normSpkThresh, it)
+function [avgNspk, finSpkThresh, itNum] = pickUns(bound, normSpkThresh, it, loadPath)
 basepath = pwd; basename = basenameFromBasepath(basepath);
 savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
 avgNspk = 0;
 itNum = 1;
 
-checking = singleCellDetection(normSpkThresh);
+if nargin < 4
+    loadPath = [];
+end
+
+checking = burstCellDetection(normSpkThresh,loadPath);
 while sum(checking(:,3)) < 1
     normSpkThresh = normSpkThresh - 0.1;
-    checking = singleCellDetection(normSpkThresh);
+    checking = burstCellDetection(normSpkThresh,loadPath);
 end
+
 
 if it > 0
     while avgNspk <= bound
-        checking = singleCellDetection(normSpkThresh);
+        checking = burstCellDetection(normSpkThresh,loadPath);
         load([savePath 'brstDt.cellinfo.mat']);
         
         %% We have to actually detect events, huh
         nSigma = 5;
         tSmooth = 0.02;
         binSz = 0.005;
-        tSepMax = 0.1; %was playing with 0.005
-        mindur = 0.1;
+        tSepMax = 0; %was playing with 0.005
+        mindur = 0.2;
         maxdur = 10;
-        lastmin = 0.3;
+        lastmin = 0.2;
         sstd = -1*(nSigma-1);
         estd = (nSigma-1);
         EMGThresh = 0.8;
@@ -79,7 +84,7 @@ elseif it < 0
     prevAvgNspk = 1000;
     keepLoop = 1;
     while (avgNspk >= bound)&&(keepLoop)
-        singleCellDetection(normSpkThresh);
+        burstCellDetection(normSpkThresh,loadPath);
         load([savePath 'brstDt.cellinfo.mat']);
         
         %% We have to actually detect events, huh
@@ -89,7 +94,7 @@ elseif it < 0
         tSepMax = 0.1; %was playing with 0.005
         mindur = 0.1;
         maxdur = 10;
-        lastmin = 0.3;
+        lastmin = 0.2;
         sstd = -1*(nSigma-1);
         estd = (nSigma-1);
         EMGThresh = 0.8;

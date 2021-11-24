@@ -74,14 +74,14 @@ elseif ~isempty(channel)
     spikeT.times = spikes.times(setUn);
 end
 
-% only one region will be assigned to each celll
+% only one region will be assigned to each cell
 if ~isempty(region)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = []; keepTimes = [];
     for i = 1:length(region)
         tempUID = []; tempTimes = [];
-        tempUID = spikes.UID(strcmp(cell_metrics.brainRegion, region(i)));
-        tempTimes = spikes.times(strcmp(cell_metrics.brainRegion, region(i)));
+        tempUID = spikes.UID(contains(cell_metrics.brainRegion, region(i)));
+        tempTimes = spikes.times(contains(cell_metrics.brainRegion, region(i)));
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)

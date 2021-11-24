@@ -200,6 +200,15 @@ def load_cell_metrics(basepath):
                 df[dn] = data['cell_metrics'][dn][0][0][0]
         except:
             continue
+        
+    # add column for bad label tag    
+    try:
+        bad_units = data['cell_metrics']['tags'][0][0]['Bad'][0][0][0]
+        df['bad_unit'] = [False]*df.shape[0]
+        for uid in bad_units:
+            df.loc[df.UID == uid,'bad_unit'] = True
+    except:
+        df['bad_unit'] = [False]*df.shape[0]  
 
     # add data from general metrics        
     df['basename'] = data['cell_metrics']['general'][0][0]['basename'][0][0][0]
@@ -554,9 +563,14 @@ def load_epoch(basepath):
     df_temp = pd.DataFrame()
     df_save = pd.DataFrame()
     for epoch in data['session']['epochs'][0][0][0]:
+        if len(epoch[0]) == 0:
+            continue
         dt = epoch[0].dtype
         for dn in dt.names:
-            df_temp[dn] = epoch[0][0][dn][0]
+            try:
+                df_temp[dn] = epoch[0][0][dn][0]
+            except:
+                df_temp[dn] = ""
         df_save = df_save.append(df_temp,ignore_index=True)
         name.append(epoch[0]['name'][0][0])
     df_save['name'] = name

@@ -1,4 +1,4 @@
-function [spkhist spkmean spkstd ts] = spkRtHist(allspk, varargin)
+function [spkhist,spkmean,spkstd,ts] = spkRtHist(allspk, varargin)
 p = inputParser;
 addParameter(p,'tSmooth',0.015,@isnumeric);
 addParameter(p,'binsz',0.001,@isnumeric);

@@ -21,6 +21,8 @@ function samples = Restrict(samples,intervals,varargin)
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %     'shift'       shift remaining epochs together in time (default = 'off')
+%     'sep'         separate samples by which interval they fall into
+%                   (default = false)
 %    =========================================================================
 %
 %  NOTE
@@ -42,6 +44,7 @@ function samples = Restrict(samples,intervals,varargin)
 % Default values
 verbose = false;
 shift = 'off';
+sep = false;
 
 % Check number of parameters
 if nargin < 2 | mod(length(varargin),2) ~= 0,
@@ -69,8 +72,10 @@ for i = 1:2:length(varargin),
 			shift = varargin{i+1};
 			if ~isstring_FMAT(shift,'on','off'),
 				error('Incorrect value for property ''shift'' (type ''help <a href="matlab:help Restrict">Restrict</a>'' for details).');
-			end
-		otherwise,
+            end
+        case 'sep'
+            sep = varargin{i+1};
+        otherwise,
 			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help Restrict">Restrict</a>'' for details).']);
 	end
 end
@@ -78,7 +83,16 @@ end
 % Restrict
 if ~isempty(samples)
     [status,interval,index] = InIntervals(samples,intervals);
-    samples = samples(status,:);
+    if sep
+        for i=1:max(index)
+            use = (index==i);
+            temp{i} = samples(use);
+        end
+        samples = [];
+        samples = temp;
+    else
+        samples = samples(status,:);
+    end
 elseif isempty(samples)
     samples = [];
     disp('No samples to restrict');

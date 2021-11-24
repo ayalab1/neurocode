@@ -1,4 +1,4 @@
-function checking = singleCellDetection(normSpkThresh)
+function checking = burstCellDetection(normSpkThresh, loadPath)
 %% Set paths
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
@@ -11,12 +11,16 @@ savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 load([basename '.cell_metrics.cellinfo.mat']);
 
 %% Produce spike structure
-spikes = [];
-spikes = importSpikes('cellType',"Pyramidal Cell",'sleepState',"NREMstate");
-% spikes = importSpikes('cellType',"Pyramidal Cell",'brainRegion',"CA2");
-save([savePath 'NREMpyr.cellinfo.mat'], 'spikes');
+if (nargin <2)||isempty(loadPath)
+    spikes = [];
+    spikes = importSpikes('cellType',"Pyramidal Cell",'sleepState',"NREMstate");
+    % spikes = importSpikes('cellType',"Pyramidal Cell",'brainRegion',"CA2");
+    save([savePath 'NREMpyr.cellinfo.mat'], 'spikes');
+else
+    load(loadPath);
+end
 %% Flag burst events
-burstThresh = 0.03; %maybe look at this in terms of Hz
+burstThresh = 2*(1/20); %maybe look at this in terms of Hz
 burstEvts = cell(size(spikes.times,2),1);
 burstSz = cell(size(spikes.times,2),1);
 avgBurstSz = NaN(size(spikes.times,2),1);
@@ -47,7 +51,7 @@ end
 
 % useAvgBurstSz = avgBurstSz(~isnan(avgBurstSz));
 % thresh = mean(useAvgBurstSz)+(std(useAvgBurstSz));
-thresh = 5;
+thresh = 3;
 % normSpkThresh = 0.25;
 flag = NaN(size(spikes.times,2),1);
 checking = NaN(size(spikes.times,2),4);

@@ -121,7 +121,11 @@ if ~loadspkhist
         allspk = remSWR(basepath, basename, spikes);
         [spkhist,spkmean,spkstd] = spkRtHist(allspk, 'tSmooth', tSmooth, 'binsz', binsz);
     else
-        allspk = cat(1,spikes.times{:});
+        if size(spikes.times,2)>1
+            allspk = cat(1,spikes.times{:});
+        else
+            allspk = spikes.times(:);
+        end
         allspk = sort(allspk);
         [spkhist,spkmean,spkstd] = spkRtHist(allspk, 'tSmooth', tSmooth, 'binsz', binsz);
     end
@@ -217,7 +221,12 @@ evtamp = evtamp(shortPass);
 %disp([' >>> Number of events after min thresholding: ' num2str(length(evtstart))]);
 
 %% Create buzcode event structure and save it
-HSE.timestamps = cat(2,evtstart',evtstop');
+% HSE.timestamps = cat(2,evtstart',evtstop');
+HSE.timestamps = [];
+for i = 1:length(evtstart)
+    HSE.timestamps(i,1) = evtstart(i);
+    HSE.timestamps(i,2) = evtstop(i);
+end
 HSE.peaks = evtpeak';
 HSE.amplitudes = evtamp;
 HSE.amplitudeUnits = 'spikes';
@@ -377,7 +386,7 @@ spiket = cat(1,spikes.times{:});
 spiket = sort(spiket);
 SWRt = SWR.timestamps;
 excludeInd = [];
-for i = 1:size(SWRt, 1);
+for i = 1:size(SWRt, 1)
     tempFind = [];
     tempFind = find((spiket > SWRt(i, 1))&(spiket <= SWRt(i,2)));
     excludeInd = [excludeInd; tempFind];
@@ -400,7 +409,6 @@ function [evtstart,evtstop,evtdur,evtpeak,evtamp] = fpEvt(spkhist,nSigma,spkmean
 % Note that sstd and estd are not fully implemented yet, but could
 % potentially be used to taper the boundary thresholds
 %
-% LKaraba 10/21
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 evtidx = spkhist>nSigma; %flag events outside nSigma stds
@@ -408,8 +416,11 @@ evtidx = spkhist>nSigma; %flag events outside nSigma stds
 evtidx = find(diff(evtidx)==1)+1; %find where we switch from above/below our acceptance threshold, keep start index
 % belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
 % belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
-belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
-belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
+% belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
+% belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
+belowmstart = spkhist<(nSigma+sstd); % Logical to run faster, what threshold to start an event
+belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
+
 [startID, stopID, evtstart, evtstop, evtdur, evtamp, evtpeak] = deal(zeros(1,length(evtidx)));
 %startID = 1; % Initialize to 1 for the first comparison to work
 

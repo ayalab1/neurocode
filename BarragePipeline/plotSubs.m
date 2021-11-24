@@ -2,7 +2,7 @@ function plotSubs(x, y, regID, cellID, UIDs, used, line)
 if nargin < 7
     line = '';
 end
-color = ['m';'g';'b';'r';'c';'k'];
+color = ['#FF00FF';'#77AC30';'#0072BD';'#A2142F';'#4DBEEE';'#000000';'#7E2F8E'];
 type = ['s';'^';'o'];
 
 figure('Position', get(0, 'Screensize'))
@@ -12,28 +12,29 @@ for i = 1:length(cellID)
     if ~isempty(ind)
 		if ~isempty(find(used==i,1))
 			if isempty(line)
-				plot(x(ind), y(ind), cat(1,color(regID(i)),type(cellID(i))),'MarkerFaceColor',color(regID(i)));
+				plot(x(ind), y(ind), 'MarkerEdgeColor', color(regID(i),:), 'Marker', type(cellID(i)),'MarkerFaceColor',color(regID(i),:));
 			else
-				plot(x, y(:,ind), cat(1,color(regID(i)),type(cellID(i)),line),'MarkerFaceColor',color(regID(i)));
+				plot(x, y(:,ind), 'MarkerEdgeColor', color(regID(i),:), 'Marker', type(cellID(i)), 'Color', color(regID(i),:),'LineStyle',line,'MarkerFaceColor',color(regID(i),:));
 			end
 		else
 			if isempty(line)
-				plot(x(ind), y(ind), cat(1,color(regID(i)),type(cellID(i))));
+				plot(x(ind), y(ind), 'MarkerEdgeColor', color(regID(i),:), 'Marker', type(cellID(i)));
 			else
-				plot(x, y(:,ind), cat(1,color(regID(i)),type(cellID(i)),line));
+				plot(x, y(:,ind), 'MarkerEdgeColor', color(regID(i),:), 'Marker', type(cellID(i)), 'Color', color(regID(i),:),'LineStyle',line);
 			end
 		end
     end
 end
-h = zeros(8, 1);
-h(1) = plot(NaN,NaN,'g');
-h(2) = plot(NaN,NaN,'b');
-h(3) = plot(NaN,NaN,'r');
-h(4) = plot(NaN,NaN,'c');
-h(5) = plot(NaN,NaN,'k');
-h(6) = plot(NaN,NaN,'k^');
-h(7) = plot(NaN,NaN,'ko');
-h(8) = plot(NaN,NaN,'ko','MarkerFaceColor','k');
-h(9) = plot(NaN,NaN,'sm');
-legend(h, 'CA1','CA2','CA3','CTX','DG','+Mod','-Mod','BrstDet','Unknown', 'Location', 'eastoutside');
+h = zeros(10, 1);
+h(1) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#77AC30','Color', '#77AC30');
+h(2) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#0072BD','Color','#0072BD');
+h(3) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#A2142F','Color','#A2142F');
+h(4) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#4DBEEE','Color','#4DBEEE');
+h(5) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#000000','Color','#000000');
+h(6) = plot(NaN,NaN,'Marker','.','MarkerEdgeColor','#7E2F8E','Color','#7E2F8E');
+h(7) = plot(NaN,NaN,'k^');
+h(8) = plot(NaN,NaN,'ko');
+h(9) = plot(NaN,NaN,'ko','MarkerFaceColor','k');
+h(10) = plot(NaN,NaN,'Marker','s','MarkerEdgeColor','#FF00FF');
+legend(h, 'CA1','CA2','CA3','CTX','DG','EC','+Mod','-Mod','BrstDet','Unknown', 'Location', 'eastoutside');
 end

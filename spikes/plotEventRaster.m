@@ -15,6 +15,9 @@ function  plotEventRaster(event,varargin)
 %               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
 %   saveFig = default false
 
+%   TO DO: 
+%   add legend to plot 
+
 %   Antonio FR, 10/21. Lindsay Karaba, 11/21
 
 %% inputs

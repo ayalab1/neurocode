@@ -67,7 +67,7 @@ if nargin < 1 | mod(length(varargin),2) ~= 0,
 end
 
 % Check parameter sizes
-if ~isdmatrix(filtered,'@2'),
+if ~isdmatrix(filtered),
 	error('Parameter ''filtered'' is not a Nx2 matrix (type ''help <a href="matlab:help FindDeltaWaves">FindDeltaWaves</a>'' for details).');
 end
 
@@ -110,7 +110,7 @@ end
 % Differentiate, filter and z-score signal
 z = filtered;
 z(:,2) = [diff(filtered(:,2));0];
-z = bz_Filter(z,'passband',[0 6],'order',8,'FMAlegacy',true);
+%z = bz_Filter(z,'passband',[0 6],'order',8,'FMAlegacy',true);
 z(:,2) = zscore(z(:,2));
 
 % Find positions (in # samples) of zero crossings

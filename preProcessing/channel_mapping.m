@@ -1,3 +1,4 @@
+
 function channel_mapping(varargin)
 % channel_mapping: updates basename.session with brain regions per channel
 % and creates a adjustable .csv with brain region labels.

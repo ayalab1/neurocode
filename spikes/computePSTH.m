@@ -23,6 +23,7 @@ addParameter(p,'percentile',99,@isnumeric);     % if events does not have the sa
 addParameter(p,'plots',true,@islogical);        % Show plots?
 addParameter(p,'eventName','',@ischar);         % Title used for plots
 addParameter(p,'maxWindow',10,@isnumeric);      % Maximum window size in seconds
+addParameter(p,'zscorePlot',true,@islogical);   % plot z-scored response
 
 parse(p,varargin{:})
 
@@ -35,6 +36,7 @@ percentile = p.Results.percentile;
 eventName = p.Results.eventName;
 plots = p.Results.plots;
 maxWindow = p.Results.maxWindow;
+zscorePlot = p.Results.zscorePlot;
 
 % If no duration is given, an optimal duration is determined
 if duration == 0
@@ -117,7 +119,10 @@ if plots
     xline(0,'--k');hold on; ylabel('mod. index');
     title(eventName)
     subplot(2,1,2)
+    if zscorePlot
     imagesc(time,[1:size(PSTH_out,2)],zscore(PSTH_out(:,index3))',[-3 3]), xlabel('time'), ylabel('units');hold on;
-    xline(0,'--k');hold on;    
-    
+    else
+    imagesc(time,[1:size(PSTH_out,2)],(PSTH_out(:,index3))'), xlabel('time'), ylabel('units');hold on;        
+    end
+    xline(0,'--k');hold on; 
 end

@@ -14,7 +14,7 @@ function delay = align_tracking(timestamps, positions, events, varargin)
 %% Input handling
 p = inputParser;
 
-addParameter(p,'fs',25,@isnumeric); % Behavior acquisition rate
+addParameter(p,'fs',30,@isnumeric); % Behavior acquisition rate
 addParameter(p,'showresults',true,@islogical);
 addParameter(p,'maxrange',120,@islogical); % Max range of shift in seconds
 

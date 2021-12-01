@@ -56,8 +56,7 @@ n_SD = p.Results.n_SD;
 patterns_method = p.Results.patterns_method;
 threshold_method = p.Results.threshold_method;
 
-
-
+%test input
 if isempty(spikes)
     error(['No spikes data']);
 end
@@ -75,13 +74,16 @@ end
     bined_time = [t1:spikes.sr*bin:t2];   
 % end
 
+%prepare spike train
 for i=1:length(spikes.ts)
     spikes_tmp{1,i} = spikes.ts{1,i}(find(spikes.ts{1,i}>=t1 & spikes.ts{1,i}<=t2)); 
     SpikeCount(i,:) = histc(spikes_tmp{1,i},bined_time);
 end    
 
+%z-score
 zSpikeCount = zscore(SpikeCount');
 
+%correlation matrix
 CorrMatrix = corr(zSpikeCount);
 CorrMatrix(isnan(CorrMatrix))=0;
 [eigenvectors,d] = eig(CorrMatrix);

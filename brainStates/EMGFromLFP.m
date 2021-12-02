@@ -1,4 +1,4 @@
-function [EMGFromLFP] = EMGFromLFP(basepath,varargin)
+function [EMGFromLFP_out] = EMGFromLFP(basepath,varargin)
 % USAGE
 % [EMGCorr] = bz_EMGCorrFromLFP(basePath)
 %
@@ -87,7 +87,7 @@ if exist(matfilename,'file') && ~overwrite
     display('EMGFromLFP Correlation already calculated - loading from EMGFromLFP.LFP.mat')
     load(matfilename)
     if exist('EMGCorr','var')%for backcompatability
-        EMGFromLFP = EMGCorr; 
+        EMGFromLFP_out = EMGCorr; 
     end 
     if ~exist('EMGFromLFP','var')
         display([matfilename,' does not contain a variable called EMGFromLFP'])
@@ -260,11 +260,11 @@ end
 
 EMGCorr = EMGCorr/(length(xcorr_chs)*(length(xcorr_chs)-1)/2); % normalize
 
-EMGFromLFP.timestamps = timestamps'./Fs;
-EMGFromLFP.data = EMGCorr;
-EMGFromLFP.channels = xcorr_chs;
-EMGFromLFP.detectorName = 'bz_EMGFromLFP';
-EMGFromLFP.samplingFrequency = samplingFrequency; 
+EMGFromLFP_out.timestamps = timestamps'./Fs;
+EMGFromLFP_out.data = EMGCorr;
+EMGFromLFP_out.channels = xcorr_chs;
+EMGFromLFP_out.detectorName = 'bz_EMGFromLFP';
+EMGFromLFP_out.samplingFrequency = samplingFrequency; 
 
 if saveMat
     %Save in buzcodeformat

@@ -280,7 +280,7 @@ if EMGThresh
     if exist(EMGfilename)
         load(EMGfilename)   %should use a bz_load script here
     else
-        [EMGFromLFP] = bz_EMGFromLFP_km(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
+        [EMGFromLFP] = EMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
     end
     excluded = logical(zeros(size(ripples,1),1));
     for i = 1:size(ripples,1)

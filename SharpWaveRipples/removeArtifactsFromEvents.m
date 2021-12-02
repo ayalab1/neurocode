@@ -44,7 +44,7 @@ check_chan = ans;
 if check_chan
     lfp = getLFP(events.detectorinfo.detectionchannel);
 else
-    lfp = getLFP(events.detectorinfo.detectionparms.Channels(1));
+    lfp = getLFP(events.detectorinfo.detectionparms.channel(1));
 end
 
 disp('Computing ripples std...');

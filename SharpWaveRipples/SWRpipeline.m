@@ -54,7 +54,7 @@ basename = basenameFromBasepath(basepath);
     outputLabels={'SWRepochs.pre','SWRepochs.task','SWRepochs.post'};
 
     SWRepochs=[];
-for epochs= 1:7 
+for epochs= 1:3 
             eval(['stateInterval=' inputLabels{epochs} ]);
             if ~isempty(stateInterval)
             clear var tmp1 St;

@@ -1,4 +1,4 @@
-function [EMGFromLFP_out] = EMGFromLFP(basepath,varargin)
+function [EMGFromLFP] = getEMGFromLFP(basepath,varargin)
 % USAGE
 % [EMGCorr] = bz_EMGCorrFromLFP(basePath)
 %
@@ -47,6 +47,7 @@ function [EMGFromLFP_out] = EMGFromLFP(basepath,varargin)
 % 
 % Erik Schomburg, Brendon Watson, Dan Levenstein, David Tingley, 2017
 % Updated: Rachel Swanson 5/2017
+
 %% Buzcode name of the EMGCorr.LFP.mat file
 [datasetfolder,recordingname] = fileparts(basepath);
 matfilename = fullfile(basepath,[recordingname,'.EMGFromLFP.LFP.mat']);
@@ -87,7 +88,7 @@ if exist(matfilename,'file') && ~overwrite
     display('EMGFromLFP Correlation already calculated - loading from EMGFromLFP.LFP.mat')
     load(matfilename)
     if exist('EMGCorr','var')%for backcompatability
-        EMGFromLFP_out = EMGCorr; 
+        EMGFromLFP = EMGCorr; 
     end 
     if ~exist('EMGFromLFP','var')
         display([matfilename,' does not contain a variable called EMGFromLFP'])
@@ -260,11 +261,11 @@ end
 
 EMGCorr = EMGCorr/(length(xcorr_chs)*(length(xcorr_chs)-1)/2); % normalize
 
-EMGFromLFP_out.timestamps = timestamps'./Fs;
-EMGFromLFP_out.data = EMGCorr;
-EMGFromLFP_out.channels = xcorr_chs;
-EMGFromLFP_out.detectorName = 'bz_EMGFromLFP';
-EMGFromLFP_out.samplingFrequency = samplingFrequency; 
+EMGFromLFP.timestamps = timestamps'./Fs;
+EMGFromLFP.data = EMGCorr;
+EMGFromLFP.channels = xcorr_chs;
+EMGFromLFP.detectorName = 'getEMGFromLFP';
+EMGFromLFP.samplingFrequency = samplingFrequency; 
 
 if saveMat
     %Save in buzcodeformat

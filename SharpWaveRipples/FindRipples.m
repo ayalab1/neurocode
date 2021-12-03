@@ -279,12 +279,12 @@ if EMGThresh
     if exist(EMGfilename)
         load(EMGfilename)   %should use a bz_load script here
     else
-        [EMGFromLFP_out] = EMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
+        [EMGFromLFP] = getEMGFromLFP(basepath,'samplingFrequency',10,'savemat',false,'noPrompts',true);
     end
     excluded = logical(zeros(size(ripples,1),1));
     for i = 1:size(ripples,1)
-       [a ts] = min(abs(ripples(i,1)-EMGFromLFP_out.timestamps)); % get closest sample
-       if EMGFromLFP_out.data(ts) > EMGThresh
+       [a ts] = min(abs(ripples(i,1)-EMGFromLFP.timestamps)); % get closest sample
+       if EMGFromLFP.data(ts) > EMGThresh
            excluded(i) = 1;           
        end
     end

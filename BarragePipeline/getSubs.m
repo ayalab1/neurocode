@@ -10,12 +10,12 @@ function [regID,modID,regKey,modKey] = getSubs(cell_metrics, regCheck, tagCheck)
 if nargin < 3
     tagCheck = ["P" "N"];
     if nargin < 2
-        regCheck = ["CA1" "CA2" "CA3" "CTX" "DG" "EC"];
+        regCheck = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];
     end
 end
 
 regID = ones(length(cell_metrics.brainRegion),1);
-check = ["CA1" "CA2" "CA3" "CTX" "DG" "EC"];
+check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];
 
 for i = 1:length(check)
     for j = 1:length(cell_metrics.brainRegion)

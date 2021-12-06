@@ -12,7 +12,7 @@ savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 plotSave = strcat('Z:\home\Lindsay\Barrage\PSTH\',animName,'.',basename,'.');
 %%
 regions = unique(cell_metrics.brainRegion);
-check = ["CA1" "CA2" "CA3" "CTX" "DG" "EC"];
+check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];
 regTot = 0;
 for i = 1:length(check)
     for j = 1:length(regions)

@@ -74,6 +74,7 @@ end
 events.eventSpikingParameters.spikingThreshold = spikingThreshold;
 events.eventSpikingParameters.winSize = winSize;
 events.eventSpikingParameters.eventSize = eventSize;
+events.eventSpikingParameters.eventResponse = eventResponse;
 
 fprintf('Keeping %4.0f of %4.0f events \n',length(validEvents),length(eventResponse));
 

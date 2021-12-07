@@ -39,12 +39,10 @@ prevPath = pwd;
 cd(basepath);
 
 %
-exist events.detectorinfo.detectionchannel;
-check_chan = ans;
-if check_chan
+if isfield(events.detectorinfo,'detectionchannel')
     lfp = getLFP(events.detectorinfo.detectionchannel);
 else
-    lfp = getLFP(events.detectorinfo.detectionparms.channel(1));
+    lfp = getLFP(events.detectorinfo.detectionparms.Channels(1));
 end
 
 disp('Computing ripples std...');

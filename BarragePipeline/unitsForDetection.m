@@ -17,7 +17,7 @@ spikes = importSpikes('cellType',"Pyramidal Cell",'sleepState',"NREMstate");
 ki = 1;
 for i = 1:length(spikes.UID)
 %     if (~contains("CA1",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("EC",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("DG",cell_metrics.brainRegion(spikes.UID(i))))
-    if contains("CA2",cell_metrics.brainRegion(spikes.UID(i)))||contains("CA3",cell_metrics.brainRegion(spikes.UID(i)))
+    if contains("CA2",cell_metrics.brainRegion(spikes.UID(i)))%||contains("CA3",cell_metrics.brainRegion(spikes.UID(i)))
         keep.UID(ki) = spikes.UID(i);
         keep.times{ki} = spikes.times{i};
         ki = ki+1;
@@ -40,7 +40,7 @@ parfor u = 1:length(spikes.UID)
     evtdur{u} = evtstop{u}-evtstart{u};
     evtpeak{u} = evtstart{u} + (evtdur{u}/2);
     evtamp{u} = zeros(length(evtstart{u}),1);
-    flagConc{u} = (unFR{u} >= 20);
+    flagConc{u} = (unFR{u} >= 15); %CHANGED FROM 20
     [start{u},stop{u},~,~,numCat{u}] = CatCon(evtstart{u},evtstop{u},evtpeak{u},evtamp{u},flagConc{u});
     samples{u} = Restrict(spikes.times{u}, [start{u}' stop{u}']);
 end
@@ -50,10 +50,10 @@ clear evtstart evtstop evtdur evtpeak evtamp flagConc
 
 %% Pull the appropriate UIDs to run through HSE_b
 for u = 1:length(spikes.UID)
-    flagging(u,2) = length(find(unFR{u} >= 20)); 
-    flagging(u,3) = length(find(numCat{u} >= (0.3/binsz))); %300 ms
+    flagging(u,2) = length(find(unFR{u} >= 15)); %CHANGED FROM 20
+    flagging(u,3) = length(find(numCat{u} >= (0.3/binsz))); %300 ms, find #times cell fires at 15Hz for at least 300ms
     if mean(flagging(:,3)>10)
-        flagging(u,4) = flagging(u,3)>=5; %this is the thresh we should play with maybe?
+        flagging(u,4) = flagging(u,3)>=5; %..this is the thresh we should play with maybe?
     else
         flagging(u,4) = flagging(u,3)>0;
     end

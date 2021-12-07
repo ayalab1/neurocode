@@ -31,10 +31,14 @@ for i = 1:length(check)
             br = convertStringsToChars(check(i));
             spikes = importSpikes('brainRegion', check(i), 'cellType', "Pyramidal Cell");
             save([savePath br 'pyr.cellinfo.mat'], 'spikes');
-            PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false);
-            plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'));
-            PSTH_bar = computePSTH(HSE,spikes,'duration',2,'plots', false);
-            plotPSTH(PSTH_bar, regTot, subNum+(regTot*2), strcat(check(i), '/barrages'));
+            if ~isempty(spikes.times)
+                PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false);
+                plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'));
+                PSTH_bar = computePSTH(HSE,spikes,'duration',2,'plots', false);
+                plotPSTH(PSTH_bar, regTot, subNum+(regTot*2), strcat(check(i), '/barrages'));
+            else
+                warning(['No pyramidal cells in ' br]);
+            end
             subNum = subNum+1; % should max at 4
         end
     end

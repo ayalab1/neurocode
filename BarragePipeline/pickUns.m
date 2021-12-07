@@ -31,8 +31,8 @@ if it > 0
         sstd = -1*(nSigma-1);
         estd = (nSigma-1);
         EMGThresh = 0.8;
-        save_evts = false;
         neuro2 = false;
+        futEVT = false;
         %With the new thresholds, we're getting it running down to UID=[],
         %which means no spikes which means no detection... need to prevent
         %this/avoid in general
@@ -40,7 +40,7 @@ if it > 0
                     'nSigma',nSigma,'binSz',binSz,'tSmooth',tSmooth,'tSepMax',tSepMax,...
                     'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
                     'EMGThresh',EMGThresh,'sstd',sstd,'estd',estd,...
-                    'save_evts',save_evts,'neuro2',neuro2,'recordMetrics',false);
+                    'neuro2',neuro2,'recordMetrics',false, 'futEVT',futEVT);
         
         %% Get event metrics
         barSpk = getRipSpikes('basepath',pwd,'events',HSE.timestamps,'spikes',spikes,'padding',0,'saveMat',false);
@@ -100,12 +100,13 @@ elseif it < 0
         EMGThresh = 0.8;
         save_evts = false;
         neuro2 = false;
+        futEVT = false;
 
         HSE = find_HSE_b('spikes',spikes,...
                     'nSigma',nSigma,'binSz',binSz,'tSmooth',tSmooth,'tSepMax',tSepMax,...
                     'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
                     'EMGThresh',EMGThresh,'sstd',sstd,'estd',estd,...
-                    'save_evts',save_evts,'neuro2',neuro2,'recordMetrics',false);
+                    'save_evts',save_evts,'neuro2',neuro2,'recordMetrics',false,'futEVT',futEVT);
 
         %% Get event metrics
         barSpk = getRipSpikes('basepath',pwd,'events',HSE.timestamps,'spikes',spikes,'padding',0,'saveMat',false);

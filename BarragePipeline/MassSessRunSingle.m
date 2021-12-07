@@ -1,6 +1,5 @@
 %% MassSessRun
 % Most up-to-date metrics for running analysis through find_HSE_b
-% Pick blocks based on what you need
 
 % Just run rats or mice together for ease to start
 
@@ -23,22 +22,27 @@
 
 % DONE:
 main = "Z:\Data\AYAold\";
-% paths = ["AYA7\day24"];
+% paths = ["AYA9\day16"; "AYA10\day34"];
 
-paths = ["AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
-    "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
-    "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
-    "AYA7\day27"; "AYA7\day30"; "AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
+% paths = ["AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
+%     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
+%     "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
+%     "AYA7\day27"; "AYA7\day30";  %broke on AYA7/day27
+
+    paths = ["AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
     "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
+
+
 % main = "Y:\SMproject\";
-% paths = ["AZ1\day13"];
+% paths = ["AZ1\day13"; "AO50\day20"; "AO50\day21"; "AO50\day22"; "AO50\day23";...
+%     "AO51\day18"; "AO51\day19"; "AO51\day20"; "AO51\day21"];
 
 load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
 bigSave = 'Z:\home\Lindsay\Barrage\ratPaths.mat'; %change to mouse, potentially - change below as well
 comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
 ifHSE = 1;
-ifAnalysis = 1;
+ifAnalysis = 0;
 ifCum = 0;
 ifPSTH = 0;
 for p = 1:length(paths)
@@ -73,11 +77,11 @@ for p = 1:length(paths)
         load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
         note_all = "Burst detected";
         load([savePath 'brstDt.UIDkeep.mat']);
-        for n = 1:length(UIDkeep)
-            load([savePath 'brstDt.cellinfo.mat']);
-            keep.times = spikes.times{n};
-            keep.UID = spikes.UID(n);
-            spikes = []; spikes = keep;
+%         for n = 1:length(UIDkeep)
+            load([savePath 'brstDt.cellinfo.mat']); %load in the spikes that we've picked and run to save
+%             keep.times = spikes.times{n};
+%             keep.UID = spikes.UID(n);
+%             spikes = []; spikes = keep;
             
             nSigma = 5;
             tSmooth = 0.02;
@@ -89,7 +93,7 @@ for p = 1:length(paths)
             sstd = -1*(nSigma-1);
             estd = (nSigma-1);
             EMGThresh = 0.8;
-            save_evts = false;
+            recordMetrics = true;
             neuro2 = false;
             notes = note_all;
 
@@ -97,70 +101,70 @@ for p = 1:length(paths)
                         'nSigma',nSigma,'binSz',binSz,'tSmooth',tSmooth,'tSepMax',tSepMax,...
                         'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
                         'EMGThresh',EMGThresh,'Notes',notes,'sstd',sstd,'estd',estd,...
-                        'save_evts',save_evts,'neuro2',neuro2,'runNum',runNum);
-            keepTimes{n} = HSE.timestamps;
-            keepPeaks{n} = HSE.peaks;
-        end
-        j=1;
-        goodTimes = []; goodPeaks = [];
-        for i = 1:length(keepTimes)
-            if ~isempty(keepTimes{i})
-                goodTimes{j} = keepTimes{i};
-                goodPeaks{j} = keepPeaks{i};
-                j = j+1;
-            end
-        end
-        keepTimes = []; keepPeaks = []; keepTimes = goodTimes; keepPeaks = goodPeaks;
-        tSepMax = 0.005;
-        for n = 1:size(keepTimes,2)-1
-            if n==1
-                evtstart = cat(1, keepTimes{n}(:,1), keepTimes{n+1}(:,1));
-                evtstop = cat(1, keepTimes{n}(:,2), keepTimes{n+1}(:,2));
-                evtpeak = cat(1, keepPeaks{n}, keepPeaks{n+1});
-                [evtstart, ind] = sort(evtstart);
-                tempstop = []; temppeak = [];
-                for e = 1:length(ind)
-                    tempstop(e) = evtstop(ind(e));
-                    temppeak(e) = evtpeak(ind(e));
-                end
-                evtstop = tempstop; evtpeak = temppeak;
-                evtdur = evtstop-evtstart;
-                evtamp = zeros(length(evtstart),1);
-                diffConc = [];
-                for e = 1:length(evtstart)-1
-                    diffConc(e) = evtstart(e+1)-evtstop(e); %start of next-stop of last
-                end
-                flagConc = (diffConc <= tSepMax); %flag indices where event distance is good
-                [start,stop,~,peak,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
-                start = start'; stop = stop'; peak = peak';
-            else
-                evtstart = cat(1, start, keepTimes{n+1}(:,1));
-                evtstop = cat(1, stop, keepTimes{n+1}(:,2));
-                evtpeak = cat(1, peak, keepPeaks{n+1});
-                [evtstart, ind] = sort(evtstart);
-                tempstop = []; temppeak = [];
-                for e = 1:length(ind)
-                    tempstop(e) = evtstop(ind(e));
-                    temppeak(e) = evtpeak(ind(e));
-                end
-                evtstop = tempstop; evtpeak = temppeak;
-                evtdur = evtstop-evtstart;
-                evtamp = zeros(length(evtstart),1);
-                diffConc = [];
-                for e = 1:length(evtstart)-1
-                    diffConc(e) = evtstart(e+1)-evtstop(e); %start of next-stop of last
-                end
-                flagConc = (diffConc <= tSepMax); %flag indices where event distance is good
-                [start,stop,~,peak,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
-                start = start'; stop = stop'; peak = peak';
-            end
-        end
-        finThresh = 0.4;
-        finDur = stop-start;
-        start = start(finDur >= finThresh);
-        stop = stop(finDur >= finThresh);
-        peak = peak(finDur >= finThresh);
-        createEVT(start, peak, stop, 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
+                        'recordMetrics',recordMetrics,'neuro2',neuro2,'runNum',runNum);
+%             keepTimes{n} = HSE.timestamps;
+%             keepPeaks{n} = HSE.peaks;
+%         end
+%         j=1;
+%         goodTimes = []; goodPeaks = [];
+%         for i = 1:length(keepTimes)
+%             if ~isempty(keepTimes{i})
+%                 goodTimes{j} = keepTimes{i};
+%                 goodPeaks{j} = keepPeaks{i};
+%                 j = j+1;
+%             end
+%         end
+%         keepTimes = []; keepPeaks = []; keepTimes = goodTimes; keepPeaks = goodPeaks;
+%         tSepMax = 0.005;
+%         for n = 1:size(keepTimes,2)-1
+%             if n==1
+%                 evtstart = cat(1, keepTimes{n}(:,1), keepTimes{n+1}(:,1));
+%                 evtstop = cat(1, keepTimes{n}(:,2), keepTimes{n+1}(:,2));
+%                 evtpeak = cat(1, keepPeaks{n}, keepPeaks{n+1});
+%                 [evtstart, ind] = sort(evtstart);
+%                 tempstop = []; temppeak = [];
+%                 for e = 1:length(ind)
+%                     tempstop(e) = evtstop(ind(e));
+%                     temppeak(e) = evtpeak(ind(e));
+%                 end
+%                 evtstop = tempstop; evtpeak = temppeak;
+%                 evtdur = evtstop-evtstart;
+%                 evtamp = zeros(length(evtstart),1);
+%                 diffConc = [];
+%                 for e = 1:length(evtstart)-1
+%                     diffConc(e) = evtstart(e+1)-evtstop(e); %start of next-stop of last
+%                 end
+%                 flagConc = (diffConc <= tSepMax); %flag indices where event distance is good
+%                 [start,stop,~,peak,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
+%                 start = start'; stop = stop'; peak = peak';
+%             else
+%                 evtstart = cat(1, start, keepTimes{n+1}(:,1));
+%                 evtstop = cat(1, stop, keepTimes{n+1}(:,2));
+%                 evtpeak = cat(1, peak, keepPeaks{n+1});
+%                 [evtstart, ind] = sort(evtstart);
+%                 tempstop = []; temppeak = [];
+%                 for e = 1:length(ind)
+%                     tempstop(e) = evtstop(ind(e));
+%                     temppeak(e) = evtpeak(ind(e));
+%                 end
+%                 evtstop = tempstop; evtpeak = temppeak;
+%                 evtdur = evtstop-evtstart;
+%                 evtamp = zeros(length(evtstart),1);
+%                 diffConc = [];
+%                 for e = 1:length(evtstart)-1
+%                     diffConc(e) = evtstart(e+1)-evtstop(e); %start of next-stop of last
+%                 end
+%                 flagConc = (diffConc <= tSepMax); %flag indices where event distance is good
+%                 [start,stop,~,peak,numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
+%                 start = start'; stop = stop'; peak = peak';
+%             end
+%         end
+%         finThresh = 0.4;
+%         finDur = stop-start;
+%         start = start(finDur >= finThresh);
+%         stop = stop(finDur >= finThresh);
+%         peak = peak(finDur >= finThresh);
+%         createEVT(start, peak, stop, 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
         load(bigSave);
         paths_save = [paths_save; strcat(main,paths(p))];
         save(bigSave, 'paths_save');

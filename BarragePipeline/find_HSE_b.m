@@ -51,7 +51,7 @@ addParameter(p,'saveSpkHist',true,@islogical); %do we want to save our spike his
 addParameter(p,'ifCat',true,@islogical); %should we try to concatenate events?
 addParameter(p,'save_evts',false,@islogical);
 addParameter(p,'neuro2',false,@islogical); %create a file for use in neuroscope2
-addParameter(p,'recordMetrics',true,@islogical); %keep track of metrics for measuring fit
+addParameter(p,'recordMetrics',true,@islogical); %keep track of metrics for measuring fit AND save HSE!
 addParameter(p,'futEVT',true,@islogical); %do we want to save timestamp info for future use?
 %generally not needed file directions/naming conventions
 addParameter(p,'basename',[],@ischar);
@@ -255,8 +255,8 @@ HSE.detectorinfo.maxdur = maxdur;
 HSE.detectorinfo.lastmin = lastmin;
 HSE.detectorinfo.ifCat = ifCat;
 
-if save_evts
-    %disp('Saving HSE struct...');
+if recordMetrics
+    disp('Saving HSE struct...');
     save([savePath name '.mat'],'HSE');
 end
 
@@ -293,6 +293,9 @@ if futEVT
         evtSave{1,2} = HSE.peaks;
     else
         load([savePath 'HSEfutEVT.mat']);
+        evtTemp = evtSave; clear evtSave
+        evtSave = cell(runNum,2);
+        evtSave(1:runNum-1,:) = evtTemp; clear evtTemp
         evtSave{runNum,1} = HSE.timestamps;
         evtSave{runNum,2} = HSE.peaks;
     end

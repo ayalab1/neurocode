@@ -206,6 +206,10 @@ channel_map_vec = channel_map_vec(nonempty_idx);
 % iter through each region and add to session
 regions = unique(anatomical_map_vec);
 regions = regions(~cellfun('isempty',regions));
+
+% clear out brain regions in order to populate 
+session.brainRegions = [];
+
 for region = regions'
     session.brainRegions.(region{1}).channels =...
         channel_map_vec(contains(anatomical_map_vec,region))';

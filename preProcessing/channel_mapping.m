@@ -40,6 +40,7 @@ addParameter(p,'save_csv',true) % save output to basepath
 addParameter(p,'pull_from_cell_metrics',false) % to populate map from cell_metrics
 addParameter(p,'force_cell_metric_overwrite',false) % will bypass the warning if .session already has regions
 addParameter(p,'save_session',true) % save session to basepath
+addParameter(p,'save_cell_metrics',true) % save updated cell metrics to basepath
 addParameter(p,'session',[])
 addParameter(p,'show_gui_session',false)
 
@@ -50,6 +51,7 @@ save_csv = p.Results.save_csv;
 pull_from_cell_metrics = p.Results.pull_from_cell_metrics;
 force_cell_metric_overwrite = p.Results.force_cell_metric_overwrite;
 save_session = p.Results.save_session;
+save_cell_metrics = p.Results.save_cell_metrics;
 session = p.Results.session;
 show_gui_session = p.Results.show_gui_session;
 
@@ -109,6 +111,23 @@ if save_csv
     writetable(cell2table(anatomical_map),...
         fullfile(basepath,'anatomical_map.csv'),...
         'WriteVariableNames',0)
+end
+
+% update cell labels in cell metrics
+if save_cell_metrics
+    disp('updating units in cell metrics')
+    load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']))
+    chListBrainRegions = findBrainRegion(session);
+    for j = 1:cell_metrics.general.cellCount
+        if isfield(session,'brainRegions') && ~isempty(session.brainRegions)
+            try
+                cell_metrics.brainRegion{j} = chListBrainRegions{cell_metrics.maxWaveformCh1(j)};
+            catch
+                cell_metrics.brainRegion{j} = 'Unknown';
+            end
+        end
+    end
+    save(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'cell_metrics')
 end
 
 if fig

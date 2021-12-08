@@ -102,7 +102,7 @@ non_rem_shift = (angles>120 & angles<300) &...
     spk_count_rem_idx;
 
 % store results in rem_shift_data
-
+rem_shift_data.UID = spikes.UID;
 % get the circular distance between awake and rem
 rem_shift_data.circ_dist = circ_dist(PhaseLockingData_rem.phasestats.m,...
                                 PhaseLockingData_wake.phasestats.m);                        

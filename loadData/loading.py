@@ -40,7 +40,7 @@ def loadXML(path):
     shank_to_channel = {}
     groups = xmldoc.getElementsByTagName('anatomicalDescription')[0].getElementsByTagName('channelGroups')[0].getElementsByTagName('group')
     for i in range(len(groups)):
-        shank_to_channel[i] = np.sort([int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')])
+        shank_to_channel[i] = [int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')]
     return int(nChannels), int(fs), int(fs_dat), shank_to_channel
 
 def loadLFP(path, n_channels=90, channel=64, frequency=1250.0, precision='int16'):

@@ -22,7 +22,7 @@ basename = basenameFromBasepath(basepath);
      
     % refine ripple detection using spiking level
     spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA1");
-    ripples = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',1); 
+    ripples = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.5); 
     save([basename '.ripples.events.mat'],'ripples');saveas(gcf,'SWRmua.png');
     
     % remove very large amplitude events (likely artifacts)

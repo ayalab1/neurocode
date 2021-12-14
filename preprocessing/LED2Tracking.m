@@ -322,9 +322,9 @@ xt = linspace(0,size(pos1,1)/fs,size(pos1,1));
 % kalman filter is not working - NEED TO BE FIXED
 % [t,x,y,vx,vy,ax,ay] = trajectory_kalman_filter(pos(:,1)',pos(:,2)',xt,0);
 x1=pos1(:,1);y1=pos1(:,2); t=xt;
-x2=pos2(:,1);y2=pos1(:,2);
+x2=pos2(:,1);y2=pos2(:,2);
 art = find(sum(abs(diff([x1 y1]))>artifactThreshold,2))+1;
-art = find(sum(abs(diff([x2 y2]))>artifactThreshold,2))+1;
+art2 = find(sum(abs(diff([x2 y2]))>artifactThreshold,2))+1;
 art = [art - 2 art - 1 art art + 1 art + 2];
 art2 = [art2 - 2 art2 - 1 art2 art2 + 1 art2 + 2];
 x1(art(:)) = NaN; y1(art(:)) = NaN;

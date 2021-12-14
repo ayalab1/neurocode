@@ -21,7 +21,7 @@
 % ["AB1\day1"];
 
 % DONE:
-main = "Z:\Data\AYAold\";
+% main = "Z:\Data\AYAold\";
 % paths = ["AYA9\day16"; "AYA10\day34"];
 
 % paths = ["AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
@@ -29,22 +29,24 @@ main = "Z:\Data\AYAold\";
 %     "AYA7\day20"; "AYA7\day22"; "AYA7\day24"; "AYA7\day25";...
 %     "AYA7\day27"; "AYA7\day30";  %broke on AYA7/day27
 
-    paths = ["AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
-    "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
+%     paths = ["AYA9\day15"; "AYA9\day16"; "AYA9\day17";...
+%     "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
 
 
-% main = "Y:\SMproject\";
+main = "Y:\SMproject\";
 % paths = ["AZ1\day13"; "AO50\day20"; "AO50\day21"; "AO50\day22"; "AO50\day23";...
 %     "AO51\day18"; "AO51\day19"; "AO51\day20"; "AO51\day21"];
+paths = ["AO51\day20"];
 
-load('C:\Users\Cornell\Documents\GitHub\neurocode\BarragePipeline\curRatMet.mat');
-bigSave = 'Z:\home\Lindsay\Barrage\ratPaths.mat'; %change to mouse, potentially - change below as well
+load('C:\Users\Cornell\Documents\GitHub\neurocode\projects\BarragePipeline\curRatMet.mat');
+bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
 comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
 ifHSE = 1;
-ifAnalysis = 0;
+ifAnalysis = 1;
 ifCum = 0;
-ifPSTH = 0;
+ifPSTH = 1;
+ifNeuro1 = 1;
 for p = 1:length(paths)
     cd(strcat(main,paths(p)));
     curPath = convertStringsToChars(paths(p));
@@ -83,15 +85,15 @@ for p = 1:length(paths)
 %             keep.UID = spikes.UID(n);
 %             spikes = []; spikes = keep;
             
-            nSigma = 5;
+            nSigma = 3;
             tSmooth = 0.02;
             binSz = 0.005;
             tSepMax = 0.005; %was playing with 0.005, 0.1
             mindur = 0.3;
             maxdur = 10;
             lastmin = 0.3;
-            sstd = -1*(nSigma-1);
-            estd = (nSigma-1);
+            sstd = -1*(nSigma-2);
+            estd = (nSigma-2);
             EMGThresh = 0.8;
             recordMetrics = true;
             neuro2 = false;
@@ -102,6 +104,14 @@ for p = 1:length(paths)
                         'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
                         'EMGThresh',EMGThresh,'Notes',notes,'sstd',sstd,'estd',estd,...
                         'recordMetrics',recordMetrics,'neuro2',neuro2,'runNum',runNum);
+                    
+            if ifNeuro1
+                load([savePath 'HSEfutEVT.mat']);
+                trial = size(evtSave,1);
+                current_time = evtSave{trial,1};
+                current_peak = evtSave{trial,2};
+                createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
+            end
 %             keepTimes{n} = HSE.timestamps;
 %             keepPeaks{n} = HSE.peaks;
 %         end

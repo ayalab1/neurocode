@@ -187,9 +187,9 @@ switch(tag)
 			regions = unique(cell_metrics.brainRegion);
 			colors = distinguishable_colors(numel(regions));
 		else
-			colors = ['m';'g';'b';'r';'c';'k'];
+			colors = ['#FF00FF';'#77AC30';'#0072BD';'#A2142F';'#4DBEEE';'#000000';'#7E2F8E';'#C233FF'];
 			if length(colors) <= length(regions)
-				colors = colors(1:length(regions));
+				colors = colors(1:length(regions),:);
 			else
 				warning('Too many regions, defaulting to distinguishable colors');
 				regions = unique(cell_metrics.brainRegion);
@@ -238,24 +238,24 @@ switch(tag)
                         if raster(i,j) > 0 && strcmp('Narrow Interneuron',cell_metrics.putativeCellType{rasterID(i)})
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
                             if isempty(br); br = 1; end
-                            scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
+                            scatter(raster(i,j),i,30,'k','o','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
                             clear y;
                         elseif raster(i,j) > 0 && strcmp('Pyramidal Cell',cell_metrics.putativeCellType{rasterID(i)})
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
                             if isempty(br); br = 1; end
-                            scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
+                            scatter(raster(i,j),i,30,'k','v','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
                             clear y;
                         end
                     elseif strcmp('ripMod',tag2)
                         if raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.N)
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
                             if isempty(br); br = 1; end
-                            scatter(raster(i,j),i,10,colors(br,:),'o','filled');hold on;
+                            scatter(raster(i,j),i,30,'k','v','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
                             clear y;
                         elseif (raster(i,j) > 0) && (ismember(rasterID(i),cell_metrics.tags.P))
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
                             if isempty(br); br = 1; end
-                            scatter(raster(i,j),i,30,colors(br,:),'v','filled');hold on;
+                            scatter(raster(i,j),i,30,'k','v','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
                             clear y;
                         end
                     else

@@ -91,8 +91,8 @@ load([savePath 'HSEmetrics.mat']);
 % NeuroScope2
 
 %% Create EVT for past events
-trial = 38;
 load([savePath 'HSEfutEVT.mat']);
+trial = 6;
 current_time = evtSave{trial,1};
 current_peak = evtSave{trial,2};
 createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
@@ -242,12 +242,12 @@ end
 %% Check an interval for nSigma value
 
 %5452.148
-load('Y:\SMproject\AZ1\day13\Barrage_Files\day13.CA2pyr.cellinfo.mat');
-timepoints = 8923.412;
-estd = 1;
-sstd = 3.5;
+load('Y:\SMproject\AO50\day22\Barrage_Files\day22.CA2pyr.cellinfo.mat');
+timepoints = 30;
+estd = -2;
+sstd = 2;
 % timepoints = [1040.819];
-nSigma = 1.75;
+nSigma = 5;
 for i = 1:length(timepoints)
     timepoint = timepoints(i);
     binsz = 0.001;
@@ -270,8 +270,11 @@ for i = 1:length(timepoints)
     ylim([-1 6]);
     xline(ind*binsz, '--');
     yline(nSigma,'k');
-    yline((spkmean+(sstd*spkstd)), 'g');
-    yline((spkmean-(estd*spkstd)), 'r');
+%     yline((spkmean+(sstd*spkstd)), 'g');
+%     yline((spkmean-(estd*spkstd)), 'r');
+    yline(nSigma+sstd, 'g');
+    yline(nSigma+estd, 'r');
+
 end
 hold off
 

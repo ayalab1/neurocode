@@ -393,6 +393,7 @@ def load_theta_rem_shift(basepath):
 
     df = pd.DataFrame()
 
+    df["UID"] = data['rem_shift_data']['UID'][0][0][0]
     df["circ_dist"] = data['rem_shift_data']['circ_dist'][0][0][0]
     df["rem_shift"] = data['rem_shift_data']['rem_shift'][0][0][0]
     df["non_rem_shift"] = data['rem_shift_data']['non_rem_shift'][0][0][0]
@@ -527,9 +528,9 @@ def load_animal_behavior(basepath):
     except:
         df['z'] = np.nan
     try:
-        df['linerized'] = data['behavior']['position'][0][0]['linerized'][0][0][0]
+        df['linearized'] = data['behavior']['position'][0][0]['linearized'][0][0][0]
     except:
-        df['linerized'] = np.nan
+        df['linearized'] = np.nan
 
     df['speed'] = data['behavior']['speed'][0][0][0]
     df['acceleration'] = data['behavior']['acceleration'][0][0][0]
@@ -560,6 +561,7 @@ def load_epoch(basepath):
     data = sio.loadmat(filename)
 
     name = []
+    environment = []
     df_temp = pd.DataFrame()
     df_save = pd.DataFrame()
     for epoch in data['session']['epochs'][0][0][0]:
@@ -573,6 +575,11 @@ def load_epoch(basepath):
                 df_temp[dn] = ""
         df_save = df_save.append(df_temp,ignore_index=True)
         name.append(epoch[0]['name'][0][0])
+        try:
+            environment.append(epoch[0]['environment'][0][0])
+        except:
+            environment.append('unknown')
     df_save['name'] = name
+    df_save['environment'] = environment
 
     return df_save

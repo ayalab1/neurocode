@@ -14,7 +14,7 @@ addParameter(p,'basepath',pwd) % path to folder
 addParameter(p,'fig',false) % simple debugging/summary figs
 addParameter(p,'passband',[6,12]) % theta band
 addParameter(p,'lfp',[]) % structure from getLFP with single theta channel
-addParameter(p,'spikes',[]) % number of bins in phase hist
+addParameter(p,'spikes',[]) % spikes.cellinfo structure
 addParameter(p,'savemat',true) % save output to basepath
 addParameter(p,'numBins',18) % number of bins in phase hist
 

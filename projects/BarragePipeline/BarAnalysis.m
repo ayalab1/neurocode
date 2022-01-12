@@ -10,7 +10,7 @@ if nargin <1
 end
 %% [STEP 0] Settings
 close all
-savePath = ('Z:\home\Lindsay\Barrage\');
+savePath = strcat(ses, '\Barrage_Files\');
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
 cd(ses);
 basepath = pwd;
@@ -28,8 +28,8 @@ reRun = 1;
 
 %% [STEP 1]
 %%% SINGLE CELL PROPERTIES
-specPath = strcat(savePath,'Cell\',animName,'\');
-plotPath = strcat(savePath,'Cell\','Plots\',animName,'\');
+specPath = strcat(savePath,'Cell\');
+plotPath = strcat(savePath,'Cell\');
 if ~exist(specPath)
     mkdir(specPath);
 end
@@ -438,8 +438,8 @@ save(strcat(specPath,basename,'.props.mat'),'cellProp', '-v7.3');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% [STEP 2]
 %%% "BARRAGE" DETECTION PROPERTIES %%%
-specPath = strcat(savePath,'Population\',animName,'\');
-plotPath = strcat(savePath,'Population\','Plots\',animName,'\');
+specPath = strcat(savePath,'Population\');
+plotPath = strcat(savePath,'Population\');
 if ~exist(specPath)
     mkdir(specPath);
 end

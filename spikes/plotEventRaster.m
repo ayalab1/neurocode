@@ -9,7 +9,7 @@ function  plotEventRaster(event,varargin)
 %   spikes  = structure of spike time and UID info
 %   lfpChan = channel to plot lfp (base 1)
 %   loadDat = load lfp trace from .dat instead of .lfp. Default = false
-%   tag     = feature to color code raste. Now supporting: pyrInt, 
+%   tag     = feature to color code raster. Now supporting: pyrInt, 
 %               brainRegion, deepSup, REMshift
 %   tag2    = feature for shape of the raster. Now supporting: cellType,
 %               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 

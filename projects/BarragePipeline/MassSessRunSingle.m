@@ -36,7 +36,7 @@
 main = "Y:\SMproject\";
 % paths = ["AZ1\day13"; "AO50\day20"; "AO50\day21"; "AO50\day22"; "AO50\day23";...
 %     "AO51\day18"; "AO51\day19"; "AO51\day20"; "AO51\day21"];
-paths = ["AO51\day20"];
+paths = ["AO50\day23"];
 
 load('C:\Users\Cornell\Documents\GitHub\neurocode\projects\BarragePipeline\curRatMet.mat');
 bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
@@ -60,6 +60,7 @@ for p = 1:length(paths)
     savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
     if ifHSE 
         %% New set of spikes
+        mkSpks([basepath '\Barrage_Files']);
         unitsForDetection(); %threshold with FR
         loadPath = strcat(basepath,'\Barrage_Files\',basename,'.brstDt.cellinfo.mat');
         bound = 3;

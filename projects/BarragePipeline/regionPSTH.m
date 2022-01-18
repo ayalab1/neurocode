@@ -9,7 +9,8 @@ load(strcat(basepath,'\Barrage_Files\',basename,'.HSE.mat'));
 load(strcat(basename,'.ripples.events.mat'));
 load(strcat(basename,'.cell_metrics.cellinfo.mat'));
 savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
-plotSave = strcat('Z:\home\Lindsay\Barrage\PSTH\',animName,'.',basename,'.');
+% plotSave = strcat('Z:\home\Lindsay\Barrage\PSTH\',animName,'.',basename,'.');
+plotSave = strcat(basepath, '\Barrage_Files\', basename, '.');
 %%
 regions = unique(cell_metrics.brainRegion);
 check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];

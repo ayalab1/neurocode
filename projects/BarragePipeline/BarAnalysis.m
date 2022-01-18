@@ -29,12 +29,8 @@ reRun = 1;
 %% [STEP 1]
 %%% SINGLE CELL PROPERTIES
 specPath = strcat(savePath,'Cell\');
-plotPath = strcat(savePath,'Cell\');
 if ~exist(specPath)
     mkdir(specPath);
-end
-if ~exist(plotPath)
-    mkdir(plotPath);
 end
 saveSchem = basename;
 if exist(strcat(specPath,'props.mat'))
@@ -97,7 +93,7 @@ ylabel('Count');
 xlim([0 500]);
 title('Distribution of ISIs in Log scale');
 set(gca, 'XScale', 'log')
-saveas(gcf,[plotPath saveSchem '.ISIdistLog.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.ISIdistLog.png'));
 
 cumMet.ISIx = t*1e3;
 cumMet.ISIy = sum(ISIc,2);
@@ -110,7 +106,7 @@ ylabel('Log of avg ISI (ms)');
 title('Average ISI per cell by type');
 set(gca, 'YScale', 'log')
 hold off
-saveas(gcf,[plotPath saveSchem '.ISIavgType.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.ISIavgType.png'));
 
 if ~showPlt
     close all
@@ -123,7 +119,7 @@ xlim([0 500]);
 title('Distribution of ISIs by cell type and region');
 ylabel('Count');
 xlabel('ISI (ms)');
-saveas(gcf,[plotPath saveSchem '.ISIdistType.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.ISIdistType.png'));
 
 % Per cell with type designations, shortened
 plotSubs(t*1000, ISIc, regID, modID, spikes.UID, UIDkeep, '-');
@@ -131,7 +127,7 @@ xlim([0 20]);
 title('Shortened distribution of ISIs by cell type and region');
 ylabel('Count');
 xlabel('ISI (ms)');
-saveas(gcf,[plotPath saveSchem '.ISIdistTypeShort.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.ISIdistTypeShort.png'));
 
 % Summary box plot per region
 boxx = [];
@@ -154,7 +150,7 @@ title('ISI per region, outliers cut off');
 ylabel('ISI (s)');
 xlabel('Region');
 ylim([-1 7]);
-saveas(gcf,[plotPath saveSchem '.ISIboxReg.png']);    
+saveas(gcf,strcat(specPath, saveSchem, '.ISIboxReg.png'));    
 
 cumMet.boxxISI = boxx;
 cumMet.boxgISI = boxg;
@@ -183,7 +179,7 @@ title('ISI per region and mod type, outliers cut off');
 ylabel('ISI (s)');
 xlabel('Region');
 ylim([-1 7]);
-saveas(gcf,[plotPath saveSchem '.ISIboxAllType.png']);  
+saveas(gcf,strcat(specPath, saveSchem, '.ISIboxAllType.png'));  
 
 if ~showPlt
     close all
@@ -205,7 +201,7 @@ plotSubs(spikes.UID, avgFR, regID, modID, spikes.UID, UIDkeep);
 title('Average Firing Rate by Type');
 ylabel('Firing Rate (Hz)');
 xlabel('Unit Number');
-saveas(gcf,[plotPath saveSchem '.avgFRtype.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgFRtype.png'));
 
 if ~showPlt
     close all
@@ -221,7 +217,7 @@ plotSubs(spikes.UID, burstIndex, regID, modID, spikes.UID, UIDkeep);
 title('Burst Index by Cell Type');
 ylabel('Burst Index');
 xlabel('Unit Number');
-saveas(gcf,[plotPath saveSchem '.burstIndType.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstIndType.png'));
 
 % Plot per region (box plot)
 boxx = [];
@@ -243,7 +239,7 @@ xticklabels(regKey(1,regInd));
 title('Burstiness Index per region');
 ylabel('Burst Index');
 xlabel('Region');
-saveas(gcf,[plotPath saveSchem '.burstBox.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstBox.png'));
 
 cumMet.boxxBurst = boxx;
 cumMet.boxgBurst = boxg;
@@ -293,7 +289,7 @@ xticklabels(regKey(1,regInd));
 title('Average number of spikes per burst per region');
 ylabel('Burst Length (# spikes)');
 xlabel('Region');
-saveas(gcf,[plotPath saveSchem '.burstSzBox.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstSzBox.png'));
 
 cellProp.avgBurstSz = avgBurstSz;
 cellProp.burstEvts = burstEvts;
@@ -328,7 +324,7 @@ xticklabels(comKey(1,comInd));
 title('Average number of spikes per burst per region per type');
 ylabel('Burst Length (# spikes)');
 xlabel('Region');
-saveas(gcf,[plotPath saveSchem '.burstSzBoxAllType.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstSzBoxAllType.png'));
 
 % Burst size histogram per region and per type
 figure('Position', get(0, 'Screensize'));
@@ -355,7 +351,7 @@ for r = 1:(size(resCell,1))
     i=i+1;
 end
 hold off;
-saveas(gcf,[plotPath saveSchem '.burstSzHist.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstSzHist.png'));
 
 cumMet.burstCnt = resCell;
 
@@ -391,7 +387,7 @@ ylabel('Normalized burst length count > 4 spikes');
 xlabel('Region and Ripple Modulation Type');
 ylim([0 0.02]);
 hold off;
-saveas(gcf,[plotPath saveSchem '.burstSzThresh.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstSzThresh.png'));
 
 % Spread of burst lengths (imagesc)
 figure('Position', get(0, 'Screensize'));
@@ -426,7 +422,7 @@ for r = 1:size(resCell,1)
     i = i+1;
 end
 hold off;
-saveas(gcf,[plotPath saveSchem '.burstSzSC.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.burstSzSC.png'));
 
 if ~showPlt
     close all
@@ -439,12 +435,8 @@ save(strcat(specPath,basename,'.props.mat'),'cellProp', '-v7.3');
 %% [STEP 2]
 %%% "BARRAGE" DETECTION PROPERTIES %%%
 specPath = strcat(savePath,'Population\');
-plotPath = strcat(savePath,'Population\');
 if ~exist(specPath)
     mkdir(specPath);
-end
-if ~exist(plotPath)
-    mkdir(plotPath);
 end
 load([basepath '\Barrage_Files\' basename '.HSEfutEVT.mat']);
 load([basepath '\Barrage_Files\' basename '.HSEmetrics.mat']);
@@ -473,7 +465,7 @@ plot(bins, evtDur./sum(evtDur));%normalize per the total n of events
 title('Event Duration normalized to number of events');
 ylabel('Normalized Event Count');
 xlabel('Event duration (s)');
-saveas(gcf,[plotPath saveSchem '.evtDur.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.evtDur.png'));
 
 if ~showPlt
     close all
@@ -505,7 +497,7 @@ title('Average number of units per event, sorted by event duration');
 xlabel('Event duration (s)');
 xticks([durX]);
 ylabel('Average number of units');
-saveas(gcf,[plotPath saveSchem '.untPerEvtDur.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.untPerEvtDur.png'));
 
 if ~showPlt
     close all
@@ -534,7 +526,7 @@ xlabel('Event #');
 ylabel('Percent');
 legend(regKey(1,:), 'Location', 'eastoutside');
 ylim([0 100]);
-saveas(gcf,[plotPath saveSchem '.percEvtReg.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.percEvtReg.png'));
     % we have unitBar.nCellsEventUID - just needs to be sorted by UIDsort
         
 % Plot sorted by increasing CA2 involvment
@@ -552,7 +544,7 @@ if ismember(3, regID)
    ylabel('Percent');
    legend(regKey(1,:), 'Location', 'eastoutside');
    ylim([0 100]);
-   saveas(gcf,[plotPath saveSchem '.percEvtRegCA2sort.png']); 
+   saveas(gcf,strcat(specPath, saveSchem, '.percEvtRegCA2sort.png')); 
 end
 
 % Sort by duration
@@ -585,7 +577,7 @@ xticks([durX]);
 ylabel('Percent participation in events');
 ylim([0 100]);
 legend(regKey(1,:), 'Location', 'eastoutside');
-saveas(gcf,[plotPath saveSchem '.percDurReg.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.percDurReg.png'));
 
 % Box plot
 boxx = [];
@@ -603,7 +595,7 @@ title('Percent of units which make up events for each region');
 ylabel('Percent of units in events');
 ylim([0 100]);
 xlabel('Region');
-saveas(gcf,[plotPath saveSchem '.percEvtBox.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.percEvtBox.png'));
 
 cumMet.boxxPerc = boxx;
 cumMet.boxgPerc = boxg;
@@ -630,7 +622,7 @@ plot(spikes.UID, avgSpkUn);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
-saveas(gcf,[plotPath saveSchem '.avgSpkUn.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgSpkUn.png'));
 barProp.avgSpkUn = avgSpkUn;
 
 % By region
@@ -638,7 +630,7 @@ plotSubs(spikes.UID, avgSpkUn, regID, modID,spikes.UID, UIDkeep);
 xlabel('Unit #');
 ylabel('Average # of Spikes');
 title('Average # of spikes during events when the unit is active');
-saveas(gcf,[plotPath saveSchem '.avgSpkUnSort.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgSpkUnSort.png'));
 
 % Plot average # of spikes per event by each event (sum across units)
 avgSpkEvt = NaN(size(unitBar.nSpkEach,2),1);
@@ -657,7 +649,7 @@ xlabel('Event #');
 ylabel('Average # of Spikes');
 xlim([1 size(unitBar.nSpkEach,2)]);
 title('Average # of spikes per event from active units');
-saveas(gcf,[plotPath saveSchem '.avgSpkEvt.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgSpkEvt.png'));
 barProp.avgSpkEvt = avgSpkEvt;
 
 % Sort by event duration
@@ -683,7 +675,7 @@ bar(durX,durAvg);
 xlabel('Event Duration (s)');
 ylabel('Average # of Spikes');
 title('Average # of spikes per event from active units by event duration');
-saveas(gcf,[plotPath saveSchem '.avgSpkEvtDur.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgSpkEvtDur.png'));
 
 % ImageSC of #spikes per event
 cumSpk = cell(size(regKey,2),size(modKey,2));
@@ -723,7 +715,7 @@ for r = 1:size(regKey,2)
     i = i+1;
 end
 hold off;
-saveas(gcf,[plotPath saveSchem '.numSpkSC.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.numSpkSC.png'));
 barProp.cumSpk = cumSpk;
 cumMet.cumSpk = cumSpk;
 if ~showPlt
@@ -748,7 +740,7 @@ plot(spikes.UID,avgFRUn);
 xlabel('Unit #');
 ylabel('Average Firing Rate');
 title('Average Firing Rate during events when the unit is active');
-saveas(gcf,[plotPath saveSchem '.avgFRun.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgFRun.png'));
 barProp.avgFRUn = avgFRUn;
 
 % Plot average # of spikes per event by each event (sum across units)
@@ -768,7 +760,7 @@ xlabel('Event #');
 ylabel('Average Firing Rate');
 xlim([1 size(unitBar.FReach,2)]);
 title('Average Firing Rate per event from active units');
-saveas(gcf,[plotPath saveSchem '.avgFRevt.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgFRevt.png'));
 barProp.avgFREvt = avgFREvt;
 
 % Sort by event duration
@@ -794,7 +786,7 @@ bar(durX,durAvg);
 xlabel('Event Duration (s)');
 ylabel('Average FR of Spikes');
 title('Average FR of spikes per event from active units by event duration');
-saveas(gcf,[plotPath saveSchem '.avgFRevtDur.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.avgFRevtDur.png'));
 
 % Firing rate imageSC
 figure('Position', get(0, 'Screensize'));
@@ -838,7 +830,7 @@ for r = 1:size(regKey,2)
     i = i+1;
 end
 hold off;
-saveas(gcf,[plotPath saveSchem '.FRsc.png']);
+saveas(gcf,strcat(specPath, saveSchem, '.FRsc.png'));
 barProp.cumFR = cumFR;
 cumMet.cumFR = cumFR;
 if ~showPlt

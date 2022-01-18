@@ -1,5 +1,19 @@
-function [] = unitsForDetection()
+function [] = unitsForDetection(Hz, ft)
 % Pull units based on their firing rate characteristics
+% INPUTS:
+% Hz -> firing rate that each neuron must hit to be considered 
+% ft -> amount of time the neuron must fire at the above firing rate to be
+%       kept, in seconds. 
+%%%
+if nargin < 1
+    Hz = 20;
+    ft = 0.3;
+elseif nargin < 2
+    ft = 0.3;
+end
+if ft > 1
+    warning('Make sure your firing time is in seconds!');
+end
 %% Set paths
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
@@ -50,8 +64,8 @@ clear evtstart evtstop evtdur evtpeak evtamp flagConc
 
 %% Pull the appropriate UIDs to run through HSE_b
 for u = 1:length(spikes.UID)
-    flagging(u,2) = length(find(unFR{u} >= 10)); %CHANGED FROM 20
-    flagging(u,3) = length(find(numCat{u} >= (0.3/binsz))); %300 ms, find #times cell fires at 15Hz for at least 300ms
+    flagging(u,2) = length(find(unFR{u} >= Hz)); %CHANGED FROM 20
+    flagging(u,3) = length(find(numCat{u} >= (ft/binsz))); %300 ms, find #times cell fires at 15Hz for at least 300ms
     if mean(flagging(:,3)>10)
         flagging(u,4) = flagging(u,3)>=5; %..this is the thresh we should play with maybe?
     else
@@ -61,6 +75,7 @@ for u = 1:length(spikes.UID)
 end
 clear samples
 flag = logical(flagging(:,4));
+% flag = ismember(spikes.UID, [90 70 35 6 18 81 10 2 121 100]);
 UIDkeep = spikes.UID(flag);
 % keptBR = br(flag);
 keep.UID = spikes.UID(flag);

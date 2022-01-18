@@ -21,8 +21,8 @@
 % ["AB1\day1"];
 
 % DONE:
-% main = "Z:\Data\AYAold\";
-% paths = ["AYA9\day16"; "AYA10\day34"];
+main = "Z:\Data\AYAold\";
+paths = ["AYA7\day19"];
 
 % paths = ["AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
 %     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; "AYA7\day19";...
@@ -33,10 +33,10 @@
 %     "AYA9\day20"; "AYA10\day25"; "AYA10\day27"; "AYA10\day32"; "AYA10\day34"];
 
 
-main = "Y:\SMproject\";
+% main = "Y:\SMproject\";
 % paths = ["AZ1\day13"; "AO50\day20"; "AO50\day21"; "AO50\day22"; "AO50\day23";...
 %     "AO51\day18"; "AO51\day19"; "AO51\day20"; "AO51\day21"];
-paths = ["AO50\day23"];
+% paths = ["AZ1\day13"];
 
 load('C:\Users\Cornell\Documents\GitHub\neurocode\projects\BarragePipeline\curRatMet.mat');
 bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
@@ -46,7 +46,8 @@ ifHSE = 1;
 ifAnalysis = 1;
 ifCum = 0;
 ifPSTH = 1;
-ifNeuro1 = 1;
+ifNeuro1 = 0;
+manual = [];
 for p = 1:length(paths)
     cd(strcat(main,paths(p)));
     curPath = convertStringsToChars(paths(p));
@@ -59,17 +60,58 @@ for p = 1:length(paths)
 
     savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
     if ifHSE 
-        %% New set of spikes
-        mkSpks([basepath '\Barrage_Files']);
-        unitsForDetection(); %threshold with FR
-        loadPath = strcat(basepath,'\Barrage_Files\',basename,'.brstDt.cellinfo.mat');
-        bound = 3;
-        useSpkThresh = 0.3;
-        [~,useSpkThresh,~] = pickUns(bound,useSpkThresh,0.05,loadPath);
-        % if it's passed, let's keep pushing the boundary to see if we can make it better
-        [~,normSpkThresh,~] = pickUns(bound,useSpkThresh,-0.01,loadPath);
-        checking = burstCellDetection(normSpkThresh,loadPath); %output for my own sanity
+        %% Set metrics to use
+        useMet.nSigma = 3;
+        useMet.tSmooth = 0.02;
+        useMet.binSz = 0.005;
+        useMet.tSepMax = 0.005; %was playing with 0.005, 0.1
+        useMet.mindur = 0.2;
+        useMet.maxdur = 10;
+        useMet.lastmin = 0.2;
+        useMet.sstd = -1*(useMet.nSigma-2);
+        useMet.estd = (useMet.nSigma-2);
+        useMet.EMGThresh = 0.8;
+        %% New set of spikes and pick units to use for detection
+        if ~isempty(manual)
+            load([savePath 'CA2pyr.cellinfo.mat']);
+            keep = [];
+            ki = 1;
+            for i = 1:length(manual)
+                if ismember(spikes.UID, manual(i))
+                    kInd = find(spikes.UID==manual(i),1);
+                    UIDkeep(ki) = spikes.UID(kInd);
+                    keep{ki} = spikes.times{find(spikes.UID==manual(i),1)};
+                    ki = ki+1;
+                else
+                    warning('Selected unit is not a CA2 pyr');
+                end
+            end
+            clear spikes
+            spikes = keep;
+            save([savePath 'brstDt.cellinfo.mat'], 'spikes');
+            save([savePath 'brstDt.UIDkeep.mat'],'UIDkeep');
+        else
+            mkSpks([basepath '\Barrage_Files']);
+            Hz = 60; ft = 0.2;
+            unitsForDetection(Hz, ft); %threshold with FR
+            loadPath = strcat(basepath,'\Barrage_Files\',basename,'.brstDt.cellinfo.mat');
+
+            %% Pare detection units
+            bound = 3;
+            useSpkThresh = 0.3;
+            [~,useSpkThresh,~,bound] = pickUns(bound,useSpkThresh,0.05,useMet,loadPath, Hz, ft);
+            % if it's passed, let's keep pushing the boundary to see if we can make it better
+            [~,normSpkThresh,~,bound] = pickUns(bound,useSpkThresh,-0.01,useMet,loadPath, Hz, ft);
+            checking = burstCellDetection(normSpkThresh,loadPath); %output for my own sanity
+        end
         
+        useMet.Hz = Hz;
+        useMet.ft = ft; 
+        useMet.bound = bound;
+        useMet.spkThresh = normSpkThresh;
+        save([savePath 'useMet.mat'],'useMet');
+        
+        %% Real detection
         if exist([savePath 'HSEfutEVT.mat'])
             load([savePath 'HSEfutEVT.mat']);
             runLast = size(evtSave,1);
@@ -86,18 +128,18 @@ for p = 1:length(paths)
 %             keep.UID = spikes.UID(n);
 %             spikes = []; spikes = keep;
             
-            nSigma = 3;
-            tSmooth = 0.02;
-            binSz = 0.005;
-            tSepMax = 0.005; %was playing with 0.005, 0.1
-            mindur = 0.3;
-            maxdur = 10;
-            lastmin = 0.3;
-            sstd = -1*(nSigma-2);
-            estd = (nSigma-2);
-            EMGThresh = 0.8;
+            nSigma = useMet.nSigma;
+            tSmooth = useMet.tSmooth;
+            binSz = useMet.binSz;
+            tSepMax = useMet.tSepMax; %was playing with 0.005, 0.1
+            mindur = useMet.mindur;
+            maxdur = useMet.maxdur;
+            lastmin = useMet.lastmin;
+            sstd = useMet.sstd;
+            estd = useMet.estd;
+            EMGThresh = useMet.EMGThresh;
             recordMetrics = true;
-            neuro2 = false;
+            neuro2 = true;
             notes = note_all;
 
             HSE = find_HSE_b('spikes',spikes,...

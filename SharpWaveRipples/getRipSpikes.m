@@ -76,7 +76,7 @@ addParameter(p,'events',[], @(x) isnumeric(x) || isstruct(x));
 addParameter(p,'spikes',{},@isstruct);
 addParameter(p,'UIDs',[],@islogical);
 addParameter(p,'padding',0.05,@isnumeric);
-addParameter(p,'savePath',pwd,@isstr);
+addParameter(p,'savePath',pwd,@isstring);
 addParameter(p,'saveNum',0,@isnumeric);
 addParameter(p,'saveMat', true, @islogical);
 

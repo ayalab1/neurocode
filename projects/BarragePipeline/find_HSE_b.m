@@ -127,6 +127,8 @@ if ~loadspkhist
     else
         if size(spikes.times,2)>1
             allspk = cat(1,spikes.times{:});
+        elseif iscell(spikes.times)
+            allspk = spikes.times{:};
         else
             allspk = spikes.times(:);
         end

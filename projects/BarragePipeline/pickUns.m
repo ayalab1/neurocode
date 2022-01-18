@@ -1,10 +1,10 @@
-function [avgNspk, finSpkThresh, itNum] = pickUns(bound, normSpkThresh, it, loadPath)
+function [avgNspk, finSpkThresh, itNum, bound] = pickUns(bound, normSpkThresh, it, useMet, loadPath, Hz, ft)
 basepath = pwd; basename = basenameFromBasepath(basepath);
 savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
 avgNspk = 0;
 itNum = 1;
 
-if nargin < 4
+if nargin < 5
     loadPath = [];
 end
 
@@ -21,27 +21,35 @@ if it > 0
         load([savePath 'brstDt.cellinfo.mat']);
         
         %% We have to actually detect events, huh
-        nSigma = 5;
-        tSmooth = 0.02;
-        binSz = 0.005;
-        tSepMax = 0; %was playing with 0.005
-        mindur = 0.2;
-        maxdur = 10;
-        lastmin = 0.2;
-        sstd = -1*(nSigma-1);
-        estd = (nSigma-1);
-        EMGThresh = 0.8;
+        nSigma = useMet.nSigma;
+        tSmooth = useMet.tSmooth;
+        binSz = useMet.binSz;
+        tSepMax = useMet.tSepMax; %was playing with 0.005
+        mindur = useMet.mindur;
+        maxdur = useMet.maxdur;
+        lastmin = useMet.lastmin;
+        sstd = useMet.sstd;
+        estd = useMet.estd;
+        EMGThresh = useMet.EMGThresh;
         neuro2 = false;
         futEVT = false;
         %With the new thresholds, we're getting it running down to UID=[],
         %which means no spikes which means no detection... need to prevent
         %this/avoid in general
-        HSE = find_HSE_b('spikes',spikes,...
-                    'nSigma',nSigma,'binSz',binSz,'tSmooth',tSmooth,'tSepMax',tSepMax,...
-                    'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
-                    'EMGThresh',EMGThresh,'sstd',sstd,'estd',estd,...
-                    'neuro2',neuro2,'recordMetrics',false, 'futEVT',futEVT);
-        
+        while length(spikes.UID) < 1
+            bound = bound - 0.1; 
+            unitsForDetection(Hz,ft);
+            load([savePath 'brstDt.cellinfo.mat']);
+            if bound < 1.2
+                error('Bound is too low, consider manually inputting units or adjusting detection parameters');
+            end
+        end 
+            HSE = find_HSE_b('spikes',spikes,...
+                        'nSigma',nSigma,'binSz',binSz,'tSmooth',tSmooth,'tSepMax',tSepMax,...
+                        'mindur',mindur,'maxdur',maxdur,'lastmin',lastmin,...
+                        'EMGThresh',EMGThresh,'sstd',sstd,'estd',estd,...
+                        'neuro2',neuro2,'recordMetrics',false, 'futEVT',futEVT);        
+            
         %% Get event metrics
         barSpk = getRipSpikes('basepath',pwd,'events',HSE.timestamps,'spikes',spikes,'padding',0,'saveMat',false);
         for unit = 1:length(barSpk.UnitAbs)
@@ -88,16 +96,16 @@ elseif it < 0
         load([savePath 'brstDt.cellinfo.mat']);
         
         %% We have to actually detect events, huh
-        nSigma = 5;
-        tSmooth = 0.02;
-        binSz = 0.005;
-        tSepMax = 0.1; %was playing with 0.005
-        mindur = 0.1;
-        maxdur = 10;
-        lastmin = 0.2;
-        sstd = -1*(nSigma-1);
-        estd = (nSigma-1);
-        EMGThresh = 0.8;
+        nSigma = useMet.nSigma;
+        tSmooth = useMet.tSmooth;
+        binSz = useMet.binSz;
+        tSepMax = useMet.tSepMax; %was playing with 0.005
+        mindur = useMet.mindur;
+        maxdur = useMet.maxdur;
+        lastmin = useMet.lastmin;
+        sstd = useMet.sstd;
+        estd = useMet.estd;
+        EMGThresh = useMet.EMGThresh;
         save_evts = false;
         neuro2 = false;
         futEVT = false;

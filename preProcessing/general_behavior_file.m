@@ -94,8 +94,8 @@ if exist([basepath,filesep,[basename,'.whl']],'file')
     positions = load([basepath,filesep,[basename,'.whl']]);
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
-    x = median([positions(:,1),positions(:,3)],2);
-    y = median([positions(:,2),positions(:,4)],2);
+    % find led with best tracking
+    [x,y] = find_best_columns(positions,fs);
     units = 'cm';
     source = '.whl';
     if exist(fullfile(basepath,'trials.mat'),'file')
@@ -114,8 +114,7 @@ elseif exist(fullfile(basepath,'fmat',[animalFromBasepath(basepath),basename,'.w
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
     try
-        x = median([positions(:,1),positions(:,3)],2);
-        y = median([positions(:,2),positions(:,4)],2);
+        [x,y] = find_best_columns(positions,fs);
     catch
         x = positions(:,1);
         y = positions(:,2);
@@ -141,8 +140,8 @@ elseif exist(fullfile(basepath,'fmat',[basename,'.whl']),'file')
     positions = load(fullfile(basepath,'fmat',[basename,'.whl']));
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
-    x = median([positions(:,1),positions(:,3)],2);
-    y = median([positions(:,2),positions(:,4)],2);
+    % find led with best tracking
+    [x,y] = find_best_columns(positions,fs);
     units = 'cm';
     source = '.whl';
     if exist(fullfile(basepath,'fmat','trials.mat'),'file')
@@ -155,14 +154,13 @@ elseif ~isempty(dir(fullfile(basepath,'fmat', '*.whl')))
     positions = load(fullfile(filelist(1).folder,filelist(1).name));
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
-    x = median([positions(:,1),positions(:,3)],2);
-    y = median([positions(:,2),positions(:,4)],2);
+    % find led with best tracking
+    [x,y] = find_best_columns(positions,fs);
     units = 'cm';
     source = '.whl';
     if exist(fullfile(basepath,'fmat','trials.mat'),'file')
         trials = load(fullfile(basepath,'fmat','trials.mat'));
         trials = trials.trials;
-        
     elseif exist(fullfile(basepath,[basename,'.trials.mat']),'file')
         trials = load(fullfile(basepath,[basename,'.trials.mat']));
         temp_trials = [];
@@ -335,5 +333,20 @@ catch
     v = LinearVelocity([t,linearized,linearized*0]);
     v = v(:,2);
 end
+
+end
+
+% find led with best tracking
+function [x,y] = find_best_columns(positions,fs)
+for col = 1:size(positions,2)
+    x_test = medfilt1(positions(:,col),round(fs/2),'omitnan');
+    R(col) = corr(positions(:,col),x_test, 'rows','complete');
+end
+[~,idx] = max([mean(R(1:2)), mean(R(3:4))]);
+columns{1} = [1,2];
+columns{2} = [3,4];
+x = positions(:,columns{idx}(1));
+y = positions(:,columns{idx}(2));
+%     [~,idx] = min([sum(isnan(positions(:,1))),sum(isnan(positions(:,3)))]);
 
 end

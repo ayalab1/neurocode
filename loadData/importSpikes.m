@@ -103,7 +103,7 @@ if ~isempty(type)
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)
-            keepTimes{keepUID(j)} = tempTimes{useIndTemp(j)};
+            keepTimes{spikeT.UID(useInd(j))} = tempTimes{useIndTemp(j)};
         end            
     end
     spikeT.UID = sort(keepUID);

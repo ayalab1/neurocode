@@ -6,7 +6,7 @@ import glob
 import warnings
 
 
-def loadXML(path):
+def loadXML(basepath):
     """
     path should be the folder session containing the XML file
     Function returns :
@@ -21,18 +21,16 @@ def loadXML(path):
 
     by Guillaume Viejo    
     """
-    if not os.path.exists(path):
-        print("The path "+path+" doesn't exist; Exiting ...")
-        sys.exit()
-    listdir = os.listdir(path)
-    xmlfiles = [f for f in listdir if f.endswith('.xml')]
-    if not len(xmlfiles):
-        print("Folder contains no xml files; Exiting ...")
-        sys.exit()
-    new_path = os.path.join(path, xmlfiles[0])
+
+    filename = glob.glob(os.path.join(basepath,'*.xml'))[0]
+
+    # check if saved file exists
+    if not os.path.exists(filename):
+        warnings.warn("file does not exist")
+        return 
 
     from xml.dom import minidom
-    xmldoc = minidom.parse(new_path)
+    xmldoc = minidom.parse(filename)
     nChannels = xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('nChannels')[0].firstChild.data
     fs_dat = xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('samplingRate')[0].firstChild.data
     fs = xmldoc.getElementsByTagName('fieldPotentials')[0].getElementsByTagName('lfpSamplingRate')[0].firstChild.data
@@ -43,7 +41,20 @@ def loadXML(path):
         shank_to_channel[i] = [int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')]
     return int(nChannels), int(fs), int(fs_dat), shank_to_channel
 
-def loadLFP(path, n_channels=90, channel=64, frequency=1250.0, precision='int16'):
+def loadLFP(basepath, n_channels=90, channel=64, frequency=1250.0, precision='int16',ext='lfp'):
+    if ext == 'lfp':
+        try:
+            path = glob.glob(os.path.join(basepath,os.path.basename(basepath)+'*.lfp'))[0]
+        except:
+            path = glob.glob(os.path.join(basepath,os.path.basename(basepath)+'*.eeg'))[0]
+    if ext == 'dat':
+            path = glob.glob(os.path.join(basepath,os.path.basename(basepath)+'*.dat'))[0]
+
+    # check if saved file exists
+    if not os.path.exists(path):
+        warnings.warn("file does not exist")
+        return 
+
     if type(channel) is not list:
         f = open(path, 'rb')
         startoffile = f.seek(0, 0)
@@ -82,16 +93,16 @@ def loadLFP(path, n_channels=90, channel=64, frequency=1250.0, precision='int16'
             return data,timestep # nts.TsdFrame(timestep, data, time_units = 's')
 
 
-def load_position(path,fs=39.0625):
-    if not os.path.exists(path):
-        print("The path "+path+" doesn't exist; Exiting ...")
+def load_position(basepath,fs=39.0625):
+    if not os.path.exists(basepath):
+        print("The path "+basepath+" doesn't exist; Exiting ...")
         sys.exit()
-    listdir = os.listdir(path)
+    listdir = os.listdir(basepath)
     whlfiles = [f for f in listdir if f.endswith('.whl')]
     if not len(whlfiles):
         print("Folder contains no whl files; Exiting ...")
         sys.exit()
-    new_path = os.path.join(path, whlfiles[0])
+    new_path = os.path.join(basepath, whlfiles[0])
     df = pd.read_csv(new_path,delimiter="\t",header=0,names=['x1','y1','x2','y2'])
     df[df==-1] = np.nan
     return df,fs
@@ -212,7 +223,7 @@ def load_cell_metrics(basepath):
 
     # add data from general metrics        
     df['basename'] = data['cell_metrics']['general'][0][0]['basename'][0][0][0]
-    df['basepath'] = data['cell_metrics']['general'][0][0]['basepath'][0][0][0]
+    df['basepath'] = basepath
     df['sex'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['sex'][0][0][0]
     df['species'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['species'][0][0][0]
     df['strain'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['strain'][0][0][0]
@@ -583,3 +594,23 @@ def load_epoch(basepath):
     df_save['environment'] = environment
 
     return df_save
+
+def get_animal_id(basepath):
+    """ return animal ID from basepath using basename.session.mat"""
+
+    filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
+
+    # check if saved file exists
+    if not os.path.exists(filename):
+        warnings.warn("file does not exist")
+        return pd.DataFrame()
+
+    # load file
+    data = sio.loadmat(filename)
+    return data['session'][0][0]['animal'][0][0]['name'][0]
+
+def load_basic_data(basepath):
+    nChannels, fs, fs_dat, shank_to_channel = loadXML(basepath)
+    ripples = load_ripples_events(basepath)
+    cell_metrics,data = load_cell_metrics(basepath)
+    return cell_metrics,data,ripples,fs_dat

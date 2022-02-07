@@ -57,9 +57,26 @@ if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 end
 
-%% Output structure
+%% Remove bad channels before we start
+load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+if isfield(cell_metrics.tags, 'Bad')
+    ct = 1;
+    for i = 1:length(spikes.UID)
+        if isempty(find(cell_metrics.tags.Bad==spikes.UID(i),1))
+            spikeT.UID(ct) = spikes.UID(i);
+            spikeT.times{ct} = spikes.times{i};
+            ct = ct+1;
+        end
+    end
+    clear ct
+else
 spikeT.UID = spikes.UID;
 spikeT.times = spikes.times;
+end
+
+%% Output structure
+% spikeT.UID = spikes.UID;
+% spikeT.times = spikes.times;
 
 if ~isempty(UID)
    spikeT.UID = spikes.UID(UID);

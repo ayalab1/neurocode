@@ -150,7 +150,7 @@ elseif isempty(roiTracking)
 elseif ischar(roiTracking) && strcmpi(roiTracking,'manual')
     disp('Draw ROI for tracking...');
     h1 = figure;
-    imshow(average_frame);
+    imshow(average_frame,[]);
     title('Draw ROI for tracking... (include all posible locations)','FontWeight','normal');
     roi = drawpolygon;
     roiTracking = [roi.Position; roi.Position(1,:)];

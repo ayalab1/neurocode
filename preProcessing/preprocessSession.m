@@ -71,6 +71,7 @@ SSD_path = p.Results.SSD_path;
 if ~exist('basepath','dir')
     error('path provided does not exist')
 end
+cd(basepath)
 
 %% Pull meta data
 
@@ -99,7 +100,7 @@ end
 % Manually ID bad channels at this point. automating it would be good
 
 session = sessionTemplate(basepath,'showGUI',false); %
-save([basename '.session.mat'],'session');
+save(fullfile(basepath,[basename, '.session.mat']),'session');
 
 %% Fill missing dat files of zeros
 if fillMissingDatFiles
@@ -187,7 +188,7 @@ end
 
 %% Get tracking positions - TO FIX
 if getPos
-    getSessionTracking('optitrack',false);
+    getSessionTracking('basepath',basepath,'optitrack',false);
 end
 
 %% Summary -  NOT WELL IMPLEMENTED YET

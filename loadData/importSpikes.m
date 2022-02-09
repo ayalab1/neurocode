@@ -23,7 +23,6 @@ function [spikeT] = importSpikes(varargin)
 %          .sessionName             
 
 % TODO:
-% Add funcionality to load specific cell types or regions
 % Do we want more output fields?
 
 % AntonioFR, 8/20; Lindsay K, 11/21
@@ -53,12 +52,12 @@ channel = p.Results.channel;
 %% Load spikes 
 basename = basenameFromBasepath(basepath);
 
-if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])) 
+if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') 
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 end
 
 %% Remove bad channels before we start
-load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
 if isfield(cell_metrics.tags, 'Bad')
     ct = 1;
     for i = 1:length(spikes.UID)
@@ -75,9 +74,6 @@ spikeT.times = spikes.times;
 end
 
 %% Output structure
-% spikeT.UID = spikes.UID;
-% spikeT.times = spikes.times;
-
 if ~isempty(UID)
    spikeT.UID = spikes.UID(UID);
    spikeT.times = spikes.times(UID);

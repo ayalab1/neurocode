@@ -45,7 +45,7 @@ addParameter(p,'cleanArtifacts',false,@islogical);
 addParameter(p,'stateScore',false,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'getPos',true,@islogical);
-addParameter(p,'removeNoise',true,@islogical);
+addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 

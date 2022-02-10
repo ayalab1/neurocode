@@ -99,7 +99,7 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 
-session = sessionTemplate(basepath,'showGUI',True); %
+session = sessionTemplate(basepath,'showGUI',true); %
 save(fullfile(basepath,[basename, '.session.mat']),'session');
 
 %% Fill missing dat files of zeros

@@ -13,6 +13,14 @@ savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 % plotSave = strcat('Z:\home\Lindsay\Barrage\PSTH\',animName,'.',basename,'.');
 plotSave = strcat(basepath, '\Barrage_Files\', basename, '.');
 %%
+
+if isfield(HSE, 'keep')
+    HSE.timestamps = HSE.timestamps(HSE.keep,:);
+    HSE.peaks = HSE.peaks(HSE.keep);
+    HSE.amplitudes = HSE.amplitudes(HSE.keep);
+    HSE.duration = HSE.duration(HSE.keep);
+end
+
 regions = unique(cell_metrics.brainRegion);
 check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];
 regTot = 0;

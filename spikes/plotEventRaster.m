@@ -62,7 +62,7 @@ end
 
 sr = session.extracellular.sr;
 
-pad = 0.05; % padding time
+pad = 0.25; % padding time
 for e = 1:size(event,1)
     event(e,1) = event(e,1)-pad;
     event(e,2) = event(e,2)+pad;
@@ -250,7 +250,7 @@ switch(tag)
                         if raster(i,j) > 0 && ismember(rasterID(i),cell_metrics.tags.N)
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
                             if isempty(br); br = 1; end
-                            scatter(raster(i,j),i,30,'k','v','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
+                            scatter(raster(i,j),i,30,'k','.','MarkerEdgeColor',colors(br,:),'MarkerFaceColor',colors(br,:));hold on;
                             clear y;
                         elseif (raster(i,j) > 0) && (ismember(rasterID(i),cell_metrics.tags.P))
                             br = find(strcmp(regions,cell_metrics.brainRegion(rasterID(i))));
@@ -439,6 +439,16 @@ switch(tag)
         
     otherwise
         error(['Unknown property ']);
+end
+
+% touch up plots
+for e = 1:size(event,1)
+    subplot(2,size(event,1),e);
+    xline(event(e,1)+pad,'--');
+    xline(event(e,2)-pad,'--');
+    subplot(2,size(event,1),e+size(event,1));
+    xline(event(e,1)+pad,'--');
+    xline(event(e,2)-pad,'--');
 end
 
 % %% add saving

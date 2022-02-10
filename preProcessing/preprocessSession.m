@@ -38,11 +38,11 @@ addParameter(p,'fillMissingDatFiles',false,@islogical);
 addParameter(p,'fillTypes',[],@iscellstr);
 addParameter(p,'analogInputs',false,@islogical);
 addParameter(p,'analogChannels',[],@isnumeric);
-addParameter(p,'digitalInputs',false,@islogical);
+addParameter(p,'digitalInputs',true,@islogical);
 addParameter(p,'digitalChannels',[],@isnumeric);
 addParameter(p,'getAcceleration',false,@islogical);
 addParameter(p,'cleanArtifacts',false,@islogical);
-addParameter(p,'stateScore',false,@islogical);
+addParameter(p,'stateScore',true,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'getPos',true,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.

@@ -68,7 +68,7 @@ removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 
-if ~exist('basepath','dir')
+if ~exist('basepath','var')
     error('path provided does not exist')
 end
 cd(basepath)

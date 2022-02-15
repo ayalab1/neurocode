@@ -27,7 +27,7 @@ function rez = CleanRez(rez,varargin)
 %    rez                cleaned rez file, without the noisy clusters
 %
 %
-% Copyright (C) 2022 by Ralitsa Todorova
+% Copyright (C) 2022 by Ralitsa Todorova and Ryan Harvey
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -113,11 +113,11 @@ for i=1:nClusters
     groupID = find(thismax,1); % index
     waveform = nanzscore(meanWaveform(groupID,:,i));
     if any(~isnan(waveform))
-        troughs = (FindLocalMinima([(1:nBins)' Smooth(waveform(:),1)]));
+        troughs = strfind([nan;diff(Smooth(waveform(:),1))>0]',[0 1])';
         maxTrough = min(waveform(troughs));
         troughs(waveform(troughs)>maxTrough/2) = []; % ignore local minima that are negligible fluctuations compared to the real trough
         nTroughs = length(troughs);
-        peaks = (FindLocalMaxima([(1:nBins)' Smooth(waveform(:),1)]));
+        peaks = strfind([nan;diff(Smooth(waveform(:),1))>0]',[1 0])';
         maxPeak = max(waveform(peaks));
         peaks(waveform(peaks)<maxPeak/2) = []; % ignore local minima that are negligible fluctuations compared to the real trough
         nPeaks = length(peaks);

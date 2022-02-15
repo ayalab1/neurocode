@@ -17,7 +17,7 @@ function  preprocessSession(varargin)
 %   stateScore     - Run automatic brain state detection with SleepScoreMaster. Default true.
 %   spikeSort      - Run automatic spike sorting using Kilosort. Default true.
 %   cleanRez       - Run automatic noise detection of the Kilosort results (these will be pre-labelled as noise in phy). Default true.
-%   getPos         - get tracking positions. Default true. 
+%   getPos         - get tracking positions. Default true.
 %   getPos         - get tracking positions. Default true.
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
@@ -102,7 +102,6 @@ end
 
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
-
 session = sessionTemplate(basepath,'showGUI',false);
 save(fullfile(basepath,[basename, '.session.mat']),'session');
 
@@ -119,6 +118,10 @@ end
 %% Concatenate sessions
 disp('Concatenate session folders...');
 concatenateDats(basepath,0,1);
+
+%% run again to add epochs from basename.MergePoints.m
+session = sessionTemplate(basepath,'showGUI',false);
+save(fullfile(basepath,[basename, '.session.mat']),'session');
 
 %% Process additional inputs - CHECK FOR OUR LAB
 

@@ -163,13 +163,13 @@ if sortFiles
     try
         names2sort = cellfun(@(X) str2num(X(end-5:end)),recordingnames,'UniformOutput',false);
         names2sort = cell2mat(names2sort);
-        if isempty(names2sort{1}) && ~isempty(recordingnames{1})
-            error('Last 6 digits were not numeric and therefore do not reflect the recording time.');
-        end
+%         if isempty(names2sort{1}) && ~isempty(recordingnames{1})
+%             error('Last 6 digits were not numeric and therefore do not reflect the recording time.');
+%         end
         disp('Assuming the last 6 digits reflect recording time.')
         %disp('Don''t like it? Write in some new options for sorting.')
     catch
-        names2sort = 1:length(recordingnames);
+       % names2sort = 1:length(recordingnames);
         disp('Last 6 digits not numeric... sorting alphabetically')
     end
 

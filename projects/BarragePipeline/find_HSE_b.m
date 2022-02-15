@@ -214,6 +214,8 @@ for i = 1:length(evtstart)-1
 end
 
 [evtstart, evtstop, evtdur, evtpeak] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
+%trim up duration
+[evtstart, evtstop, evtdur] = trimEvt(evtstart,evtstop,evtdur,spikes);
 %disp([' >>> Number of events after overlap concatenation: ' num2str(length(evtstart))]);
 
 %% Final pass to remove any short events that did not get concatenated
@@ -425,10 +427,10 @@ evtidx = spkhist>nSigma; %flag events outside nSigma stds
 evtidx = find(diff(evtidx)==1)+1; %find where we switch from above/below our acceptance threshold, keep start index
 % belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
 % belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
-% belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
-% belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
-belowmstart = spkhist<(nSigma+sstd); % Logical to run faster, what threshold to start an event
-belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
+belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
+belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
+% belowmstart = spkhist<(nSigma+sstd); % Logical to run faster, what threshold to start an event
+% belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
 
 [startID, stopID, evtstart, evtstop, evtdur, evtamp, evtpeak] = deal(zeros(1,length(evtidx)));
 %startID = 1; % Initialize to 1 for the first comparison to work
@@ -485,6 +487,31 @@ evtdur = evtdur(goodHSE);
 evtpeak = evtpeak(goodHSE);
 evtamp = evtamp(goodHSE);
 %disp([' >>> Number of events after first length thresholding: ' num2str(length(evtstart))]);
+end
+
+function [evtstart, evtstop, evtdur] = trimEvt(evtstart,evtstop,evtdur,spikes)
+numEvt = length(evtstart);
+tempStart = zeros(numEvt,1);
+tempEnd = zeros(numEvt,1);
+for e = 1:numEvt
+    for u = 1:length(spikes.UID)
+        curStart = spikes.times{u}(find((spikes.times{u}>=evtstart(e))&(spikes.times{u}<=evtstop(e)),1,'first'));
+        curEnd = spikes.times{u}(find((spikes.times{u}>=evtstart(e))&(spikes.times{u}<=evtstop(e)),1,'last'));
+        if (tempStart(e)==0)&&~isempty(curStart)
+            tempStart(e) = curStart;
+        elseif tempStart(e) > curStart
+            tempStart(e) = curStart;
+        end
+        if (tempEnd(e)==0)&&~isempty(curEnd)
+            tempEnd(e) = curEnd;
+        elseif tempEnd(e) < curEnd
+            tempEnd(e) = curEnd;
+        end
+    end
+    evtstart(e) = tempStart(e);
+    evtstop(e) = tempEnd(e);
+    evtdur(e) = tempEnd(e) - tempStart(e);
+end
 end
 
 end

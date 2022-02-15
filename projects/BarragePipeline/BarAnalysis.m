@@ -9,6 +9,7 @@ if nargin <1
     ses = pwd;
 end
 %% [STEP 0] Settings
+% warning('off','all');
 close all
 savePath = strcat(ses, '\Barrage_Files\');
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
@@ -188,9 +189,11 @@ end
 %% [1.3] FR per unit
 FR = cell(length(spikes.times),1);
 avgFR = NaN(length(spikes.times),1);
+tSmooth = 0.02;
+binSz = 0.005;
 for i = 1:length(spikes.times)
-    spkHist = spkRtHist(sort(spikes.times{i}), 'ifz', false);
-    FR{i} = spkHist/0.001; %get rate from our count/bin size
+    spkHist = spkRtHist(sort(spikes.times{i}),'tSmooth',tSmooth,'binSz',binSz,'ifz', false);
+    FR{i} = spkHist/binSz; %get rate from our count/bin size
     avgFR(i) = sum(FR{i})/length(FR{i});
 end
 cellProp.FR = FR;
@@ -429,7 +432,7 @@ if ~showPlt
 end
 
 %% [1.5] Cell SAVE
-save(strcat(specPath,basename,'.props.mat'),'cellProp', '-v7.3');
+saveStructs(cellProp,specPath,basename);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% [STEP 2]
@@ -470,6 +473,8 @@ saveas(gcf,strcat(specPath, saveSchem, '.evtDur.png'));
 if ~showPlt
     close all
 end
+
+cumMet.evtDur = spkEventTimes.EventDuration;
 
 %% [2.2] # units per event
 barProp.untPerEvt = unitBar.nCellsEvent;
@@ -838,7 +843,22 @@ if ~showPlt
 end
 
 %% [2.6] Population SAVE
-save(strcat(specPath,saveSchem,'.props.mat'),'barProp', '-v7.3');
+saveStructs(barProp,specPath,basename)
 save(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat'),'cumMet', '-v7.3');
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+end
+
+function saveStructs(structure,specPath,basename)
+    unpackStruct(structure);
+    clear structure FR %SOME THINGS ARE NOT BEING SAVED BECAUSE THEY ARE TOO BIG, BUT THAT'S OKAY FOR NOW
+    save(strcat(specPath,basename,'.props.mat'));
+end
+
+function unpackStruct(structure)
+    fn = fieldnames(structure);
+    for i = 1:numel(fn)
+        fni = string(fn(i));
+        field = structure.(fni);
+        assignin('caller', fni, field);
+    end
 end

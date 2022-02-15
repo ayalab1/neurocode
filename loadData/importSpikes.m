@@ -58,7 +58,8 @@ end
 
 %% Remove bad channels before we start
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
-if isfield(cell_metrics.tags, 'Bad')
+if isfield(cell_metrics, 'tags')
+    if isfield(cell_metrics.tags, 'Bad')
     ct = 1;
     for i = 1:length(spikes.UID)
         if isempty(find(cell_metrics.tags.Bad==spikes.UID(i),1))
@@ -68,6 +69,7 @@ if isfield(cell_metrics.tags, 'Bad')
         end
     end
     clear ct
+    end
 else
 spikeT.UID = spikes.UID;
 spikeT.times = spikes.times;

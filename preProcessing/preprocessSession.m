@@ -5,7 +5,7 @@ function  preprocessSession(varargin)
 %   Master function to run the basic pre-processing pipeline for an
 %   individual sessions. Is based on sessionsPipeline.m but in this case
 %   works on an individual session basis no in a folfer with multiple ones.
-% 
+%
 
 % INPUTS
 %   <options>       optional list of property-value pairs (see table below)
@@ -18,14 +18,15 @@ function  preprocessSession(varargin)
 %   spikeSort      - Run automatic spike sorting using Kilosort. Default true.
 %   cleanRez       - Run automatic noise detection of the Kilosort results (these will be pre-labelled as noise in phy). Default true.
 %   getPos         - get tracking positions. Default true. 
+%   getPos         - get tracking positions. Default true.
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
 %
-%  HISTORY: 
+%  HISTORY:
 %   AntonioFR, 5/20
 
 %  TO DO:
-%   - Improve auto-clustering routine 
+%   - Improve auto-clustering routine
 %   - Test cleaning and removing artifacts routines
 
 
@@ -51,7 +52,7 @@ addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 
-% addParameter(p,'pullData',[],@isdir); To do... 
+% addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
 
 basepath = p.Results.basepath;
@@ -71,10 +72,10 @@ removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 
-if ~exist('basepath')
+if ~exist(basepath,'dir')
     error('path provided does not exist')
 end
-cd(basepath);
+cd(basepath)
 
 %% Pull meta data
 
@@ -102,8 +103,9 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 
-session = sessionTemplate(pwd,'showGUI',true); %
-save([basename '.session.mat'],'session');
+session = sessionTemplate(basepath,'showGUI',false);
+save(fullfile(basepath,[basename, '.session.mat']),'session');
+
 
 %% Fill missing dat files of zeros
 if fillMissingDatFiles
@@ -115,26 +117,24 @@ if fillMissingDatFiles
     end
 end
 %% Concatenate sessions
-cd(basepath);
-
 disp('Concatenate session folders...');
-concatenateDats(pwd,0,1);
+concatenateDats(basepath,0,1);
 
 %% Process additional inputs - CHECK FOR OUR LAB
 
 % Analog inputs
-    % check the two different fucntions for delaing with analog inputs and proably rename them
-if analogInputs 
+% check the two different fucntions for delaing with analog inputs and proably rename them
+if analogInputs
     if  ~isempty(analogChannels)
         analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true,'fs',session.extracellular.sr);
     else
-        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr); 
+        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr);
     end
     
-% analog pulses ... 
-    [pulses] = getAnalogPulses('samplingRate',session.extracellular.sr);     
+    % analog pulses ...
+    [pulses] = getAnalogPulses('samplingRate',session.extracellular.sr);
 end
-   
+
 % Digital inputs
 if digitalInputs
     if ~isempty(digitalChannels)
@@ -147,12 +147,12 @@ end
 
 % Auxilary input
 if getAcceleration
-    accel = computeIntanAccel('saveMat',true); 
+    accel = computeIntanAccel('saveMat',true);
 end
 
 %% Make LFP
 
-LFPfromDat(pwd,'outFs',1250,'useGPU',false);
+LFPfromDat(basepath,'outFs',1250,'useGPU',false);
 
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer
@@ -166,19 +166,19 @@ end
 
 % remove noise from data for cleaner spike sorting
 if removeNoise
-    NoiseRemoval(pwd); % not very well tested yet
+    NoiseRemoval(basepath); % not very well tested yet
 end
 
 %% Get brain states
-% an automatic way of flaging bad channels is needed 
-if stateScore 
-    try 
+% an automatic way of flaging bad channels is needed
+if stateScore
+    try
         if exist('pulses','var')
-            SleepScoreMaster(pwd,'noPrompts',true,'ignoretime',pulses.intsPeriods); % try to sleep score
-            thetaEpochs(pwd); 
+            SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods); % try to sleep score
+            thetaEpochs(basepath);
         else
-            SleepScoreMaster(pwd,'noPrompts',true); % takes lfp in base 0
-            thetaEpochs(pwd); 
+            SleepScoreMaster(basepath,'noPrompts',true); % takes lfp in base 0
+            thetaEpochs(basepath);
         end
     catch
         disp('Problem with SleepScore skyping...');
@@ -197,14 +197,14 @@ end
 
 %% Get tracking positions - TO FIX
 if getPos
-    getSessionTracking('optitrack',false);
+    getSessionTracking('basepath',basepath,'optitrack',false);
 end
 
 %% Summary -  NOT WELL IMPLEMENTED YET
 if runSummary
     if forceSum || (~isempty(dir('*Kilosort*')) && (isempty(dir('summ*')))) % is kilosorted but no summ
         disp('running summary analysis...');
-        sessionSummary;         
+        sessionSummary;
     end
 end
 end

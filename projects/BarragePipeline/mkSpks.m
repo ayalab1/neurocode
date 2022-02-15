@@ -18,4 +18,7 @@ end
 spikes = [];
 spikes = importSpikes('cellType', "Pyramidal Cell");
 save([savePath '\' basename '.allpyr.cellinfo.mat'], 'spikes');
+spikes = [];
+spikes = importSpikes('cellType', ["Narrow Interneuron"; "Wide Interneuron"]);
+save([savePath '\' basename '.allint.cellinfo.mat'], 'spikes');
 end

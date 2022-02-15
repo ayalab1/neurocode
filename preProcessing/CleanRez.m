@@ -1,9 +1,9 @@
 function rez = CleanRez(rez,varargin)
 
-% Remove noisy clusters from the rez file. This is an optional preprocessing 
+% Remove noisy clusters from the rez file. This is an optional preprocessing
 % step the user may choose to perform before exporting the Kilosort results to
-% phy. Alternatively, one may provide a path (of the Kilosort folder), where 
-% the function would export the "noise" labels for the noisy clusters in 
+% phy. Alternatively, one may provide a path (of the Kilosort folder), where
+% the function would export the "noise" labels for the noisy clusters in
 % phy format. If prior labels exist, "noise" labels will be appended to the %
 % existing cluster_group.tsv file.
 %
@@ -17,7 +17,7 @@ function rez = CleanRez(rez,varargin)
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %     'savepath'        folder where phy files have already been exported
-%                       (by default, undefined as you may run CleanRez before 
+%                       (by default, undefined as you may run CleanRez before
 %                       exporting the clean rez to phy). If provided, cluster
 %                       labels will be saved in a cluster_groups.tsv file for phy.
 %    =========================================================================
@@ -37,19 +37,19 @@ function rez = CleanRez(rez,varargin)
 
 % Parse parameter list
 for i = 1:2:length(varargin)
-	if ~ischar(varargin{i})
-		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
-	end
+    if ~ischar(varargin{i})
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
+    end
     switch(lower(varargin{i}))
-     case 'savepath'
+        case 'savepath'
             savepath = varargin{i+1};
             if ~isfolder(savepath)
                 error('Incorrect value for property ''savepath'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
             end
-
+            
         otherwise
-			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
-	end
+            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
+    end
 end
 
 nClusters = rez.ops.Nfilt;
@@ -94,7 +94,7 @@ for i=1:nClusters
     groupID = find(thismax,1); % index
     if isempty(groupID), continue; end
     waveform = (meanWaveform(groupID,:,i))'; waveform = (waveform-median(waveform))./diff(quantile(waveform,[0.25 0.75]));
-
+    
     [maxValue,idx] = max(abs(waveform));
     si = sign(waveform(idx));
     if idx==1 || idx==length(waveform), continue; end
@@ -152,20 +152,3 @@ if exist('savepath','var') && exist(savepath,'dir') % if the user has already ex
     end
     fclose(fid);
 end
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

@@ -16,6 +16,7 @@ function  preprocessSession(varargin)
 %   cleanArtifacts - Remove artifacts from dat file. By default, if there is analogEv in folder, is true.
 %   stateScore     - Run automatic brain state detection with SleepScoreMaster. Default true.
 %   spikeSort      - Run automatic spike sorting using Kilosort. Default true.
+%   cleanRez       - Run automatic noise detection of the Kilosort results (these will be pre-labelled as noise in phy). Default true.
 %   getPos         - get tracking positions. Default true. 
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
@@ -44,6 +45,7 @@ addParameter(p,'getAcceleration',false,@islogical);
 addParameter(p,'cleanArtifacts',false,@islogical);
 addParameter(p,'stateScore',false,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
+addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',true,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
@@ -63,6 +65,7 @@ getAcceleration = p.Results.getAcceleration;
 cleanArtifacts = p.Results.cleanArtifacts;
 stateScore = p.Results.stateScore;
 spikeSort = p.Results.spikeSort;
+cleanRez = p.Results.cleanRez;
 getPos = p.Results.getPos;
 removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
@@ -99,7 +102,7 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 
-session = sessionTemplate(pwd,'showGUI',false); %
+session = sessionTemplate(pwd,'showGUI',true); %
 save([basename '.session.mat'],'session');
 
 %% Fill missing dat files of zeros
@@ -185,7 +188,11 @@ end
 %% Kilosort concatenated sessions
 if spikeSort
     kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
-    PhyAutoClustering(kilosortFolder);
+    %     PhyAutoClustering(kilosortFolder);
+    if cleanRez
+        load(fullfile(kilosortFolder,'rez.mat'),'rez');
+        CleanRez(rez,'savepath',kilosortFolder);
+    end
 end
 
 %% Get tracking positions - TO FIX

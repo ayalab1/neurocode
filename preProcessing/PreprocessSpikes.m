@@ -47,6 +47,14 @@ for i = 1:length(files)
     basename{i} = basenameFromBasepath(files(i).folder);
 end
 
+% write data frame of basepaths to project folder
+% using this .csv, you will not need to again search for all the cell_metrics
+% files, which can take some time if you have many sessions
+df = table();
+df.basepath = basepath';
+df.basename = basename';
+writetable(df,['sessions_',date,'.csv'])
+
 % load all cell metrics
 cell_metrics = loadCellMetricsBatch('basepaths',basepath,'basenames',basename);
 

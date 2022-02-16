@@ -778,8 +778,8 @@ ripPowerAll = zeros(Nblocks,1);
 featureTs   = zeros(Nblocks,1);
 
 MaxCounter  = 0;
-for ii = 1:Nepochs
-    epoch_inds = floor(Epochs(ii,:)*SR);
+for ep_i = 1:Nepochs
+    epoch_inds = floor(Epochs(ep_i,:)*SR);
     blocks     = epoch_inds(1):WinSize:epoch_inds(2);
     
     for jj = 1:length(blocks)-1
@@ -1353,12 +1353,8 @@ for ii = 1:Nepochs
         save([Filebase '.ripples.events.mat'],'ripples')
     end
     
-end %EOF
-
-
-
-
-
+end 
+end
 
 
 % makegausslpfir        Gaussian LP filter
@@ -1386,13 +1382,13 @@ x = -ceil( s * sd ) : ceil( s * sd );
 gwin = 1/( 2 * pi * sd ) * exp( -( x.^2/2/sd.^2 ) );
 gwin = gwin / sum( gwin );
 
-return
+end
 
 % EOF
 
 % to determine the proper support:
-cwin = cumsum( gwin );
-length( cwin ), [ find( cwin >= 0.001, 1, 'first' ) - 1, find( cwin <= 0.999, 1, 'last' ) + 1 ]
+% cwin = cumsum( gwin );
+% length( cwin ), [ find( cwin >= 0.001, 1, 'first' ) - 1, find( cwin <= 0.999, 1, 'last' ) + 1 ]
 % 3 SD are usually enough
 
 
@@ -1422,13 +1418,7 @@ Y = filter(W,1,[flipud(x(1:C,:)); x; flipud(x(end-C+1:end,:))]);
 clear x
 Y = Y(1+C+D:end-C+D,:);
 
-return
-% EOF
-
-
-
-
-
+end
 
 
 function logAnalysisFile(AnalysisFileName, writePath)
@@ -1553,3 +1543,4 @@ end
 % Close all files
 fclose(fid1);
 fclose(fid2);
+end

@@ -130,6 +130,11 @@ multiplePeaksAndTroughs = nPeaksAndTroughs>1;
 nSpikes = accumarray(rez.st3(:,2),1);
 tooFew = nSpikes<=5;
 
+detectedOnAllElectrodes(end+1:nClusters) = false;
+singleBin(end+1:nClusters) = false;
+multiplePeaksAndTroughs(end+1:nClusters) = false;
+tooFew(end+1:nClusters) = false;
+
 % Clusters selected by any of the above criteria are marked as "noisy"
 noisy = detectedOnAllElectrodes | singleBin | multiplePeaksAndTroughs | tooFew;
 

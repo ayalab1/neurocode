@@ -81,7 +81,7 @@ if rearrange_by_xml
     [~, basename] = fileparts(basepath);
     % load channel map from basename.session
     session = loadSession(basepath,basename);
-    lfp_frag = lfp_frag(:,session.extracellular.electrodeGroups.channels{1, 1}); 
+    lfp_frag = lfp_frag(:,[session.extracellular.electrodeGroups.channels{:}]); 
     % remove bad channels 
     lfp_frag(:,session.channelTags.Bad.channels) = []; 
     % save channels in mapped order and remove those excluded 

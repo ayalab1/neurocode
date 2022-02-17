@@ -44,6 +44,8 @@ addParameter(p,'temp_sm',0,@isnumeric);
 addParameter(p,'doDetrend',false,@islogical);
 addParameter(p,'plotCSD',true,@islogical);
 addParameter(p,'plotLFP',true,@islogical);
+addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'rearrange_by_xml',true,@islogical);
 
 parse(p,varargin{:});
 channels = p.Results.channels;
@@ -53,7 +55,8 @@ temp_sm = p.Results.temp_sm;
 doDetrend = p.Results.doDetrend;
 plotCSD = p.Results.plotCSD;
 plotLFP = p.Results.plotLFP;
-
+basepath = p.Results.basepath;
+rearrange_by_xml = p.Results.rearrange_by_xml;
 %lfp input
 if isstruct(lfp)
     data = lfp.data;
@@ -73,6 +76,17 @@ win = (p.Results.win*samplingRate)+1;
 %% Compute CSD
 
 lfp_frag = data(win(1):win(2),channels)*-1;
+
+if rearrange_by_xml
+    % load channel map from basename.session
+    session = sessionTemplate(basepath,'showGUI',false);
+    lfp_frag = lfp_frag(:,session.extracellular.electrodeGroups.channels{1, 1}); 
+    % remove bad channels 
+    lfp_frag(:,session.channelTags.Bad.channels) = []; 
+    % save channels in mapped order and remove those excluded 
+    channels = session.extracellular.electrodeGroups.channels{1, 1};
+    channels(:,session.channelTags.Bad.channels) = [];
+end
 
 % detrend
 if doDetrend
@@ -120,11 +134,13 @@ if plotLFP
     subplot(1,2,2);
     for ch=1:size(lfp_frag,2)
         offset = 500*(ch-1);
-        sh_tmp = 10e5*(lfp_frag(:,ch)) + offset;
+        sh_tmp = (lfp_frag(:,ch)) + offset;
         plot(timestamps(win(1):win(2)),sh_tmp,'k','LineWidth',1.5); hold on;
         clear sh_tmp
     end
-    set(gca,'YDir','reverse','YTickLabel',[]);ylim([-500 offset+500]);xlim([timestamps(win(1)) timestamps(win(2))]);
+     set(gca,'YDir','reverse','YTickLabel',[]);
+     ylim([-500 offset+500]);
+     xlim([csd.timestamps(1) csd.timestamps(end)]);
     xlabel('time (s)');ylabel('channel');title('LFP');   
     
 elseif plotCSD  

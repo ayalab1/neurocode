@@ -7,9 +7,10 @@ function smoothed = Smooth(data,smooth,varargin)
 %    smoothed = Smooth(data,smooth,<options>)
 %
 %    data           data to smooth
-%    smooth         vertical and horizontal kernel size:
-%                    - gaussian: standard deviations [Sv Sh]
-%                    - rect/triangular: window half size [Nv Nh]
+%    smooth         vertical and horizontal kernel sizes:
+%                    - gaussian: standard deviations [Sv Sh] (optionally,
+%                      kernel size W can also be provided as [Sv Sh Wv Wh])
+%                    - rectangular/triangular: window half size [Nv Nh]
 %                   (in number of samples, 0 = no smoothing)
 %    <options>      optional list of property-value pairs (see table below))
 %
@@ -19,12 +20,12 @@ function smoothed = Smooth(data,smooth,varargin)
 %     'type'        two letters (one for X and one for Y) indicating which
 %                   coordinates are linear ('l') and which are circular ('c')
 %                   - for 1D data, only one letter is used (default 'll')
-%  	'kernel'		  either 'gaussian' (default), 'rect' (running average), 
-%  					  or 'triangular' (weighted running average)
+%     'kernel'      either 'gaussian' (default), 'rectangular' (running
+%                   average), or 'triangular' (weighted running average)
 %    =========================================================================
 %
 
-% Copyright (C) 2004-2015 by Michaël Zugaro, 2013 Nicolas Maingret
+% Copyright (C) 2004-2016 by Michaël Zugaro, 2013 Nicolas Maingret
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -52,19 +53,10 @@ end
 kernel = 'gaussian';
 if vector, type = 'l'; else type = 'll'; end
 
-if ~isdvector(smooth,'>=0') | (matrix & length(smooth) > 2) | (vector & length(smooth) ~= 1),
-	error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
-end
-
 % If Sh = Sv = 0, no smoothing required
 if all(smooth==0),
 	smoothed = data;
 	return
-end
-
-if length(smooth) == 1,
-	% For 2D data, providing only one value S for the std is interpreted as Sh = Sv = S
-	smooth = [smooth smooth];
 end
 
 % Parse parameter list
@@ -75,12 +67,12 @@ for i = 1:2:length(varargin),
 	switch(lower(varargin{i})),
 		case 'type',
 			type = lower(varargin{i+1});
-			if (vector && ~isstring_FMAT(type,'c','l')) || (~vector && ~isstring_FMAT(type,'cc','cl','lc','ll')),
+			if (vector && ~isastring(type,'c','l')) || (~vector && ~isastring(type,'cc','cl','lc','ll')),
 				error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
 			end
 		case 'kernel',
 			kernel = lower(varargin{i+1});
-			if ~isstring_FMAT(kernel,'gaussian','rectangular','triangular'),
+			if ~isastring(kernel,'gaussian','rectangular','triangular'),
 				error('Incorrect value for property ''kernel'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
 			end
 		otherwise,
@@ -89,9 +81,24 @@ for i = 1:2:length(varargin),
   end
 end
 
-% Build kernels
+% Check kernel parameters
+if matrix && length(smooth) == 1,
+	% For 2D data, providing only one value S for the std is interpreted as Sh = Sv = S
+	smooth = [smooth smooth];
+end
+if strcmp(kernel,'gaussian'),
+	if ~isdvector(smooth,'>=0') | (vector & ~ismember(length(smooth),[1 2])) | (matrix & ~ismember(length(smooth),[2 4])),
+		error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
+	end
+else
+	if ~isdvector(smooth,'>=0') | (vector & length(smooth) ~= 1) | (matrix & length(smooth) ~= 2),
+		error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
+	end
+end
+
 [vSize,hSize] = size(data);
 
+% Build kernels
 if strcmp(kernel,'rectangular'),
 
 	% Rectangular kernel (running average)
@@ -124,16 +131,26 @@ else
 
 	% Gaussian kernel
 	% 1) Vertical kernel
-	%if vSize > maxSize, warning(['Kernel too large; using ' int2str(maxSize) ' points.']); end
-	vKernelSize = min([vSize maxSize]);
+	if vector && length(smooth) == 2,
+		vKernelSize = smooth(2);
+	elseif matrix && length(smooth) == 4,
+		vKernelSize = smooth(3);
+	else
+		if vSize > maxSize, warning(['Default kernel too large; using ' int2str(maxSize) ' points.']); end
+		vKernelSize = min([vSize maxSize]);
+	end
 	r = (-vKernelSize:vKernelSize)'/vKernelSize;
 	vKernelStdev = smooth(1)/vKernelSize;
 	vKernel = exp(-r.^2/(vKernelStdev+eps)^2/2);
 	vKernel = vKernel/sum(vKernel);
 	% 2) Horizontal kernel
 	if ~vector,
-		if hSize > maxSize, warning(['Kernel too large; using ' int2str(maxSize) ' points.']); end
-		hKernelSize = min([hSize maxSize]);
+		if length(smooth) == 4,
+			hKernelSize = smooth(4);
+		else
+			if hSize > maxSize, warning(['Default kernel too large; using ' int2str(maxSize) ' points.']); end
+			hKernelSize = min([hSize maxSize]);
+		end
 		r = (-hKernelSize:hKernelSize)/hKernelSize;
 		hKernelStdev = smooth(2)/hKernelSize;
 		hKernel = exp(-r.^2/(hKernelStdev+eps)^2/2);
@@ -145,21 +162,18 @@ end
 if vector,
 	% Vector smoothing
 	% Prepend/append data to limit edge effects
-    %% This changes the behavior of Smooth, to avoid linear variable edge effects
 	if strcmp(type,'l'),
 		% For linear data, flip edge data
 		% top = 2*data(1)-flipud(data(1:vKernelSize));
 		% bottom = 2*data(end)-flipud(data(end-vKernelSize+1:end));
-% 		top = flipud(data(1:vKernelSize));
-% 		bottom = flipud(data(end-vKernelSize+1:end));
+		top = flipud(data(1:vKernelSize));
+		bottom = flipud(data(end-vKernelSize+1:end));
 	else
 		% For circular data, wrap edge data
 		top = data(end-vKernelSize+1:end);
 		bottom = data(1:vKernelSize);
-        data = [top;data;bottom];
 	end
-% 	data = [top;data;bottom];
-%%
+	data = [top;data;bottom];
 	% Convolve (and return central part)
 	tmp = conv(vKernel,data);
 	n = size(tmp,1);

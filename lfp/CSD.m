@@ -78,8 +78,9 @@ win = (p.Results.win*samplingRate)+1;
 lfp_frag = data(win(1):win(2),channels)*-1;
 
 if rearrange_by_xml
+    [~, basename] = fileparts(basepath);
     % load channel map from basename.session
-    session = sessionTemplate(basepath,'showGUI',false);
+    session = loadSession(basepath,basename);
     lfp_frag = lfp_frag(:,session.extracellular.electrodeGroups.channels{1, 1}); 
     % remove bad channels 
     lfp_frag(:,session.channelTags.Bad.channels) = []; 

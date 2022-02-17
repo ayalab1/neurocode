@@ -397,7 +397,7 @@ ripples.duration = ripples.timestamps(:,2) - ripples.timestamps(:,1);
 
 %The detectorinto substructure
 detectorinfo.detectorname = 'FindRipples';
-detectorinfo.detectiondate = today;
+detectorinfo.detectiondate = datestr(floor(datenum(clock)));
 detectorinfo.detectionintervals = restrict;
 detectorinfo.detectionparms = p.Results;
 detectorinfo.detectionparms = rmfield(detectorinfo.detectionparms,'noise');

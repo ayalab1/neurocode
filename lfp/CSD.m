@@ -78,7 +78,7 @@ win = (p.Results.win*samplingRate)+1;
 lfp_frag = data(win(1):win(2),channels)*-1;
 
 if rearrange_by_xml
-    [~, basename] = fileparts(basepath);
+    basename = basenameFromBasepath(basepath);
     % load channel map from basename.session
     session = loadSession(basepath,basename);
     lfp_frag = lfp_frag(:,[session.extracellular.electrodeGroups.channels{:}]); 
@@ -129,7 +129,7 @@ if plotLFP
     figure;
     subplot(1,2,1);
     contourf(timestamps(win(1):win(2)),1:size(CSD,2),CSD',40,'LineColor','none');hold on;
-    colormap jet; caxis([-cmax cmax]);
+    caxis([-cmax cmax]);
     set(gca,'YDir','reverse');xlabel('time (s)');ylabel('channel');title('CSD'); 
    
     subplot(1,2,2);
@@ -140,7 +140,7 @@ if plotLFP
         clear sh_tmp
     end
      set(gca,'YDir','reverse','YTickLabel',[]);
-     ylim([-500 offset+500]);
+     axis tight
      xlim([csd.timestamps(1) csd.timestamps(end)]);
     xlabel('time (s)');ylabel('channel');title('LFP');   
     

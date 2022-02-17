@@ -110,6 +110,11 @@ function [ripples] = DetectSWR(Channels, varargin)
 % minDurRP:     a threshold setting the minimum duration of a localized
 %               ripple event associated with a sharp-wave.
 %
+% check:        boolean, a flag that triggers whether or not you wish to
+%               view a figure with the sharpwave/ripple score and the k-means
+%               separation and refine it manually if needed (the function
+%               would enter debugging mode) e.g. to ignore outliers
+%
 % EVENTFILE:    boolean, a flag that triggers whether or not to write out
 %               an event file corresponding to the detections (for
 %               inspection in neuroscope).
@@ -181,6 +186,7 @@ addParameter(p, 'minIsi', 0.05, @isnumeric); 			% seconds
 addParameter(p, 'minDurSW', 0.02, @isnumeric); 			% seconds
 addParameter(p, 'maxDurSW', 0.5, @isnumeric); 			% seconds
 addParameter(p, 'minDurRP', 0.025, @isnumeric); 		% seconds
+addParameter(p, 'check', false, @islogical);
 addParameter(p, 'EVENTFILE', true, @islogical);
 addParameter(p, 'FIGS', false, @islogical);
 addParameter(p, 'TRAINING', false, @islogical);
@@ -207,6 +213,7 @@ minIsi = p.Results.minIsi;
 minDurSW = p.Results.minDurSW;
 maxDurSW = p.Results.maxDurSW;
 minDurRP = p.Results.minDurRP;
+check = p.Results.check;
 EVENTFILE = p.Results.EVENTFILE;
 FIGS = p.Results.FIGS;
 TRAINING = p.Results.TRAINING;
@@ -846,7 +853,16 @@ for ep_i = 1:Nepochs
         idx1      = logical(idx == 1);
         idx2      = logical(idx == 2);
     end
-    
+
+    if check
+        clf
+        plot(swDiffAll(idx2),ripPowerAll(idx2),'k.','markersize',1); hold on
+        plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1); legend('non-ripples','ripples');
+        disp(['Please review the figure and change the idx1 (ripples) ' newline 'and idx2 (calm non-ripple periods) groups.' newline ...
+            'Note that noisy periods need not participate in either group.']);
+        keyboard
+    end
+
     % For the unsupervised case, I'll set thresholds for ripple power
     % and sharp wave difference magnitude according to thresholds upon the
     % empirical distributions.

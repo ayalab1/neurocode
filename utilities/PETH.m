@@ -11,6 +11,11 @@ pictureoptions = {};
 smooth = 1;
 nBins = 100;
 stars = false;
+if nargout<1
+    show = 'on';
+else
+    show = 'off';
+end
 mode = 'l';
 
 for i = 1:2:length(varargin),
@@ -34,6 +39,11 @@ for i = 1:2:length(varargin),
             nBins = varargin{i+1};
             if ~isvector(nBins) || length(nBins) ~= 1,
                 error('Incorrect value for property ''nBins'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
+            end
+        case 'show',
+            show = varargin{i+1};
+            if ~isastring(show,'on','off'),
+                error('Incorrect value for property ''show'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
         case 'mode',
             mode = varargin{i+1};
@@ -79,6 +89,7 @@ if size(data,2)==2 % if the provided data is a signal rather than events
         varargout{2} = t;
         varargout{3} = m;
     end
+    if strcmpi(show,'on'), plot(t', m, pictureoptions{:}); end
     return
 end
 
@@ -107,4 +118,19 @@ if nargout>0,
 	varargout{1} = mat;
 	varargout{2} = t;
 	varargout{3} = m;
+end
+
+if strcmpi(show,'on'),
+    if isempty(pictureoptions),
+        title([namestring ', ' num2str(numel(j)) ' x ' num2str(numel(unique(j))) ' instances']);
+        if exist('linetype','var'), PlotXY(t', m, linetype); else, PlotXY(t', m); end
+        if stars, try hold on; plot(t(h>0),m(h>0),'k*'); end; end
+        %         try sig = FindInterval(h); PlotIntervals([t(sig(:,1))-mode(diff(t))/2 t(sig(:,2))+mode(diff(t))/2]); end
+        title([namestring ', ' num2str(numel(j)) ' x ' num2str(numel(unique(j))) ' instances']);
+    else
+        title([namestring ', ' num2str(numel(j)) ' x ' num2str(numel(unique(j))) ' instances']);
+        PlotXY(t', m, pictureoptions{:}); title([namestring ', ' num2str(numel(j)) ' x ' num2str(numel(unique(j))) ' instances']);
+        if stars,try hold on; plot(t(h>0),m(h>0),'k*'); end; end
+        %         try sig = FindInterval(h); PlotIntervals([t(sig(:,1))-mode(diff(t))/2 t(sig(:,2))+mode(diff(t))/2]); end
+    end
 end

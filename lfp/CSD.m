@@ -85,7 +85,7 @@ if rearrange_by_xml
     % remove bad channels 
     lfp_frag(:,session.channelTags.Bad.channels) = []; 
     % save channels in mapped order and remove those excluded 
-    channels = session.extracellular.electrodeGroups.channels{1, 1};
+    channels = [session.extracellular.electrodeGroups.channels{:}];
     channels(:,session.channelTags.Bad.channels) = [];
 end
 

@@ -84,7 +84,11 @@ if figOpt
     plot([cutpoint cutpoint],ax(3:4),'r');
     ylabel('Counts'); xlabel('Event Std [Intan amplitude]');
     title('Artifact detection threshold','FontWeight','normal','FontSize',11);
+    try
     saveas(gcf,'SummaryFigures\ArtifactDetectionThreshold.png');
+    catch 
+    saveas(gcf,'ArtifactDetectionThreshold.png');  
+    end
 end
 
 cd(prevPath);

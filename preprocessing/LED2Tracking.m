@@ -59,7 +59,7 @@ addParameter(p,'convFact',[],@isnumeric); % 0.1149
 addParameter(p,'roiTracking',[],@ismatrix);
 addParameter(p,'roiLED',[],@ismatrix);
 addParameter(p,'forceReload',false,@islogical)
-addParameter(p,'saveFrames',true,@islogical)
+addParameter(p,'saveFrames',false,@islogical)
 addParameter(p,'verbose',false,@islogical);
 addParameter(p,'thresh',.75,@isnumeric) %0.98
 addParameter(p,'bazlerTTL',[],@isnumeric)

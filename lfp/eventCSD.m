@@ -54,6 +54,9 @@ addParameter(p,'temp_sm',11,@isnumeric);
 addParameter(p,'doDetrend',false,@islogical);
 addParameter(p,'plotCSD',true,@islogical);
 addParameter(p,'plotLFP',true,@islogical);
+addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'rearrange_by_xml',true,@islogical);
+
 
 parse(p,varargin{:});
 channels = p.Results.channels;
@@ -63,7 +66,8 @@ temp_sm = p.Results.temp_sm;
 doDetrend = p.Results.doDetrend;
 plotCSD = p.Results.plotCSD;
 plotLFP = p.Results.plotLFP;
-
+basepath = p.Results.basepath;
+rearrange_by_xml = p.Results.rearrange_by_xml;
 %lfp input
 if isstruct(lfp)
     data = lfp.data;
@@ -92,6 +96,19 @@ end
 lfp_avg = nanmean(lfp_temp,3)*-1;
 
 %% Conpute CSD
+
+if rearrange_by_xml
+    basename = basenameFromBasepath(basepath);
+    % load channel map from basename.session
+    session = loadSession(basepath,basename);
+    lfp_avg = lfp_avg(:,[session.extracellular.electrodeGroups.channels{:}]); 
+    % remove bad channels 
+    lfp_avg(:,session.channelTags.Bad.channels) = []; 
+    % save channels in mapped order and remove those excluded 
+    channels = [session.extracellular.electrodeGroups.channels{:}];
+    channels(:,session.channelTags.Bad.channels) = [];
+end
+
 
 % detrend
 if doDetrend
@@ -140,8 +157,9 @@ if plotLFP
     cmax = max(max(CSD)); 
     figure;
     subplot(1,2,1);
+    
     contourf(taxis,1:size(CSD,2),CSD',40,'LineColor','none');hold on;
-    colormap jet; caxis([-cmax cmax]);
+    colormap(magma(255)); caxis([-cmax cmax]);
     set(gca,'YDir','reverse');xlabel('time (s)');ylabel('channel');title('CSD'); 
     %plot([0 0],[1 size(CSD,2)],'--k');hold on;
     set(gca,'visible','off');

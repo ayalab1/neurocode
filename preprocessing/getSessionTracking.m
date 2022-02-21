@@ -109,7 +109,7 @@ if ~(optitrack)
                 cd([basepath filesep MergePoints.foldernames{ii}]); %cd([basepath filesep sess(ii).name]);
                 fprintf('Computing tracking in %s folder \n',MergePoints.foldernames{ii});
                  tempTracking{count}= LED2Tracking([],'fs',samplingRate,'convFact',convFact,'roiTracking',...
-                     roiTracking,'roiLED',roiLED,'forceReload',forceReload); % computing trajectory
+                     roiTracking,'roiLED',roiLED,'forceReload',forceReload,'saveFrames',false); % computing trajectory
                 trackFolder(count) = ii; 
                 count = count + 1;
             end

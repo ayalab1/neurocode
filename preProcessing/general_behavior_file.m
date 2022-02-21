@@ -91,6 +91,7 @@ notes = [];
 
 % standard whl file xyxy format
 if exist([basepath,filesep,[basename,'.whl']],'file')
+    disp('detected .whl')
     positions = load([basepath,filesep,[basename,'.whl']]);
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
@@ -109,7 +110,7 @@ if exist([basepath,filesep,[basename,'.whl']],'file')
     
     % sometimes whl files are within fmat folder and have different name
 elseif exist(fullfile(basepath,'fmat',[animalFromBasepath(basepath),basename,'.whl']),'file')
-    
+    disp('detected .whl')
     positions = load(fullfile(basepath,'fmat',[animalFromBasepath(basepath),basename,'.whl']));
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
@@ -137,6 +138,7 @@ elseif exist(fullfile(basepath,'fmat',[animalFromBasepath(basepath),basename,'.w
     
     % sometimes whl files are within fmat folder and have different name
 elseif exist(fullfile(basepath,'fmat',[basename,'.whl']),'file')
+    disp('detected .whl')
     positions = load(fullfile(basepath,'fmat',[basename,'.whl']));
     t = (0:length(positions)-1)'/fs;
     positions(positions == -1) = NaN;
@@ -150,6 +152,7 @@ elseif exist(fullfile(basepath,'fmat',[basename,'.whl']),'file')
     end
     
 elseif ~isempty(dir(fullfile(basepath,'fmat', '*.whl')))
+    disp('detected .whl')
     filelist = dir(fullfile(basepath,'fmat', '*.whl'));
     positions = load(fullfile(filelist(1).folder,filelist(1).name));
     t = (0:length(positions)-1)'/fs;
@@ -172,6 +175,7 @@ elseif ~isempty(dir(fullfile(basepath,'fmat', '*.whl')))
     end
     % postTrials format, processed linearized data
 elseif exist([basepath,filesep,['posTrials.mat']],'file')
+    disp('detected posTrials.mat')
     load([basepath,filesep,['posTrials.mat']]);
     positions = [posTrials{1};posTrials{2}];
     [~,idx] = sort(positions(:,1));
@@ -195,6 +199,7 @@ elseif exist([basepath,filesep,['posTrials.mat']],'file')
     
     % posTrials is sometimes moved
 elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')
+    disp('detected posTrials.mat')
     load([basepath,filesep,['oldfiles\posTrials.mat']]);
     positions = [posTrials{1};posTrials{2}];
     [~,idx] = sort(positions(:,1));
@@ -219,6 +224,7 @@ elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')
         
     % .position.behavior file with x,y,linear and more
 elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
+    disp('detected position.behavior.mat')
     load([basepath,filesep,[basename,'.position.behavior.mat']])
     t = position.timestamps;
     x = position.position.x;
@@ -243,6 +249,7 @@ elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     
     % position_info files have xy and linearized data
 elseif exist([basepath,filesep,['position_info.mat']],'file')
+    disp('detected position_info.mat')
     load([basepath,filesep,['position_info.mat']])
     t = pos_inf.ts';
     x = pos_inf.x;
@@ -256,6 +263,7 @@ elseif exist([basepath,filesep,['position_info.mat']],'file')
     
     %  _TXVt files have time, x, v, and trials
 elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
+    disp('detected _TXVt.mat')
     load([basepath,filesep,[basename,'_TXVt.mat']])
     t = TXVt(:,1);
     linearized = TXVt(:,2);
@@ -270,6 +278,7 @@ elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
     fs = 1/mode(diff(t));
     
 elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
+    disp('detected tracking.behavior.mat')
     load([basepath,filesep,[basename,'.tracking.behavior.mat']])
     t = tracking.timestamps;
     fs = 1/mode(diff(t));

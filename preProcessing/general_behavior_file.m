@@ -8,6 +8,10 @@ function behavior = general_behavior_file(varargin)
 % check extract_tracking below to preview methods. Can be further
 % customized.
 %
+% Currently compatible with the following sources:
+%   .whl, posTrials.mat, position.behavior.mat, position_info.mat,
+%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat
+%
 % Ryan H 2021
 
 p=inputParser;

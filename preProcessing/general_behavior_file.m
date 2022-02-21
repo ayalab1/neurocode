@@ -272,14 +272,27 @@ elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
 elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     load([basepath,filesep,[basename,'.tracking.behavior.mat']])
     t = tracking.timestamps;
-    x = tracking.position.x * 100;
-    y = tracking.position.z * 100;
-    z = tracking.position.y * 100;
-    notes = "z to y and y to z";
-    units = 'cm';
-    source = '.tracking.behavior.mat';
-    
     fs = 1/mode(diff(t));
+
+    if isfield(tracking.position,'x') && isfield(tracking.position,'y') && isfield(tracking.position,'z') 
+        x = tracking.position.x * 100;
+        y = tracking.position.z * 100;
+        z = tracking.position.y * 100;
+        notes = "z to y and y to z";
+        units = 'cm';
+        source = '.tracking.behavior.mat';
+    elseif isfield(tracking.position,'x1') && isfield(tracking.position,'y1')
+        positions = [tracking.position.x1,tracking.position.y1,tracking.position.x2,tracking.position.y2];
+        [x,y] = find_best_columns(positions,fs);
+        units = 'pixels';
+        source = '.Tracking.behavior.mat';
+        
+    end
+    if isfield(tracking, 'events')
+        if isfield(tracking.events,'subSessions')
+            trials = tracking.events.subSessions;
+        end
+    end
     
     if ~isempty(dir([basepath,filesep,[basename,'.*Trials.mat']]))
         filelist = dir([basepath,filesep,[basename,'.*Trials.mat']]);

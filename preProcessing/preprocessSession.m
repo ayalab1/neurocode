@@ -201,6 +201,8 @@ end
 %% Get tracking positions - TO FIX
 if getPos
     getSessionTracking('basepath',basepath,'optitrack',false);
+    % put tracking into standard format
+    general_behavior_file('basepath',basepath)
 end
 
 %% Summary -  NOT WELL IMPLEMENTED YET

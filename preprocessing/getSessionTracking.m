@@ -1,10 +1,10 @@
 
 function [tracking] = getSessionTracking(varargin)
 %
-% Gets position trackign for each sub-session and concatenate all of them so they are 
-% aligned with LFP and spikes. Default is recording with Basler, and requiere avi videos 
-% and at least one tracking LED. There is an alternative in case OptiTrack was used. 
-% Needs to be run in main session folder. 
+% Gets position trackign for each sub-session and concatenate all of them so they are
+% aligned with LFP and spikes. Default is recording with Basler, and requiere avi videos
+% and at least one tracking LED. There is an alternative in case OptiTrack was used.
+% Needs to be run in main session folder.
 %
 % USAGE
 %
@@ -30,11 +30,11 @@ function [tracking] = getSessionTracking(varargin)
 %   position.x               - x position in cm/ normalize
 %   position.y               - y position in cm/ normalize
 %   timestamps      - in seconds, if Basler ttl detected, sync by them
-%   folder          - 
+%   folder          -
 %   sync.sync       - Rx1 LED luminance.
 %   sync.timestamps - 2xC with start stops of sync LED.
 %       only for OptiTrack
-%   position.z 
+%   position.z
 %   orientation.x
 %   orientation.y
 %   orientation.z
@@ -70,7 +70,7 @@ optitrack = p.Results.optitrack;
 threshold = p.Results.threshold;
 samplingRate = p.Results.fs;
 
-%% In case tracking already exists 
+%% In case tracking already exists
 if ~isempty(dir([basepath filesep '*Tracking.Behavior.mat'])) || forceReload
     disp('Trajectory already detected! Loading file.');
     file = dir([basepath filesep '*Tracking.Behavior.mat']);
@@ -78,23 +78,23 @@ if ~isempty(dir([basepath filesep '*Tracking.Behavior.mat'])) || forceReload
     return
 end
 
-%% Basler tracking 
+%% Basler tracking
 if ~(optitrack)
     cd(basepath); cd ..; upBasepath = pwd; cd(basepath);
     if isempty(roisPath)
         if exist([basepath filesep 'roiTracking.mat'],'file') || ...
-            exist([basepath filesep 'roiLED.mat'],'file')
-                roisPath = basepath;
-                try load([roisPath filesep 'roiLED.mat'],'roiLED'); end
-                load([roisPath filesep 'roiTracking.mat'],'roiTracking');
+                exist([basepath filesep 'roiLED.mat'],'file')
+            roisPath = basepath;
+            try load([roisPath filesep 'roiLED.mat'],'roiLED'); end
+            load([roisPath filesep 'roiTracking.mat'],'roiTracking');
         elseif exist([upBasepath filesep 'roiTracking.mat'],'file') || ...
-            exist([upBasepath filesep 'roiLED.mat'],'file')
-                roisPath = upBasepath;
-                try load([roisPath filesep 'roiLED.mat'],'roiLED'); end
-                load([roisPath filesep 'roiTracking.mat'],'roiTracking');
-        end   
+                exist([upBasepath filesep 'roiLED.mat'],'file')
+            roisPath = upBasepath;
+            try load([roisPath filesep 'roiLED.mat'],'roiLED'); end
+            load([roisPath filesep 'roiTracking.mat'],'roiTracking');
+        end
     end
-
+    
     %% Find subfolder recordings
     cd(basepath);
     [sessionInfo] = getSession('basepath',basepath);
@@ -105,12 +105,12 @@ if ~(optitrack)
         count = 1;
         for ii = 1:size(MergePoints.foldernames,2)
             %if sess(ii).isdir && ~isempty(dir([basepath filesep sess(ii).name filesep '*Basler*avi']))
-             if ~isempty(dir([basepath filesep MergePoints.foldernames{ii} filesep '*Basler*avi']))   
+            if ~isempty(dir([basepath filesep MergePoints.foldernames{ii} filesep '*Basler*avi']))
                 cd([basepath filesep MergePoints.foldernames{ii}]); %cd([basepath filesep sess(ii).name]);
                 fprintf('Computing tracking in %s folder \n',MergePoints.foldernames{ii});
-                 tempTracking{count}= LED2Tracking([],'fs',samplingRate,'convFact',convFact,'roiTracking',...
-                     roiTracking,'roiLED',roiLED,'forceReload',forceReload,'saveFrames',false); % computing trajectory
-                trackFolder(count) = ii; 
+                tempTracking{count}= LED2Tracking([],'fs',samplingRate,'convFact',convFact,'roiTracking',...
+                    roiTracking,'roiLED',roiLED,'forceReload',forceReload,'saveFrames',false); % computing trajectory
+                trackFolder(count) = ii;
                 count = count + 1;
             end
         end
@@ -141,30 +141,30 @@ if ~(optitrack)
             ts = [ts; sumTs];
         end
     end
-
+    
     % Concatenating tracking fields...
     x1 = []; y1 = []; x2 = []; y2 = []; folder = []; samplingRate = []; description = [];
-    for ii = 1:size(tempTracking,2) 
-        x1 = [x1; tempTracking{ii}.position.x1]; 
+    for ii = 1:size(tempTracking,2)
+        x1 = [x1; tempTracking{ii}.position.x1];
         y1 = [y1; tempTracking{ii}.position.y1];
-        x2 = [x2; tempTracking{ii}.position.x2]; 
-        y2 = [y2; tempTracking{ii}.position.y2];        
-        folder{ii} = tempTracking{ii}.folder; 
-        samplingRate = [samplingRate; tempTracking{ii}.samplingRate];  
+        x2 = [x2; tempTracking{ii}.position.x2];
+        y2 = [y2; tempTracking{ii}.position.y2];
+        folder{ii} = tempTracking{ii}.folder;
+        samplingRate = [samplingRate; tempTracking{ii}.samplingRate];
         description{ii} = tempTracking{ii}.description;
     end
-
+    
     tracking.position.x1 = x1;
     tracking.position.y1 = y1;
     tracking.position.x2 = x2;
-    tracking.position.y2 = y2;    
+    tracking.position.y2 = y2;
     tracking.folders = folder;
     tracking.samplingRate = samplingRate;
     tracking.timestamps = ts;
     tracking.events.subSessions =  subSessions;
     tracking.events.subSessionsMask = maskSessions;
-
-%% OptiTrack 
+    
+    %% OptiTrack
 else
     
     % Get csv file locations
@@ -175,7 +175,7 @@ else
     mergeFile = checkFile('basepath',basepath,'fileType','.MergePoints.events.mat');
     load([mergeFile.folder,filesep,mergeFile.name]);
     
-    % Load data from each file with proper time 
+    % Load data from each file with proper time
     clear trackData;
     for fileIdx = 1:nFiles
         tempFile = trackingFiles(fileIdx);
@@ -210,7 +210,7 @@ else
     
 end
 
-%% save tracking 
+%% save tracking
 session = getSession('basepath',basepath);
 if saveMat
     save([basepath filesep session.general.name '.Tracking.behavior.mat'],'tracking');

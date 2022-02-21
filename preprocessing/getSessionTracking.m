@@ -47,7 +47,7 @@ function [tracking] = getSessionTracking(varargin)
 
 %% Defaults and Params
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'convFact',[],@isnumeric); % 0.1149
 addParameter(p,'roiTracking',[],@ismatrix);
 addParameter(p,'roiLED',[],@ismatrix);

@@ -284,9 +284,16 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     elseif isfield(tracking.position,'x1') && isfield(tracking.position,'y1')
         positions = [tracking.position.x1,tracking.position.y1,tracking.position.x2,tracking.position.y2];
         [x,y] = find_best_columns(positions,fs);
-        units = 'pixels';
+        if range(x) <= 1
+            units = 'normalized';
+        elseif range(x) > 1
+            units = 'pixels';
+        end
         source = '.Tracking.behavior.mat';
-        
+        if length(t) > length(x)
+            t = t(1:length(x));
+            warning('Different number of ts and coords! Check data source to verify')
+        end
     end
     if isfield(tracking, 'events')
         if isfield(tracking.events,'subSessions')

@@ -861,6 +861,48 @@ for ep_i = 1:Nepochs
         disp(['Please review the figure and change the idx1 (ripples) ' newline 'and idx2 (calm non-ripple periods) groups.' newline ...
             'Note that noisy periods need not participate in either group.']);
         keyboard
+
+        if false % optional code to help you find which points are ripples
+
+            % First, remove points that occur in noisy lfp periods
+            [clean,bad,badIntervals] = CleanLFP([tl,double(lfp(:,2))]);
+            smoothed = Smooth(abs(swDiff),1250*10);
+            noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>200)),'epsilon',1);
+            sw = interp1(tl,lfpLow(:,2),t);
+            bad = InIntervals(t,badIntervals) | InIntervals(t,noisyPeriods) | sw>0;
+            idx1 = idx1 & ~bad; idx2 = idx2 & ~bad; % remove bad points from "idx1" and "idx2"
+
+            figure(1); % plot a clean figure without these points and chech indivudual ripples
+            clf
+            plot(swDiffAll(idx2),ripPowerAll(idx2),'k.','markersize',1); hold on
+            plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1);
+
+            while true % click "Ctrl+C" to exit when you feel you're done
+                figure(2);
+                colors = Bright(1000);
+                [x,y,button] = ginput(1);
+                i = findmin(abs(x-swDiffAll)+abs(y-ripPowerAll));
+                t = featureTs/1250;
+                tl = (1:length(lfp))'/1250;
+                figure(3); clf; interval = t(i) + [-1 1]*0.5; in = InIntervals(tl,interval); plot(tl(in) - t(i),lfp(in,:)); xlabel(num2str(t(i)));
+                legend('ripple channel','SW channel','noise channel');
+                %     x = input( prompt )
+                score = str2double(input('good(1)/bad(0)?','s'));
+
+                figure(2);
+                if ~isnan(score) && score>0.1
+                    hold on
+                    plot(swDiffAll(i),ripPowerAll(i),'o','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
+                else
+                    plot(swDiffAll(i),ripPowerAll(i),'x','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
+                end
+            end
+
+            selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
+            idx1 = selected & ~bad; % final ripples
+            idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
+
+        end
     end
 
     % For the unsupervised case, I'll set thresholds for ripple power

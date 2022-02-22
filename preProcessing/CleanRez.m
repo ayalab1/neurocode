@@ -20,6 +20,8 @@ function rez = CleanRez(rez,varargin)
 %                       (by default, undefined as you may run CleanRez before
 %                       exporting the clean rez to phy). If provided, cluster
 %                       labels will be saved in a cluster_groups.tsv file for phy.
+%     'minNumberOfSpikes'   clusters with nSpikes<minNumberOfSpikes will be 
+%                       removed (default = 20).
 %    =========================================================================
 %
 %  OUTPUT
@@ -34,6 +36,7 @@ function rez = CleanRez(rez,varargin)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
+minNumberOfSpikes = 20;
 
 % Parse parameter list
 for i = 1:2:length(varargin)
@@ -126,9 +129,20 @@ for i=1:nClusters
 end
 multiplePeaksAndTroughs = nPeaksAndTroughs>1;
 
+isiViolation = false(nClusters,1);
+for i=1:nClusters
+    spikes = rez.st3(rez.st3(:,2)==i)/rez.ops.fs;
+    [acg,acg_t] = CCG(spikes,ones(size(spikes)),'binSize',0.003,'duration',0.031);
+    [~,idxMax] = max(acg);
+    [~,idx0] = min(abs(acg_t)); % bin t=0
+    if idxMax==idx0
+        isiViolation(i) = true;
+    end
+end
+
 % We can also delete clusters with less than a certain number of spikes, e.g. 5
 nSpikes = accumarray(rez.st3(:,2),1);
-tooFew = nSpikes<=5;
+tooFew = nSpikes<minNumberOfSpikes;
 
 detectedOnAllElectrodes(end+1:nClusters) = false;
 singleBin(end+1:nClusters) = false;
@@ -136,7 +150,7 @@ multiplePeaksAndTroughs(end+1:nClusters) = false;
 tooFew(end+1:nClusters) = false;
 
 % Clusters selected by any of the above criteria are marked as "noisy"
-noisy = detectedOnAllElectrodes | singleBin | multiplePeaksAndTroughs | tooFew;
+noisy = detectedOnAllElectrodes | singleBin | multiplePeaksAndTroughs | isiViolation | tooFew;
 
 % delete noisy clusters to clean the rez file
 rez.cProj(ismember(rez.st3(:,2),find(noisy)),:) = [];

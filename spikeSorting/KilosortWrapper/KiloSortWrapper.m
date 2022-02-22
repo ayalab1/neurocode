@@ -119,22 +119,23 @@ if mahalThreshold<Inf
     nClusters = rez.ops.Nfilt;
     pcs = double(reshape(rez.cProjPC,size(rez.cProjPC,1),[]));
     nPCs = size(pcs,2);
-    for i=1:nClusters
-        ok = find(rez.st3(:,2)==i);
-        if length(ok)>nPCs
-            d = sqrt(mahal(pcs(ok,:),pcs(ok,:)));
-            bad = ok(d>mahalThreshold);
-            rez.st3(bad,2) = 0; % set bad spikes to unused cluster "0"
+    rez.raw.st3 = rez.st3;
+    badID = find(accumarray(rez.st3(:,2),1)==0,1); % find a cluster ID not in use (cannot just delete spikes without phy crashing,
+    % adjusting cProj and cProjPC are not sufficient, but I don't know where the number of total spikes is saved)
+    if isempty(badID)
+        disp('Cannot perform Mahalanobis distance thresholding as no empty clusters are found to store the bad spikes.');
+    else
+        for i=1:nClusters
+            ok = find(rez.st3(:,2)==i);
+            if length(ok)>nPCs
+                d = sqrt(mahal(pcs(ok,:),pcs(ok,:)));
+                bad = ok(d>mahalThreshold);
+                rez.st3(bad,2) = badID; % set bad spikes to unused cluster
+            end
         end
+        disp(['Removed a total of ' num2str(sum(bad)) ' bad spikes (Mahalanobis threshold) to unused cluster ' num2str(badID) ' (' num2str(badID-1) ' in phy).']);
+        rez.st3(bad,2) = find(accumarray(rez.st3(:,2),1)==0,1);
     end
-    rez.raw.st3 = rez.st3; rez.raw.cProj = rez.cProj; rez.raw.cProjPC = rez.cProjPC;  % save raw data from before these spikes were deleted
-
-    % Remove the bad cluster
-    bad = rez.st3(:,2)==0;
-    disp(['Removing a total of ' num2str(sum(bad)) ' bad spikes (Mahalanobis threshold)']);
-    rez.st3(bad,:) = [];
-    rez.cProj(bad,:) = [];
-    rez.cProjPC(bad,:) = [];
 end
 
 %% posthoc merge templates (under construction)

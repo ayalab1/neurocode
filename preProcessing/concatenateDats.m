@@ -107,6 +107,10 @@ for a = 1:length(d)
             ampfile = fullfile(basepath,d(a).name,'amplifier.dat');
             digitalinfile = fullfile(basepath,d(a).name,'digitalin.dat');
         end
+        if ~exist(ampfile,'file') && exist(digitalinfile,'file')
+             % create an empty ampfile. This will allow us to preprocess sessions without recorded brain activity (but e.g. digital events)
+            if ~exist(ampfile,'file'), fclose(fopen(ampfile, 'w')); end
+        end
         if exist(ampfile,'file')
             rcount = rcount+1;
             datpaths.amplifier{rcount} = ampfile;
@@ -125,23 +129,6 @@ for a = 1:length(d)
                     datsizes.(otherdattypes{odidx})(rcount) = d2(1).bytes;
                 end
             end
-        elseif exist(digitalinfile,'file')
-            rcount = rcount+1;
-            recordingnames{rcount} = d(a).name;
-            datpaths.amplifier{rcount} = ampfile; 
-            % create an empty ampfile:
-            if ~exist(ampfile,'file'), fclose(fopen(ampfile, 'w')); end
-            for odidx = 1:length(otherdattypes)%loop through other .dat types found here
-                datpaths.(otherdattypes{odidx}){rcount} = fullfile(basepath,d(a).name,[otherdattypes{odidx} '.dat']);
-                d2 = dir(datpaths.(otherdattypes{odidx}){rcount});
-                if isempty(d2)
-                    bad_otherdattypes(odidx) = 1;
-                else
-                    %eval([otherdattypes{odidx} 'datsizes(rcount) = d2(1).bytes;'])
-                    datsizes.(otherdattypes{odidx})(rcount) = d2(1).bytes;
-                end
-            end
-
         end
     end
 end

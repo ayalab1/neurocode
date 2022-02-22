@@ -97,25 +97,24 @@ recordingnames = {};
 rcount = 0; %Count of good subfolders
 for a = 1:length(d)
     %look in each subfolder
-    if d(a).isdir 
-        %Check for amplifier.dat or subfolderbaseName.dat 
+    if any(~ismember(d(a).name,'.')) && d(a).isdir
+        %Check for amplifier.dat or subfolderbaseName.dat
         if exist(fullfile(basepath,d(a).name,[d(a).name,'.dat']),'file')
             ampfile = fullfile(basepath,d(a).name,[d(a).name,'.dat']);
         elseif exist(fullfile(basepath,d(a).name,'amplifier_analogin_auxiliary_int16.dat'),'file')%Luke Sjulson's Modified code to record all 16bit signals in one file
             ampfile = fullfile(basepath,d(a).name,'amplifier_analogin_auxiliary_int16.dat');
         else
             ampfile = fullfile(basepath,d(a).name,'amplifier.dat');
+            digitalinfile = fullfile(basepath,d(a).name,'digitalin.dat');
         end
-        
         if exist(ampfile,'file')
             rcount = rcount+1;
             datpaths.amplifier{rcount} = ampfile;
             t = dir(ampfile);
             datsizes.amplifier(rcount) = t.bytes;
             recordingnames{rcount} = d(a).name;
-
             for odidx = 1:length(otherdattypes)%loop through other .dat types found here
-               % eval([otherdattypes{odidx} 'datpaths{rcount} = fullfile(basepath,recordingnames{rcount},''' otherdattypes{odidx} '.dat'');'])
+                % eval([otherdattypes{odidx} 'datpaths{rcount} = fullfile(basepath,recordingnames{rcount},''' otherdattypes{odidx} '.dat'');'])
                 datpaths.(otherdattypes{odidx}){rcount} = fullfile(basepath,recordingnames{rcount},[otherdattypes{odidx} '.dat']);
                 %eval(['d2 = dir(' otherdattypes{odidx} 'datpaths.amplifier{rcount});'])
                 d2 = dir(datpaths.(otherdattypes{odidx}){rcount});
@@ -126,11 +125,29 @@ for a = 1:length(d)
                     datsizes.(otherdattypes{odidx})(rcount) = d2(1).bytes;
                 end
             end
+        elseif exist(digitalinfile,'file')
+            rcount = rcount+1;
+            recordingnames{rcount} = d(a).name;
+            datpaths.amplifier{rcount} = ampfile; 
+            % create an empty ampfile:
+            if ~exist(ampfile,'file'), fclose(fopen(ampfile, 'w')); end
+            for odidx = 1:length(otherdattypes)%loop through other .dat types found here
+                datpaths.(otherdattypes{odidx}){rcount} = fullfile(basepath,d(a).name,[otherdattypes{odidx} '.dat']);
+                d2 = dir(datpaths.(otherdattypes{odidx}){rcount});
+                if isempty(d2)
+                    bad_otherdattypes(odidx) = 1;
+                else
+                    %eval([otherdattypes{odidx} 'datsizes(rcount) = d2(1).bytes;'])
+                    datsizes.(otherdattypes{odidx})(rcount) = d2(1).bytes;
+                end
+            end
+
         end
     end
 end
+
 otherdattypes(find(bad_otherdattypes)) = [];%if there weren't analogin or digitalin in some recording
-if isempty(datpaths.amplifier)
+if isempty(datpaths) || isempty(datpaths.amplifier)
     disp('No .dats found in subfolders.  Exiting bz_ConcatenateDats.')
     return
 end

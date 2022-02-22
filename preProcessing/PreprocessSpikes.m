@@ -8,7 +8,7 @@
   % Do manual curation using Phy2
   
 %% 1- extract spike times and waveforms for sorted clusters
-    session = loadSession();
+    session = sessionTemplate(pwd,'showGUI',false);
     f = dir('Kilosort*');
     spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
 

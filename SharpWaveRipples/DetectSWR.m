@@ -865,7 +865,7 @@ for ep_i = 1:Nepochs
         if false % optional code to help you find which points are ripples
 
             % First, remove points that occur in noisy lfp periods
-            tl = featureTs(:)/1250; % timestamps for lfp
+            tl = (1:length(lfp))'/1250; % timestamps for lfp
             [clean,bad,badIntervals] = CleanLFP([tl,double(lfp(:,2))]);
             smoothed = Smooth(abs(swDiff),1250*10);
             noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>200)),'epsilon',1);

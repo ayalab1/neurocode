@@ -52,15 +52,15 @@ if isempty(filename) && ~isempty(fileType)
     file = dir([basepath,filesep,'*',fileType]);
     if isempty(file) && searchSubdirs
         subFile = dir([basepath,filesep,'*',filesep,'*',fileType]);
+        ignore = cellfun(@(x) strcmp(x,'settings.xml'),{subFile(1:end).name})'; % ignore "settings.xml" files
+        subFile(ignore) = [];
         file = [file; subFile];
         if ~isempty(file)
             warning(['Found file of type: ',fileType,' in subdirectory']);
         end
     end
     if isempty(file) && searchSuperdirs
-        mydir  = pwd;
-        idcs   = strfind(mydir,'\');
-        newdir = mydir(1:idcs(end)-1);
+        newdir = fileparts(basepath);
         superFile = dir([newdir,filesep,'*',fileType]);
         file = [file; superFile];
         if ~isempty(file)

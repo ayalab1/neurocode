@@ -14,7 +14,7 @@ function savepath = KiloSortWrapper(varargin)
 %
 % Dependencies:  KiloSort (https://github.com/cortex-lab/KiloSort)
 % 
-% Copyright (C) 2016 Brendon Watson and the Buzsakilab
+% Copyright (C) 2016-2022 Brendon Watson and the Buzsakilab and Ralitsa Todorova (mahal threshold)
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -34,6 +34,7 @@ addParameter(p,'GPU_id',1,@isnumeric)               % Specify the GPU_id
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output into a subfolder
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
+addParameter(p,'mahal',12,@isnumeric)               % Perform mahalanobis threshold by default (set to Inf to not impose threshold)
 addParameter(p,'config','',@ischar)                 % Specify a configuration file to use from the ConfigurationFiles folder. e.g. 'Omid'
 
 parse(p,varargin{:})
@@ -45,6 +46,9 @@ SSD_path = p.Results.SSD_path;
 CreateSubdirectory = p.Results.CreateSubdirectory;
 performAutoCluster = p.Results.performAutoCluster;
 config = p.Results.config;
+mahalThreshold = p.Results.mahal;
+
+if mahalThreshold<Inf, disp(['Will remove spikes exceeding a Mahalanobis distance of ' num2str(mahalThreshold)]); end
 
 cd(basepath)
 
@@ -109,6 +113,29 @@ rez = fitTemplates(rez, DATA, uproj);  % fit templates iteratively
 
 disp('Extracting final spike times')
 rez = fullMPMU(rez, DATA); % extract final spike times (overlapping extraction)
+
+%% Removes spikes that are beyond the threshold Mahalanobis distance before exporting to phy
+if mahalThreshold<Inf
+    nClusters = rez.ops.Nfilt;
+    pcs = double(reshape(rez.cProjPC,size(rez.cProjPC,1),[]));
+    nPCs = size(pcs,2);
+    for i=1:nClusters
+        ok = find(rez.st3(:,2)==i);
+        if length(ok)>nPCs
+            d = sqrt(mahal(pcs(ok,:),pcs(ok,:)));
+            bad = ok(d>mahalThreshold);
+            rez.st3(bad,2) = 0; % set bad spikes to unused cluster "0"
+        end
+    end
+    rez.raw.st3 = rez.st3; rez.raw.cProj = rez.cProj; rez.raw.cProjPC = rez.cProjPC;  % save raw data from before these spikes were deleted
+
+    % Remove the bad cluster
+    bad = rez.st3(:,2)==0;
+    disp(['Removing a total of ' num2str(sum(bad)) ' bad spikes (Mahalanobis threshold)']);
+    rez.st3(bad,:) = [];
+    rez.cProj(bad,:) = [];
+    rez.cProjPC(bad,:) = [];
+end
 
 %% posthoc merge templates (under construction)
 % save matlab results file

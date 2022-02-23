@@ -34,7 +34,7 @@ if useArduino, a = arduino(); end
 write = true;
 nargin = 0;
 % Choose screen with maximum id - e.g. the secondary display on a dual-display setup for display:
-screenid = max(Screen('Screens')); screenid=3;
+screenid = max(Screen('Screens')); screenid=2;
 nRepetitions = 30; 
 
 % History:

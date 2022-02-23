@@ -1,6 +1,6 @@
 animals = {'Unimplanted\m01','Unimplanted\m02','Unimplanted\m03','Unimplanted\m04','V1Jean','AO52'};
 add = [0 0 0 0 17 8];
-nDays = 12;
+nDays = 13;
 fontsize = 15;
 
 [n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),nDays));

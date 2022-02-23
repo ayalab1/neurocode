@@ -178,7 +178,7 @@ addParameter(p, 'swBP', [ 2 50 ], @isnumeric);
 addParameter(p, 'ripBP', [ 80 250 ], @isnumeric);
 addParameter(p, 'per_thresswD', 10, @isnumeric); 		% percentile
 addParameter(p, 'per_thresRip', 50, @isnumeric); 		% percentile
-addParameter(p, 'WinSize', 200, @isnumeric); 			% ms
+addParameter(p, 'WinSize', 20, @isnumeric); 			% ms
 addParameter(p, 'Ns_chk', 5, @isnumeric); 				% seconds
 addParameter(p, 'thresSDswD', [0.5 2.5], @isnumeric); 	% standard deviations
 addParameter(p, 'thresSDrip', [0.5 2.5], @isnumeric); 	% standard deviations
@@ -914,8 +914,7 @@ for ep_i = 1:Nepochs
 
             figure(1); % plot a clean figure without these points and check indivudual ripples
             clf
-            plot(swDiffAll(idx2),ripPowerAll(idx2),'k.','markersize',1); hold on
-            plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1);
+            plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
             scores = nan(size(ripPowerAll,1),1);
 
             while true % click "Ctrl+C" to exit when you feel you're done
@@ -947,7 +946,7 @@ for ep_i = 1:Nepochs
                 if ~isnan(score) && score>0.1
                     hold on
                     plot(swDiffAll(i),ripPowerAll(i),'o','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
-                else
+                elseif ~isnan(score)
                     plot(swDiffAll(i),ripPowerAll(i),'x','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
                 end
             end

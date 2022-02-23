@@ -135,7 +135,6 @@ tracking.samplingRate = fs;
 tracking.description = '';
 end
 
-
 function [x,y,t,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
 
 % match basler frames con ttl pulses
@@ -216,7 +215,7 @@ filename = p.Results.filename;
 lag = p.Results.periodLag;
 folder = p.Results.folder;
 
-if ~isempty(dir('*.xml'))
+if ~isempty(dir(fullfile(folder,'*.xml')))
     %sess = bz_getSessionInfo(pwd,'noPrompts',true);
     sess = getSession('basepath',fileparts(folder));
 end

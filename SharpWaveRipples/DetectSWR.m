@@ -471,7 +471,7 @@ lfpLow     = lfpLow - eegLo;            % difference of Gaussians
 clear eegLo
 
 
-swDiff     = lfpLow(:,1) - lfpLow(:,end);
+swDiff     = lfpLow(:,1) - lfpLow(:,2); % this allows us to use a noise channel
 
 if TRAINING
     % Extract ripple and paired non-ripple segments from lfp
@@ -498,7 +498,7 @@ if TRAINING
         
     end
 end
-clear lfpLow
+% clear lfpLow % this can be useful if the user wants to manually remove ripples with positive sharp waves while in mode "check"
 
 % I made 2 changes to Eran's defaults for ripple processing:
 % 1) I subtract the across channel mean from each channel prior to
@@ -509,26 +509,52 @@ clear lfpLow
 % filter and process ripples, using Eran's defaults (diff of Gaussians)
 hRip1      = makegausslpfir( ripBP( 1 ), SR, 6 );
 hRip2      = makegausslpfir( ripBP( 2 ), SR, 6 );
+if Nchan==2
+    % Use the difference between the two channels for computing ripple power
+    % subtract mean before filtering
+    lfpM       = lfp - int16(repmat(mean(lfp,2),[1 Nchan]));
+    %clear lfp
 
-% subtract mean before filtering
-lfpM       = lfp - int16(repmat(mean(lfp,2),[1 Nchan]));
-%clear lfp
+    rip        = firfilt( lfpM, hRip2 );    % highpass filter
+    clear lfpM
+    eegLo      = firfilt( rip, hRip1 );     % lowpass filter
+    % rip        = rip -.lfpLo;               % difference of gaussians
+    % clear.lfpLo
+    rip        = rip - eegLo;               % difference of gaussians
+    clear eegLo
 
-rip        = firfilt( lfpM, hRip2 );    % highpass filter
-clear lfpM
-eegLo      = firfilt( rip, hRip1 );     % lowpass filter
-% rip        = rip -.lfpLo;               % difference of gaussians
-% clear.lfpLo
-rip        = rip - eegLo;               % difference of gaussians
-clear eegLo
+    ripWindow  = pi / mean( ripBP );
+    powerWin   = makegausslpfir( 1 / ripWindow, SR, 6 );
 
-ripWindow  = pi / mean( ripBP );
-powerWin   = makegausslpfir( 1 / ripWindow, SR, 6 );
+    rip        = abs(rip);
+    ripPower0  = firfilt( rip, powerWin );
+    clear rip
+    
+    ripPower0  = max(ripPower0,[],2);
+    
 
-rip        = abs(rip);
-ripPower0  = firfilt( rip, powerWin );
-ripPower0  = max(ripPower0,[],2);
-clear rip
+else % if a noise channel is provided
+
+    % ripple channel
+    rip        = firfilt( lfp(:,1), hRip2 );    % highpass filter
+    eegLo      = firfilt( rip, hRip1 );     % lowpass filter
+    rip        = rip - eegLo;               % difference of gaussians
+    ripWindow  = pi / mean( ripBP );
+    powerWin   = makegausslpfir( 1 / ripWindow, SR, 6 );
+    rip        = abs(rip);
+    signal  = firfilt( rip, powerWin );
+
+    rip        = firfilt( lfp(:,3), hRip2 );    % highpass filter
+    eegLo      = firfilt( rip, hRip1 );     % lowpass filter
+    rip        = rip - eegLo;               % difference of gaussians
+    ripWindow  = pi / mean( ripBP );
+    powerWin   = makegausslpfir( 1 / ripWindow, SR, 6 );
+    rip        = abs(rip);
+    noise  = firfilt( rip, powerWin );
+
+    ripPower0 = signal-noise; 
+end
+
 
 if TRAINING
     % Extract ripple and paired non-ripple segments from lfp
@@ -866,31 +892,58 @@ for ep_i = 1:Nepochs
 
             % First, remove points that occur in noisy lfp periods
             tl = (1:length(lfp))'/1250; % timestamps for lfp
-            [clean,bad,badIntervals] = CleanLFP([tl,double(lfp(:,2))]);
-            smoothed = Smooth(abs(swDiff),1250*10);
-            noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>200)),'epsilon',1);
-            sw = interp1(tl,lfpLow(:,2),t);
-            bad = InIntervals(t,badIntervals) | InIntervals(t,noisyPeriods) | sw>0;
+            t = featureTs/1250; % timestamps for candidate ripple events
+            bad = false(size(t));
+            try % optionally, remove periods of noisy LFP (large deflections)
+                [clean,bad,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[10 Inf]);
+                bad = bad | InIntervals(t,badIntervals);
+            end
+            try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
+                % if you need to use this, make sure your threshold if appropriate for your session. Plot the smoothed signal to see what seems
+                % reasonable to you!
+                smoothed = Smooth(abs(swDiff),1250*10);
+                noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>500)),'epsilon',1);
+                bad = bad | InIntervals(t,noisyPeriods);
+            end
+            try % optionally, remove ripples in which the sharp wave channel was positive 
+                % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
+                sw = interp1(tl,lfpLow(:,2),t);
+                bad = bad | sw>0;
+            end
             idx1 = idx1 & ~bad; idx2 = idx2 & ~bad; % remove bad points from "idx1" and "idx2"
 
-            figure(1); % plot a clean figure without these points and chech indivudual ripples
+            figure(1); % plot a clean figure without these points and check indivudual ripples
             clf
             plot(swDiffAll(idx2),ripPowerAll(idx2),'k.','markersize',1); hold on
             plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1);
+            scores = nan(size(ripPowerAll,1),1);
 
             while true % click "Ctrl+C" to exit when you feel you're done
-                figure(2);
+                figure(1);
                 colors = Bright(1000);
                 [x,y,button] = ginput(1);
                 i = findmin(abs(x-swDiffAll)+abs(y-ripPowerAll));
+
                 t = featureTs/1250;
                 tl = (1:length(lfp))'/1250;
-                figure(3); clf; interval = t(i) + [-1 1]*0.5; in = InIntervals(tl,interval); plot(tl(in) - t(i),lfp(in,:)); xlabel(num2str(t(i)));
+                figure(2); 
+                clf; interval = t(i) + [-1 1]*0.5; in = InIntervals(tl,interval); 
+                subplot(3,1,1); 
+                plot(tl(in) - t(i),lfp(in,:)); xlabel(num2str(t(i)));
+                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
                 legend('ripple channel','SW channel','noise channel');
+                subplot(3,1,2);
+                plot(tl(in) - t(i),double(swDiff(in)));
+                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
+                subplot(3,1,3);
+                plot(tl(in) - t(i),double(ripPower0(in)));
+                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
+
                 %     x = input( prompt )
                 score = str2double(input('good(1)/bad(0)?','s'));
+                scores(i) = score; % save scores to optionally save
 
-                figure(2);
+                figure(1);
                 if ~isnan(score) && score>0.1
                     hold on
                     plot(swDiffAll(i),ripPowerAll(i),'o','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));

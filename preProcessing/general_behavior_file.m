@@ -10,7 +10,7 @@ function behavior = general_behavior_file(varargin)
 %
 % Currently compatible with the following sources:
 %   .whl, posTrials.mat, position.behavior.mat, position_info.mat,
-%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat
+%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
 %
 % Ryan H 2021
 

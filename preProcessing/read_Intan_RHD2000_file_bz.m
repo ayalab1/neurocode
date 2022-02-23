@@ -1,6 +1,6 @@
 function [amplifier_channels, notes, aux_input_channels, spike_triggers,...
     board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels ]...
-    =  read_Intan_RHD2000_file_bz
+    =  read_Intan_RHD2000_file_bz(varargin)
 
 % read_Intan_RHD2000_file_bz
 %
@@ -21,8 +21,13 @@ function [amplifier_channels, notes, aux_input_channels, spike_triggers,...
 
 % [file, path, filterindex] = ...
 %      uigetfile('*.rhd', 'Select an RHD2000 Data File', 'MultiSelect', 'off');
-path = [pwd,'\'];
-file = [ls('*.rhd')];
+p = inputParser;
+p.addParameter('basepath',pwd,@isfolder); 
+p.parse(varargin{:});
+path = p.Results.basepath;
+
+% path = [pwd,'\'];
+file = [ls(fullfile(path,'*.rhd'))];
 
 if (file == 0)
     return;
@@ -34,7 +39,7 @@ end
 % file = d(end).name;
 
 tic;
-filename = [path,file];
+filename = fullfile(path,file);
 fid = fopen(filename, 'r');
 
 s = dir(filename);

@@ -10,7 +10,7 @@ function behavior = general_behavior_file(varargin)
 %
 % Currently compatible with the following sources:
 %   .whl, posTrials.mat, position.behavior.mat, position_info.mat,
-%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat
+%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
 %
 % Ryan H 2021
 
@@ -93,8 +93,26 @@ notes = [];
 
 % below are many methods on locating tracking data from many formats
 
+if ~isempty(dir(fullfile(basepath, '**', '*DLC*.csv')))
+    disp('detected deeplabcut')
+    tracking = process_and_sync_dlc('basepath',basepath);
+    
+    t = tracking.timestamps;
+    fs = 1/mode(diff(t));
+
+    x = tracking.position.x;
+    y = tracking.position.y;
+    units = 'pixels';
+    source = 'deeplabcut';
+        
+    if isfield(tracking, 'events')
+        if isfield(tracking.events,'subSessions')
+            trials = tracking.events.subSessions;
+        end
+    end
+    
 % standard whl file xyxy format
-if exist([basepath,filesep,[basename,'.whl']],'file')
+elseif exist([basepath,filesep,[basename,'.whl']],'file')
     disp('detected .whl')
     positions = load([basepath,filesep,[basename,'.whl']]);
     t = (0:length(positions)-1)'/fs;
@@ -280,7 +298,6 @@ elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
     units = 'cm';
     source = '_TXVt.mat';
     fs = 1/mode(diff(t));
-    
 elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     disp('detected tracking.behavior.mat')
     load([basepath,filesep,[basename,'.tracking.behavior.mat']])
@@ -294,6 +311,7 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
         notes = "z to y and y to z";
         units = 'cm';
         source = '.tracking.behavior.mat';
+        
     elseif isfield(tracking.position,'x1') && isfield(tracking.position,'y1')
         positions = [tracking.position.x1,tracking.position.y1,tracking.position.x2,tracking.position.y2];
         [x,y] = find_best_columns(positions,fs);

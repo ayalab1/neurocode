@@ -1,4 +1,4 @@
-function [avgNspk, finSpkThresh, itNum, bound] = pickUns(bound, normSpkThresh, it, useMet, loadPath, Hz, ft)
+function [avgNspk, finSpkThresh, itNum, bound] = pickUns(bound, normSpkThresh, it, useMet, loadPath, Hz, ft, numEvt)
 basepath = pwd; basename = basenameFromBasepath(basepath);
 savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
 avgNspk = 0;
@@ -12,6 +12,9 @@ checking = burstCellDetection(normSpkThresh,loadPath);
 while sum(checking(:,3)) < 1
     normSpkThresh = normSpkThresh - 0.1;
     checking = burstCellDetection(normSpkThresh,loadPath);
+    if normSpkThresh <= 0
+        error('normSpkThresh dipped below zero');
+    end
 end
 
 
@@ -38,7 +41,7 @@ if it > 0
         %this/avoid in general
         while length(spikes.UID) < 1
             bound = bound - 0.1; 
-            unitsForDetection(Hz,ft);
+            unitsForDetection(Hz,ft, numEvt);
             load([savePath 'brstDt.cellinfo.mat']);
             if bound < 1.2
                 error('Bound is too low, consider manually inputting units or adjusting detection parameters');

@@ -84,6 +84,6 @@ for i = 1:length(flag)
 end
 spikes = [];
 spikes = keep;
-save([savePath 'brstDt.cellinfo.mat'], 'spikes');
-save([savePath 'brstDt.UIDkeep.mat'],'UIDkeep');
+save([savePath 'useSpk.cellinfo.mat'], 'spikes');
+save([savePath 'useSpk.UIDkeep.mat'],'UIDkeep');
 end

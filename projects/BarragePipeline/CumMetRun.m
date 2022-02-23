@@ -16,7 +16,13 @@ if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))||(nargin < 1
     combine = "both";
 end
 savePath = ('Z:\home\Lindsay\Barrage\');
-load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
+if combine == "both"
+    load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
+elseif combine == "mouse"
+    load('Z:\home\Lindsay\Barrage\mousePaths.mat');
+else
+    load('Z:\home\Lindsay\Barrage\ratPaths.mat');
+end
 
 ISI_x = [];
 ISI_y = [];
@@ -37,6 +43,7 @@ perc_boxx = [];
 perc_boxg = [];
 spkSC = cell(6,2);
 FRsc = cell(6,2);
+evtDur = [];
 
 for p = 1:size(paths_save,1)
 % for p = 1:2
@@ -54,7 +61,11 @@ for p = 1:size(paths_save,1)
     end
     if (label==combine)||(combine=="both")
         load(strcat('Z:\home\Lindsay\Barrage\CumMet\',animName,'.',basename,'.cumMet.mat'));
-        load(strcat(basepath,'\Barrage_Files\',basename,'.brstDt.cellinfo.mat'));
+        load(strcat(basepath,'\Barrage_Files',basename,'.brstDt.cellinfo.mat'));
+        load(strcat(basepath,'\Barrage_Files\Population\',basename,'.brstDt.props.mat'));
+        load(strcat(basepath,'\Barrage_Files\Population\',basename,'.brstDt.spkEventTimes.mat'));
+        load(strcat(basepath,'\Barrage_Files\Population\',basename,'.brstDt.unitBar.mat'));
+           
         %% Cell level ISI distribution
         ISI_x = [cumMet.ISIx]; %this should be the same for everything?
         ISI_y = sum([ISI_y,cumMet.ISIy],2);
@@ -99,6 +110,15 @@ for p = 1:size(paths_save,1)
                 end
             end
         end
+        
+        %% Population Level Event Duration Histogram
+        evtDur = [evtDur; cumMet.evtDur];
+        
+        %% Absolute FR during barr (per region, box)
+        absFRx = [absFRx; 
+        %% Whole session FR (per region)
+        
+        %% Barrage FR (per region)
         
         %% Population Level Percent of Units in Events
         perc_boxx = [perc_boxx; cumMet.boxxPerc];
@@ -230,6 +250,21 @@ ylabel('Percent of units');
 xlabel('Region');
 saveas(gcf,['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.PercUntsCum.png']);
 
+%% Population level event duration histogram
+figure('Position', get(0, 'Screensize'));
+binsEvtDur = [0:0.01:2];
+evtDurHist = histc(evtDur, binsEvtDur);
+% evtDurHistSmooth = smooth(evtDurHist, 'sgolay', 1);
+% plot(binsEvtDur, evtDurHist./sum(evtDurHist));
+plot(binsEvtDur, evtDurHist);
+xlim([0 2]);
+% plot(binsEvtDur, evtDurHist);
+title('Barrage Event Duration');
+ylabel('Barrage Count');
+xlabel('Event duration (s)');
+saveas(gcf, ['Z:\home\Lindsay\Barrage\cumMet\' convertStringsToChars(combine) '.evtDurHist.png']);
+
+%% Spk SC
 % We're gonna make this a histogram rather than sc (maybe later we can
 % sort by average intensity to get a nice trend or something?
 figure('Position', get(0, 'Screensize'));

@@ -10,7 +10,7 @@ for i = 1:length(useReg)
     spikes = [];
     tempReg = []; tempReg = convertCharsToStrings(useReg{i});
     spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', tempReg);
-    save([savePath '\' basename '.' useReg{i} '.cellinfo.mat'], 'spikes');
+    save([savePath '\' basename '.' useReg{i} 'pyr.cellinfo.mat'], 'spikes');
 %     spikes = [];
 %     spikes = importSpikes('cellType', ["Narrow Interneuron"; "Wide Interneuron"], 'brainRegion', tempReg);
 %     save([savePath '\' basename '.' useReg{i} 'inter.cellinfo.mat'], 'spikes');

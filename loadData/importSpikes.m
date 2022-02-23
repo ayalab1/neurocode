@@ -69,6 +69,9 @@ if isfield(cell_metrics, 'tags')
         end
     end
     clear ct
+    else
+    spikeT.UID = spikes.UID;
+    spikeT.times = spikes.times;        
     end
 else
 spikeT.UID = spikes.UID;

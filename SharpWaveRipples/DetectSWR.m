@@ -905,7 +905,7 @@ for ep_i = 1:Nepochs
                 noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>500)),'epsilon',1);
                 bad = bad | InIntervals(t,noisyPeriods);
             end
-            try % optionally, remove ripples in which the sharp wave channel was positive 
+            try % optionally, remove ripples in which the sharp wave channel was positive
                 % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
                 sw = interp1(tl,lfpLow(:,2),t);
                 bad = bad | sw>0;
@@ -917,6 +917,15 @@ for ep_i = 1:Nepochs
             plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
             scores = nan(size(ripPowerAll,1),1);
 
+
+            % figure(1); % plot a clean figure without these points and check indivudual ripples
+            % clf
+            % plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
+            % scores = nan(size(ripPowerAll,1),1);
+
+            matrix = [swDiffAll ripPowerAll];
+            z = bsxfun(@rdivide,bsxfun(@minus,matrix,mean(matrix(~bad,:))),std(matrix(~bad,:)));
+
             while true % click "Ctrl+C" to exit when you feel you're done
                 figure(1);
                 colors = Bright(1000);
@@ -925,10 +934,10 @@ for ep_i = 1:Nepochs
 
                 t = featureTs/1250;
                 tl = (1:length(lfp))'/1250;
-                figure(2); 
-                clf; interval = t(i) + [-1 1]*0.5; in = InIntervals(tl,interval); 
-                subplot(3,1,1); 
-                plot(tl(in) - t(i),lfp(in,:)); xlabel(num2str(t(i)));
+                figure(2);
+                clf; interval = t(i) + [-1 1]*0.5; in = tl>interval(1) & tl<interval(end);
+                subplot(3,1,1);
+                plot(tl(in) - t(i),lfp(in,:)); title(num2str(t(i)));
                 PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
                 legend('ripple channel','SW channel','noise channel');
                 subplot(3,1,2);
@@ -938,22 +947,53 @@ for ep_i = 1:Nepochs
                 plot(tl(in) - t(i),double(ripPower0(in)));
                 PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
 
+
                 %     x = input( prompt )
+                commandwindow % select the command window
                 score = str2double(input('good(1)/bad(0)?','s'));
                 scores(i) = score; % save scores to optionally save
 
                 figure(1);
-                if ~isnan(score) && score>0.1
-                    hold on
-                    plot(swDiffAll(i),ripPowerAll(i),'o','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
-                elseif ~isnan(score)
-                    plot(swDiffAll(i),ripPowerAll(i),'x','linewidth',2,'color',colors(findmin(abs(score-linspace(0,1,1000)')),:));
+                xlims = xlim; ylims = ylim; clf
+                % extrapolate the score of each ripple based on the score of the nearest scored ripple
+                scored = find(~isnan(scores));
+                distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
+                [~,nearestNeighbour] = min(distances,[],2);
+                estimated = scores(scored(nearestNeighbour));
+                scatter(matrix(:,1),matrix(:,2),1,estimated,'filled'); colormap(Bright); clim([0 1]);
+                xlim(xlims); ylim(ylims);
+                hold on;
+                scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
+                clabel('Estimated ripple score');
+                xlabel('Sharp wave depth'); ylabel('Ripple power');
+                    
+                title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});
+
+                if rem(i,10)==0
+                    display('saving...');
+                    save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'swDiffAll','ripPowerAll','bad','scores');
                 end
             end
 
+            % either draw a polyglon:
             selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
+            
+            % or use the nearest neighbours with a threshold you've used
+            % (I tend to label an ugly ripple that is still clearly a ripple with a score of 0.2)
+            scored = find(~isnan(scores));
+            distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
+            [~,nearestNeighbour] = min(distances,[],2);
+            estimated = scores(scored(nearestNeighbour));
+            selected = estimated>0.1;
+
             idx1 = selected & ~bad; % final ripples
             idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
+
+
+
+            display('saving...');
+            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
+            saveas(figure(1),fullfile(basepath,'DetectSWR_manual_scoring.fig'));
 
         end
     end

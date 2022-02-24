@@ -1,4 +1,4 @@
-function [] = unitsForDetection(Hz, ft)
+function [] = unitsForDetection(Hz, ft, numEvt)
 % Pull units based on their firing rate characteristics
 % INPUTS:
 % Hz -> firing rate that each neuron must hit to be considered 
@@ -26,20 +26,19 @@ savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 load([basename '.cell_metrics.cellinfo.mat']);
 
 %% Produce spike structure
-spikes = [];
-spikes = importSpikes('cellType',"Pyramidal Cell",'sleepState',"NREMstate");
-ki = 1;
-for i = 1:length(spikes.UID)
-%     if (~contains("CA1",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("EC",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("DG",cell_metrics.brainRegion(spikes.UID(i))))
-    if contains("CA2",cell_metrics.brainRegion(spikes.UID(i)))%||contains("CA3",cell_metrics.brainRegion(spikes.UID(i)))
-        keep.UID(ki) = spikes.UID(i);
-        keep.times{ki} = spikes.times{i};
-        ki = ki+1;
-    end
-end
-spikes = []; spikes = keep;
+load([savePath 'CA2pyr.cellinfo.mat']);
+% ki = 1;
+% for i = 1:length(spikes.UID)
+% %     if (~contains("CA1",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("EC",cell_metrics.brainRegion(spikes.UID(i))))&&(~contains("DG",cell_metrics.brainRegion(spikes.UID(i))))
+%     if contains("CA2",cell_metrics.brainRegion(spikes.UID(i)))%||contains("CA3",cell_metrics.brainRegion(spikes.UID(i)))
+%         keep.UID(ki) = spikes.UID(i);
+%         keep.times{ki} = spikes.times{i};
+%         ki = ki+1;
+%     end
+% end
+% spikes = []; spikes = keep;
 % spikes = importSpikes('cellType',"Pyramidal Cell",'brainRegion',"CA2");
-save([savePath 'NREMpyr.cellinfo.mat'], 'spikes');
+% save([savePath 'NREMpyr.cellinfo.mat'], 'spikes');
 %% Get cell by cell firing rate
 tSmooth = 0.05; binsz = 0.01;
 flagging = nan(length(spikes.UID),4);
@@ -54,7 +53,7 @@ parfor u = 1:length(spikes.UID)
     evtdur{u} = evtstop{u}-evtstart{u};
     evtpeak{u} = evtstart{u} + (evtdur{u}/2);
     evtamp{u} = zeros(length(evtstart{u}),1);
-    flagConc{u} = (unFR{u} >= 10); %CHANGED FROM 20
+    flagConc{u} = (unFR{u} >= Hz); %CHANGED FROM 20
     [start{u},stop{u},~,~,numCat{u}] = CatCon(evtstart{u},evtstop{u},evtpeak{u},evtamp{u},flagConc{u});
     samples{u} = Restrict(spikes.times{u}, [start{u}' stop{u}']);
 end
@@ -66,10 +65,10 @@ clear evtstart evtstop evtdur evtpeak evtamp flagConc
 for u = 1:length(spikes.UID)
     flagging(u,2) = length(find(unFR{u} >= Hz)); %CHANGED FROM 20
     flagging(u,3) = length(find(numCat{u} >= (ft/binsz))); %300 ms, find #times cell fires at 15Hz for at least 300ms
-    if mean(flagging(:,3)>10)
-        flagging(u,4) = flagging(u,3)>=5; %..this is the thresh we should play with maybe?
+    if ~isnan(flagging(u,3)) %if any events (I was doing mean(flagging(:,3)>10) for some reason??? Why????)
+        flagging(u,4) = flagging(u,3)>=numEvt; %..this is the thresh we should play with maybe?
     else
-        flagging(u,4) = flagging(u,3)>0;
+        flagging(u,4) = 0; %was flagging(u,4) = flagging(u,3)>0; (WHY)
     end
 %     br(u,1) = cell_metrics.brainRegion(spikes.UID(u));
 end
@@ -89,6 +88,6 @@ for i = 1:length(flag)
 end
 spikes = [];
 spikes = keep;
-save([savePath 'brstDt.cellinfo.mat'], 'spikes');
-save([savePath 'brstDt.UIDkeep.mat'],'UIDkeep');
+save([savePath 'useSpk.cellinfo.mat'], 'spikes');
+save([savePath 'useSpk.UIDkeep.mat'],'UIDkeep');
 end

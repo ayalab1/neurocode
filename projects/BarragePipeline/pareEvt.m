@@ -1,5 +1,8 @@
 %% Pare events
-function HSE = pareEvt(HSE, spikes, numCell, numSpk, singleHz)
+function HSE = pareEvt(HSE, spikes, numCell, numSpk, singleHz, maxCell)
+if nargin < 6
+    maxCell = 0;
+end
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
 numEvt = size(HSE.timestamps,1);
@@ -17,8 +20,17 @@ for e = 1:numEvt
         end
     end
 end
-tempKeep = find(tempInd >= numCell);
+tempKeepMin = find(tempInd >= numCell);
+if maxCell == 0
+    tempKeep = tempKeepMin;
+else
+    tempKeepMax = find(tempInd <= maxCell);
+    tempKeep = intersect(tempKeepMin, tempKeepMax);
+end
 tempKeep2 = find(tempSing==1);
 HSE.keep = sort(unique(cat(1,tempKeep,tempKeep2)));
+load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
+HSEnREM = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+[~,HSE.NREM] = intersect(HSE.peaks(HSE.keep), HSEnREM.peaks);
 save([basepath '\Barrage_Files\' basename '.HSE.mat'], 'HSE');
 end

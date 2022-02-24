@@ -92,17 +92,21 @@ load([savePath 'HSEmetrics.mat']);
 
 %% Create EVT for past events
 load([savePath 'HSEfutEVT.mat']);
-trial = 6;
+trial = 76;
 current_time = evtSave{trial,1};
 current_peak = evtSave{trial,2};
 createEVT(current_time(:,1), current_peak, current_time(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
 
 %% Create Neuroscope2 file for past events
+savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
 load([savePath 'HSEfutEVT.mat']);
-trial = 266;
+load([savePath 'HSE.mat']);
+trial = size(evtSave,1);
 HSEn2.timestamps = evtSave{trial,1};
+HSEn2.timestamps = HSEn2.timestamps(HSE.keep,:);
 HSEn2.peaktimes = evtSave{trial,2};
-save([basename '.HSE.events.mat'], 'HSEn2');
+HSEn2.peaktimes = HSEn2.peaktimes(HSE.keep,:);
+save([basename '.HSE.events.mat'], 'HSEnrem');
 NeuroScope2
 
 %% Run with previous metrics (or mostly previous metrics)
@@ -242,12 +246,12 @@ end
 %% Check an interval for nSigma value
 
 %5452.148
-load('Y:\SMproject\AO50\day22\Barrage_Files\day22.CA2pyr.cellinfo.mat');
-timepoints = 30;
-estd = -2;
-sstd = 2;
+load('Z:\Data\AYAold\AYA7\day20\Barrage_Files\day20.CA2pyr.cellinfo.mat');
+timepoints = 2276;
+estd = 2.5;
+sstd = -2.5;
 % timepoints = [1040.819];
-nSigma = 5;
+nSigma = 3;
 for i = 1:length(timepoints)
     timepoint = timepoints(i);
     binsz = 0.001;
@@ -261,7 +265,7 @@ for i = 1:length(timepoints)
 
     difspk = spkTimes-timepoint;
     ind = find(difspk==min(abs(difspk)));
-    tsur = 30; %in seconds
+    tsur = 20; %in seconds
     figure(1);
     hold on
     plot((spkTimes((ind-(tsur/binsz)):(ind+(tsur/binsz)))), spkhist((ind-(tsur/binsz)):(ind+(tsur/binsz))));
@@ -270,10 +274,10 @@ for i = 1:length(timepoints)
     ylim([-1 6]);
     xline(ind*binsz, '--');
     yline(nSigma,'k');
-%     yline((spkmean+(sstd*spkstd)), 'g');
-%     yline((spkmean-(estd*spkstd)), 'r');
-    yline(nSigma+sstd, 'g');
-    yline(nSigma+estd, 'r');
+    yline((spkmean+(sstd*spkstd)), 'g');
+    yline((spkmean-(estd*spkstd)), 'r');
+%     yline(spkmean+sstd, 'g');
+%     yline(spkmean+estd, 'r');
 
 end
 hold off

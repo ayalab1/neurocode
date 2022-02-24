@@ -214,8 +214,8 @@ for i = 1:length(evtstart)-1
 end
 
 [evtstart, evtstop, evtdur, evtpeak] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc);
-%trim up duration
-[evtstart, evtstop, evtdur] = trimEvt(evtstart,evtstop,evtdur,spikes);
+%trim up duration 
+% [evtstart, evtstop, evtdur] = trimEvt(evtstart,evtstop,evtdur,spikes);
 %disp([' >>> Number of events after overlap concatenation: ' num2str(length(evtstart))]);
 
 %% Final pass to remove any short events that did not get concatenated
@@ -427,10 +427,10 @@ evtidx = spkhist>nSigma; %flag events outside nSigma stds
 evtidx = find(diff(evtidx)==1)+1; %find where we switch from above/below our acceptance threshold, keep start index
 % belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
 % belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
-belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
-belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
-% belowmstart = spkhist<(nSigma+sstd); % Logical to run faster, what threshold to start an event
-% belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
+% belowmstart = spkhist<(spkmean+(sstd*spkstd)); % Logical to run faster, what threshold to start an event
+% belowmstop = spkhist<(spkmean-(estd*spkstd)); %what threshold to end an event
+belowmstart = spkhist<(nSigma+sstd); % Logical to run faster, what threshold to start an event
+belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
 
 [startID, stopID, evtstart, evtstop, evtdur, evtamp, evtpeak] = deal(zeros(1,length(evtidx)));
 %startID = 1; % Initialize to 1 for the first comparison to work

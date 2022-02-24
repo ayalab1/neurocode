@@ -19,7 +19,7 @@ basename = basenameFromBasepath(basepath);
 animName = animalFromBasepath(basepath);
 % Load in session information
 load(['Barrage_Files\' basename '.allpyr.cellinfo.mat']);
-load(['Barrage_Files\' basename '.brstDt.UIDkeep.mat']);
+load(['Barrage_Files\' basename '.useSpk.UIDkeep.mat']);
 load([basename '.cell_metrics.cellinfo.mat']);
 load([basename '.session.mat']);
 showPlt = 0;
@@ -441,16 +441,24 @@ specPath = strcat(savePath,'Population\');
 if ~exist(specPath)
     mkdir(specPath);
 end
-load([basepath '\Barrage_Files\' basename '.HSEfutEVT.mat']);
+load([basepath '\Barrage_Files\' basename '.HSE.mat']);
 load([basepath '\Barrage_Files\' basename '.HSEmetrics.mat']);
-saveSchem = strcat(basename,'.brstDt');
+load([basepath '\' basename '.SleepState.states.mat']);
+saveSchem = strcat(basename,'.useSpk');
 if exist(strcat(specPath,'props.mat'))
     load([specPath 'props.mat']);
 end
 
+if isfield(HSE, 'keep')
+    HSE.timestamps = HSE.timestamps(HSE.keep,:);
+    HSE.peaks = HSE.peaks(HSE.keep);
+    HSE.amplitudes = HSE.amplitudes(HSE.keep);
+    HSE.duration = HSE.duration(HSE.keep);
+end
+HSEnrem = eventIntervals(HSE,SleepState.ints.NREMstate,1);
 %% [2.0] Initial runs
 if reRun
-    [spkEventTimes] = getRipSpikes('basepath',pwd,'events',evtSave{end,1},'spikes',spikes,'savePath',savePath,'padding',0,'saveMat',false);
+    [spkEventTimes] = getRipSpikes('basepath',pwd,'events',HSEnrem.timestamps,'spikes',spikes,'savePath',savePath,'padding',0,'saveMat',false);
     save(strcat(specPath,saveSchem,'.spkEventTimes.mat'),'spkEventTimes', '-v7.3');
     [unitBar] = unitSWRmetrics(spkEventTimes,spikes);
     save(strcat(specPath,saveSchem,'.unitBar.mat'),'unitBar', '-v7.3');

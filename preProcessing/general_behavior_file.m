@@ -20,6 +20,8 @@ addParameter(p,'fs',39.0625); % behavioral tracking sample rate (will detect fs 
 addParameter(p,'force_overwrite',false); % overwrite previously saved data (will remove custom fields)
 addParameter(p,'force_run',true); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
+addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract
+addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
 
 parse(p,varargin{:});
 basepaths = p.Results.basepath;
@@ -27,6 +29,8 @@ fs = p.Results.fs;
 force_overwrite = p.Results.force_overwrite;
 force_run = p.Results.force_run;
 save_mat = p.Results.save_mat;
+primary_coords_dlc = p.Results.primary_coords_dlc;
+likelihood_dlc = p.Results.likelihood_dlc;
 
 if ~iscell(basepaths)
     basepaths = {basepaths};
@@ -40,11 +44,12 @@ for i = 1:length(basepaths)
         continue
     end
     disp(basepath)
-    behavior = main(basepath,basename,fs,save_mat,force_overwrite);
+    behavior = main(basepath,basename,fs,save_mat,force_overwrite,...
+        primary_coords_dlc,likelihood_dlc);
 end
 end
 
-function behavior = main(basepath,basename,fs,save_mat,force_overwrite)
+function behavior = main(basepath,basename,fs,save_mat,force_overwrite,primary_coords,likelihood)
 
 if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
@@ -52,7 +57,7 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
 end
 
 [t,x,y,z,v,trials,units,source,linearized,fs,notes] =...
-    extract_tracking(basepath,basename,fs);
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood);
 
 load([basepath,filesep,[basename,'.session.mat']]);
 
@@ -78,7 +83,7 @@ end
 end
 
 function [t,x,y,z,v,trials,units,source,linearized,fs,notes] =...
-    extract_tracking(basepath,basename,fs)
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood)
 
 t = [];
 x = [];
@@ -95,23 +100,27 @@ notes = [];
 
 if ~isempty(dir(fullfile(basepath, '**', '*DLC*.csv')))
     disp('detected deeplabcut')
-    tracking = process_and_sync_dlc('basepath',basepath);
+    tracking = process_and_sync_dlc('basepath',basepath,...
+        'primary_coords',primary_coords,...
+        'likelihood',likelihood);
     
     t = tracking.timestamps;
     fs = 1/mode(diff(t));
-
+    
     x = tracking.position.x;
     y = tracking.position.y;
     units = 'pixels';
     source = 'deeplabcut';
-        
+    
     if isfield(tracking, 'events')
         if isfield(tracking.events,'subSessions')
             trials = tracking.events.subSessions;
         end
     end
+    notes = ['primary_coords: ',num2str(primary_coords),...
+        ', likelihood: ',num2str(likelihood)];
     
-% standard whl file xyxy format
+    % standard whl file xyxy format
 elseif exist([basepath,filesep,[basename,'.whl']],'file')
     disp('detected .whl')
     positions = load([basepath,filesep,[basename,'.whl']]);
@@ -243,7 +252,7 @@ elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')
         [~,idx] = sort(temp_trials(:,1));
         trials = temp_trials(idx,:);
     end
-        
+    
     % .position.behavior file with x,y,linear and more
 elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     disp('detected position.behavior.mat')
@@ -265,7 +274,7 @@ elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     
     if exist([basepath,filesep,['position_info.mat']],'file')
         load([basepath,filesep,['position_info.mat']])
-         trials = [cellfun(@(x) min(x),pos_inf.ts_ep),...
+        trials = [cellfun(@(x) min(x),pos_inf.ts_ep),...
             cellfun(@(x) max(x),pos_inf.ts_ep)];
     end
     
@@ -303,8 +312,8 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     load([basepath,filesep,[basename,'.tracking.behavior.mat']])
     t = tracking.timestamps;
     fs = 1/mode(diff(t));
-
-    if isfield(tracking.position,'x') && isfield(tracking.position,'y') && isfield(tracking.position,'z') 
+    
+    if isfield(tracking.position,'x') && isfield(tracking.position,'y') && isfield(tracking.position,'z')
         x = tracking.position.x * 100;
         y = tracking.position.z * 100;
         z = tracking.position.y * 100;

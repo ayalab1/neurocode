@@ -99,7 +99,7 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 
-session = sessionTemplate(pwd,'showGUI',true); %
+session = sessionTemplate(pwd,'showGUI',false); % show GUI only after concatenating data and getting MergePoints
 save([basename '.session.mat'],'session');
 
 %% Fill missing dat files of zeros

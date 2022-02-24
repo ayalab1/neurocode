@@ -29,7 +29,7 @@ function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 %    badIntervals   the [start stop] intervals in which the signal or derivative
 %                   surpassed its respective threshold
 %
-% Copyright (C) 2017 by Ralitsa Todorova
+% Copyright (C) 2017-2022 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

@@ -34,7 +34,7 @@ addParameter(p,'GPU_id',1,@isnumeric)               % Specify the GPU_id
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output into a subfolder
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
-addParameter(p,'mahal',12,@isnumeric)               % Perform mahalanobis threshold by default (set to Inf to not impose threshold)
+addParameter(p,'mahal',Inf,@isnumeric)               % Perform mahalanobis threshold by default (set to Inf to not impose threshold)
 addParameter(p,'config','',@ischar)                 % Specify a configuration file to use from the ConfigurationFiles folder. e.g. 'Omid'
 
 parse(p,varargin{:})

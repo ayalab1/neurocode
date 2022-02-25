@@ -75,7 +75,7 @@ if isempty(values)
     return
 end
 
-if size(values,1) == 1,
+if (size(values,2) == 1),
 	values = values(:);
 end
 

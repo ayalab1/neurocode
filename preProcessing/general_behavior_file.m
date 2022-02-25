@@ -112,6 +112,8 @@ if ~isempty(dir(fullfile(basepath, '**', '*DLC*.csv')))
     units = 'pixels';
     source = 'deeplabcut';
     
+    t = t(1:length(x));
+
     if isfield(tracking, 'events')
         if isfield(tracking.events,'subSessions')
             trials = tracking.events.subSessions;

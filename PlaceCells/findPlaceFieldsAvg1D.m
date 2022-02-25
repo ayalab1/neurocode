@@ -97,7 +97,7 @@ basepath = p.Results.basepath;
 firingMaps = p.Results.firingMapsAvg;
 % Get session info
 basename = basenameFromBasepath(basepath);
-load([basepath filesep basename '.sessionInfo.mat']);
+load([basepath filesep basename '.session.mat']);
 % Default firingMapsAvg
 if isempty(firingMaps)
     firingMaps = load([basepath filesep basename '.firingMapsAvg.cellinfo.mat']);

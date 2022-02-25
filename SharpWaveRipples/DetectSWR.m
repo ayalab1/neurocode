@@ -132,7 +132,9 @@ function [ripples] = DetectSWR(Channels, varargin)
 %
 % noPrompts     true/false disable any user prompts (default: true)
 %
-% useSPW        true (default)/false
+% useSPW        Reject all events without a significant (and sufficiently long) 
+%               sharp-wave true, and determine the [start stop] boundaries of 
+%               the final events exclusively using the sharp wave (default=true)
 %
 %%%%%%%%%%%%%%%
 %%% OUTPUTS %%%
@@ -895,7 +897,7 @@ for ep_i = 1:Nepochs
             t = featureTs/1250; % timestamps for candidate ripple events
             bad = false(size(t));
             try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,bad,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[10 Inf]);
+                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[10 Inf]);
                 bad = bad | InIntervals(t,badIntervals);
             end
             try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
@@ -908,7 +910,7 @@ for ep_i = 1:Nepochs
             try % optionally, remove ripples in which the sharp wave channel was positive
                 % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
                 sw = interp1(tl,lfpLow(:,2),t);
-                bad = bad | sw>0;
+%                 bad = bad | sw>0;
             end
             idx1 = idx1 & ~bad; idx2 = idx2 & ~bad; % remove bad points from "idx1" and "idx2"
 
@@ -1106,7 +1108,11 @@ for ep_i = 1:Nepochs
     thresL_Rip   = prctile(ripPowerAll(idx2,1),per_thresRip);
     
     % retain SWR candidates according to clustering and thresholds
-    SWRind = idx1 & swDiffAll > thresL_swD & ripPowerAll > thresL_Rip;
+    if check
+        SWRind = idx1;
+    else
+        SWRind = idx1 & swDiffAll > thresL_swD & ripPowerAll > thresL_Rip;
+    end
     SWRid  = find(SWRind);
     
     % Access time-stamps of SWR features
@@ -1229,7 +1235,11 @@ for ep_i = 1:Nepochs
         
         % We have a valid detection
         valid                     = valid + 1;
-        SWR_valid.Ts(valid,:)     = [SWRs(ii) (SWRs(ii)-(bound+1-startSWR)) (SWRs(ii)+stopSWR-1)];
+        if useSPW, % let event boundaries be entirely determined by the sharp wave boundaries
+            SWR_valid.Ts(valid,:)     = [SWRs(ii) (SWRs(ii)-(bound+1-startSWR)) (SWRs(ii)+stopSWR-1)];
+        else % event boundaries are determined by the union of the sharp wave and ripple intervals
+            SWR_valid.Ts(valid,:)     = [SWRs(ii) (SWRs(ii)-(bound+1-min(startSWR,startRP))) (SWRs(ii)+max(stopSWR,stopRP)-1)];
+        end
         
         swMax                     = swDiffAll(SWRid(ii));
         ripMax                    = ripPowerAll(SWRid(ii));

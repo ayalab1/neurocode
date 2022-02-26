@@ -1,4 +1,4 @@
-function [behavior,trials] = linearTrackBehavior(varargin)
+function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 %        [behavior] = linearTrackBehavior(varargin)
 % Gets raw tracking data and generates behavior structure
 % based on the standards described in cellexplorer
@@ -68,10 +68,10 @@ end
 
 % I am creating for now a temporary trials struct, but this needs to be
 % included inside the behavior struct instead
-trials.outboundTs = [outbound_start outbound_stop];
-trials.outboundTs=trials.outboundTs(trials.outboundTs(:,2)-trials.outboundTs(:,1)<100,:);
-trials.inboundTs = [inbound_start inbound_stop];
-trials.inboundTs=trials.inboundTs(trials.inboundTs(:,2)-trials.inboundTs(:,1)<100,:);
+trials{1}.timestamps = [outbound_start outbound_stop];
+trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
+trials{2}.timestamps = [inbound_start inbound_stop];
+trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
 
 %% Get periods of runnig
 % this method is better than LinearVelocity.m
@@ -80,25 +80,25 @@ v = sqrt(vx.^2+vy.^2);
 
 [quiet,quiescence] = QuietPeriods([behavior.time' v],0.1,0.5);
 
-trials.outboundTsMov = SubtractIntervals(trials.outboundTs,quiet);
-trials.inboundTsMov = SubtractIntervals(trials.inboundTs,quiet);
+for i = 1:2
+    trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);
+end
 
 %% Separate positions for each direction of running
 % this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
 % so, for now, I am converting it to the old posTrials 
-
-trials.outboundPos=Restrict([behavior.time' linpos],trials.outboundTsMov);
-trials.inboundPos=Restrict([behavior.time' linpos],trials.inboundTsMov);
-
-posTrials{1}=trials.inboundPos;
-posTrials{2}=trials.outboundPos;
-
+for i = 1:2
+    trials{i}.positions=Restrict([behavior.time' linpos],trials{i}.timestamps);
+    trials{i}.positionsRun=Restrict([behavior.time' linpos],trials{i}.timestampsRun); 
+    posTrials{i} = trials{i}.positions;
+end
+   
 %% Plots to check results 
 % need improvement
 figure;plot(behavior.time,behavior.linearized,'k','LineWidth',2);hold on;
        plot(behavior.time,v,'r','LineWidth',2);hold on;
-PlotIntervals(trials.outboundTsMov,'color','b','alpha',.5);hold on;
-PlotIntervals(trials.inboundTsMov,'color','g','alpha',.5);hold on;
+PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
+PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
 
 % testing stuff...
 if exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')

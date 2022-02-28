@@ -98,7 +98,18 @@ notes = [];
 
 % below are many methods on locating tracking data from many formats
 
-if ~isempty(dir(fullfile(basepath, '**', '*DLC*.csv')))
+
+% search for DLC csv within basepath and subdirs, but not kilosort folder
+%       (takes too long)
+load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+for k = 1:length(MergePoints.foldernames)
+    dlc_flag(k) = isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*DLC*.csv')));
+end
+files = dir(basepath);
+files = files(~contains({files.name},'Kilosort'),:);
+dlc_flag(k+1) = isempty(dir(fullfile(files(1).folder,'*DLC*.csv')));
+
+if ~all(dlc_flag)
     disp('detected deeplabcut')
     tracking = process_and_sync_dlc('basepath',basepath,...
         'primary_coords',primary_coords,...

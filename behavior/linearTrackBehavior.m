@@ -20,8 +20,7 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 
 % Can, Ryan, Antonio; 02/22
 %
-% TODO: 
-%       -data should be restricted to just linear track epochs
+% TODO:
 %       -xy should be converted from pixels to cm (speed thres can them be adjusted)
 %       -find best way to store output trials. Ideally, should be easy to
 %           identify, maybe table so human readable.
@@ -38,6 +37,7 @@ addParameter(p,'lapStart',20,@isnumeric);
 addParameter(p,'speedTh',0.1,@isnumeric);
 addParameter(p,'savemat',true,@islogical);
 addParameter(p,'show_fig',true,@islogical);
+addParameter(p,'restrict_to_epoch',true,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -47,6 +47,7 @@ lapStart = p.Results.lapStart;
 speedTh = p.Results.speedTh;
 savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
+restrict_to_epoch = p.Results.restrict_to_epoch;
 
 basename = basenameFromBasepath(basepath);
 
@@ -61,9 +62,37 @@ else
     error('run general_behavior_file first')
 end
 
+%% Pull in basename.session to epoch data
+if restrict_to_epoch
+    load([basepath,filesep,[basename,'.session.mat']]);
+    if ~isfield(session.epochs,'environment')
+        warning('environment not labeled')
+        warning('label environment and save before moving on')
+        session = gui_session(session);
+    end
+    startTime = [];
+    stopTime = [];
+    for ep = session.epochs
+        ep = ep{1};
+        if contains(ep.environment,'linear')
+            startTime = [startTime;ep.startTime];
+            stopTime = [stopTime;ep.stopTime];
+        end
+    end
+    linear_epochs = [startTime,stopTime];
+end
 %% Linearize postions
 % add method to select best LED/ marker
-[~,lin,~] = pca([behavior.position.x',behavior.position.y']);
+
+% make all coords outside linear track to nan
+if restrict_to_epoch
+    xy = [behavior.position.x',behavior.position.y'];
+    [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs);
+    xy(~idx) = nan;
+else
+    xy = [behavior.position.x',behavior.position.y'];
+end
+[~,lin,~] = pca(xy);
 linpos = lin(:,1);
 linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
 behavior.position.linearized = linpos';

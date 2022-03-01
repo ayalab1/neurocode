@@ -62,7 +62,7 @@ end
 load([basepath,filesep,[basename,'.session.mat']]);
 
 behavior.sr = fs;
-behavior.time = t';
+behavior.timestamps = t';
 behavior.position.x = x';
 behavior.position.y = y';
 behavior.position.z = z';

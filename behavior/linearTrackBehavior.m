@@ -70,7 +70,7 @@ behavior.position.linearized = linpos';
 
 %% Get laps
 % add option to get laps from tracking or from sensors
-laps=FindLapsNSMAadapted(behavior.time,linpos,lapStart);
+laps=FindLapsNSMAadapted(behavior.timestamps,linpos,lapStart);
 
 outbound_start=[];outbound_stop=[];inbound_start=[];inbound_stop=[];
 for i = 1:length([laps.start_ts])-1
@@ -92,10 +92,10 @@ trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.
 
 %% Get periods of runnig
 % this method works better than LinearVelocity.m
-[~,~,~,vx,vy,~,~] = KalmanVel(linpos,linpos*0,behavior.time,2);
+[~,~,~,vx,vy,~,~] = KalmanVel(linpos,linpos*0,behavior.timestamps,2);
 v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
 
-[quiet,quiescence] = QuietPeriods([behavior.time' v],speedTh,0.5);
+[quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
 
 for i = 1:2
     trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);
@@ -107,8 +107,8 @@ end
 % would be to modify findPlaceFieldsAvg1D and other functions to take
 % instead the behavior structure
 for i = 1:2
-    trials{i}.positions=Restrict([behavior.time' linpos],trials{i}.timestamps);
-    trials{i}.positionsRun=Restrict([behavior.time' linpos],trials{i}.timestampsRun);
+    trials{i}.positions=Restrict([behavior.timestamps' linpos],trials{i}.timestamps);
+    trials{i}.positionsRun=Restrict([behavior.timestamps' linpos],trials{i}.timestampsRun);
     posTrials{i} = trials{i}.positions;
 end
 
@@ -138,8 +138,8 @@ end
 % need improvement
 if show_fig
     figure;
-    plot(behavior.time,behavior.position.linearized,'k','LineWidth',2);hold on;
-    plot(behavior.time,v,'r','LineWidth',2);hold on;
+    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
+    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
     PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
     PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
     if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')

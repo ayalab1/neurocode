@@ -20,7 +20,7 @@ addParameter(p,'fs',39.0625); % behavioral tracking sample rate (will detect fs 
 addParameter(p,'force_overwrite',false); % overwrite previously saved data (will remove custom fields)
 addParameter(p,'force_run',true); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
-addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract
+addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
 
 parse(p,varargin{:});
@@ -56,7 +56,7 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
     load([basepath,filesep,[basename,'.animal.behavior.mat']]);
 end
 
-[t,x,y,z,v,trials,units,source,linearized,fs,notes] =...
+[t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood);
 
 load([basepath,filesep,[basename,'.session.mat']]);
@@ -77,12 +77,19 @@ behavior.processinginfo.date = date;
 behavior.processinginfo.function = 'general_behavioral_file.mat';
 behavior.processinginfo.source = source;
 
+if ~isempty(extra_points)
+    for field = fieldnames(extra_points)'
+        field = field{1};
+        behavior.position.(field) = extra_points.(field)';
+    end
+end
+
 if save_mat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
 end
 end
 
-function [t,x,y,z,v,trials,units,source,linearized,fs,notes] =...
+function [t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood)
 
 t = [];
@@ -95,7 +102,7 @@ units = [];
 source = [];
 linearized = [];
 notes = [];
-
+extra_points = [];
 % below are many methods on locating tracking data from many formats
 
 
@@ -111,15 +118,25 @@ dlc_flag(k+1) = isempty(dir(fullfile(files(1).folder,'*DLC*.csv')));
 
 if ~all(dlc_flag)
     disp('detected deeplabcut')
-    tracking = process_and_sync_dlc('basepath',basepath,...
+    [tracking,field_names] = process_and_sync_dlc('basepath',basepath,...
         'primary_coords',primary_coords,...
         'likelihood',likelihood);
     
     t = tracking.timestamps;
     fs = 1/mode(diff(t));
     
-    x = tracking.position.x;
-    y = tracking.position.y;
+    x = tracking.position.x(:,primary_coords);
+    y = tracking.position.y(:,primary_coords);
+    
+    % multiple tracking points will likely exist, extract here
+    x_col = field_names(contains(field_names,'x'));
+    y_col = field_names(contains(field_names,'y'));
+    extra_points = struct();
+    for i = 1:length(x_col)
+        extra_points.([x_col{i},'_point']) = tracking.position.x(:,i);
+        extra_points.([y_col{i},'_point']) = tracking.position.y(:,i);
+    end
+    
     units = 'pixels';
     source = 'deeplabcut';
     
@@ -132,6 +149,7 @@ if ~all(dlc_flag)
     end
     notes = ['primary_coords: ',num2str(primary_coords),...
         ', likelihood: ',num2str(likelihood)];
+    
     
     % standard whl file xyxy format
 elseif exist([basepath,filesep,[basename,'.whl']],'file')

@@ -172,7 +172,7 @@ function [ripples] = DetectSWR(Channels, varargin)
 %%% SET DEFAULT FREE PARAMETERS %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p = inputParser;
-addParameter(p, 'basepath', pwd, @isstr);
+addParameter(p, 'basepath', pwd, @isfolder);
 addParameter(p, 'Epochs', [], @isnumeric);
 addParameter(p, 'saveMat', true, @islogical);
 addParameter(p, 'forceDetect', false, @islogical);

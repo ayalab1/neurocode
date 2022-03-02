@@ -1,4 +1,4 @@
-function PSTH = computePSTH(event,spikes,varargin)
+function [PSTH,index_abs] = computePSTH(event,spikes,varargin)
 % This is a generalized way for creating a PSTH for units for various events
 % 
 % INPUTS
@@ -7,6 +7,8 @@ function PSTH = computePSTH(event,spikes,varargin)
 % 
 % OUTPUT
 % psth
+% index3
+% 
 % 
 % Dependencies: CCG
 
@@ -86,6 +88,7 @@ for j = 1:numel(spikes.times)
 end
 time = time(binsToKeep+1);
 
+% modulation index based on response to events
 modulationIndex = mean(PSTH_out(binsEvents,:))./mean(PSTH_out(binsPre,:));
 modulationSignificanceLevel = [];
 for i = 1:size(PSTH_out,2)
@@ -108,9 +111,14 @@ PSTH.modulationIndex = modulationIndex;
 PSTH.modulationPeakResponseTime = modulationPeakResponseTime';
 PSTH.modulationSignificanceLevel = modulationSignificanceLevel;
 
+% index to sort out units in plot (relative to specific spikes entered)
+%[~,index2] = sort(modulationIndex,'descend');
+[~,index3] = sort(modulationPeakResponseTime);    
+
+% index converted to absolute UID to track units from plot
+index_abs = spikes.UID(index3);
+
 if plots
-    %[~,index2] = sort(modulationIndex,'descend');
-    [~,index3] = sort(modulationPeakResponseTime);    
     figure,
     subplot(2,1,1);
     plot(time,mean(PSTH_out')','LineWidth',2); hold on; 

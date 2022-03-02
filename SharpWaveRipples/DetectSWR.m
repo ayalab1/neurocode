@@ -980,7 +980,7 @@ for ep_i = 1:Nepochs
             
             % Save your progress!
             display('saving...');
-            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll',idx1','idx2','bad','selected','scores');
+            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
             saveas(figure(1),fullfile(basepath,'DetectSWR_manual_scoring.fig'));
 
         end

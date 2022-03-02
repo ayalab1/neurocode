@@ -77,18 +77,18 @@ function [ripples] = FindRipples(varargin)
 
 % Default values
 p = inputParser;
-addParameter(p,'thresholds',[2 4],@isnumeric)
-addParameter(p,'durations',[30 300],@isnumeric)
+addParameter(p,'thresholds',[0.5 2.5],@isnumeric)
+addParameter(p,'durations',[50 500],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'SR',1250,@isnumeric)
 addParameter(p,'stdev',[],@isnumeric)
 addParameter(p,'show','off',@isstr)
 addParameter(p,'noise',[],@ismatrix)
-addParameter(p,'passband',[100 250],@isnumeric)
+addParameter(p,'passband',[80 250],@isnumeric)
 addParameter(p,'EMGThresh',.9,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'EVENTFILE',true,@islogical);
-addParameter(p,'minDuration',20,@isnumeric)
+addParameter(p,'minDuration',25,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
 
 if isstr(varargin{1})  % if first arg is basepath

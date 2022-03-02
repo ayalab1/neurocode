@@ -30,7 +30,7 @@ function [spikeT] = importSpikes(varargin)
 %% Parse inputs 
 
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstring);
+addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'brainRegion','',@isstring); 
 addParameter(p,'cellType','',@isstring); 
 addParameter(p,'sleepState','',@isstring);

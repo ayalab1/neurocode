@@ -29,6 +29,7 @@ addParameter(p,'spikingThreshold',.5);
 addParameter(p,'winSize',.5);
 addParameter(p,'eventSize',.01);
 addParameter(p,'figOpt',true,@islogical);
+addParameter(p,'EVENTFILE',true,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -37,10 +38,11 @@ spikingThreshold = p.Results.spikingThreshold;
 winSize = p.Results.winSize;
 eventSize = p.Results.eventSize;
 figOpt = p.Results.figOpt;
+EVENTFILE = p.Results.figOpt;
 
 % 
 if isempty(spikes)
-    spikes = loadSpikes;
+    spikes = loadSpikes('basepath',basepath);
 end
 [spikemat] = bz_SpktToSpkmat(spikes, 'dt',0.01,'overlap',6);
 sSpkMat = zscore(sum(spikemat.data,2)/size(spikemat.data,2));
@@ -93,8 +95,43 @@ if figOpt
     plot([spikingThreshold spikingThreshold], [1 size(eventPopResponse,1)],'r');
     xlabel('Response (SD)'); ylim([1 size(eventPopResponse,1)]); set(gca,'YDir','normal','TickDir','out');
     try 
-        saveas(gcf,'SummaryFigures\eventSpikingThreshold.png');
+        saveas(gcf,fullfile(basepath,'SummaryFigures','eventSpikingThreshold.png'));
     end
 end
 
+if EVENTFILE
+    Filebase = basenameFromBasepath(basepath);
+    Filebase = fullfile(basepath,Filebase);
+    [pathname, filename, extname] = fileparts(Filebase);
+    if isempty(pathname)
+        pathname = pwd;
+    end
+    
+    rippleFiles = dir('*.R*.evt');
+    if isempty(rippleFiles)
+        fileN = 1;
+    else
+        %set file index to next available value\
+        pat = '.R[0-9].';
+        fileN = 0;
+        for ii = 1:length(rippleFiles)
+            token  = regexp(rippleFiles(ii).name,pat);
+            val    = str2double(rippleFiles(ii).name(token+2:token+4));
+            fileN  = max([fileN val]);
+        end
+        fileN = fileN + 1;
+    end
+    fid = fopen(sprintf('%s%s%s.R%02d.evt',pathname,filesep,filename,fileN),'w');
+    % convert detections to milliseconds
+    SWR_start   = events.timestamps(:,1).*(1000);
+    SWR_peak    = events.peaks.*(1000);
+    SWR_end     = events.timestamps(:,2).*(1000);
+    fprintf(1,'Writing event file ...\n');
+    for ii = 1:size(SWR_peak)
+        fprintf(fid,'%9.1f\tstart\n',SWR_start(ii));
+        fprintf(fid,'%9.1f\tpeak\n',SWR_peak(ii));
+        fprintf(fid,'%9.1f\tstop\n',SWR_end(ii));
+    end
+    fclose(fid);
+end
 end

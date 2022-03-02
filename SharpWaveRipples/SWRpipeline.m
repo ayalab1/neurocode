@@ -14,7 +14,7 @@ basename = basenameFromBasepath(basepath);
 %% 2 - SWR detection
 
     % preferred method (index base 1)
-     ripples = DetectSWR([swrCh.ripple swrCh.sharpwave],'saveMat',true);
+     ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel swrCh.Noise_Channel],'saveMat',true);
      % only use this is you don't have sharp-wave
      ripples = FindRipples(basepath,swrCh.ripple,'noise',swrCh.noise,'saveMat',true);
      
@@ -22,8 +22,12 @@ basename = basenameFromBasepath(basepath);
      
     % refine ripple detection using spiking level
     spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA1");
-    ripples = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.5); 
-    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,'SWRmua.png');
+    ripplesTemp = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.1);
+    ripples = ripplesTemp;
+    if ~exist([basepath '\Ripple_Profile'])
+        mkdir('Ripple_Profile');
+    end
+    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,['Ripple_Profile\SWRmua.png']);
     
     % remove very large amplitude events (likely artifacts)
     ripples = removeArtifactsFromEvents(ripples,'stdThreshold',10);
@@ -40,8 +44,10 @@ basename = basenameFromBasepath(basepath);
     createEVT(ripples);
 
     % plot wavelet to check detection quality 
-    mkdir('Ripple_Profile');
-    lfpRip = getLFP(swrCh.ripple);
+    if ~exist([basepath '\Ripple_Profile'])
+        mkdir('Ripple_Profile');
+    end
+    lfpRip = getLFP(swrCh.Ripple_Channel);
     [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(1:500),'twin',[0.1 0.1]);
     saveas(gcf,['Ripple_Profile\swrWaveletSample.png']);
     

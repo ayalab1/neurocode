@@ -4,7 +4,19 @@ basename = basenameFromBasepath(pwd);
 if nargin <1
     savePath = basepath;
 end
-load([basename '.cell_metrics.cellinfo.mat']);
+if exist([basename '.cell_metrics.cellinfo.mat'])
+    load([basename '.cell_metrics.cellinfo.mat']);
+else
+    warning('Cell Metrics does not exist, computing');
+    load([basename '.session.mat']);
+    cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false); close all
+end
+if ~isfield(cell_metrics,'brainRegion')
+    warning('Cell Metrics not fully calculated, recalculating')
+    load([basename '.session.mat']);
+    cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false); close all
+end
+
 useReg = unique(cell_metrics.brainRegion);
 for i = 1:length(useReg)
     spikes = [];

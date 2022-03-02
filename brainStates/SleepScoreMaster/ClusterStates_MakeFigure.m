@@ -16,11 +16,11 @@ if ~exist(figloc,'dir')
 end
 
 %% Figure
-[zFFTspec,mu,sig] = zscore(log10(swFFTspec)');
+[zFFTspec,mu,sig] = nanzscore(log10(swFFTspec)');
 if sum(isinf(log10(thFFTspec(:))))==0
-    [~,mu_th,sig_th] = zscore(log10(thFFTspec)');
+    [~,mu_th,sig_th] = nanzscore(log10(thFFTspec)');
 else %For Theta over PSS (ThIRASA)
-    [~,mu_th,sig_th] = zscore((thFFTspec)');
+    [~,mu_th,sig_th] = nanzscore((thFFTspec)');
 end
 
  viewwin  =[t_clus(1) t_clus(end)];

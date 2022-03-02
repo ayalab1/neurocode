@@ -7,7 +7,7 @@ basepath = pwd;
 basename = basenameFromBasepath(basepath);
 animName = animalFromBasepath(basepath);
 load(strcat(basepath,'\Barrage_Files\',basename,'.HSE.mat'));
-load(strcat(basename,'.ripples.events.mat'));
+
 load(strcat(basename,'.cell_metrics.cellinfo.mat'));
 load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
 savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
@@ -17,7 +17,28 @@ plotSave = strcat(basepath, '\Barrage_Files\', basename, '.');
 if ~exist(strcat(basepath,'\Barrage_Files\PSTHmet\'))
         mkdir(strcat(basepath,'\Barrage_Files\PSTHmet\'));
 end
-
+if ~exist(strcat(basepath,'\',basename,'.ripples.events.mat'))
+    if exist(strcat(basepath,'\old files\SWR.mat'))
+        load(strcat(basepath,'\old files\SWR.mat'));
+        ripples = SWR;
+        if isfield(ripples,'peaktimes')
+            ripples.peaks = ripples.peaktimes;
+        end
+        plotRips = 1;
+    elseif exist(strcat(basepath,'\oldfiles\SWR.mat'))
+        load(strcat(basepath,'\oldfiles\SWR.mat'));
+        ripples = SWR;
+        if isfield(ripples,'peaktimes')
+            ripples.peaks = ripples.peaktimes;
+        end
+        plotRips = 1;
+    else
+        plotRips = 0;
+    end
+else
+    load(strcat(basename,'.ripples.events.mat'));
+    plotRips = 1;
+end
 %%
 
 if isfield(HSE, 'keep')
@@ -53,15 +74,19 @@ for i = 1:length(check)
                 load([savePath br 'pyr.cellinfo.mat']);
             end
             if ~isempty(spikes.times)
-                PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false,'alignment','peaks');
-                plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'),1);
-                PSTH_bar = computePSTH(HSEnrem,spikes,'duration',2,'plots', false,'alignment','peaks');
-                plotPSTH(PSTH_bar, regTot, subNum+(regTot*2), strcat(check(i), '/barrages'),1);
-                PSTHmets.PSTH_ripples = PSTH_ripples; PSTHmets.PSTH_bar = PSTH_bar;
-                save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmets.mat'], 'PSTHmets');
-            else
-                warning(['No pyramidal cells in ' br]);
-            end
+                if plotRips
+                    PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false,'alignment','peaks');
+                    plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'),1);
+                    PSTHmets.PSTH_ripples = PSTH_ripples;
+                end
+                    PSTH_bar = computePSTH(HSEnrem,spikes,'duration',2,'plots', false,'alignment','peaks');
+                    plotPSTH(PSTH_bar, regTot, subNum+(regTot*2), strcat(check(i), '/barrages'),1);
+                    PSTHmets.PSTH_bar = PSTH_bar;
+                    save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmets.mat'], 'PSTHmets');
+                else
+                    warning(['No pyramidal cells in ' br]);
+                end
+            
             subNum = subNum+1; % should max at 4
         end
     end
@@ -83,11 +108,14 @@ for i = 1:length(check)
                 load([savePath br 'int.cellinfo.mat']);
             end
             if ~isempty(spikes.times)
-                PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false,'alignment','peaks');
-                plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'),2);
+                if plotRips
+                    PSTH_ripples = computePSTH(ripples,spikes,'duration',2,'plots', false,'alignment','peaks');
+                    plotPSTH(PSTH_ripples, regTot, subNum, strcat(check(i), '/ripples'),2);
+                    PSTHmetsINT.PSTH_ripples = PSTH_ripples;
+                end
                 PSTH_bar = computePSTH(HSEnrem,spikes,'duration',2,'plots', false,'alignment','peaks');
                 plotPSTH(PSTH_bar, regTot, subNum+(regTot*2), strcat(check(i), '/barrages'),2);
-                PSTHmetsINT.PSTH_ripples = PSTH_ripples; PSTHmetsINT.PSTH_bar = PSTH_bar;
+                PSTHmetsINT.PSTH_bar = PSTH_bar;
                 save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
             else
                 warning(['No interneurons in ' br]);
@@ -96,8 +124,10 @@ for i = 1:length(check)
         end
     end
 end
-sgtitle('Interneuron PSTH');
-saveas(gcf,[plotSave 'PSTHint.png']);
+if ~isempty(spikes.UID)
+    sgtitle('Interneuron PSTH');
+    saveas(gcf,[plotSave 'PSTHint.png']);
+end
 
 %% Event duration
 duration = HSEnrem.timestamps(:,2)-HSEnrem.timestamps(:,1);
@@ -105,21 +135,27 @@ figure(3);
 hist(duration,50);title('barrages');xlabel('duration (s)');
 saveas(gcf,[plotSave 'evtDist.png']);
 %% CCG
-t_ripple{1}=ripples.peaks(:);
-t_barrages{1}=HSEnrem.peaks(:);
-t_ripple_id{1}=ones(1,length(ripples.peaks(:)))';
-t_barrage_id{1}=ones(1,length(HSEnrem.peaks(:)))';
-binsize=0.1;duration=6;
-[ccg_ripple_barrage,t_ripple_barrage] = CCG(cat(1,t_ripple{1},t_barrages{1}),cat(1,t_ripple_id{1},2*t_barrage_id{1}),'binSize',binsize,'duration',duration,'norm','rate');
-figure(4);plot(t_ripple_barrage,ccg_ripple_barrage(:,2,1),'r');hold on;title('ccg barr-SWR');
-saveas(gcf,[plotSave 'CCG.png']);
-CCG_dat.time = t_ripple_barrage; CCG_dat.y = ccg_ripple_barrage(:,2,1);
-save([savePath 'CCG_dat.mat'],'CCG_dat');
+if plotRips
+    t_ripple{1}=ripples.peaks(:);
+    t_barrages{1}=HSEnrem.peaks(:);
+    t_ripple_id{1}=ones(1,length(ripples.peaks(:)))';
+    t_barrage_id{1}=ones(1,length(HSEnrem.peaks(:)))';
+    binsize=0.1;duration=6;
+    [ccg_ripple_barrage,t_ripple_barrage] = CCG(cat(1,t_ripple{1},t_barrages{1}),cat(1,t_ripple_id{1},2*t_barrage_id{1}),'binSize',binsize,'duration',duration,'norm','rate');
+    figure(4);plot(t_ripple_barrage,ccg_ripple_barrage(:,2,1),'r');hold on;title('ccg barr-SWR');
+    saveas(gcf,[plotSave 'CCG.png']);
+    CCG_dat.time = t_ripple_barrage; CCG_dat.y = ccg_ripple_barrage(:,2,1);
+    save([savePath 'CCG_dat.mat'],'CCG_dat');
+end
 
 %% Fraction per state
 [wake_theta] = getWakeStates(SleepState);
 num_theta = 0; num_nontheta = 0; num_REM = 0; num_NREM = 0;
-temp_theta = Restrict(HSE.peaks(:),wake_theta);
+if ~isempty(wake_theta)
+    temp_theta = Restrict(HSE.peaks(:),wake_theta);
+else
+    temp_theta = [];
+end
 num_theta = length(temp_theta);
 temp_wake = Restrict(HSE.peaks(:),SleepState.ints.WAKEstate);
 num_nontheta = length(temp_wake) - num_theta; %if it's wake but not theta, must be nontheta wake
@@ -142,13 +178,27 @@ sessEp = cell(1, length(session.epochs));
 xtickuse = cell(1, length(session.epochs));
 bary = nan(1, length(session.epochs));
 for e = 1:length(session.epochs)
-    if ~isfield(session.epochs{1,e},'stopTime')
-        sessEp{e} = Restrict(HSEnrem.peaks(:), [session.epochs{1,e}.startTime session.general.duration]);
+    if ~isfield(session.epochs{1,e},'startTime') 
+        if ~isnumeric(session.general.duration)
+            sessEp{e} = Restrict(HSEnrem.peaks(:), [0 str2num(session.general.duration)]);
+        else
+            sessEp{e} = Restrict(HSEnrem.peaks(:), [0 session.general.duration]);
+        end
         xtickuse{e} = 'Full session';
         warning('No stop time available');
     else
-        sessEp{e} = Restrict(HSEnrem.peaks(:), [session.epochs{1,e}.startTime session.epochs{1,e}.stopTime]);  
-        xtickuse{e} = session.epochs{1,e}.name;
+        if ~isfield(session.epochs{1,e},'stopTime')
+            if ~isnumeric(session.general.duration)
+                sessEp{e} = Restrict(HSEnrem.peaks(:), [session.epochs{1,e}.startTime str2num(session.general.duration)]);
+            else
+                sessEp{e} = Restrict(HSEnrem.peaks(:), [session.epochs{1,e}.startTime session.general.duration]);
+            end
+            xtickuse{e} = 'Full session';
+            warning('No stop time available');
+        else
+            sessEp{e} = Restrict(HSEnrem.peaks(:), [session.epochs{1,e}.startTime session.epochs{1,e}.stopTime]);  
+            xtickuse{e} = session.epochs{1,e}.name;
+        end
     end
     bary(e) = length(sessEp{e});
 end

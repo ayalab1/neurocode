@@ -36,7 +36,7 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             % locate file
             file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*csv'));
             
-            video_file = dir(fullfile(file.folder,'*.avi'));
+            video_file = dir(fullfile(file(1).folder,'*.avi'));
             obj = VideoReader(fullfile(video_file.folder,video_file.name));
             fs = obj.FrameRate;
             

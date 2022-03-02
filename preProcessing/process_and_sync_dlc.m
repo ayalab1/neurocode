@@ -1,4 +1,4 @@
-function tracking = process_and_sync_dlc(varargin)
+function [tracking,field_names] = process_and_sync_dlc(varargin)
 % Unpacks DLC CSV within subfolders
 %
 % Run this after you have exported deeplabcut csv results
@@ -57,8 +57,11 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
                 df{idx,y_col(i)} = NaN;
             end
             ts = df{:,1}/fs;
-            x = df{:,x_col(primary_coords)};
-            y = df{:,y_col(primary_coords)};
+%             x = df{:,x_col(primary_coords)};
+%             y = df{:,y_col(primary_coords)};
+            
+            x = df{:,x_col};
+            y = df{:,y_col};
             
             tempTracking{count} = sync_ttl(file.folder,x,y,ts,fs,pulses_delta_range);
             trackFolder(count) = ii;
@@ -105,7 +108,7 @@ tracking.position.y = y;
 tracking.folders = folder;
 tracking.samplingRate = samplingRate;
 tracking.timestamps = ts;
-tracking.events.subSessions =  subSessions;
+tracking.events.subSessions = subSessions;
 tracking.events.subSessionsMask = maskSessions;
 end
 
@@ -121,12 +124,12 @@ bazlerTtl = digitalIn.timestampsOn{1,1};
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range);
 bazlerTtl(extra_pulses) = [];
 
-basler_intan_diff = length(bazlerTtl) - length(x);
+basler_intan_diff = length(bazlerTtl) - size(x,1);
 
 [x,y,ts,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,ts,fs);
 
 [~,folder_name] = fileparts(folder);
-tracking.position.x =x;
+tracking.position.x = x;
 tracking.position.y = y;
 tracking.timestamps = bazlerTtl;
 tracking.originalTimestamps = ts;
@@ -138,27 +141,27 @@ end
 function [x,y,t,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
 
 % match basler frames con ttl pulses
-if (length(bazlerTtl) == length(x)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
+if (length(bazlerTtl) == size(x,1)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
     disp('N of frames match!!');
 elseif basler_intan_diff>0 && abs(basler_intan_diff)<fs
-    disp([num2str(abs(length(bazlerTtl) - length(x))) ' of frames dont match, probably at the end of the recording']);
-    bazlerTtl = bazlerTtl(1:length(x));
+    disp([num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the end of the recording']);
+    bazlerTtl = bazlerTtl(1:size(x,1));
 elseif basler_intan_diff<0 && abs(basler_intan_diff)<fs
-    disp([num2str(abs(length(bazlerTtl) - length(x))) ' of frames dont match, probably at the beggining of the recording']);
-    x = x(1:length(bazlerTtl));
-    y = y(1:length(bazlerTtl));
+    disp([num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the beggining of the recording']);
+    x = x(1:length(bazlerTtl),:);
+    y = y(1:length(bazlerTtl),:);
 elseif basler_intan_diff<0 && abs(basler_intan_diff)>fs
-    disp([num2str(abs(length(x) - length(bazlerTtl)))...
+    disp([num2str(abs(size(x,1) - length(bazlerTtl)))...
         ' video frames without TTL... was the recording switched off before the camera? Cutting positions accordingly...']);
-    x = x(1:length(bazlerTtl));
-    y = y(1:length(bazlerTtl));
+    x = x(1:length(bazlerTtl),:);
+    y = y(1:length(bazlerTtl),:);
 elseif abs(basler_intan_diff)>2*fs
     warning('More than 2 seconds missalignment in total in this session...will adjust to the closer one...');
     if basler_intan_diff>0
-        bazlerTtl = bazlerTtl(1:length(x));
+        bazlerTtl = bazlerTtl(1:size(x,1));
     else
-        x = x(1:length(bazlerTtl));
-        y = y(1:length(bazlerTtl));
+        x = x(1:length(bazlerTtl),:);
+        y = y(1:length(bazlerTtl),:);
     end
 elseif isempty(bazlerTtl)
     bazlerTtl = t;

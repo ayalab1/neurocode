@@ -40,6 +40,7 @@ for i=1:nTrials
 end
 
 clf
+set(gcf,'position',[1 1 1920 1000]); % make fugure big so legends are visible when exported
 
 subplot(2,2,1); cla
 colors = get(gca,'ColorOrder');

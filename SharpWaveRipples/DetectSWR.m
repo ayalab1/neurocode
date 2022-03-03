@@ -1119,7 +1119,7 @@ for ep_i = 1:Nepochs
     fprintf(1,'Number of candidate SWRs excluded due to boundary constraints: %d\n',Nswr - length(SWRs));
     Nswr        =  length(SWRs);
     timeline    = -bound:bound;
-    SWR_diff    =  [0; diff(SWRs*(1/SR))];    % in seconds
+    SWR_diff    =  [diff([0;SWRs*(1/SR)])];    % in seconds
     
     % localize events
     SWR_valid.Ts     = zeros(size(SWRs,1),3);   % peak, start, stop in samples
@@ -1193,18 +1193,9 @@ for ep_i = 1:Nepochs
         durRP         = (bound - HalfWinSize + maxRpInd - startRP) + stopRP;
         
         % 4) events associated with detections must exceed a minimum duration
-        
-        if durSWR < minDurSWs && useSPW
+        if durRP < minDurRPs && durSWR < minDurSWs
             if DEBUG
-                disp('Sharp-Wave Event Duration is too short.')
-            end
-            SWRindF(SWRid(ii)) = false;
-            continue
-        end
-        
-        if durRP < minDurRPs
-            if DEBUG
-                disp('Ripple Event Duration is too short.')
+                disp('Event Duration is too short.')
             end
             SWRindF(SWRid(ii)) = false;
             continue

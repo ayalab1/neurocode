@@ -30,7 +30,13 @@ end
 tempKeep2 = find(tempSing==1);
 HSE.keep = sort(unique(cat(1,tempKeep,tempKeep2)));
 load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
-HSEnREM = eventIntervals(HSE,SleepState.ints.NREMstate,1);
-[~,HSE.NREM] = intersect(HSE.peaks(HSE.keep), HSEnREM.peaks);
-save([basepath '\Barrage_Files\' basename '.HSE.mat'], 'HSE');
+if ~isempty(SleepState.ints.NREMstate)
+    HSEnREM = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+    if ~isempty(HSEnREM)
+        [~,HSE.NREM] = intersect(HSE.peaks(HSE.keep), HSEnREM.peaks);
+    else
+        HSE.NREM = [];
+    end
+    save([basepath '\Barrage_Files\' basename '.HSE.mat'], 'HSE');
+end
 end

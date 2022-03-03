@@ -21,7 +21,7 @@ end
 if it > 0
     while avgNspk <= bound
         checking = burstCellDetection(normSpkThresh,loadPath);
-        load([savePath 'brstDt.cellinfo.mat']);
+        load([savePath 'useSpk.cellinfo.mat']);
         
         %% We have to actually detect events, huh
         nSigma = useMet.nSigma;
@@ -42,7 +42,7 @@ if it > 0
         while length(spikes.UID) < 1
             bound = bound - 0.1; 
             unitsForDetection(Hz,ft, numEvt);
-            load([savePath 'brstDt.cellinfo.mat']);
+            load([savePath 'useSpk.cellinfo.mat']);
             if bound < 1.2
                 error('Bound is too low, consider manually inputting units or adjusting detection parameters');
             end
@@ -96,7 +96,7 @@ elseif it < 0
     keepLoop = 1;
     while (avgNspk >= bound)&&(keepLoop)
         burstCellDetection(normSpkThresh,loadPath);
-        load([savePath 'brstDt.cellinfo.mat']);
+        load([savePath 'useSpk.cellinfo.mat']);
         
         %% We have to actually detect events, huh
         nSigma = useMet.nSigma;

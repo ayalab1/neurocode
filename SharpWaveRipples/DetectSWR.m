@@ -172,7 +172,7 @@ function [ripples] = DetectSWR(Channels, varargin)
 %%% SET DEFAULT FREE PARAMETERS %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p = inputParser;
-addParameter(p, 'basepath', pwd, @isstr);
+addParameter(p, 'basepath', pwd, @isfolder);
 addParameter(p, 'Epochs', [], @isnumeric);
 addParameter(p, 'saveMat', true, @islogical);
 addParameter(p, 'forceDetect', false, @islogical);
@@ -897,7 +897,7 @@ for ep_i = 1:Nepochs
             t = featureTs/1250; % timestamps for candidate ripple events
             bad = false(size(t));
             try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[10 Inf]);
+                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[6 Inf]);
                 bad = bad | InIntervals(t,badIntervals);
             end
             try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
@@ -917,22 +917,16 @@ for ep_i = 1:Nepochs
             figure(1); % plot a clean figure without these points and check indivudual ripples
             clf
             plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
-            scores = nan(size(ripPowerAll,1),1);
-
-
-            % figure(1); % plot a clean figure without these points and check indivudual ripples
-            % clf
-            % plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
-            % scores = nan(size(ripPowerAll,1),1);
-
             matrix = [swDiffAll ripPowerAll];
             z = bsxfun(@rdivide,bsxfun(@minus,matrix,mean(matrix(~bad,:))),std(matrix(~bad,:)));
 
+
+            scores = nan(size(ripPowerAll,1),1);
             while true % click "Ctrl+C" to exit when you feel you're done
                 figure(1);
                 colors = Bright(1000);
                 [x,y,button] = ginput(1);
-                i = findmin(abs(x-swDiffAll)+abs(y-ripPowerAll));
+                [~,i] = min(abs(x-swDiffAll.*(1-bad))+abs(y-ripPowerAll.*(1-bad)));
 
                 t = featureTs/1250;
                 tl = (1:length(lfp))'/1250;
@@ -940,15 +934,14 @@ for ep_i = 1:Nepochs
                 clf; interval = t(i) + [-1 1]*0.5; in = tl>interval(1) & tl<interval(end);
                 subplot(3,1,1);
                 plot(tl(in) - t(i),lfp(in,:)); title(num2str(t(i)));
-                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
+                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
                 legend('ripple channel','SW channel','noise channel');
                 subplot(3,1,2);
                 plot(tl(in) - t(i),double(swDiff(in)));
-                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
+                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
                 subplot(3,1,3);
                 plot(tl(in) - t(i),double(ripPower0(in)));
-                PlotHVLines(Restrict(t,interval) - t(i),'v','k--');
-
+                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
 
                 %     x = input( prompt )
                 commandwindow % select the command window
@@ -962,39 +955,32 @@ for ep_i = 1:Nepochs
                 distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
                 [~,nearestNeighbour] = min(distances,[],2);
                 estimated = scores(scored(nearestNeighbour));
-                scatter(matrix(:,1),matrix(:,2),1,estimated,'filled'); colormap(Bright); clim([0 1]);
+                selected = estimated>0.1;
+                idx1 = selected & ~bad; % final ripples
+                idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
+
+                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); clim([0 1]);
                 xlim(xlims); ylim(ylims);
                 hold on;
                 scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
                 clabel('Estimated ripple score');
                 xlabel('Sharp wave depth'); ylabel('Ripple power');
-                    
+
                 title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});
 
                 if rem(i,10)==0
                     display('saving...');
-                    save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'swDiffAll','ripPowerAll','bad','scores');
+                    save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','bad','scores');
                 end
             end
 
-            % either draw a polyglon:
+
+            % Otherwise, you can just draw a polyglon:
             selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
             
-            % or use the nearest neighbours with a threshold you've used
-            % (I tend to label an ugly ripple that is still clearly a ripple with a score of 0.2)
-            scored = find(~isnan(scores));
-            distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
-            [~,nearestNeighbour] = min(distances,[],2);
-            estimated = scores(scored(nearestNeighbour));
-            selected = estimated>0.1;
-
-            idx1 = selected & ~bad; % final ripples
-            idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
-
-
-
+            % Save your progress!
             display('saving...');
-            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
+            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
             saveas(figure(1),fullfile(basepath,'DetectSWR_manual_scoring.fig'));
 
         end
@@ -1108,7 +1094,7 @@ for ep_i = 1:Nepochs
     thresL_Rip   = prctile(ripPowerAll(idx2,1),per_thresRip);
     
     % retain SWR candidates according to clustering and thresholds
-    if check
+    if check % if the points were clustered manually, there is no need to assign further thresholds on them
         SWRind = idx1;
     else
         SWRind = idx1 & swDiffAll > thresL_swD & ripPowerAll > thresL_Rip;

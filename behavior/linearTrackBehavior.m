@@ -65,7 +65,7 @@ end
 %% Pull in basename.session to epoch data
 if restrict_to_epoch
     load([basepath,filesep,[basename,'.session.mat']]);
-    if ~isfield(session.epochs,'environment')
+    if ~isfield(session.epochs{1},'environment')
         warning('environment not labeled')
         warning('label environment and save before moving on')
         session = gui_session(session);

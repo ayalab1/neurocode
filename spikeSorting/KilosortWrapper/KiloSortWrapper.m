@@ -14,7 +14,7 @@ function savepath = KiloSortWrapper(varargin)
 %
 % Dependencies:  KiloSort (https://github.com/cortex-lab/KiloSort)
 % 
-% Copyright (C) 2016-2022 Brendon Watson and the Buzsakilab and Ralitsa Todorova (mahal threshold)
+% Copyright (C) 2016-2022 Brendon Watson and the Buzsakilab
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -34,7 +34,6 @@ addParameter(p,'GPU_id',1,@isnumeric)               % Specify the GPU_id
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output into a subfolder
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
-addParameter(p,'mahal',Inf,@isnumeric)               % Perform mahalanobis threshold by default (set to Inf to not impose threshold)
 addParameter(p,'config','',@ischar)                 % Specify a configuration file to use from the ConfigurationFiles folder. e.g. 'Omid'
 
 parse(p,varargin{:})
@@ -46,9 +45,6 @@ SSD_path = p.Results.SSD_path;
 CreateSubdirectory = p.Results.CreateSubdirectory;
 performAutoCluster = p.Results.performAutoCluster;
 config = p.Results.config;
-mahalThreshold = p.Results.mahal;
-
-if mahalThreshold<Inf, disp(['Will remove spikes exceeding a Mahalanobis distance of ' num2str(mahalThreshold)]); end
 
 cd(basepath)
 
@@ -113,30 +109,6 @@ rez = fitTemplates(rez, DATA, uproj);  % fit templates iteratively
 
 disp('Extracting final spike times')
 rez = fullMPMU(rez, DATA); % extract final spike times (overlapping extraction)
-
-%% Removes spikes that are beyond the threshold Mahalanobis distance before exporting to phy
-if mahalThreshold<Inf
-    nClusters = rez.ops.Nfilt;
-    pcs = double(reshape(rez.cProjPC,size(rez.cProjPC,1),[]));
-    nPCs = size(pcs,2);
-    rez.raw.st3 = rez.st3;
-    badID = find(accumarray(rez.st3(:,2),1)==0,1); % find a cluster ID not in use (cannot just delete spikes without phy crashing,
-    % adjusting cProj and cProjPC are not sufficient, but I don't know where the number of total spikes is saved)
-    if isempty(badID)
-        disp('Cannot perform Mahalanobis distance thresholding as no empty clusters are found to store the bad spikes.');
-    else
-        for i=1:nClusters
-            ok = find(rez.st3(:,2)==i);
-            if length(ok)>nPCs
-                d = sqrt(mahal(pcs(ok,:),pcs(ok,:)));
-                bad = ok(d>mahalThreshold);
-                rez.st3(bad,2) = badID; % set bad spikes to unused cluster
-            end
-        end
-        disp(['Removed a total of ' num2str(sum(bad)) ' bad spikes (Mahalanobis threshold) to unused cluster ' num2str(badID) ' (' num2str(badID-1) ' in phy).']);
-        rez.st3(bad,2) = find(accumarray(rez.st3(:,2),1)==0,1);
-    end
-end
 
 %% posthoc merge templates (under construction)
 % save matlab results file

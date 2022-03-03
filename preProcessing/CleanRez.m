@@ -20,6 +20,9 @@ function rez = CleanRez(rez,varargin)
 %                       (by default, undefined as you may run CleanRez before
 %                       exporting the clean rez to phy). If provided, cluster
 %                       labels will be saved in a cluster_groups.tsv file for phy.
+%     'mahalThreshold'  spikes exceeding this threshold will be considered
+%                       outliers and removed (set to Inf to not impose threshold,
+%                       default = 12). 
 %     'minNumberOfSpikes'   clusters with nSpikes<minNumberOfSpikes will be 
 %                       removed (default = 20).
 %    =========================================================================
@@ -37,6 +40,7 @@ function rez = CleanRez(rez,varargin)
 % (at your option) any later version.
 
 minNumberOfSpikes = 20;
+mahalThreshold  = 12;
 
 % Parse parameter list
 for i = 1:2:length(varargin)
@@ -49,11 +53,46 @@ for i = 1:2:length(varargin)
             if ~isfolder(savepath)
                 error('Incorrect value for property ''savepath'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
             end
-            
+        case 'mahalthreshold'
+            mahalThreshold = varargin{i+1};
+            if ~isnumeric(mahalThreshold)
+                error('Incorrect value for property ''savepath'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
+            end
         otherwise
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
     end
 end
+
+
+%% Impose a Mahalanobis distance threshold on each cluster
+
+if mahalThreshold<Inf && exist('savepath','var') && exist(savepath,'dir')
+    disp(['Removing spikes exceeding a Mahalanobis distance of ' num2str(mahalThreshold)]); 
+
+    % Read the .clu file indicating which cluster every spike is associated with
+    clu = double(readNPY(fullfile(savepath, 'spike_clusters.npy')));
+    % Load PCA space to estimate the Mahalanobis distance
+    PCA = double(readNPY(fullfile(savepath, 'pc_features.npy')));
+    PCA = reshape(PCA,size(PCA,1),[]);
+
+    badCluster = max(clu+1); % select a cluster where we will put all the outlier spikes
+    nSpikesRemoved = 0;
+    for i = 0:max(clu)
+        indices = find(clu==i);
+        if length(indices)>100
+            d = mahal(PCA(indices,:),PCA(indices,:));
+            bad = sqrt(d)>mahalThreshold;
+            nSpikesRemoved = nSpikesRemoved+sum(bad);
+            clu(indices(bad)) = badCluster;
+        end
+    end
+    disp(['Removed a total of ' num2str(sum(nSpikesRemoved)) ' bad spikes (Mahalanobis threshold) to unused cluster ' num2str(badCluster) ' in phy.']);
+    writeNPY(uint32(clu), fullfile(savepath, 'spike_clusters.npy'));
+elseif mahalThreshold<Inf
+    warning('You did not provide a phy path. Mahalanobis threshold will not be implemented.');
+end
+
+%% Find noisy clusters
 
 nClusters = rez.ops.Nfilt;
 nChannels = size(rez.U,1);
@@ -158,7 +197,7 @@ noisy = detectedOnAllElectrodes | singleBin | multiplePeaksAndTroughs | isiViola
 rez.cProj(ismember(rez.st3(:,2),find(noisy)),:) = [];
 rez.st3(ismember(rez.st3(:,2),find(noisy)),:) = [];
 
-% Optionally, export labels for phy
+% Export labels for phy
 if exist('savepath','var') && exist(savepath,'dir') % if the user has already exported to phy and wants added labels to noise clusters
     display(['Exporting results to ' fullfile(savepath,'cluster_group.tsv')]);
     if ~exist(fullfile(savepath,'cluster_group.tsv'))
@@ -171,5 +210,10 @@ if exist('savepath','var') && exist(savepath,'dir') % if the user has already ex
     for i=1:length(indices)
         fwrite(fid, sprintf('%d\t%s\r\n', indices(i), 'noise'));
     end
+    if exist('badCluster','var') % if we performed Mahalanobis distance cleaning, mark this new outlier cluster (absent from the rez file) as bad as well
+        fwrite(fid, sprintf('%d\t%s\r\n', badCluster, 'noise'));
+    end
     fclose(fid);
 end
+
+

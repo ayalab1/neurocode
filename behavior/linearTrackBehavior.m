@@ -36,7 +36,6 @@ addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
 addParameter(p,'speedTh',0.1,@isnumeric); % speed threshold for stop/run times
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat and linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
-addParameter(p,'restrict_to_epoch',true,@islogical); % restrict linearize to linear track epochs
 addParameter(p,'norm_zero_to_one',true,@islogical); % normalize linear coords 0-1
 
 parse(p,varargin{:});
@@ -46,7 +45,6 @@ lapStart = p.Results.lapStart;
 speedTh = p.Results.speedTh;
 savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
-restrict_to_epoch = p.Results.restrict_to_epoch;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 
 basename = basenameFromBasepath(basepath);
@@ -63,41 +61,42 @@ else
 end
 
 %% Pull in basename.session to epoch data
-if restrict_to_epoch
-    load([basepath,filesep,[basename,'.session.mat']]);
-    if ~isfield(session.epochs{1},'environment')
-        warning('environment not labeled')
-        warning('label environment and save before moving on')
-        session = gui_session(session);
-    end
-    startTime = [];
-    stopTime = [];
-    for ep = session.epochs
-        ep = ep{1};
-        if contains(ep.environment,'linear')
-            startTime = [startTime;ep.startTime];
-            stopTime = [stopTime;ep.stopTime];
-        end
-    end
-    linear_epochs = [startTime,stopTime];
+load([basepath,filesep,[basename,'.session.mat']]);
+if ~isfield(session.epochs{1},'environment')
+    warning('environment not labeled')
+    warning('label environment and save before moving on')
+    session = gui_session(session);
 end
+startTime = [];
+stopTime = [];
+for ep = session.epochs
+    if contains(ep{1}.environment,'linear')
+        startTime = [startTime;ep{1}.startTime];
+        stopTime = [stopTime;ep{1}.stopTime];
+    end
+end
+linear_epochs = [startTime,stopTime];
 %% Linearize postions
 % add method to select best LED/ marker
 
 % make all coords outside linear track to nan
-if restrict_to_epoch
+behavior.position.linearized = NaN(1,length(behavior.timestamps));
+
+% make linear epoch by epoch to account for different maze positions
+for ep = 1:size(linear_epochs,1)
     xy = [behavior.position.x',behavior.position.y'];
-    [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs);
-    xy(~idx) = nan;
-else
-    xy = [behavior.position.x',behavior.position.y'];
+    % find intervals in epoch
+    [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+    % make linear
+    [~,lin,~] = pca(xy(idx,:));
+    linpos = lin(:,1);
+    % normalize?
+    if norm_zero_to_one
+        linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
+    end
+    % add linear with interval epoch
+    behavior.position.linearized(idx) = linpos';
 end
-[~,lin,~] = pca(xy);
-linpos = lin(:,1);
-if norm_zero_to_one
-    linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
-end
-behavior.position.linearized = linpos';
 
 %% Get laps
 % add option to get laps from tracking or from sensors

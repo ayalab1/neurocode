@@ -180,7 +180,7 @@ addParameter(p, 'swBP', [ 2 50 ], @isnumeric);
 addParameter(p, 'ripBP', [ 80 250 ], @isnumeric);
 addParameter(p, 'per_thresswD', 10, @isnumeric); 		% percentile
 addParameter(p, 'per_thresRip', 50, @isnumeric); 		% percentile
-addParameter(p, 'WinSize', 20, @isnumeric); 			% ms
+addParameter(p, 'WinSize', 40, @isnumeric); 			% ms
 addParameter(p, 'Ns_chk', 5, @isnumeric); 				% seconds
 addParameter(p, 'thresSDswD', [0.5 2.5], @isnumeric); 	% standard deviations
 addParameter(p, 'thresSDrip', [0.5 2.5], @isnumeric); 	% standard deviations

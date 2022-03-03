@@ -1,6 +1,6 @@
-nDays = 22;
+nDays = 26;
 
-folders = cell(22,1);
+folders = cell(nDays,1);
 for i=1:length(folders),
     folders{i} = ['N:\V1test\AO52\day' num2str(i)];
 end
@@ -21,7 +21,7 @@ runSummary = false;
 SSD_path = 'D:\KiloSort';
 
 
-for i=1:length(folders),
+for i=length(folders):-1:1
     try
         basepath = folders{i}
 

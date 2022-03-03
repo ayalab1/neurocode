@@ -132,11 +132,13 @@ multiplePeaksAndTroughs = nPeaksAndTroughs>1;
 isiViolation = false(nClusters,1);
 for i=1:nClusters
     spikes = rez.st3(rez.st3(:,2)==i)/rez.ops.fs;
-    [acg,acg_t] = CCG(spikes,ones(size(spikes)),'binSize',0.003,'duration',0.031);
-    [~,idxMax] = max(acg);
-    [~,idx0] = min(abs(acg_t)); % bin t=0
-    if idxMax==idx0
-        isiViolation(i) = true;
+    if length(spikes)>1
+        [acg,acg_t] = CCG(spikes,ones(size(spikes)),'binSize',0.003,'duration',0.031);
+        [~,idxMax] = max(acg);
+        [~,idx0] = min(abs(acg_t)); % bin t=0
+        if idxMax==idx0
+            isiViolation(i) = true;
+        end
     end
 end
 

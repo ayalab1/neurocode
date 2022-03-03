@@ -31,23 +31,23 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 
 p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'tracking',[],@isnumeric);
-addParameter(p,'manipulation',true,@islogical);
-addParameter(p,'lapStart',20,@isnumeric);
-addParameter(p,'speedTh',0.1,@isnumeric);
-addParameter(p,'savemat',true,@islogical);
-addParameter(p,'show_fig',true,@islogical);
-addParameter(p,'restrict_to_epoch',true,@islogical);
+addParameter(p,'manipulation',true,@islogical); % add manipulation times to output
+addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
+addParameter(p,'speedTh',0.1,@isnumeric); % speed threshold for stop/run times
+addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat and linearTrackTrials.mat
+addParameter(p,'show_fig',true,@islogical); % do you want a figure?
+addParameter(p,'restrict_to_epoch',true,@islogical); % restrict linearize to linear track epochs
+addParameter(p,'norm_zero_to_one',true,@islogical); % normalize linear coords 0-1
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
-tracking = p.Results.tracking;
 manipulation = p.Results.manipulation;
 lapStart = p.Results.lapStart;
 speedTh = p.Results.speedTh;
 savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
 restrict_to_epoch = p.Results.restrict_to_epoch;
+norm_zero_to_one = p.Results.norm_zero_to_one;
 
 basename = basenameFromBasepath(basepath);
 
@@ -94,7 +94,9 @@ else
 end
 [~,lin,~] = pca(xy);
 linpos = lin(:,1);
-linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
+if norm_zero_to_one
+    linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
+end
 behavior.position.linearized = linpos';
 
 %% Get laps
@@ -174,8 +176,6 @@ if show_fig
     if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
         PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on;
     end
-    ylim([0 1]);
-
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
 %% Generate output variables

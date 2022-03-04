@@ -26,7 +26,8 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 %           identify, maybe table so human readable.
 %       -Improve output figure
 %       -add option to get laps from tracking or from sensors
-%
+%       -detect laps seperately per epoch in case linear track lengths are
+%       different
 %% parse inputs
 
 p=inputParser;
@@ -94,13 +95,16 @@ for ep = 1:size(linear_epochs,1)
     if norm_zero_to_one
         linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
     end
+    % min to zero
+    linpos = linpos - min(linpos);
+
     % add linear with interval epoch
     behavior.position.linearized(idx) = linpos';
 end
 
 %% Get laps
 % add option to get laps from tracking or from sensors
-laps=FindLapsNSMAadapted(behavior.timestamps,linpos,lapStart);
+laps=FindLapsNSMAadapted(behavior.timestamps,behavior.position.linearized,lapStart);
 
 outbound_start=[];outbound_stop=[];inbound_start=[];inbound_stop=[];
 for i = 1:length([laps.start_ts])-1
@@ -122,7 +126,7 @@ trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.
 
 %% Get periods of runnig
 % this method works better than LinearVelocity.m
-[~,~,~,vx,vy,~,~] = KalmanVel(linpos,linpos*0,behavior.timestamps,2);
+[~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
 v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
 
 [quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
@@ -137,8 +141,8 @@ end
 % would be to modify findPlaceFieldsAvg1D and other functions to take
 % instead the behavior structure
 for i = 1:2
-    trials{i}.positions=Restrict([behavior.timestamps' linpos],trials{i}.timestamps);
-    trials{i}.positionsRun=Restrict([behavior.timestamps' linpos],trials{i}.timestampsRun);
+    trials{i}.positions=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
+    trials{i}.positionsRun=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestampsRun);
     posTrials{i} = trials{i}.positions;
 end
 
@@ -175,6 +179,7 @@ if show_fig
     if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
         PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on;
     end
+    ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
 %% Generate output variables

@@ -34,7 +34,7 @@ p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'manipulation',true,@islogical); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
-addParameter(p,'speedTh',0.1,@isnumeric); % speed threshold for stop/run times
+addParameter(p,'speedTh',0.1,@isnumeric); % speed threshold for stop/run times (* not implemented *)
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat and linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',true,@islogical); % normalize linear coords 0-1
@@ -128,6 +128,9 @@ trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.
 % this method works better than LinearVelocity.m
 [~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
 v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
+
+warning('because data is not standardized in cm, speed thres will be the 10th percentile of V')
+speedTh = prctile(v(~isoutlier(v)),10);
 
 [quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
 

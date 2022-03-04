@@ -161,7 +161,7 @@ switch spectype
         assumedLFPtimestamps = [0:length(lfp.data)-1]./lfp.samplingRate;
         spec.timestamps = interp1(assumedLFPtimestamps,lfp.timestamps,spec.timestamps,'nearest');
         
-        keeptimes = InIntervals(spec.timestamps,ints);
+        keeptimes = ce_InIntervals(spec.timestamps,ints);
         
         spec.amp = log10(abs(spec.data(:,keeptimes)'));
         spec.data = spec.data(:,keeptimes)';

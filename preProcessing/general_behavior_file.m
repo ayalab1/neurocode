@@ -144,7 +144,16 @@ if any(dlc_flag)
     units = 'pixels';
     source = 'deeplabcut';
     
-    t = t(1:length(x));
+    if length(t) > length(x)
+        t = t(1:length(x));
+    elseif length(x) > length(t)
+        x = x(1:length(t));
+        y = y(1:length(t));
+        % adjust other tracker points
+        for name = fields(extra_points)'
+            extra_points.(name{1}) = extra_points.(name{1})(1:length(t));
+        end
+    end
 
     if isfield(tracking, 'events')
         if isfield(tracking.events,'subSessions')

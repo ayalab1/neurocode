@@ -68,9 +68,17 @@ if isempty(event)
     t = linspace(duration(1),duration(2),nBins);
     return
 end
-peths = fastPETH(data,event,duration);
-[m,~,t] = SyncHist(peths,size(event,1)*ones(size(peths)), 'nBins', nBins, 'smooth', smooth, 'mode', 'mean', 'durations', duration);
+if size(data,2)==1 && exist('fastPETH')
+    peths = fastPETH(data,event,duration);
+    j = size(event,1)*ones(size(peths));
+else
+    [peths, j] = Sync(data, event, 'durations', duration);
+end
+[m,~,t] = SyncHist(peths,j, 'nBins', nBins, 'smooth', smooth, 'mode', 'mean', 'durations', duration);
 m = m(:)';
+if isempty(m)
+    m = zeros(1,nBins);
+end
 
 
 

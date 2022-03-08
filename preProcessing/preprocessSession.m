@@ -44,7 +44,7 @@ addParameter(p,'digitalInputs',false,@islogical);
 addParameter(p,'digitalChannels',[],@isnumeric);
 addParameter(p,'getAcceleration',false,@islogical);
 addParameter(p,'cleanArtifacts',false,@islogical);
-addParameter(p,'stateScore',false,@islogical);
+addParameter(p,'stateScore',true,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',true,@islogical);

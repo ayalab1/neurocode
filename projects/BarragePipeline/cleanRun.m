@@ -45,7 +45,7 @@ main = "Y:\SMproject\";
 "AO39\day7"; "AO39\day9"; "AO39\day16"; "AO39\day17"];
 %}
 
-paths = ["AO25\day10"];
+paths = ["AO13\day17"];
 bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
 comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
@@ -53,7 +53,7 @@ comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 ifHSE = 1; %Run detection
     ifUseMet = 0; %Load in previous metrics
     ifDetUn = 1; %Choose only high firing rate units
-    ifPickUn = 1; %Choose only units that fire many spikes during events
+    ifPickUn = 0; %Choose only units that fire many spikes during events
     ifPare = 1; %Keep only the events with so many spikes
 ifPSTH = 1; %Get analytical plots for each run
 ifAnalysis = 0; %Run analytical plots
@@ -63,7 +63,7 @@ bigCCG = 0; %Get population CCG
 bigDur = 0; %Get population event duration distribution (box plot)
 
 if ~ifUseMet
-    useMet.nSigma = 4;
+    useMet.nSigma = 3;
     useMet.tSmooth = 0.02;
     useMet.binSz = 0.005;
     useMet.tSepMax = 0.005; %was playing with 0.005, 0.1
@@ -74,10 +74,10 @@ if ~ifUseMet
     useMet.estd = (useMet.nSigma-0.1); %sets end to nSig-sstd %(useMet.nSigma-2);
     useMet.EMGThresh = 0.8;
     
-    useMet.Hz = 30; useMet.ft = 0.2; useMet.numEvt = 2;
-    useMet.bound = 3.475; useMet.spkThresh = 0.3;
+    useMet.Hz = 40; useMet.ft = 0.2; useMet.numEvt = 2;
+    useMet.bound = 3; useMet.spkThresh = 0.3;
     
-    useMet.unMin = 2; useMet.spkNum = 4; useMet.spkHz = 60; useMet.unMax = 0; 
+    useMet.unMin = 2; useMet.spkNum = 5; useMet.spkHz = 80; useMet.unMax = 0; 
     useMet.DetUn = ifDetUn; useMet.PickUn = ifPickUn; useMet.ifPare = ifPare;
 end
 
@@ -110,6 +110,12 @@ for p = 1:length(paths)
         if CA2pyrRun %this only loads if it exists, is it empty
             if ifUseMet
                 load([savePath 'useMetNew.mat']);
+                if ~isfield(useMet,'DetUn') %catch if this previously wasn't saved
+                    useMet.DetUn = 1;
+                    useMet.PickUn = 0;
+                    useMet.ifPare = 1;
+                    save([savePath 'useMetNew.mat'],'useMet');
+                end
             end
             if ~exist(strcat(basepath,'\',basename,'.SleepState.states.mat'))
                 SleepState = SleepScoreMaster(basepath);

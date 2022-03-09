@@ -94,7 +94,7 @@ end
 sgtitle('Pyramidal PSTH');
 saveas(gcf,[plotSave 'PSTH.png']);
 
-subNum = 1;
+subNum = 1; intEmpt = 0;
 for i = 1:length(check)
     for j=1:length(regions)
         regCheck = regions{j};
@@ -119,12 +119,13 @@ for i = 1:length(check)
                 save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
             else
                 warning(['No interneurons in ' br]);
+                intEmpt = intEmpt+1;
             end
             subNum = subNum+1; % should max at 4
         end
     end
 end
-if ~isempty(spikes.UID)
+if ~(intEmpt == length(regions))
     sgtitle('Interneuron PSTH');
     saveas(gcf,[plotSave 'PSTHint.png']);
 end

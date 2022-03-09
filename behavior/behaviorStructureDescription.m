@@ -24,6 +24,9 @@
 
 %   position:       .x, .y, .z spatial position and .linearized (a projection of 2D postions
 %                   into a 1 dimensional representation). Default units: cm.
+%   positionTrials: {[t x y]} or {[t linearized]}. Cell array with postions separted by trial type 
+%                   (e.g. the two running directions in the linear track). This is redundant but 
+%                   is the input that the firingMap and other functions take (from FMAT format)
 %   speed:          a 1D representation of the running speed (cm/s).
 %   acceleration:   a 1D representation of the acceleration (cm^2/s).
 

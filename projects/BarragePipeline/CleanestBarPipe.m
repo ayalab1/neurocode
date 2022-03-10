@@ -103,10 +103,10 @@ load([savePath 'HSEfutEVT.mat']);
 load([savePath 'HSE.mat']);
 trial = size(evtSave,1);
 HSEn2.timestamps = evtSave{trial,1};
-HSEn2.timestamps = HSEn2.timestamps(HSE.keep,:);
+HSEn2.timestamps = HSEn2.timestamps(HSE.keep(HSE.NREM),:);
 HSEn2.peaktimes = evtSave{trial,2};
-HSEn2.peaktimes = HSEn2.peaktimes(HSE.keep,:);
-save([basename '.HSE.events.mat'], 'HSEnrem');
+HSEn2.peaktimes = HSEn2.peaktimes(HSE.keep(HSE.NREM),:);
+save([basename '.HSE.events.mat'], 'HSEn2');
 NeuroScope2
 
 %% Run with previous metrics (or mostly previous metrics)

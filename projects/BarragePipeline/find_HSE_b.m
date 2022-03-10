@@ -110,7 +110,7 @@ if (recordMetrics&&loadspkhist)
 end
 
 if (runNum==0) %if runNum isn't set, find out what it should be
-    if exist([savePath 'HSEfutEVT.mat']);
+    if exist([savePath 'HSEfutEVT.mat'])
         load([savePath 'HSEfutEVT.mat']);
         runNum = size(evtSave,1) + 1;
     else

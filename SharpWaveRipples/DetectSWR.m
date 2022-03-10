@@ -977,7 +977,9 @@ for ep_i = 1:Nepochs
 
             % Otherwise, you can just draw a polyglon:
             selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
-            
+            idx1 = selected & ~bad; % final ripples
+            idx2 = ~selected & ~bad;
+
             % Save your progress!
             display('saving...');
             save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');

@@ -32,9 +32,14 @@ else
 	positions = positions(:);
 end
 
-if ~isastring(direction,'h','v'),
+if ~isastring(direction,'h','v','b'),
 	varargin = {direction,varargin{:}};
 	direction = 'v';
+end
+
+if strcmp(direction,'b'), % both
+    PlotHVLines(positions,'h',varargin{:});
+    PlotHVLines(positions,'v',varargin{:});
 end
 
 hold on;

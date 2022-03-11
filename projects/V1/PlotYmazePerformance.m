@@ -157,6 +157,7 @@ end
 
 figure(2)
 clf
+set(gcf,'position',[1921 1 1920 1000]); % make fugure big so legends are visible when exported
 
 subplot(2,3,1);
 counts = [sum(animalWentRight) nTrials 0.5];

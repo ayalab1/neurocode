@@ -47,7 +47,14 @@ if isfield(HSE, 'keep')
     HSE.amplitudes = HSE.amplitudes(HSE.keep);
     HSE.duration = HSE.duration(HSE.keep);
 end
-HSEnrem = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+if isfield(HSE,'keep')&&isfield(HSE,'NREM')
+        HSEnrem.timestamps = HSE.timestamps(HSE.NREM,:);
+        HSEnrem.peaks = HSE.peaks(HSE.NREM);
+        HSEnrem.amplitudes = HSE.amplitudes(HSE.NREM);
+        HSEnrem.duration = HSE.duration(HSE.NREM);
+else
+    HSEnrem = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+end
 
 regions = unique(cell_metrics.brainRegion);
 check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];

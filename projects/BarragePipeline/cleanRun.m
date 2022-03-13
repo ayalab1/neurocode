@@ -45,16 +45,20 @@ main = "Y:\SMproject\";
 "AO39\day7"; "AO39\day9"; "AO39\day16"; "AO39\day17"];
 %}
 
-paths = ["AO13\day17"];
+% paths = ["AO10\day20"; "AO10\day27"; "AO11\day15";...
+%     "AO12\day8"; "AO12\day9"; "AO12\day13"; "AO12\day15";...
+%     "AO12\day17"; "AO12\day18"; "AO13\day13"; "AO13\day14";...
+%     "AO13\day15"; "AO16\day12"; "AO17\day7"; "AO20\day15"; "AO22\day12"];
+paths = "AO26\day11";
 bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
 comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
 
 %% Set main parameters
 ifHSE = 1; %Run detection
-    ifUseMet = 0; %Load in previous metrics
-    ifDetUn = 1; %Choose only high firing rate units
-    ifPickUn = 0; %Choose only units that fire many spikes during events
-    ifPare = 1; %Keep only the events with so many spikes
+ifUseMet = 1; %Load in previous metrics
+ifDetUn = 1; %Choose only high firing rate units
+ifPickUn = 0; %Choose only units that fire many spikes during events
+ifPare = 1; %Keep only the events with so many spikes
 ifPSTH = 1; %Get analytical plots for each run
 ifAnalysis = 0; %Run analytical plots
 ifBigPSTH = 0;
@@ -63,21 +67,21 @@ bigCCG = 0; %Get population CCG
 bigDur = 0; %Get population event duration distribution (box plot)
 
 if ~ifUseMet
-    useMet.nSigma = 3;
+    useMet.nSigma = 4;
     useMet.tSmooth = 0.02;
     useMet.binSz = 0.005;
-    useMet.tSepMax = 0.005; %was playing with 0.005, 0.1
+    useMet.tSepMax = 0.01; %was playing with 0.005, 0.1
     useMet.mindur = 0.05;
     useMet.maxdur = 10;
     useMet.lastmin = 0.05;
     useMet.sstd = -1*(useMet.nSigma-0.1); %sets start to nSig+sstd %-1*(useMet.nSigma-2);
     useMet.estd = (useMet.nSigma-0.1); %sets end to nSig-sstd %(useMet.nSigma-2);
-    useMet.EMGThresh = 0.8;
+    useMet.EMGThresh = 0.7;
     
-    useMet.Hz = 40; useMet.ft = 0.2; useMet.numEvt = 2;
-    useMet.bound = 3; useMet.spkThresh = 0.3;
+    useMet.Hz = 50; useMet.ft = 0.1; useMet.numEvt = 2;
+    useMet.bound = 2.5; useMet.spkThresh = 0.3;
     
-    useMet.unMin = 2; useMet.spkNum = 5; useMet.spkHz = 80; useMet.unMax = 0; 
+    useMet.unMin = 2; useMet.spkNum = 5; useMet.spkHz = 80; useMet.unMax = 0;
     useMet.DetUn = ifDetUn; useMet.PickUn = ifPickUn; useMet.ifPare = ifPare;
 end
 
@@ -122,7 +126,7 @@ for p = 1:length(paths)
             else
                 load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
             end
-
+            
             % Detect high firing units
             if ifDetUn||(ifUseMet&&useMet.DetUn)
                 unitsForDetection(useMet.Hz,useMet.ft,useMet.numEvt);
@@ -143,7 +147,7 @@ for p = 1:length(paths)
             else
                 note_all = "No pre-vetting";
             end
-
+            
             if exist([savePath 'HSEfutEVT.mat'])
                 load([savePath 'HSEfutEVT.mat']);
                 runLast = size(evtSave,1);
@@ -151,7 +155,7 @@ for p = 1:length(paths)
                 runLast = 0;
             end
             runNum = runLast+1;
-            load([basepath '\' basename '.cell_metrics.cellinfo.mat']);    
+            load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
             if ifDetUn
                 load([savePath 'useSpk.UIDkeep.mat']);
                 load([savePath 'useSpk.cellinfo.mat']); %load in the spikes that we've picked and run to save
@@ -168,14 +172,16 @@ for p = 1:length(paths)
                 note_all = "Failed DetectUn";
             end
             HSE = find_HSE_b('spikes',spikes,...
-                            'nSigma',useMet.nSigma,'binSz',useMet.binSz,...
-                            'tSmooth',useMet.tSmooth,'tSepMax',useMet.tSepMax,...
-                            'mindur',useMet.mindur,'maxdur',useMet.maxdur,...
-                            'lastmin',useMet.lastmin,'EMGThresh',useMet.EMGThresh,...
-                            'Notes',note_all,'sstd',useMet.sstd,'estd',useMet.estd,...
-                            'recordMetrics',true,'neuro2',true,'runNum',runNum);
+                'nSigma',useMet.nSigma,'binSz',useMet.binSz,...
+                'tSmooth',useMet.tSmooth,'tSepMax',useMet.tSepMax,...
+                'mindur',useMet.mindur,'maxdur',useMet.maxdur,...
+                'lastmin',useMet.lastmin,'EMGThresh',useMet.EMGThresh,...
+                'Notes',note_all,'sstd',useMet.sstd,'estd',useMet.estd,...
+                'recordMetrics',true,'neuro2',true,'runNum',runNum);
             if ifPare||(ifUseMet&&useMet.ifPare)
                 HSE = pareEvt(HSE, spikes, useMet.unMin, useMet.spkNum, useMet.spkHz, useMet.unMax);
+            else
+                HSE = pareEvt(HSE, spikes, 0, 0, 0, 0);
             end
             % Save
             save([savePath 'useMetNew.mat'],'useMet');
@@ -190,7 +196,7 @@ for p = 1:length(paths)
             warning(strcat('No CA2pyr for ', paths(p), ' :('));
         end
     end
-        
+    
     if ~ifHSE||(CA2pyrRun&&(~isempty(SleepState.ints.NREMstate))&&(~isempty(HSE.NREM)))
         if ifAnalysis
             BarAnalysis(strcat(main,paths(p)));
@@ -238,7 +244,7 @@ if ifBigPSTH
 end
 
 if ifCum
-    NewMetComb("rat");
+    NewMetComb("mouse");
 end
 if bigDur
     figure(2);

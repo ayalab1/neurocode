@@ -4,7 +4,6 @@ function [tracking,field_names] = process_and_sync_dlc(varargin)
 % Run this after you have exported deeplabcut csv results
 %
 % TODO: 
-%       -make multi tracking points available (multi-points on animal)
 %       -make option to just load and format csv without sync
 %       -make more robust to file exist assumptions 
 %           (ex. MergePoints.events.mat, digitalIn.events.mat)

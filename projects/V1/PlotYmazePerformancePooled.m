@@ -1,9 +1,9 @@
 animals = {'Unimplanted\m01','Unimplanted\m02','Unimplanted\m03','Unimplanted\m04','V1Jean','AO52'}; % Creates a cell with all the animals.
 add = [0 0 0 0 17 8];% Animals sessions have different numbers for the same day, so adding 17 and 8 to V1Jean and AO56 put them in the same number.
 fontsize = 15;% Just initiating some parameters.
-listOfDays = 20:24; % Specify the days of interest
+listOfDays = [24 26 27]; % Specify the days of interest
 
-[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number). "length(20:nDays)" if I only want to represent the last 4 days, for example.
+[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number). 
 skipStartCell = cell(length(animals),length(listOfDays));% Creates a cell
 for i=1:length(animals) % This looks for all the animals going through all of them
     animal = animals{i};
@@ -27,7 +27,7 @@ clf
 p = (n_correct./n_trials); 
 p = p*100; %proportion of correct trials over the total number
 
-z = nan(1,nDays);
+z = nan(1,length(listOfDays));
 for dayNumber = 1:length(listOfDays),z(dayNumber) = zBinomialComparison(sum(n_correct(:,dayNumber)),sum(n_trials(:,dayNumber)),0.5); end
 
 
@@ -59,7 +59,7 @@ p = (n_right./n_trials);
 p = p*100;
 % p(mean(p,2)<50,:) = 100 - p(mean(p,2)<50,:);
 
-z = nan(1,nDays);
+z = nan(1,length(listOfDays));
 for i=1:length(listOfDays),z(i) = zBinomialComparison(sum(p(:,i).*n_trials(:,i)/100),sum(n_trials(:,i)),0.5); end
 
 
@@ -94,7 +94,7 @@ p = (n_skipStart./n_trials);
 p = p;
 % p(mean(p,2)<50,:) = 100 - p(mean(p,2)<50,:);
 
-z = nan(1,nDays);
+z = nan(1,length(listOfDays));
 for i=1:length(listOfDays),z(i) = zBinomialComparison(sum(p(:,i).*n_trials(:,i)/100),sum(n_trials(:,i)),0.5); end
 
 

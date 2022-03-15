@@ -10,59 +10,22 @@
 % save('Z:\home\Lindsay\Barrage\mousePaths.mat', 'paths_save');
 
 %% Set paths to be run
-% main = "Z:\Data\AYAold\";
-main = "Y:\SMproject\";
-% paths = ["AYA10\day31"];
-% paths = ["AB4\day03"; "AB4\day07"; "AB4\day08"; "AB4\day09"; "AB4\day11";...
-%     "AYA6\day17"; "AYA6\day19"; "AYA6\day20"; ...
-%     "AYA7\day19" ; "AYA7\day22"; "AYA7\day24"; ...
-%     "AYA7\day25"; "AYA7\day27"; ...
-%     "AYA9\day15"; "AYA9\day16"; "AYA9\day17"; "AYA9\day20"; ...
-%     "AYA10\day25"; "AYA10\day27"; "AYA10\day31"; "AYA10\day32"; "AYA10\day34"];
-%no AYA7\day20 or day30
-%{
-["AO10\day14"; "AO10\day15"; "AO10\day16"; "AO10\day20"; "AO10\day23"; "AO10\day26"; "AO10\day27";...
-    "AO11\day15"; "AO11\day17"; "AO11\day19"; "AO11\day20"; "AO11\day23"; "AO11\day26"; "AO11\day27"; "AO11\day34";...
-    "AO12\day8"; "AO12\day9"; "AO12\day11"; "AO12\day13"; "AO12\day15"; "AO12\day17"; "AO12\day18";...
-    "AO13\day10"; "AO13\day11"; "AO13\day13"; "AO13\day14"; "AO13\day15"; "AO13\day17"; "AO13\day19";...
-    "AO14\day10"; "AO14\day11"; "AO14\day12"; "AO14\day13"; "AO14\day14"; "AO14\day15";...
-    "AO15\day9"; "AO15\day10"; "AO15\day11"; "AO15\day12"; "AO15\day13"; "AO15\day14";...
-    "AO16\day11"; "AO16\day12";...
-    "AO17\day7"; "AO17\day9"; "AO17\day12";...
-    "AO19\day9";...
-    "AO20\day11"; "AO20\day13"; "AO20\day15"; "AO20\day18"; "AO20\day21"; "AO20\day25"; "AO20\day28";...
-    "AO22\day11"; "AO22\day12"; "AO22\day13"; "AO22\day16";...
-    "AO23\day13"; "AO23\day18"; "AO23\day21"; "AO23\day22"; "AO23\day25"];
-
-"AO24\day10"; "AO24\day11";...
-"AO25\day10"; "AO25\day11"; "AO25\day12"; "AO25\day17";...
-"AO26\day10"; "AO26\day11"; "AO26\day13";...
-"AO27\day9";...
-"AO28\day11"; "AO28\day14";...
-"AO29\day8"; "AO29\day9";...
-"AO31\day10";...
-"AO33\day8"; AO33\day11";...
-"AO39\day7"; "AO39\day9"; "AO39\day16"; "AO39\day17"];
-%}
-
-% paths = ["AO10\day20"; "AO10\day27"; "AO11\day15";...
-%     "AO12\day8"; "AO12\day9"; "AO12\day13"; "AO12\day15";...
-%     "AO12\day17"; "AO12\day18"; "AO13\day13"; "AO13\day14";...
-%     "AO13\day15"; "AO16\day12"; "AO17\day7"; "AO20\day15"; "AO22\day12"];
-paths = "AO26\day11";
-bigSave = 'Z:\home\Lindsay\Barrage\mousePaths.mat'; %change to mouse, potentially - change below as well
-comSave = 'Z:\home\Lindsay\Barrage\combinedPaths.mat';
+useSess = readtable('Z:\home\Lindsay\Barrage\rat_sessions.csv');
+% readtable('Z:\home\Lindsay\Barrage\rat_sessions.csv');
 
 %% Set main parameters
-ifHSE = 1; %Run detection
+ifHSE = 0; %Run detection
 ifUseMet = 1; %Load in previous metrics
 ifDetUn = 1; %Choose only high firing rate units
 ifPickUn = 0; %Choose only units that fire many spikes during events
 ifPare = 1; %Keep only the events with so many spikes
-ifPSTH = 1; %Get analytical plots for each run
+ifPSTH = 0; %Get analytical plots for each run
 ifAnalysis = 0; %Run analytical plots
 ifBigPSTH = 0;
-ifCum = 0; %Run cumulative metrics analysis
+ifCum = 1; %Run cumulative metrics analysis
+    ifNewRip = 0;
+    ifNewBar = 0;
+    ifSkipPSTH = 0;
 bigCCG = 0; %Get population CCG
 bigDur = 0; %Get population event duration distribution (box plot)
 
@@ -76,23 +39,23 @@ if ~ifUseMet
     useMet.lastmin = 0.05;
     useMet.sstd = -1*(useMet.nSigma-0.1); %sets start to nSig+sstd %-1*(useMet.nSigma-2);
     useMet.estd = (useMet.nSigma-0.1); %sets end to nSig-sstd %(useMet.nSigma-2);
-    useMet.EMGThresh = 0.7;
+    useMet.EMGThresh = 0.8;
     
-    useMet.Hz = 50; useMet.ft = 0.1; useMet.numEvt = 2;
+    useMet.Hz = 45; useMet.ft = 0.1; useMet.numEvt = 2;
     useMet.bound = 2.5; useMet.spkThresh = 0.3;
     
-    useMet.unMin = 2; useMet.spkNum = 5; useMet.spkHz = 80; useMet.unMax = 0;
+    useMet.unMin = 2; useMet.spkNum = 5; useMet.spkHz = 70; useMet.unMax = 0;
     useMet.DetUn = ifDetUn; useMet.PickUn = ifPickUn; useMet.ifPare = ifPare;
 end
 
 %% Iterate through our sessions
-for p = 1:length(paths)
+for p = 1:size(useSess,1)
     % Set naming conventions for session p
-    cd(strcat(main,paths(p)));
-    curPath = convertStringsToChars(paths(p));
-    basepath = convertStringsToChars(strcat(main,curPath));
-    basename = convertStringsToChars(basenameFromBasepath(basepath));
-    animName = animalFromBasepath(basepath);
+    cd(useSess.basepath{p});
+    curPath = [useSess.animal{p} '\' useSess.basename{p}];
+    basepath = useSess.basepath{p};
+    basename = useSess.basename{p};
+    animName = useSess.animal{p};
     if ~exist(strcat(basepath,'\','Barrage_Files'))
         mkdir('Barrage_Files');
     end
@@ -185,13 +148,6 @@ for p = 1:length(paths)
             end
             % Save
             save([savePath 'useMetNew.mat'],'useMet');
-            load(bigSave);
-            paths_save = [paths_save; strcat(main,paths(p))];
-            save(bigSave, 'paths_save');
-            paths_save = [];
-            load(comSave);
-            paths_save = [paths_save; strcat(main,paths(p))];
-            save(comSave, 'paths_save');
         else
             warning(strcat('No CA2pyr for ', paths(p), ' :('));
         end
@@ -199,7 +155,7 @@ for p = 1:length(paths)
     
     if ~ifHSE||(CA2pyrRun&&(~isempty(SleepState.ints.NREMstate))&&(~isempty(HSE.NREM)))
         if ifAnalysis
-            BarAnalysis(strcat(main,paths(p)));
+            BarAnalysis(useSess.basepath{p});
         end
         if ifPSTH
             regionPSTH();
@@ -213,7 +169,7 @@ for p = 1:length(paths)
                 totDurX = HSE.timestamps(:,2)-HSE.timestamps(:,1);
                 useGroup{ugc} = animName;
                 totDurG = ugc*ones(size(totDurX,1),1);
-                totDurLab = [paths(p)];
+                totDurLab = [curPath];
             else
                 tempName = [];
                 tempName = animName;
@@ -226,13 +182,13 @@ for p = 1:length(paths)
                 tempDur = []; tempDur = HSE.timestamps(:,2)-HSE.timestamps(:,1);
                 totDurX = [totDurX; tempDur];
                 totDurG = [totDurG; ugc*ones(size(tempDur,1),1)];
-                totDurLab = [totDurLab paths(p)];
+                totDurLab = [totDurLab curPath];
             end
         end
         if bigCCG
             load([savePath 'CCG_dat.mat']);
             if p == 1
-                CCGsum = zeros(length(CCG_dat.time),length(paths));
+                CCGsum = zeros(length(CCG_dat.time),size(useSess,1));
             end
             CCGsum(:,p) = zscore(CCG_dat.y);
         end
@@ -244,13 +200,21 @@ if ifBigPSTH
 end
 
 if ifCum
-    NewMetComb("mouse");
+    if contains(useSess.basepath{1},'Y:\')
+        NewMetComb([ifNewRip ifNewBar ifSkipPSTH], "mouse");
+    else
+        NewMetComb([ifNewRip ifNewBar ifSkipPSTH], "rat");
+    end
 end
 if bigDur
     figure(2);
     boxplot(totDurX,totDurG);title('Barrage Duration Across Animals');ylabel('Duration (s)');
     xticklabels(useGroup);
-    saveas(gcf,'Z:\home\Lindsay\Barrage\ratEvtBox.png');
+    if contains(useSess.basepath{1}, 'Z:\')
+        saveas(gcf,'Z:\home\Lindsay\Barrage\ratEvtBox.png');
+    else
+        saveas(gcf,'Z:\home\Lindsay\Barrage\mouseEvtBox.png');
+    end
 end
 if bigCCG
     CCG_mean = mean(CCGsum,2);
@@ -261,5 +225,9 @@ if bigCCG
     plot(CCG_dat.time, CCG_mean, 'k');
     plot(CCG_dat.time,CCG_low, 'Color', [0.25 0.25 0.25], 'LineStyle', ':');
     plot(CCG_dat.time,CCG_high, 'Color', [0.25 0.25 0.25], 'LineStyle', ':');
-    saveas(gcf,'Z:\home\Lindsay\Barrage\ratCCG.png');
+    if contains(useSess.basepath{1}, 'Z:\')
+        saveas(gcf,'Z:\home\Lindsay\Barrage\ratCCG.png');
+    else
+        saveas(gcf,'Z:\home\Lindsay\Barrage\mouseCCG.png');
+    end
 end

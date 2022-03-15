@@ -186,12 +186,12 @@ end
 % need improvement
 if show_fig
     figure;
-    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
-    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
-    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
-    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
+    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on; %black line - all linearized positions
+    plot(behavior.timestamps,v,'r','LineWidth',2);hold on; % red line - velocity
+    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on; % blue regions - trial 1
+    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on; % green regions - trial 2
     if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
-        PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on;
+        PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on; % megenta region - stimulation
     end
     ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);

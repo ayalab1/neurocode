@@ -49,6 +49,10 @@ for i=1:nTrials
     skipStart(i) = length(photodetectors)-1;
 end
 
+if exist(fullfile(basepath,[sessionID '_behavioral_performance.fig']),'file')
+    return
+end
+
 figure(1)
 clf
 set(gcf,'position',[1 1 1920 1000]); % make fugure big so legends are visible when exported

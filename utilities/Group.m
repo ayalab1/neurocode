@@ -31,4 +31,4 @@ end
 % groups = repelem(1:length(varargin),cellfun(@numel,varargin));
 % grouped = [values groups];
 %
-% grouped = sortrows(grouped);
+grouped = sortrows(grouped);

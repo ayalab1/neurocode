@@ -145,6 +145,11 @@ for i = 1:2:length(varargin),
     end
 end
 
+% Make sure that position timestamps are unique
+positions = sortrows(positions);
+ignore = diff(positions(:,1))<=0;
+positions(ignore,:) = [];
+
 % Defaults (training)
 if isdscalar(training), %If 'training' was provided as a portion, convert it to an interval
     training = [-Inf positions(1,1)+training*(positions(end,1)-positions(1,1))];

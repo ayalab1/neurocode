@@ -65,6 +65,7 @@ end
 %% SPLIT INTERVALS INTO PIECES OF EQUAL ABSULUTE LENGTHS (pieceSize)
 d = diff(intervals,[],2);
 piecesPerInterval = floor(d./pieceSize);
+indicesNotEmpty = find(piecesPerInterval>0);
 firstPiecePosition = CumSum([1;piecesPerInterval(1:end-1)]);
 % create the pieces by filling in the interval starts in their respective positions
 pieces = zeros(sum(piecesPerInterval),1);
@@ -76,6 +77,7 @@ if pieceSize<1, time2add = round(time2add/pieceSize)*pieceSize; end %fix underfl
 pieces = CumSum(pieces,reset) + time2add; %repeat first pieces for the duration of the interval
 pieces(:,2) = pieces(:,1)+pieceSize;
 ids = CumSum(reset);
+ids = indicesNotEmpty(ids);
 
 end
 

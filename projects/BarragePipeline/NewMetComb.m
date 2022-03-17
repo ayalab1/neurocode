@@ -1,8 +1,38 @@
 %% Cumulative Metrics for Figures 
 
-function NewMetComb(combine)
-if nargin < 1
+function NewMetComb(logicIn,combine)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% NewMetComb
+%
+% This script is for calculating population metrics across many animals and
+% many sessions.
+%
+% INPUTS
+% logicIn -> array containing binary values denoting:
+%   (1) NEWRIPS --> whether or not new ripples have been detected since 
+%   the last run (default 1)
+%   (2) NEWEVTS --> whether or not new barrages have been detected since 
+%   the last run (default 1)
+%   (3) skipPSTH --> whether or not we should calculate a population PSTH
+%   (default 0, which DOES plot the PSTH)
+% combine -> string denoting if we should be plotting mouse data ("mouse"),
+% rat data ("rat"), or both ("both")
+%
+% Lindsay K, 3/22
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+if nargin < 2
     combine = "both";
+elseif nargin < 1
+    NEWRIPS = 1;
+    NEWEVTS = 1;
+    skipPSTH = 0;
+    combine = "both";
+else
+    NEWRIPS = logicIn(1);
+    NEWEVTS = logicIn(2);
+    skipPSTH = logicIn(3);
 end
 if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))||(nargin < 1)
     warning('Must choose mouse, rat, or both. Defaulting to both');
@@ -10,16 +40,15 @@ if ~((combine == "mouse")||(combine == "rat")||(combine == "both"))||(nargin < 1
 end
 savePath = ('Z:\home\Lindsay\Barrage\');
 if combine == "both"
-    load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
+    useSess = readtable('Z:\home\Lindsay\Barrage\rat_sessions.csv');
+    useSess_temp2 = readtable('Z:\home\Lindsay\Barrage\mouse_sessions.csv');
+    useSess(size(useSess,1)+1:size(useSess,1)+size(useSess_temp2,1),:) = useSess_temp2; clear useSess_temp2
 elseif combine == "mouse"
-    load('Z:\home\Lindsay\Barrage\mousePaths.mat');
+    useSess = readtable('Z:\home\Lindsay\Barrage\mouse_sessions.csv');
 else
-    load('Z:\home\Lindsay\Barrage\ratPaths.mat');
+    useSess = readtable('Z:\home\Lindsay\Barrage\rat_sessions.csv');
 end
 
-NEWEVTS = 0;
-NEWRIPS = 0;
-skipPSTH=1;
 %% Initialize cells and arrays
 evtDur = []; %event durations
 evtDur_tot = [];
@@ -47,15 +76,16 @@ gainFRis = cell(8,1);
 burstcp = cell(8,1);
 
 %% Iterate through saved sessions
-for p = 1:size(paths_save,1) 
+for p = 1:size(useSess,1) 
 % for p = 1:2
 %     disp(paths_save(p)); %just need some form of progress bar
 %     fprintf('This message is sent at time %s\n', datestr(now,'HH:MM:SS'));
-    ses = paths_save(p);
+    ses = useSess.basepath{p};
+    basepath = useSess.basepath{p};
+    basename = useSess.basename{p};
+    animName = useSess.animal{p};
     cd(ses);
-    basepath = pwd;
-    basename = basenameFromBasepath(basepath);
-    animName = animalFromBasepath(basepath);
+    
     if contains(basepath, 'Z:\')
         label = "rat";
     elseif contains(basepath, 'Y:\')
@@ -116,7 +146,11 @@ for p = 1:size(paths_save,1)
         evtDur(p,1:length(binsEvtDur)) = histc(barSpkEventTimes.EventDuration, binsEvtDur);
         evtDur(p,1:length(binsEvtDur)) = evtDur(p,1:length(binsEvtDur))/sum(evtDur(p,1:length(binsEvtDur)));
         evtDur_tot = [evtDur_tot; barSpkEventTimes.EventDuration];
-        sesDur = (session.epochs{1,end}.stopTime-session.epochs{1,1}.startTime);
+        try
+            sesDur = (session.epochs{1,end}.stopTime-session.epochs{1,1}.startTime);
+        catch
+            sesDur = session.general.duration;
+        end
         
         evtDurRip(p,1:length(binsEvtDur)) = histc(ripSpkEventTimes.EventDuration, binsEvtDur);
         evtDurRip(p,1:length(binsEvtDur)) = evtDurRip(p,1:length(binsEvtDur))/sum(evtDurRip(p,1:length(binsEvtDur)));
@@ -150,7 +184,16 @@ for p = 1:size(paths_save,1)
         absFR2gt = cell(1,size(spikesPYR.UID,2));
         nSpkEach = unitBar.nSpkEach; EventDuration = barSpkEventTimes.EventDuration;
         nSpkEachRip = unitRip.nSpkEach; EventDurationRip = ripSpkEventTimes.EventDuration;
-        Narr = cell_metrics.tags.N; Parr = cell_metrics.tags.P;
+        try
+            Narr = cell_metrics.tags.N; 
+        catch
+            Narr = []; %warning(['No N cells in session: ' basepath]);
+        end
+        try
+            Parr = cell_metrics.tags.P;
+        catch
+            Parr = []; %warning(['No N cells in session: ' basepath]);
+        end
         parfor u = 1:size(spikesPYR.UID,2)
             % Absolute FR during barr (per region, box)
             tSmooth = 0.02;
@@ -729,12 +772,15 @@ xlim([1 49]);ylim([-0.1 0.3]);
 xticks(xlab); xticklabels(xticklab);title('CA3');hold on;
 line([round(length(bigPSTH.bin_time)/2)-1 round(length(bigPSTH.bin_time)/2)-1],[-0.1 0.3],'Color','red','LineStyle','--');
 
-subplot(3,3,4);imagesc(bigPSTH.z_score_CA1); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--');
-subplot(3,3,5);imagesc(bigPSTH.z_score_CA2); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--'); title('Barrage PSTH');
-subplot(3,3,6);imagesc(bigPSTH.z_score_CA3); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--');
-subplot(3,3,7);imagesc(bigPSTH_rip.z_score_CA1_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--');
-subplot(3,3,8);imagesc(bigPSTH_rip.z_score_CA2_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--'); title('Ripple PSTH');
-subplot(3,3,9);imagesc(bigPSTH_rip.z_score_CA3_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([-0.025 0.25]); xline(25, 'r--'); colormap(flipud(bone)); 
+cmin = mean([min(bigPSTH.z_score_CA1_2plot) min(bigPSTH.z_score_CA2_2plot) min(bigPSTH.z_score_CA3_2plot) min(bigPSTH_rip.z_score_CA1_rip_2plot) min(bigPSTH_rip.z_score_CA2_rip_2plot) min(bigPSTH_rip.z_score_CA3_rip_2plot)]);
+cmax = mean([max(bigPSTH_rip.z_score_CA1_rip_2plot) max(bigPSTH.z_score_CA2_2plot) max(bigPSTH_rip.z_score_CA3_rip_2plot)]);
+
+subplot(3,3,4);imagesc(bigPSTH.z_score_CA1); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--');
+subplot(3,3,5);imagesc(bigPSTH.z_score_CA2); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--'); title('Barrage PSTH');
+subplot(3,3,6);imagesc(bigPSTH.z_score_CA3); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--');
+subplot(3,3,7);imagesc(bigPSTH_rip.z_score_CA1_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--');
+subplot(3,3,8);imagesc(bigPSTH_rip.z_score_CA2_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--'); title('Ripple PSTH');
+subplot(3,3,9);imagesc(bigPSTH_rip.z_score_CA3_rip); xlim([1 49]); xticks(xlab); xticklabels(xticklab); caxis([cmin cmax]); xline(25, 'r--'); colormap(parula); colormap(viridis);
 saveas(gcf, ['Z:\home\Lindsay\Barrage\FigPlots\' convertStringsToChars(combine) '.bigPSTHcomb.png']);
 end
 %% computePSTH Big combined PSTH
@@ -773,12 +819,15 @@ xline(0,'Color','red','LineStyle','--');
 xlim([-.5 .5]);ylim([-5 15]);
 title('CA3');hold on;
 
-subplot(3,3,4);imagesc(catPSTHsc{1}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
-subplot(3,3,5);imagesc(catPSTHsc{2}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); title('Barrage PSTH');
-subplot(3,3,6);imagesc(catPSTHsc{3}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
-subplot(3,3,7);imagesc(catPSTHsc_rip{1}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
-subplot(3,3,8);imagesc(catPSTHsc_rip{2}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); title('Ripple PSTH');
-subplot(3,3,9);imagesc(catPSTHsc_rip{3}'); caxis([-5 15]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); colormap(flipud(bone)); 
+% cmin = mean([min(mean(catPSTH{1}')) min(mean(catPSTH{2}')) min(mean(catPSTH{3}')) min(mean(catPSTH_rip{1}')) min(mean(catPSTH_rip{2}')) min(mean(catPSTH_rip{3}'))]);
+cmax = mean([max(mean(catPSTH_rip{1}')) max(mean(catPSTH{2}')) max(mean(catPSTH_rip{3}'))]);
+
+subplot(3,3,4);imagesc(catPSTHsc{1}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
+subplot(3,3,5);imagesc(catPSTHsc{2}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); title('Barrage PSTH');
+subplot(3,3,6);imagesc(catPSTHsc{3}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
+subplot(3,3,7);imagesc(catPSTHsc_rip{1}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--');
+subplot(3,3,8);imagesc(catPSTHsc_rip{2}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); title('Ripple PSTH');
+subplot(3,3,9);imagesc(catPSTHsc_rip{3}'); caxis([-3 cmax]); xlim([75 125]); xticks(xlab); xticklabels(xticklab); xline(100, 'r--'); colormap(parula); colormap(viridis);
 
 saveas(gcf, ['Z:\home\Lindsay\Barrage\FigPlots\' convertStringsToChars(combine) '.bigCompPSTHcomb.png']);
 end

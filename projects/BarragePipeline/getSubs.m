@@ -27,7 +27,11 @@ end
 
 modID = ones(length(cell_metrics.putativeCellType),1);
 for i = 1:length(tagCheck)
-    inds = ismember(1:length(modID),eval(strcat('cell_metrics.tags.',tagCheck(i))));
+    try
+        inds = ismember(1:length(modID),eval(strcat('cell_metrics.tags.',tagCheck(i))));
+    catch
+        inds = [];
+    end
     modID(inds) = i+1;
 end
 

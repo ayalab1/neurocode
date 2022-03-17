@@ -11,7 +11,7 @@ end
 %% [STEP 0] Settings
 % warning('off','all');
 close all
-savePath = strcat(ses, '\Barrage_Files\');
+savePath = strcat(ses, '\Barrage_Files\'); savePath = convertCharsToStrings(savePath);
 load('Z:\home\Lindsay\Barrage\combinedPaths.mat');
 cd(ses);
 basepath = pwd;

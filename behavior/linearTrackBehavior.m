@@ -21,7 +21,6 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 % Can, Ryan, Antonio; 02/22
 %
 % TODO:
-%       -xy should be converted from pixels to cm (speed thres can them be adjusted)
 %       -find best way to store output trials. Ideally, should be easy to
 %           identify, maybe table so human readable.
 %       -Improve output figure
@@ -34,10 +33,11 @@ p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'manipulation',true,@islogical); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
-addParameter(p,'speedTh',0.1,@isnumeric); % speed threshold for stop/run times (* not implemented *)
-addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat and linearTrackTrials.mat
+addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times 
+addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
-addParameter(p,'norm_zero_to_one',true,@islogical); % normalize linear coords 0-1
+addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
+addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -47,6 +47,7 @@ speedTh = p.Results.speedTh;
 savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
+maze_sizes = p.Results.maze_sizes;
 
 basename = basenameFromBasepath(basepath);
 
@@ -85,19 +86,27 @@ behavior.position.linearized = NaN(1,length(behavior.timestamps));
 
 % make linear epoch by epoch to account for different maze positions
 for ep = 1:size(linear_epochs,1)
-    xy = [behavior.position.x',behavior.position.y'];
     % find intervals in epoch
     [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+    % pull out xy
+    xy = [behavior.position.x(idx)',behavior.position.y(idx)'];
     % make linear
-    [~,lin,~] = pca(xy(idx,:));
+    [~,lin,~] = pca(xy);
     linpos = lin(:,1);
-    % normalize?
-    if norm_zero_to_one
-        linpos = ZeroToOne(linpos); % TODO xy needs to be transformed to cm
-    end
     % min to zero
     linpos = linpos - min(linpos);
-
+    if ~isempty(maze_sizes)
+        pos_range = max(linpos) - min(linpos);
+        convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+        linpos = linpos / convert_pix_to_cm_ratio;
+        % convert xy to cm as well
+        behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
+        behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+    end
+    % normalize?
+    if norm_zero_to_one
+        linpos = ZeroToOne(linpos);
+    end
     % add linear with interval epoch
     behavior.position.linearized(idx) = linpos';
 end
@@ -129,8 +138,10 @@ trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.
 [~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
 v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
 
-warning('because data is not standardized in cm, speed thres will be the 10th percentile of V')
-speedTh = prctile(v(~isoutlier(v)),10);
+if isempty(maze_sizes)
+    warning('because data is not standardized in cm, speed thres will be the 10th percentile of V')
+    speedTh = prctile(v(~isoutlier(v)),10);
+end
 
 [quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
 
@@ -175,12 +186,12 @@ end
 % need improvement
 if show_fig
     figure;
-    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
-    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
-    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
-    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
+    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on; %black line - all linearized positions
+    plot(behavior.timestamps,v,'r','LineWidth',2);hold on; % red line - velocity
+    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on; % blue regions - trial 1
+    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on; % green regions - trial 2
     if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
-        PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on;
+        PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on; % megenta region - stimulation
     end
     ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);

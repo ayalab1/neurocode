@@ -32,7 +32,7 @@ function [behavior] = linearTrackBehavior(varargin)
 p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'behavior',[],@isnumeric);
-addParameter(p,'manipulation',true,@islogical); % add manipulation times to output
+addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
 addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times 
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
@@ -172,7 +172,7 @@ for i = 1:2
 end
 
 %% Manipulations
-if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
+if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
     load([basepath,filesep,[basename,'.pulses.events.mat']])
     behavior.manipulation = manipulation;
     behavior.stimON = pulses.intsPeriods;    
@@ -186,7 +186,7 @@ if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'fil
     stimTrials=[];
     for i = 1:numel(trials)
         t = InIntervals(behavior.stimON,trials{i}.timestampsRun);
-        if sum(t) > 2
+        if sum(t) > 5 % I'm not sure why there are a few stim trials in the wrong direction
             stimTrials(i,1) = 1;
             behavior.trialIDname{i,2} = 'stimON';
             %trials{i}.manipulation = 'ON';

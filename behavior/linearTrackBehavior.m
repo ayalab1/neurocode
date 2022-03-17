@@ -1,4 +1,4 @@
-function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
+function [behavior] = linearTrackBehavior(varargin)
 %        [behavior] = linearTrackBehavior(varargin)
 % Gets raw tracking data and generates behavior structure
 % based on the standards described in cellexplorer

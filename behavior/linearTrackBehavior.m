@@ -6,6 +6,7 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 
 %  INPUTS  (Name-value paired inputs):
 %
+%  behavior = AYA lab standard behavior structure from general_behavior_file.m
 %  tracking
 %  manipulation = true if some type of manipulation (e.g. opto stimulation) was conducted
 %  lapStart = start/end of lap, in % of track length
@@ -15,8 +16,6 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 %  OUTPUTS
 %
 %  behavior = AYA lab standard behavior structure
-%  trials and postTrials are just temporary, should not be needed once this
-%  function is finished
 
 % Can, Ryan, Antonio; 02/22
 %
@@ -27,10 +26,12 @@ function [behavior,trials,posTrials] = linearTrackBehavior(varargin)
 %       -add option to get laps from tracking or from sensors
 %       -detect laps seperately per epoch in case linear track lengths are
 %       different
+
 %% parse inputs
 
 p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
+addParameter(p,'behavior',[],@isnumeric);
 addParameter(p,'manipulation',true,@islogical); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
 addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times 
@@ -41,6 +42,7 @@ addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must corresp
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
+behavior = p.Results.behavior;
 manipulation = p.Results.manipulation;
 lapStart = p.Results.lapStart;
 speedTh = p.Results.speedTh;
@@ -52,14 +54,15 @@ maze_sizes = p.Results.maze_sizes;
 basename = basenameFromBasepath(basepath);
 
 %% Initialize/load behavior structure
-% not sure what do we prefer to do here. We could generate the behavior
-% structure with Ryan's function and just load it here or perhaps better
-% generate it directly here from Tracking.behavior.mat
-if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file')
-    disp('detected animal.behavior.mat')
-    load([basepath,filesep,[basename,'.animal.behavior.mat']]);
-else
-    error('run general_behavior_file first')
+% the basic animal.behavior.mat structure should have been generated first
+% with general_behavior_file.m
+if isempty(behavior)
+    if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file')
+        disp('detected animal.behavior.mat')
+        load([basepath,filesep,[basename,'.animal.behavior.mat']]);
+    else
+        error('run general_behavior_file first')
+    end
 end
 
 %% Pull in basename.session to epoch data
@@ -78,6 +81,7 @@ for ep = session.epochs
     end
 end
 linear_epochs = [startTime,stopTime];
+
 %% Linearize postions
 % add method to select best LED/ marker
 
@@ -126,44 +130,52 @@ for i = 1:length([laps.start_ts])-1
     end
 end
 
-% I am creating for now a temporary trials struct, but this needs to be
-% included inside the behavior struct instead
-trials{1}.timestamps = [outbound_start outbound_stop];
-trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-trials{2}.timestamps = [inbound_start inbound_stop];
-trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
+% save lap information 
+behavior.trials = [];
+behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
+behavior.trials(1:length(inbound_start),3) = 1;
+behavior.trials(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+behavior.trials = sortrows(behavior.trials);
+behavior.trialID = behavior.trials(:,3);
+behavior.trials = behavior.trials(:,1:2);
+behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
 %% Get periods of runnig
 % this method works better than LinearVelocity.m
 [~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
 v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
+behavior.speed =v'; % overriding the original speed variable (obtained with LinearVelocity.m)
 
 if isempty(maze_sizes)
-    warning('because data is not standardized in cm, speed thres will be the 10th percentile of V')
-    speedTh = prctile(v(~isoutlier(v)),10);
+    warning('data is not standardized in cm')
+    if isempty(speedTh)
+        speedTh = prctile(v(~isoutlier(v)),10);
+    end
 end
 
+% probably we don't need this
 [quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
-
+trials{1}.timestamps = [outbound_start outbound_stop];
+trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
+trials{2}.timestamps = [inbound_start inbound_stop];
+trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
 for i = 1:2
     trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);
 end
 
 %% Separate positions for each direction of running
 % this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
-% so, for now, I am converting it to the old posTrials. The best solution
-% would be to modify findPlaceFieldsAvg1D and other functions to take
-% instead the behavior structure
 for i = 1:2
-    trials{i}.positions=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
-    trials{i}.positionsRun=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestampsRun);
-    posTrials{i} = trials{i}.positions;
+    behavior.positionTrials{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
+    % probably we don't need this
+    behavior.positionTrialsRun{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestampsRun);
 end
 
 %% Manipulations
 if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
     load([basepath,filesep,[basename,'.pulses.events.mat']])
-    stimON = pulses.intsPeriods;
+    behavior.manipulation = manipulation;
+    behavior.stimON = pulses.intsPeriods;    
     % we need something more general because manipualtions can be stored in
     % digitalin or come in different ways
     
@@ -171,35 +183,48 @@ if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'fil
     % only classifying each trial type (running directions in this case)
     % in stimON/OFF. We probably also want to do something like getting
     % the intersection of intervals for each trials with stimON
+    stimTrials=[];
     for i = 1:numel(trials)
-        t = InIntervals(stimON,trials{i}.timestampsRun);
-        if sum(t) > 1
-            trials{i}.manipulation = 'ON';
+        t = InIntervals(behavior.stimON,trials{i}.timestampsRun);
+        if sum(t) > 2
+            stimTrials(i,1) = 1;
+            behavior.trialIDname{i,2} = 'stimON';
+            %trials{i}.manipulation = 'ON';
         else
-            trials{i}.manipulation = 'OFF';
+            stimTrials(i,1) = 0;
+            behavior.trialIDname{i,2} = 'stimOFF';
+            %trials{i}.manipulation = 'OFF';
         end
         clear t;
     end
+    for i = 1:numel(behavior.trialID)
+        if behavior.trialID(i) == 1
+           behavior.trialID(i,2) = stimTrials(1);
+        elseif behavior.trialID(i) == 2
+           behavior.trialID(i,2) = stimTrials(2);            
+        end
+    end
+    
 end
 
 %% Plots to check results
-% need improvement
+% needs improvement
 if show_fig
     figure;
-    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on; %black line - all linearized positions
-    plot(behavior.timestamps,v,'r','LineWidth',2);hold on; % red line - velocity
-    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on; % blue regions - trial 1
-    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on; % green regions - trial 2
-    if manipulation && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
-        PlotIntervals(pulses.intsPeriods,'color','m','alpha',.5);hold on; % megenta region - stimulation
+    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
+    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
+    PlotIntervals(behavior.trials(behavior.trialID(:,1)==1,:),'color','b','alpha',.5);hold on;
+    PlotIntervals(behavior.trials(behavior.trialID(:,1)==2,:),'color','g','alpha',.5);hold on;
+    if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
+        PlotIntervals(pulses.intsPeriods,'color','k','alpha',.5);hold on;
     end
     ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
+
 %% Generate output variables
 if savemat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
-    save([basepath,filesep,[basename,'.linearTrackTrials.mat']],'trials','posTrials');
 end
 
 end

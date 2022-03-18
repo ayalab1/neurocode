@@ -1,3 +1,5 @@
 *.asv
 *.pyc
+*.mexw64
+*.mexmaci64
 behavior/dlc/Run_startdlc.bat

@@ -3,8 +3,11 @@ import sys,os
 import pandas as pd
 import numpy as np
 import glob
+import nelpy as nel
 import warnings
-
+from warnings import simplefilter
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
+import math
 
 def loadXML(basepath):
     """
@@ -21,11 +24,10 @@ def loadXML(basepath):
 
     by Guillaume Viejo    
     """
-
-    filename = glob.glob(os.path.join(basepath,'*.xml'))[0]
-
     # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.xml'))[0]
+    except:
         warnings.warn("file does not exist")
         return 
 
@@ -92,6 +94,85 @@ def loadLFP(basepath, n_channels=90, channel=64, frequency=1250.0, precision='in
                 timestep = np.load(lfp_ts_path).reshape(-1)
             return data,timestep # nts.TsdFrame(timestep, data, time_units = 's')
 
+def loadChunk(fid, nChannels, channels, nSamples, precision):
+	size = int(nChannels * nSamples * precision)
+	nSamples = int(nSamples)
+	data = fid.read(size)
+	# fromstring to read the data as int16
+	# reshape to give it the appropiate shape (nSamples x nChannels)
+	data = np.fromstring(data, dtype=np.int16).reshape(nSamples, len(channels))
+	data = data[:, channels]
+	return data
+
+def bz_LoadBinary(filename, nChannels, channels, sampleSize, verbose=False):
+
+	if (len(channels) > nChannels):
+		print("Cannot load specified channels (listed channel IDs inconsistent with total number of channels).")
+		return
+
+	#aqui iria CdE de filename
+	with open(filename, "rb") as f:
+		dataOffset = 0
+
+		# Determine total number of samples in file
+		fileStart = f.tell()
+		if verbose:
+			print("fileStart ", fileStart)
+		status = f.seek(0, 2) # Go to the end of the file
+		fileStop = f.tell()
+		f.seek(0, 0) # Back to the begining
+		if verbose:
+			print("fileStop ", fileStop)
+
+		# (floor in case all channels do not have the same number of samples)
+		maxNSamplesPerChannel = math.floor(((fileStop-fileStart)/nChannels/sampleSize))
+		nSamplesPerChannel = maxNSamplesPerChannel
+
+		# For large amounts of data, read chunk by chunk
+		maxSamplesPerChunk = 10000
+		nSamples = int(nSamplesPerChannel*nChannels)
+
+		if verbose:
+			print("nSamples ", nSamples)
+
+		if nSamples <= maxNSamplesPerChannel:
+			data = loadChunk(f, nChannels, channels, nSamples, sampleSize)
+		else:
+			# Determine chunk duration and number of chunks
+			nSamplesPerChunk = math.floor(maxSamplesPerChunk/nChannels)*nChannels
+			nChunks = math.floor(nSamples/nSamplesPerChunk)
+
+			if verbose:
+				print("nSamplesPerChannel ", nSamplesPerChannel)
+				print("nSamplesPerChunk ", nSamplesPerChunk)
+
+			# Preallocate memory
+			data = np.zeros((nSamplesPerChannel,len(channels)), dtype=np.int16)
+
+			if verbose:
+				print("size data ", np.size(data, 0))
+
+			# Read all chuncks
+			i = 0
+			for j in range(nChunks):
+				d = loadChunk(f, nChannels, channels, nSamplesPerChunk/nChannels, sampleSize)
+				m = np.size(d, 0)
+
+				if m == 0:
+					break
+
+				data[i:i+m, :] = d
+				i = i+m
+
+			# If the data size is not a multiple of the chunk size, read the remainder
+			remainder = nSamples - nChunks*nSamplesPerChunk
+			if remainder != 0:
+				d = loadChunk(f, nChannels, channels, remainder/nChannels, sampleSize)
+				m = np.size(d, 0)
+
+				if m != 0:
+					data[i:i+m, :] = d
+	return data
 
 def load_position(basepath,fs=39.0625):
     if not os.path.exists(basepath):
@@ -107,8 +188,30 @@ def load_position(basepath,fs=39.0625):
     df[df==-1] = np.nan
     return df,fs
 
+def load_all_cell_metrics(basepaths):
+    """
+    load cell metrics from multiple sessions
 
-def load_cell_metrics(basepath):
+    Input: 
+            basepaths: list of basepths, can be pandas column
+    Output:
+            cell_metrics: concatenated pandas df with metrics
+
+    Note: to get waveforms, spike times, etc. use load_cell_metrics
+    """
+    import multiprocessing
+    from joblib import Parallel, delayed
+
+    # to speed up, use parallel
+    num_cores = multiprocessing.cpu_count()   
+    cell_metrics = Parallel(n_jobs=num_cores)(
+            delayed(load_cell_metrics)(basepath,True) for basepath in basepaths
+        )
+
+    return pd.concat(cell_metrics,ignore_index=True)
+
+
+def load_cell_metrics(basepath,only_metrics=False):
     """ 
     loader of cell-explorer cell_metrics.cellinfo.mat
 
@@ -212,7 +315,8 @@ def load_cell_metrics(basepath):
         except:
             continue
         
-    # add column for bad label tag    
+    # add column for bad label tag 
+    # have dedicated var as this tag is important   
     try:
         bad_units = data['cell_metrics']['tags'][0][0]['Bad'][0][0][0]
         df['bad_unit'] = [False]*df.shape[0]
@@ -220,6 +324,17 @@ def load_cell_metrics(basepath):
             df.loc[df.UID == uid,'bad_unit'] = True
     except:
         df['bad_unit'] = [False]*df.shape[0]  
+
+    # load in tag
+    dt = data['cell_metrics']['tags'][0][0].dtype
+    if len(dt) > 0:
+        # iter through each tag
+        for dn in dt.names:
+            # set up column for tag
+            df['tags_'+dn] = [False]*df.shape[0]
+            # iter through uid 
+            for uid in data['cell_metrics']['tags'][0][0][dn][0][0][0]:
+                df.loc[df.UID == uid,'tags_'+dn] = True 
 
     # add data from general metrics        
     df['basename'] = data['cell_metrics']['general'][0][0]['basename'][0][0][0]
@@ -232,6 +347,13 @@ def load_cell_metrics(basepath):
 
     # fix nesting issue for strings
     df = un_nest_df(df)
+
+    # convert nans within tags columns to false
+    cols = df.filter(regex='tags_').columns
+    df[cols] = df[cols].replace({np.nan:False})
+    
+    if only_metrics:
+        return df
 
     # extract other general data and put into dict    
     data_ = extract_general(data)
@@ -274,13 +396,12 @@ def load_SWRunitMetrics(basepath):
         df2['epoch'] = epoch
         return df2
 
-    filename = glob.glob(os.path.join(basepath,'*.SWRunitMetrics.mat'))[0]
-
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.SWRunitMetrics.mat'))[0]
+    except:
         warnings.warn("file does not exist")
         return pd.DataFrame()
-
+        
     # load file
     data = sio.loadmat(filename)
 
@@ -294,7 +415,7 @@ def load_SWRunitMetrics(basepath):
 
             # append conents to overall data frame
             if df_.size>0:
-                df2 = df2.append(df_,ignore_index=True)
+                df2 = pd.concat([df2,df_],ignore_index=True)
 
     return df2
 
@@ -322,10 +443,9 @@ def load_ripples_events(basepath):
     """
 
     # locate .mat file
-    filename = glob.glob(basepath+os.sep+'*ripples.events.mat')[0]
-
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(basepath+os.sep+'*ripples.events.mat')[0]
+    except:
         warnings.warn("file does not exist")
         return pd.DataFrame()
 
@@ -344,13 +464,16 @@ def load_ripples_events(basepath):
     df['peaks'] = data['ripples']['peaks'][0][0]
     try:
         df['amplitude'] = data['ripples']['amplitude'][0][0]
-        df['duration'] = data['ripples']['duration'][0][0]
-        df['frequency'] = data['ripples']['frequency'][0][0]
     except:
         df['amplitude'] = np.nan
+    try:
+        df['duration'] = data['ripples']['duration'][0][0]
+    except:
         df['duration'] = np.nan
+    try:
+        df['frequency'] = data['ripples']['frequency'][0][0]
+    except:
         df['frequency'] = np.nan
-     
     try:
         df['detectorName'] = data['ripples']['detectorinfo'][0][0]['detectorname'][0][0][0]
     except:
@@ -367,7 +490,6 @@ def load_ripples_events(basepath):
                 df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['channel'][0][0][0][0]
             except:
                 df['ripple_channel'] = data['ripples']['detectorinfo'][0][0]['detectionparms'][0][0]['ripple_channel'][0][0][0][0]
-
 
     dt = data['ripples'].dtype
     if "eventSpikingParameters" in dt.names:
@@ -392,12 +514,7 @@ def load_theta_rem_shift(basepath):
     try:
         filename = glob.glob(basepath+os.sep+'*theta_rem_shift.mat')[0]
     except:
-        # warnings.warn("file does not exist")
-        return pd.DataFrame(),np.nan
-
-    # check if saved file exists
-    if not os.path.exists(filename):
-        # warnings.warn("file does not exist")
+        warnings.warn("file does not exist")
         return pd.DataFrame(),np.nan
 
     data = sio.loadmat(filename)
@@ -456,10 +573,9 @@ def load_SleepState_states(basepath):
     TODO: extract more from file, this extracts the basics for now.
 
     """
-    filename = glob.glob(os.path.join(basepath,'*.SleepState.states.mat'))[0]
-    
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.SleepState.states.mat'))[0]
+    except:
         warnings.warn("file does not exist")
         return 
 
@@ -493,11 +609,9 @@ def load_animal_behavior(basepath):
 
     Ryan H 2021
     """
-
-    filename = glob.glob(os.path.join(basepath,'*.animal.behavior.mat'))[0]
-
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.animal.behavior.mat'))[0]
+    except:
         warnings.warn("file does not exist")
         return 
 
@@ -521,7 +635,7 @@ def load_animal_behavior(basepath):
 
     df = pd.DataFrame()
     try:
-        df['time'] = data['behavior']['time'][0][0][0]
+        df['time'] = data['behavior']['timestamps'][0][0][0]
     except:
         warnings.warn("no tracking data")
         return pd.DataFrame()
@@ -560,11 +674,9 @@ def load_epoch(basepath):
     """
     Loads epoch info from cell explorer basename.session and stores in df
     """
-
-    filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
-
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
+    except:
         warnings.warn("file does not exist")
         return pd.DataFrame()
 
@@ -584,7 +696,7 @@ def load_epoch(basepath):
                 df_temp[dn] = epoch[0][0][dn][0]
             except:
                 df_temp[dn] = ""
-        df_save = df_save.append(df_temp,ignore_index=True)
+        df_save = pd.concat([df_save,df_temp],ignore_index=True)
         name.append(epoch[0]['name'][0][0])
         try:
             environment.append(epoch[0]['environment'][0][0])
@@ -597,11 +709,9 @@ def load_epoch(basepath):
 
 def get_animal_id(basepath):
     """ return animal ID from basepath using basename.session.mat"""
-
-    filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
-
-    # check if saved file exists
-    if not os.path.exists(filename):
+    try:
+        filename = glob.glob(os.path.join(basepath,'*.session.mat'))[0]
+    except:
         warnings.warn("file does not exist")
         return pd.DataFrame()
 
@@ -614,3 +724,62 @@ def load_basic_data(basepath):
     ripples = load_ripples_events(basepath)
     cell_metrics,data = load_cell_metrics(basepath)
     return cell_metrics,data,ripples,fs_dat
+
+def load_spikes(basepath,
+                putativeCellType=[], # restrict spikes to putativeCellType
+                brainRegion=[], # restrict spikes to brainRegion
+                bad_unit=False, # false for not loading bad cells
+                brain_state=[] # restrict spikes to brainstate
+                ):
+    """ 
+    Load specific cells' spike times
+    """
+    if not isinstance(putativeCellType, list):
+        putativeCellType = [putativeCellType]
+    if not isinstance(brainRegion, list):
+        brainRegion = [brainRegion]
+
+    _,_,fs_dat,_ = loadXML(basepath)
+
+    cell_metrics,data = load_cell_metrics(basepath)
+
+    st = np.array(data['spikes'],dtype=object)
+
+    # restrict cell metrics                      
+    if len(putativeCellType) > 0:
+        restrict_idx = []
+        for cell_type in putativeCellType:
+            restrict_idx.append(cell_metrics.putativeCellType.str.contains(cell_type).values) 
+        restrict_idx = np.any(restrict_idx,axis=0)
+        cell_metrics = cell_metrics[restrict_idx]
+        st = st[restrict_idx]
+
+    if len(brainRegion) > 0:
+        restrict_idx = []
+        for brain_region in brainRegion:
+            restrict_idx.append(cell_metrics.brainRegion.str.contains(brain_region).values) 
+        restrict_idx = np.any(restrict_idx,axis=0)
+        cell_metrics = cell_metrics[restrict_idx]
+        st = st[restrict_idx]
+
+    restrict_idx = cell_metrics.bad_unit.values==bad_unit
+    cell_metrics = cell_metrics[restrict_idx]
+    st = st[restrict_idx]
+
+    # get spike train array
+    try:
+        st = nel.SpikeTrainArray(timestamps=st, fs=fs_dat)
+    except: # if only single cell... should prob just skip session
+        st = nel.SpikeTrainArray(timestamps=st[0], fs=fs_dat)
+
+    if len(brain_state) > 0:
+        # get brain states        
+        brain_states = ['WAKEstate', 'NREMstate', 'REMstate', 'THETA', 'nonTHETA']
+        if brain_state not in brain_states:
+            assert print('not correct brain state. Pick one',brain_states) 
+        else:                                    
+            state_dict = load_SleepState_states(basepath)
+            state_epoch = nel.EpochArray(state_dict[brain_state])
+            st = st[state_epoch]
+
+    return st,cell_metrics

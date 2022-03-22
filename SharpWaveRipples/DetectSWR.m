@@ -959,11 +959,11 @@ for ep_i = 1:Nepochs
                 idx1 = selected & ~bad; % final ripples
                 idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
 
-                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); clim([0 1]);
+                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); set(gca,'CLim',[0 1])
                 xlim(xlims); ylim(ylims);
                 hold on;
                 scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
-                clabel('Estimated ripple score');
+%                 clabel('Estimated ripple score');
                 xlabel('Sharp wave depth'); ylabel('Ripple power');
 
                 title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});

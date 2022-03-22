@@ -265,6 +265,8 @@ for odidx = 1:length(otherdattypes)
             for didx = 1:length(datpaths.(otherdattypes{odidx}))
                 datpathsplus{didx} = [datpaths.(otherdattypes{odidx}){didx} '+'];
             end
+          %Last file string shouldn't end with '+'
+          datpathsplus{length(datpaths.(otherdattypes{odidx}))} = datpaths.(otherdattypes{odidx}){didx};
         else
             datpathsplus = datpaths.(otherdattypes{odidx});
         end

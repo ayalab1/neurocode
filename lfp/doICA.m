@@ -71,6 +71,7 @@ addParameter(p,'plotWeights',true,@islogical)
 addParameter(p,'plotCFC',true,@islogical)
 addParameter(p,'regionChan',[],@isnumeric)
 addParameter(p,'chanRange',[], @isnumeric)
+addParameter(p,'thetaChannel',[],@isnumeric)
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -84,12 +85,15 @@ regionChan = p.Results.regionChan;
 plotWeights = p.Results.plotWeights;
 plotCFC = p.Results.plotCFC;
 chanRange = p.Results.chanRange;
+thetaChannel = p.Results.thetaChannel; 
 
 % Deal with inputs
 prevBasepath = pwd;
-cd(basepath);
+cd(basepath); % will change this once I figure out which downstream functions require PWD
 
-targetFile = dir('*.ica.channelInfo.mat');
+basename = basenameFromBasepath(basepath);
+
+targetFile = dir([basepath,filesep,'*.ica.channelInfo.mat']);
 if ~isempty(targetFile) && ~force
     disp('ICA already computed! Loading file.');
     load(targetFile.name);
@@ -98,12 +102,18 @@ end
 
 if isempty(lfp)
     try 
-        sessionInfo = getSessionInfo(basepath, 'noPrompts', true);
+        % load session to get anatomical groups (should be mapped)
+        load([basepath,filesep,[basename,'.session.mat']])
         if isempty(chanRange)
-            channelOrder = sessionInfo.AnatGrps(shankNum).Channels; 
+            channelOrder =  session.extracellular.electrodeGroups(shankNum).channels{:};
         else
-            channelOrder = sessionInfo.AnatGrps(shankNum).Channels(chanRange); 
+            channelOrder = session.extracellular.electrodeGroups(shankNum).channels{:}(chanRange); 
         end
+        
+        % remove bad channels 
+        channelOrder(ismember(channelOrder,session.channelTags.Bad.channels(:))) = [];
+        disp(['removing bad channels: ',num2str(session.channelTags.Bad.channels(:)')])
+        % load lfp using mapping
         lfp = getLFP(channelOrder);
     catch
         error('LFP not found!');
@@ -111,7 +121,7 @@ if isempty(lfp)
 end
 
 if isempty(regionChan)
-    regFile = dir('*.hippocampalLayers.channelinfo.mat');
+    regFile = dir([basepath,filesep,'*.hippocampalLayers.channelinfo.mat']);
     if ~isempty(regFile)
         load(regFile.name);
         regionChan = hippocampalLayers.all;
@@ -123,6 +133,7 @@ disp('Filtering...');
 lfpFilt = bz_Filter(lfp,'passband',passband,'order',4,'filter','butter');
 
 %% Run runica
+
 [weights,sphere,meanvar,bias,signs,lrates,data] = runica(double(lfpFilt.data'),'lrate',1.0000e-03,'pca',nICs);
 
 % Normalize sphere
@@ -151,8 +162,7 @@ ica.channels = lfp.channels;
 
 if saveMat
     disp('Saving results...');
-    filename = split(pwd,filesep); filename = filename{end};
-    save([filename '.ica.channelInfo.mat'],'ica','-v7.3');
+    save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica','-v7.3');
 end
 
 if plotWeights
@@ -160,7 +170,7 @@ if plotWeights
     plot(ica.topo,repmat([1:numel(ica.channels)]',1,nICs),'LineWidth',2);
     set(gca,'YDir','reverse')
     hold on
-    legend
+    legend({num2str(ica.channels)})
     ylim([1 size(ica.weights,2)])
     if ~isempty(regionChan)
         for ii = 1:length(regionChan)
@@ -173,7 +183,7 @@ if plotWeights
     if ~isfolder('ICA')
         mkdir('ICA')
     end
-    saveas(gcf,'ICA\Weights.png');
+    saveas(gcf,[basepath,filesep,'ICA\Weights.png']);
 end
 
 if plotCFC
@@ -199,7 +209,7 @@ if plotCFC
     [comodulogram] = CFCPhaseAmp(lfpICA,phaserange,amprange,'phaseCh',1,'ampCh',2:length(lfpICA.channels));
     
     set(gcf,'Position',[100 100 1400 300])  
-    saveas(gcf,'ICA\CFC.png');
+    saveas(gcf,[basepath,filesep,'ICA\CFC.png']);
 end
 
 cd(prevBasepath);

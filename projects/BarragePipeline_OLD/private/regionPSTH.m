@@ -47,7 +47,14 @@ if isfield(HSE, 'keep')
     HSE.amplitudes = HSE.amplitudes(HSE.keep);
     HSE.duration = HSE.duration(HSE.keep);
 end
-HSEnrem = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+if isfield(HSE,'keep')&&isfield(HSE,'NREM')
+        HSEnrem.timestamps = HSE.timestamps(HSE.NREM,:);
+        HSEnrem.peaks = HSE.peaks(HSE.NREM);
+        HSEnrem.amplitudes = HSE.amplitudes(HSE.NREM);
+        HSEnrem.duration = HSE.duration(HSE.NREM);
+else
+    HSEnrem = eventIntervals(HSE,SleepState.ints.NREMstate,1);
+end
 
 regions = unique(cell_metrics.brainRegion);
 check = ["CA1" "CA2" "CA3" "CTX" "DG" "MEC" "LEC"];
@@ -94,7 +101,7 @@ end
 sgtitle('Pyramidal PSTH');
 saveas(gcf,[plotSave 'PSTH.png']);
 
-subNum = 1;
+subNum = 1; intEmpt = 0;
 for i = 1:length(check)
     for j=1:length(regions)
         regCheck = regions{j};
@@ -119,12 +126,13 @@ for i = 1:length(check)
                 save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
             else
                 warning(['No interneurons in ' br]);
+                intEmpt = intEmpt+1;
             end
             subNum = subNum+1; % should max at 4
         end
     end
 end
-if ~isempty(spikes.UID)
+if ~(intEmpt == length(regions))
     sgtitle('Interneuron PSTH');
     saveas(gcf,[plotSave 'PSTHint.png']);
 end

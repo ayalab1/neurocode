@@ -4,7 +4,6 @@ function [tracking,field_names] = process_and_sync_dlc(varargin)
 % Run this after you have exported deeplabcut csv results
 %
 % TODO: 
-%       -make multi tracking points available (multi-points on animal)
 %       -make option to just load and format csv without sync
 %       -make more robust to file exist assumptions 
 %           (ex. MergePoints.events.mat, digitalIn.events.mat)
@@ -118,7 +117,10 @@ if ~exist(fullfile(folder,'digitalIn.events.mat'),'file')
     digitalIn = getDigitalIn('all','folder',folder);
 end
 load(fullfile(folder,'digitalIn.events.mat'))
-bazlerTtl = digitalIn.timestampsOn{1,1};
+
+Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
+[~,idx] = max(cell2mat(Len));
+bazlerTtl = digitalIn.timestampsOn{idx};
 
 %check for extra pulses of much shorter distance than they should
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range);

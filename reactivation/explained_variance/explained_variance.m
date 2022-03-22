@@ -1,4 +1,4 @@
-function [EV, rEV] = bz_ExplainedVariance(spikes,intervals,varargin)
+function [EV, rEV] = explainedVariance(spikes,intervals,varargin)
 % Calculate explained variance of the firing rate correlation matrix of
 % several behavioral epochs
 % 

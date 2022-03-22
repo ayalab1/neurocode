@@ -17,9 +17,19 @@ files = dir(basepath);
 for i=1:length(files)
     filenames{i,1} = files(i).name;
 end
-filename = fullfile(basepath,filenames{find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')), filenames),1,'last')});
+indices = find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')), filenames));
 
-data = load(filename);
+data = []; currentTime = 0; currentTrial = 0;
+for i=1:length(indices)
+    filename = fullfile(basepath,filenames{indices(i)});
+    loaded = load(filename);
+    loaded(2:end,1) = loaded(2:end,1)+currentTime; 
+    nTrialsPerSession(i) = loaded(end,4);
+    loaded(:,4) = loaded(:,4)+currentTrial;
+    currentTime = loaded(end,1); currentTrial = loaded(end,4);
+    data = [data; loaded];
+end
+
 choice = find(abs(data(:,3))==50);
 trials = data(choice,:);
 trialID = trials(:,4);
@@ -39,6 +49,11 @@ for i=1:nTrials
     skipStart(i) = length(photodetectors)-1;
 end
 
+if exist(fullfile(basepath,[sessionID '_behavioral_performance.fig']),'file')
+    return
+end
+
+figure(1)
 clf
 set(gcf,'position',[1 1 1920 1000]); % make fugure big so legends are visible when exported
 
@@ -80,6 +95,7 @@ hold all
 plot(trialID(~animalWentRight),correct(~animalWentRight),'r.','markersize',markersize,'color',colors(4,:));
 plot(trialID(animalWentRight),correct(animalWentRight),'.','markersize',markersize,'color',colors(3,:));
 PlotHVLines(0.5,'h','k--','linewidth',2);
+title(['Number of trials: ' num2str(nTrialsPerSession)]);
 
 nans = ones(nTrials,nTrials);
 matrix = double(repmat(correct,1,nTrials));
@@ -143,7 +159,9 @@ if true | ~exist(fullfile(basepath,[sessionID '_behavioral_performance.fig']))
     SaveFig(fullfile(basepath,[sessionID '_behavioral_performance']));
 end
 
+figure(2)
 clf
+set(gcf,'position',[1921 1 1920 1000]); % make fugure big so legends are visible when exported
 
 subplot(2,3,1);
 counts = [sum(animalWentRight) nTrials 0.5];
@@ -226,7 +244,7 @@ handle = line(nan, nan, 'Linestyle', 'none', 'Marker', 'none', 'Color', 'none');
 legend(handle,['p=' num2str(z2p(z))],'box','off');
 
 subplot(2,4,7);
-anovabar(trialDuration,correct);
+try anovabar(trialDuration,correct); catch bar(mean(trialDuration)); if mean(correct)>0.5, set(gca,'xticklabel','correct trials'); else  set(gca,'xticklabel','error trials'); end; end
 set(gca,'xticklabel',{'error trials','correct trials'},'XTickLabelRotation',15);
 ylabel('mean trial duration (s)');
 set(gca,'FontSize',fontsize);

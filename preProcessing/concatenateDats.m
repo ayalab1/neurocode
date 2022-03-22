@@ -84,6 +84,7 @@ end
 %% Find all .dat paths in subfolders 
 
 otherdattypes = {'analogin';'digitalin';'auxiliary';'time';'supply'};
+
 bad_otherdattypes = [];
 for odidx = 1:length(otherdattypes)
     %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
@@ -143,7 +144,7 @@ end
 try 
     %Look for xml/sessionInfo in topfolder
     %sessionInfo = bz_getSessionInfo(basepath,'noPrompts',true);
-    load([basename '.session.mat']); % Peter's sessionInfo
+    load(fullfile(basepath,[basename '.session.mat'])); % Peter's sessionInfo
 catch
     %If none exists, look for xml in any of the subpaths
     disp('No .xml or .sessionInfo in top folder, trying subfolders')
@@ -264,6 +265,8 @@ for odidx = 1:length(otherdattypes)
             for didx = 1:length(datpaths.(otherdattypes{odidx}))
                 datpathsplus{didx} = [datpaths.(otherdattypes{odidx}){didx} '+'];
             end
+          %Last file string shouldn't end with '+'
+          datpathsplus{length(datpaths.(otherdattypes{odidx}))} = datpaths.(otherdattypes{odidx}){didx};
         else
             datpathsplus = datpaths.(otherdattypes{odidx});
         end

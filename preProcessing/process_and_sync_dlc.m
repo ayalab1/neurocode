@@ -101,12 +101,17 @@ for ii = 1:size(tempTracking,2)
     samplingRate = [samplingRate; tempTracking{ii}.samplingRate];
     description{ii} = tempTracking{ii}.description;
 end
+% pull out notes
+for i = 1:length(tempTracking)
+    notes{i} = [tempTracking{i}.folder,': ',tempTracking{i}.notes];
+end
 
 tracking.position.x = x;
 tracking.position.y = y;
 tracking.folders = folder;
 tracking.samplingRate = samplingRate;
 tracking.timestamps = ts;
+tracking.notes = notes;
 tracking.events.subSessions = subSessions;
 tracking.events.subSessionsMask = maskSessions;
 end

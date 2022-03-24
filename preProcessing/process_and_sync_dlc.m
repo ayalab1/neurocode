@@ -140,7 +140,7 @@ tracking.samplingRate = fs;
 tracking.description = '';
 end
 
-function [x,y,t,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
+function [x,y,t,bazlerTtl,fs] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
 
 % match basler frames con ttl pulses
 if (length(bazlerTtl) == size(x,1)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
@@ -157,6 +157,15 @@ elseif basler_intan_diff<0 && abs(basler_intan_diff)>fs
         ' video frames without TTL... was the recording switched off before the camera? Cutting positions accordingly...']);
     x = x(1:length(bazlerTtl),:);
     y = y(1:length(bazlerTtl),:);
+    
+elseif abs(basler_intan_diff)>60*fs
+    warning('More than 1 minute missalignment in total in this session...will interpolate ts');
+
+    simulated_ts = linspace(min(bazlerTtl),max(bazlerTtl),length(x));
+    bazlerTtl_new = interp1(bazlerTtl,bazlerTtl,simulated_ts);
+    bazlerTtl = bazlerTtl_new';
+    fs = mode(diff(bazlerTtl));
+    
 elseif abs(basler_intan_diff)>2*fs
     warning('More than 2 seconds missalignment in total in this session...will adjust to the closer one...');
     if basler_intan_diff>0

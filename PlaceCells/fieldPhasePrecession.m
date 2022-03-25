@@ -295,7 +295,8 @@ elseif strcmp(boundaries,'count'),
 	if any(start) && any(stop),
 		if start(1) >= stop(1), stop(1) = []; end
 		if start(end) >= stop(end), start(end) = []; end
-		traversals = [start stop];
+        traversals = [start stop];
+        traversals(diff(traversals,[],2)<0.1,:) = []; %drop traversals of place fields shorter than 100ms
 		% Determine lap number
 		[~,lap] = InIntervals(data.position.t,traversals);
 		data.position.lap = lap;

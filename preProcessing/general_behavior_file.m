@@ -162,7 +162,7 @@ if any(dlc_flag)
     end
     notes = ['primary_coords: ',num2str(primary_coords),...
         ', likelihood: ',num2str(likelihood)];
-    
+    notes = {notes,tracking.notes};
     
     % standard whl file xyxy format
 elseif exist([basepath,filesep,[basename,'.whl']],'file')

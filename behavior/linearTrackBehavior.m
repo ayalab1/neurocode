@@ -155,9 +155,9 @@ end
 
 % probably we don't need this
 [quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
-trials{1}.timestamps = [outbound_start outbound_stop];
+trials{1}.timestamps = [inbound_start inbound_stop];
 trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-trials{2}.timestamps = [inbound_start inbound_stop];
+trials{2}.timestamps = [outbound_start outbound_stop];
 trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
 for i = 1:2
     trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);

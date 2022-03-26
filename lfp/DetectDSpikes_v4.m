@@ -192,8 +192,8 @@ DS1.eventIDlabels = repmat({'DS1'},size(DS1triad,1),1);
 DS1.eventIDbinary = false(size(DS1triad,1),1);
 % center: center time-point of event (in seconds; calculated from timestamps; Px1).
 % duration: duration of event (in seconds; calculated from timestamps; Px1).
-DS1.duration = DS1triad(:,2)-DS1triad(:,1);
-DS1.center = DS1triad(:,1)+DS1.duration;
+DS1.duration = DS1triad(:,3) - DS1triad(:,1);
+DS1.center = DS1triad(:,1) + DS1triad(:,2) - DS1triad(:,1);
 
 DS1.detectorinfo.detectorname = 'DetectDSpikes_v4';
 DS1.detectorinfo.detectionparms = [];
@@ -218,8 +218,8 @@ DS2.eventIDlabels = repmat({'DS2'},size(DS2triad,1),1);
 DS2.eventIDbinary = false(size(DS2triad,1),1);
 % center: center time-point of event (in seconds; calculated from timestamps; Px1).
 % duration: duration of event (in seconds; calculated from timestamps; Px1).
-DS2.duration = DS2triad(:,2)-DS2triad(:,1);
-DS2.center = DS2triad(:,1)+DS2.duration;
+DS2.duration = DS2triad(:,3) - DS2triad(:,1);
+DS2.center = DS2triad(:,1) + DS2triad(:,2) - DS2triad(:,1);
 
 DS2.detectorinfo.detectorname = 'DetectDSpikes_v4';
 DS2.detectorinfo.detectionparms = [];

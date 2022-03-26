@@ -66,7 +66,8 @@ for unit = 1:length(ripSpk.UnitAbs)
 end
 
 %% Gain
-if baseFR
+if ~isempty(baseFR)
+
     % in each ripple
     for unit = 1:length(ripSpk.UnitAbs)
         for rip = 1:length(ripSpk.EventAbs)

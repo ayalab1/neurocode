@@ -6,23 +6,14 @@ load([basename '.cell_metrics.cellinfo.mat'])
 load([basename '.chanCoords.channelInfo.mat'])
 load([basename '.MergePoints.events.mat'])
 
-regions = cell_metrics.brainRegion;
-regionNames = unique(regions)
-regionCell = zeros(length(regions),1);
-for i=1:length(regionNames)
-    regionCell(strcmp(regions,regionNames{i})) = i;
-end
+[spikes,regionID,regionNames,spikesCell] = GetAyaSpikes(basepath);
 
-
-depth = chanCoords.y(cell_metrics.maxWaveformCh1)';
 matrix = dlmread('stimuli_synced.times');
 % Windows is imprecise when saving the "last modified" date of the file:
 % it says the file was modified between 1.72s to 0.72 before it was actually finished!
 % The real time is therefore AT LEAST 0.72s before the saved time
 matrix(:,1) = matrix(:,1); % I'm subtracting 1, although the real number (between 1.72 and 0.72) is unknown
 matrix(isnan(matrix(:,1)),:) = [];
-
-spikesCell = cell_metrics.spikes.times';
 
 % for i=1:length(spikesCell)
 %     spikesCell{i} = spikesCell{i}*1;
@@ -46,51 +37,65 @@ z = zscore(m,[],2);
 score = nanmean(z(:,InIntervals(ht,[0 0.2])),2) - nanmean(z(:,InIntervals(ht,[-1 0])),2);
 
 subplot(1,2,1);
-PlotColorMap(sortby(Smooth(zscore(m,[],2),[0 2]),(depth)),'x',ht);
+PlotColorMap(sortby(Smooth(zscore(m,[],2),[0 2]),(regionID)),'x',ht);
 PlotHVLines([-1:2],'v','k--','linewidth',2);
-PlotHVLines(sum(depth<-900)+0.5,'h','w--','linewidth',2);
+PlotHVLines(cumsum(Accumulate(regionID))+0.5,'h','w--','linewidth',2);
 % xlim([-1 1]*5);
-set(gca,'ytick',1:max(ylim),'yticklabel',sort(depth));
-ylabel('unit depth (a.u. as screw turns were likely not taken into account)');
-xlabel('time from LED pulse (s)');
+set(gca,'ytick',1:max(ylim));
+regionListString = regionNames; regionListString(2,:) = repmat({'->'},1,size(regionListString,2)); regionListString{end} = '';
+regionListString = strcat(regionListString{:});
+ylabel(['Neuron ID: ' regionListString]); xlabel('time from ripple start (s)');
+xlabel('time from visual stimulus (s)');
 clabel('Firing rate (z units)');
 clim([-1 1]*1.5);
 set(gca,'fontsize',12);
 
-
 subplot(2,2,2);
-semplot(ht,(zscore(m(depth<-750,:),[],2)),'k', 2);
-semplot(ht,(zscore(m(depth>-750,:),[],2)),'r', 2);
+colors = get(gca,'colororder'); clear handles
+for i=1:max(regionID),
+    if sum(regionID==i)>1
+        handles(i) = semplot(ht,(zscore(m(regionID==i,:),[],2)),colors(i,:), 2);
+    else
+        handles(i) = plot(ht,Smooth(zscore(m(regionID==i,:),[],2),2),'color',colors(i,:), 'linewidth',2);
+    end
+    if i==1, hold on; end
+end
 y = ylim;
 PlotHVLines(0,'v','k--','linewidth',2);
 ylim(y);
 % xlim([-1 1]*1);
 ylabel('Mean firing rate (z units)');
-xlabel('time from LED pulse (s)');
-handle = get(gca,'children');
-legend(handle([2 4]),'putative V1','putative HPC');
-legend('box','off');
+xlabel('time from stimulus (s)');
+% handle = get(gca,'children');
+legend(handles,regionNames{:});
+legend('box','off','location','northwest');
 set(gca,'fontsize',12);
 
 subplot(2,2,4);
 cla
-semplot(ht,abs(zscore(m(depth<-750,:),[],2)),'k', 2);
-semplot(ht,abs(zscore(m(depth>-750,:),[],2)),'r', 2);
+colors = get(gca,'colororder'); clear handles
+for i=1:max(regionID),
+    if sum(regionID==i)>1
+        handles(i) = semplot(ht,abs(zscore(m(regionID==i,:),[],2)),colors(i,:), 2);
+    else
+        handles(i) = plot(ht,Smooth(abs(zscore(m(regionID==i,:),[],2)),2),'color',colors(i,:), 'linewidth',2);
+    end
+    if i==1, hold on; end
+end
 y = ylim;
 PlotHVLines(0,'v','k--','linewidth',2);
 ylim(y);
 % xlim([-1 1]*1);
 ylabel('Mean (absolute) change from baseline');
 xlabel('time from LED pulse (s)');
-handle = get(gca,'children');
-legend(handle([2 4]),'putative V1','putative HPC');
+legend(handles,regionNames{:});
 legend('box','off');
 set(gca,'fontsize',12);
 
-% SaveFig('Effect');
+SaveFig('Effect');
 
 %%
-u = unique(matrix(:,2)); u(u==-1) = [];
+u = unique(matrix(:,2)); u(u==-1) = []; u(isnan(u)) = [];
 stims = matrix(diff([0;matrix(:,2)])~=0,:);
 hs = {};
 for i=1:nUnits
@@ -194,7 +199,7 @@ clf
 q = zscore(guess);
 for i=1:size(lAngles,2)
     subplot(3,3,i);
-    ok = lAngles(testingHalf,i) == 1;  
+    ok = lAngles(testingHalf,i) == 1;
     bar(nanmean(q(ok,:)))
     hold all
     bar(i,nanmean(q(ok,i)),'facecolor',[0.9 0.7 0.2]);
@@ -206,7 +211,7 @@ for i=1:size(lAngles,2)
         title('For trials around 0 degrees');
     else
         title('For trials around 90 degrees');
-%         title(['For ' num2str(u(i)) ' deg trials']);
+        %         title(['For ' num2str(u(i)) ' deg trials']);
     end
 end
 EquateScales
@@ -266,14 +271,14 @@ for i=1:size(decoded,2)
 end
 hh = cat(3,dh{:});
 [~,m] = max(decoded,[],2); % most likely position
-mTranspose = m'; 
+mTranspose = m';
 for i=1:9
     for j=1:9
         transitions(i,j) = numel(strfind(mTranspose(:)',[i j]));
         this = nan(100,1);
         for k=1:100
             rng(k); scrambled = Scramble(mTranspose);
-        this(k,1) = numel(strfind(scrambled(:)',[i j]));
+            this(k,1) = numel(strfind(scrambled(:)',[i j]));
         end
         ctrlTransitions(i,j) = nanmean(this);
     end
@@ -297,12 +302,12 @@ ok = diff([0;matrix(:,2)])~=0 & matrix(:,end)>0;
 stims = matrix(ok,:);
 d = @(x,y) (x-y)./(x+y);
 for j=1:nUnits
-% for j=2
+    % for j=2
     i=j;
-% for i=4
+    % for i=4
     clf
     rng(100*i);
-%     i=1;
+    %     i=1;
     for j=1:length(u)
         angle = u(j);
         [h,ht]  = PETH(spikesCell{i},stims(stims(:,2)==angle)*1+0.05,'durations',[-1 1]*5,'nBins',2001);
@@ -319,7 +324,7 @@ for j=1:nUnits
     subplot(2,1,1);
     PlotColorMap(Smooth(hs1{i}([1 10 2 11 3 12 4 13 5 14 6 15 7 16 8 17 9 18],:),[0 2]),'x',ht);
     set(gca,'ytick',1:max(ylim),'yticklabel',repelem(u,2));
-    
+
     PlotColorMap(Smooth(hs1{i},[0 2]),'x',ht);
     set(gca,'ytick',1:max(ylim),'yticklabel',repmat(u,2,1));
     PlotHVLines([0:2],'v','k--','linewidth',2);
@@ -328,16 +333,16 @@ for j=1:nUnits
     ylabel({'angle (-2=OFF)','data split in half (analysed independently)'});
     title(['neuron ' num2str(i) ' recorded at relative depth ' num2str(depth(i))]);
     set(gca,'fontsize',12,'box','off');
-    
-    
+
+
     subplot(2,1,2);
     semplot(ht,hs{i});
     PlotHVLines([0:2],'v','k--','linewidth',2);
     xlim([-1 3]);
     title(score(i,:));
     drawnow
-%     pause(2);
-%     SaveFig(['y:\V1test\figures\' [projectName '_' dayName] '_unit_' num2str(i)]);
+    %     pause(2);
+    %     SaveFig(['y:\V1test\figures\' [projectName '_' dayName] '_unit_' num2str(i)]);
 end
 
 %%
@@ -375,7 +380,7 @@ plot(xt*dt,x);
 hold all
 in = InIntervals(bins(:,1),[stim(1) stim(end,1)]); [x,xt] = xcorr(counts(in,1),counts(in,2),'coeff');
 plot(xt*dt,x,'linewidth',2);
-in = bins(:,1)>stim(end,1) & inSWS; [x,xt] = xcorr(counts(in,1),counts(in,2),'coeff'); 
+in = bins(:,1)>stim(end,1) & inSWS; [x,xt] = xcorr(counts(in,1),counts(in,2),'coeff');
 plot(xt*dt,x);
 xlim([-1 1]*0.5)
 
@@ -387,26 +392,26 @@ clf
 for i=1:length(spikesCell)
     subplot(4,ceil(length(spikesCell)/4),i);
     response = CountInIntervals(spikesCell{i},bsxfun(@plus,stims(:,1),[0.05 0.3]));
-    
+
     mm = nan(size(response,1),length(u)); mm(sub2ind(size(mm),(1:size(response,1))',FindClosest(u,stims(:,2)))) = response;
     mm(stims(:,end)==3,:) = [];
     mm = sort(mm); mm(sum(~isnan(mm),2)==0,:) = [];
     preferred(i,1) = u(findmax(nanmean(mm)));
     dd = u; dd(2:end) = wrap((dd(2:end)-preferred(i,1))/180*pi);
-    
-    
+
+
     colors = {'','k','b','r'};
     for k=2:4
         mm = nan(size(response,1),length(u)); mm(sub2ind(size(mm),(1:size(response,1))',FindClosest(u,stims(:,2)))) = response;
         mm(stims(:,end)~=k,:) = [];
         mm = sort(mm); mm(sum(~isnan(mm),2)==0,:) = [];
-        
+
         x = dd(sum(~isnan(mm))>0); x = [x; x(2:end)+4; x(2:end)+8];
         x = u(sum(~isnan(mm))>0); x = [x; x(2:end)+180; x(2:end)+360];
         y = mm(:,sum(~isnan(mm))>0); y(:) = nanzscore(y(:)); y = [y(:,1) repmat(y(:,2:end),1,3)];
         semplot(x,y,colors{k},sum(sum(~isnan(mm))>0)/9);
     end
-    
+
     PlotHVLines([0 180 360]+preferred(i,1),'v','k--');
     xlim([0 360]);
     title(i);
@@ -426,12 +431,49 @@ for i=1:9
 end
 PlotColorMap(qq,'x',qt);
 
+%%
+[spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath);
+maxElectrode = cell_metrics.maxWaveformCh(order);
+matrix = dlmread('stimuli_synced.times');
+% Windows is imprecise when saving the "last modified" date of the file:
+% it says the file was modified between 1.72s to 0.72 before it was actually finished!
+% The real time is therefore AT LEAST 0.72s before the saved time
+% matrix(:,1) = matrix(:,1)-.23; % I'm subtracting 1, although the real number (between 1.72 and 0.72) is unknown
+matrix(isnan(matrix(:,1)),:) = [];
 
+u = unique(matrix(:,2)); u(u==-1) = []; u(isnan(u)) = [];
+stims = matrix(diff([0;matrix(:,2)])~=0,:);
+clf
+i=6;
+for j=1:length(u)
+    angle = u(j);
+    [h,ht]  = PETH(spikesCell{i},stims(stims(:,2)==angle),'durations',[-1 1]*5,'nBins',2001);
+    h = h./diff(ht(1:2));
+    if j==1, hs{i,1} = []; hs1{i,1} = []; end
+    hs{i,1}(j,:) = nanmean(h);
+    [~,order] = sort(rand(size(h,1),1));
+    hs1{i,1}(j,:) = nanmean(h(order(1:end/2),:)); order(1:end/2) = [];
+    hs1{i,1}(j+length(u),:) = nanmean(h(order,:));
+end
+subplot(2,1,1);
+% PlotColorMap(Smooth(hs1{i}([1 10 2 11 3 12 4 13 5 14 6 15 7 16 8 17 9 18],:),[0 2]),'x',ht);
+% set(gca,'ytick',1:max(ylim),'yticklabel',repelem(u,2));
+PlotColorMap(Smooth(hs1{i},[0 2]),'x',ht);
+set(gca,'ytick',1:max(ylim),'yticklabel',repmat(u,2,1));
+PlotHVLines([0:2],'v','k--','linewidth',2);
+xlim([-1 3]);
+xlabel('time from stimulus (stimulus=0s, flip=1s, off=2s)');
+title(['neuron ' num2str(i) ', ' regionNames{regionID(i)} ' (neuroscope channel ' num2str(maxElectrode(i)) ')']);
+set(gca,'fontsize',12,'box','off');
+ylabel({'Orientations (degrees; -2 = black screen)','data randomly split in two to test stability'});
 
+subplot(2,1,2);
+semplot(ht,hs{i});
+PlotHVLines([0:2],'v','k--','linewidth',2);
+xlim([-1 3]);
+ylabel('firing rate (Hz)');
 
-
-
-
+SaveFig(['M:\home\raly\results\V1\IndividualCells\' sessionID '_unit_' num2str(i)]);
 
 
 

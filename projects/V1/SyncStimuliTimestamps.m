@@ -1,10 +1,10 @@
 
-folder = pwd;
+basepath = pwd;
 
-[parentFolder,dayName] = fileparts(folder);
+[parentFolder,basename] = fileparts(basepath);
 [~,projectName] = fileparts(parentFolder);
-sessionID = [projectName '_' dayName];
-
+sessionID = [projectName '_' basename];
+load(fullfile(basepath,[basename '.session.mat']),'session');
 % Load saved data
 q = dir('task*.times');
 matrix = [];
@@ -35,12 +35,13 @@ end
 % Use digital input if any
 try
     %     exist(fullfile(parentFolder,dayName,'digitalIn.events.mat'),'file')
-    load(fullfile(parentFolder,dayName,'digitalIn.events.mat'),'digitalIn');
-    on = digitalIn.timestampsOn{end};
-    off = digitalIn.timestampsOff{end};
+    load(fullfile(parentFolder,basename,'digitalIn.events.mat'),'digitalIn');
+    on = digitalIn.timestampsOn{2};
+    off = digitalIn.timestampsOff{2};
     if off(1)<on(1), off(1) = []; end
     if off(end)<on(end), off(end+1) = nan; end
     timesDigital = [on off];
+    timesDigital = Restrict(timesDigital,VS);
     timesDigital = reshape(timesDigital',1,[])'; % vectorize
     % perhaps do: timesDigital = Restrict(timesDigital,VS); % visual stimuli to avoid the Y maze stuff
 
@@ -61,9 +62,9 @@ try
     matrix(:,1) = newTimes;
 catch
     display('Mismatch between matlab matrix and digital inputs. Ignoring digital inputs...');
-    load(fullfile(folder,[dayName '.MergePoints.events.mat']),'MergePoints');
+    load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
     for i=1:length(MergePoints.foldernames)
-        computerTime(i,1) = dir(fullfile(folder,MergePoints.foldernames{i},'amplifier.dat')).datenum;
+        computerTime(i,1) = dir(fullfile(basepath,MergePoints.foldernames{i},'amplifier.dat')).datenum;
     end
     for i=1:max(matrix(:,end))
         indices = find(matrix(:,end)==i);

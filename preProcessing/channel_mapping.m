@@ -114,7 +114,8 @@ if save_csv
 end
 
 % update cell labels in cell metrics
-if save_cell_metrics
+if save_cell_metrics &&...
+        exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
     disp('updating units in cell metrics')
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']))
     chListBrainRegions = findBrainRegion(session);

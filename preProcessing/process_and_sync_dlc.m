@@ -131,6 +131,12 @@ bazlerTtl = digitalIn.timestampsOn{idx};
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range);
 bazlerTtl(extra_pulses) = [];
 
+if isempty(bazlerTtl)
+   warning('no real ttls, something went wrong')
+   disp('fix the issue and type dbcont to continue')
+   keyboard 
+end
+
 basler_intan_diff = length(bazlerTtl) - size(x,1);
 
 [x,y,ts,bazlerTtl,fs,notes] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,ts,fs);

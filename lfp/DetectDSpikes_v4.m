@@ -81,20 +81,25 @@ if isempty(DS2_firstPass)
     disp('Detection by thresholding failed');
     return
 else
-    disp(['After detection by thresholding: ' num2str(length(DS2_firstPass)) ' putative DS2 events.']);
+    disp(['After detection by thresholding: ',...
+        num2str(length(DS2_firstPass)),' putative DS2 events.']);
 end
 
 DS2_secondPass = DS2_firstPass;
 
 
-% Discard ripples with a peak power < highThreshold for
+% Discard with a peak power < highThreshold for
 DS2 = [];
 for i = 1:size(DS2_secondPass,1)
     if DS2_secondPass(i,1)>50
-        m_meanValue = mean(res_lfp_m([DS2_secondPass(i,1):DS2_secondPass(i,2)],2));
-        ds2criteria = mean(res_lfp_m([(DS2_secondPass(i,1)-45):(DS2_secondPass(i,1)-20) ],2))-DS2_mol_threshold; % 25/1250sec = 20ms, 40/1250 = 32 ms
-        m_minValue =  min(res_lfp_m([(DS2_secondPass(i,1)-45):(DS2_secondPass(i,1)-20), (DS2_secondPass(i,2)+20):(DS2_secondPass(i,2)+45)],2));
-        h_maxValue =  max(res_lfp_h([(DS2_secondPass(i,1)-45):(DS2_secondPass(i,1)-20), (DS2_secondPass(i,2)+20):(DS2_secondPass(i,2)+45)],2));
+        m_meanValue = mean(res_lfp_m(DS2_secondPass(i,1):DS2_secondPass(i,2),2));
+        % 25/1250sec = 20ms, 40/1250 = 32 ms
+        ds2criteria = mean(res_lfp_m((DS2_secondPass(i,1)-45):(DS2_secondPass(i,1)-20),2))-DS2_mol_threshold; 
+        
+        idx = [(DS2_secondPass(i,1)-45):(DS2_secondPass(i,1)-20),(DS2_secondPass(i,2)+20):(DS2_secondPass(i,2)+45)];
+        m_minValue =  min(res_lfp_m(idx,2));
+        h_maxValue =  max(res_lfp_h(idx,2));
+                                
         if (m_meanValue < ds2criteria && m_minValue > -6000 && h_maxValue < 6000)
             DS2lfp = res_lfp_h( DS2_secondPass(i,1): DS2_secondPass(i,2),:);
             [~,idx]=max(DS2lfp(:,2));
@@ -107,7 +112,7 @@ if isempty(DS2)
     disp('DS2 Peak thresholding failed.');
     return
 else
-    disp(['After peak thresholding: DS2 ' num2str(length(DS2)) ' events.']);
+    disp(['After peak thresholding: DS2 ', num2str(length(DS2)), ' events.']);
 end
 
 
@@ -133,7 +138,8 @@ if isempty(DS1_firstPass)
     disp('Detection by thresholding failed');
     return
 else
-    disp(['After detection by thresholding: ' num2str(length(DS1_firstPass)) ' putative DS1 events.']);
+    disp(['After detection by thresholding: ',...
+        num2str(length(DS1_firstPass)), ' putative DS1 events.']);
 end
 
 DS1_secondPass = DS1_firstPass;
@@ -147,13 +153,16 @@ for i = 1:size(DS1_secondPass,1)
         df_maxValue = max(hm_dif([DS1_secondPass(i,1):DS1_secondPass(i,2)]));
         h_maxValue = max(res_lfp_h([DS1_secondPass(i,1):DS1_secondPass(i,2)],2));
         m_meanValue = mean(res_lfp_m([DS1_secondPass(i,1):DS1_secondPass(i,2)],2));
-        ds1criteria = mean(res_lfp_m([(DS1_secondPass(i,1)-80):(DS1_secondPass(i,1)-55) ],2))+500; % 25/1250sec = 20ms, 55/1250sec = 44ms
+        % 25/1250sec = 20ms, 55/1250sec = 44ms
+        ds1criteria = mean(res_lfp_m([(DS1_secondPass(i,1)-80):(DS1_secondPass(i,1)-55) ],2))+500; 
         m_maxValue = max(res_lfp_m([DS1_secondPass(i,1)-55:DS1_secondPass(i,2)+55],2));
         m_minValue = min(res_lfp_m([DS1_secondPass(i,1)-55:DS1_secondPass(i,2)+55],2));
         % make sure period does not exceed the size of res_lfp
         if size(res_lfp_h,1)>=(DS1_secondPass(i,2)+125)
-            h_postValue = mean(res_lfp_h([(DS1_secondPass(i,1)+100):(DS1_secondPass(i,2)+125)],2)); % 100/1250sec = 80ms, 125/1250sec = 100ms
-            ds1postcriteria = mean(res_lfp_h([(DS1_secondPass(i,1)-80):(DS1_secondPass(i,1)-55) ],2))+2000; % 25/1250sec = 20ms, 55/1250sec = 44ms
+            % 100/1250sec = 80ms, 125/1250sec = 100ms
+            h_postValue = mean(res_lfp_h([(DS1_secondPass(i,1)+100):(DS1_secondPass(i,2)+125)],2)); 
+            % 25/1250sec = 20ms, 55/1250sec = 44ms
+            ds1postcriteria = mean(res_lfp_h([(DS1_secondPass(i,1)-80):(DS1_secondPass(i,1)-55) ],2))+2000; 
             if (df_maxValue > DS1fil_highThreshold) && (h_maxValue > DS1wb_highThreshold) && (m_meanValue > ds1criteria) ...
                     && (h_postValue < ds1postcriteria) && (m_minValue > -3000) && (m_maxValue < 3000)
                 DS1lfp = res_lfp_h( DS1_secondPass(i,1): DS1_secondPass(i,2),:);

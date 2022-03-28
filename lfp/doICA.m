@@ -162,7 +162,7 @@ ica.channels = lfp.channels;
 
 if saveMat
     disp('Saving results...');
-    save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica','-v7.3');
+    save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica');
 end
 
 if plotWeights

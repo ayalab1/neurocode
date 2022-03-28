@@ -29,6 +29,12 @@ addOptional(p,'baseFR',[])
 parse(p,varargin{:})
 baseFR = p.Results.baseFR;
 
+%% check that there is data to work with
+if isempty(ripSpk) || isempty(spikes)
+    unitRip=[];
+    return
+end
+
 %% Prob of participation
 % for each unit
 temp = zeros(length(ripSpk.UnitAbs),length(ripSpk.EventAbs));
@@ -66,7 +72,8 @@ for unit = 1:length(ripSpk.UnitAbs)
 end
 
 %% Gain
-if baseFR
+if ~isempty(baseFR)
+
     % in each ripple
     for unit = 1:length(ripSpk.UnitAbs)
         for rip = 1:length(ripSpk.EventAbs)

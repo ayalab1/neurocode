@@ -3,18 +3,18 @@ function [tracking,field_names] = process_and_sync_dlc(varargin)
 %
 % Run this after you have exported deeplabcut csv results
 %
-% TODO: 
+% TODO:
 %       -make option to just load and format csv without sync
-%       -make more robust to file exist assumptions 
+%       -make more robust to file exist assumptions
 %           (ex. MergePoints.events.mat, digitalIn.events.mat)
-%       -make option for dlc csv in basepath 
+%       -make option for dlc csv in basepath
 %       -make compatible with multi-animal tracking
 %
 %
 % Ryan H 2022
 
 p = inputParser;
-p.addParameter('basepath',pwd,@isfolder); 
+p.addParameter('basepath',pwd,@isfolder);
 p.addParameter('primary_coords',1,@isnumeric); % which tracker point do you want
 p.addParameter('likelihood',.95,@isnumeric); % tracking quality thres [0-1]
 p.addParameter('pulses_delta_range',0.01,@isnumeric); % range for ttls
@@ -26,7 +26,7 @@ likelihood = p.Results.likelihood;
 pulses_delta_range = p.Results.pulses_delta_range;
 
 basename = basenameFromBasepath(basepath);
-            
+
 if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
     load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
     count = 1;
@@ -56,8 +56,8 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
                 df{idx,y_col(i)} = NaN;
             end
             ts = df{:,1}/fs;
-%             x = df{:,x_col(primary_coords)};
-%             y = df{:,y_col(primary_coords)};
+            %             x = df{:,x_col(primary_coords)};
+            %             y = df{:,y_col(primary_coords)};
             
             x = df{:,x_col};
             y = df{:,y_col};
@@ -68,7 +68,7 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
         end
     end
 end
-    
+
 % Concatenate and sync timestamps
 ts = []; subSessions = []; maskSessions = [];
 if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
@@ -101,12 +101,17 @@ for ii = 1:size(tempTracking,2)
     samplingRate = [samplingRate; tempTracking{ii}.samplingRate];
     description{ii} = tempTracking{ii}.description;
 end
-    
+% pull out notes
+for i = 1:length(tempTracking)
+    notes{i} = [tempTracking{i}.folder,': ',tempTracking{i}.notes];
+end
+
 tracking.position.x = x;
 tracking.position.y = y;
 tracking.folders = folder;
 tracking.samplingRate = samplingRate;
 tracking.timestamps = ts;
+tracking.notes = notes;
 tracking.events.subSessions = subSessions;
 tracking.events.subSessionsMask = maskSessions;
 end
@@ -126,9 +131,15 @@ bazlerTtl = digitalIn.timestampsOn{idx};
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range);
 bazlerTtl(extra_pulses) = [];
 
+if isempty(bazlerTtl)
+   warning('no real ttls, something went wrong')
+   disp('fix the issue and type dbcont to continue')
+   keyboard 
+end
+
 basler_intan_diff = length(bazlerTtl) - size(x,1);
 
-[x,y,ts,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,ts,fs);
+[x,y,ts,bazlerTtl,fs,notes] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,ts,fs);
 
 [~,folder_name] = fileparts(folder);
 tracking.position.x = x;
@@ -138,27 +149,45 @@ tracking.originalTimestamps = ts;
 tracking.folder = folder_name;
 tracking.samplingRate = fs;
 tracking.description = '';
+tracking.notes = notes;
 end
 
-function [x,y,t,bazlerTtl] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
+function [x,y,t,bazlerTtl,fs,notes] = match_basler_frames_to_ttl(bazlerTtl,basler_intan_diff,x,y,t,fs)
+
+notes = [];
 
 % match basler frames con ttl pulses
 if (length(bazlerTtl) == size(x,1)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
-    disp('N of frames match!!');
+    notes = 'N of frames match!!';
+    warning(notes);
+    
 elseif basler_intan_diff>0 && abs(basler_intan_diff)<fs
-    disp([num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the end of the recording']);
+    notes = [num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the end of the recording'];
+    warning(notes);
     bazlerTtl = bazlerTtl(1:size(x,1));
 elseif basler_intan_diff<0 && abs(basler_intan_diff)<fs
-    disp([num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the beggining of the recording']);
+    notes = [num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the beggining of the recording'];
+    warning(notes);
     x = x(1:length(bazlerTtl),:);
     y = y(1:length(bazlerTtl),:);
 elseif basler_intan_diff<0 && abs(basler_intan_diff)>fs
-    disp([num2str(abs(size(x,1) - length(bazlerTtl)))...
-        ' video frames without TTL... was the recording switched off before the camera? Cutting positions accordingly...']);
+    notes = [num2str(abs(size(x,1) - length(bazlerTtl)))...
+        ' video frames without TTL... was the recording switched off before the camera? Cutting positions accordingly...'];
+    warning(notes);
     x = x(1:length(bazlerTtl),:);
     y = y(1:length(bazlerTtl),:);
+    
+elseif abs(basler_intan_diff)>60*fs
+    notes = 'More than 1 minute missalignment in total in this session...will interpolate ts';
+    warning(notes);
+    simulated_ts = linspace(min(bazlerTtl),max(bazlerTtl),length(x));
+    bazlerTtl_new = interp1(bazlerTtl,bazlerTtl,simulated_ts);
+    bazlerTtl = bazlerTtl_new';
+    fs = mode(diff(bazlerTtl));
+    
 elseif abs(basler_intan_diff)>2*fs
-    warning('More than 2 seconds missalignment in total in this session...will adjust to the closer one...');
+    notes = 'More than 2 seconds missalignment in total in this session...will adjust to the closer one...';
+    warning(notes);
     if basler_intan_diff>0
         bazlerTtl = bazlerTtl(1:size(x,1));
     else
@@ -167,8 +196,11 @@ elseif abs(basler_intan_diff)>2*fs
     end
 elseif isempty(bazlerTtl)
     bazlerTtl = t;
+    notes = 'no ttls';
+    warning(notes);
 else
-    warning('Unnoticed problem with Camera/Intan... I would go back and check both step by step');
+    notes = 'Unnoticed problem with Camera/Intan... I would go back and check both step by step';
+    warning(notes);
 end
 end
 
@@ -181,23 +213,23 @@ function [digitalIn] = getDigitalIn(ch,varargin)
 % ch            Default all.
 % <OPTIONALS>
 % fs            Sampling frequency (in Hz), default 30000, or try to
-%               recover for rhd 
+%               recover for rhd
 % offset        Offset subtracted (in seconds), default 0.
-% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 5s)    
+% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 5s)
 % filename      File to get pulses from. Default, digitalin.dat file with folder
 %               name in current directory
 %
 %
 % OUTPUTS
 %               digitalIn - events struct with the following fields
-% ints          C x 2  matrix with pulse times in seconds. First column of C 
-%               are the beggining of the pulses, second column of C are the end of 
+% ints          C x 2  matrix with pulse times in seconds. First column of C
+%               are the beggining of the pulses, second column of C are the end of
 %               the pulses.
 % dur           Duration of the pulses. Note that default fs is 30000.
 % timestampsOn  Beggining of all ON pulses
 % timestampsOff Beggining of all OFF pulses
 % intsPeriods   Stimulation periods, as defined by perioLag
-% 
+%
 % MV-BuzsakiLab 2019
 % Based on Process_IntanDigitalChannels by P Petersen
 
@@ -241,8 +273,8 @@ else
 end
 
 try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
-    board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...    
-    read_Intan_RHD2000_file_bz('basepath',folder);
+        board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...
+        read_Intan_RHD2000_file_bz('basepath',folder);
     fs = frequency_parameters.board_dig_in_sample_rate;
 catch
     disp('File ''info.rhd'' not found. (Type ''help <a href="matlab:help loadAnalog">loadAnalog</a>'' for details) ');
@@ -291,7 +323,7 @@ for ii = 1:size(digital_on,2)
             intsPeriods(jj,2) = d(2,intPeaks(jj));
             intsPeriods(jj+1,1) = d(1,intPeaks(jj)+1);
         end
-        intsPeriods(end,2) = d(2,end);  
+        intsPeriods(end,2) = d(2,end);
         digitalIn.intsPeriods{ii} = intsPeriods;
     end
 end
@@ -300,16 +332,16 @@ if exist('digitalIn','var')==1
     xt = linspace(0,size(data,2)/fs,size(data,2));
     data = flip(data);
     data = data(1:size(digitalIn.intsPeriods,2),:);
-
+    
     h=figure;
     imagesc(xt,1:size(data,2),data);
-    xlabel('s'); ylabel('Channels'); colormap gray 
+    xlabel('s'); ylabel('Channels'); colormap gray
     mkdir(fullfile(folder,'Pulses'));
     saveas(h,fullfile(folder,'Pulses','digitalIn.png'));
-
+    
     save(fullfile(folder,'digitalIn.events.mat'),'digitalIn');
 else
     digitalIn = [];
 end
- 
+
 end

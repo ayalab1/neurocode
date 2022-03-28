@@ -88,21 +88,18 @@ saveMat = p.Results.saveMat;
 if isempty(events)
     spkEventTimes=[];
     return
-else 
-     %this comes from a work around to Restrict when empty intervals
+elseif isstruct(events)&&isfield(events,'timestamps')
+    %this comes from a work around to Restrict when empty intervals
     if isempty(events.timestamps)
         spkEventTimes=[];
         return
     else
-        % Starting and ending timestamps
-        if isnumeric(events)
-            timestamps = events;
-        elseif isstruct(events)
-            timestamps = events.timestamps;
-        else
-            warning('Events must be either a Nx2 vector or a bz event structure!');
-        end
+        timestamps = events.timestamps;
     end
+elseif isnumeric(events)
+    timestamps = events;
+else 
+    error('Events must be either a Nx2 vector or a bz event structure!');
 end
 
 % Default events, UIDs, and spikes

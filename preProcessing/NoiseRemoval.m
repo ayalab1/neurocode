@@ -19,7 +19,7 @@ lfpSamplingRate = lfpStructure.samplingRate;
 % Identify Noise intervals
 lfp = mean(lfpStructure.data,2);
 
-[b a] = cheby2(5,20,300/(lfpSamplingRate/2),'low');
+[b,a] = cheby2(5,20,300/(lfpSamplingRate/2),'low');
 slow = filtfilt(b,a,lfp);
 filtered = lfp-slow; % this is the signal filtered in the 300Hz+ frequency band
 power = abs(hilbert(filtered));
@@ -40,7 +40,7 @@ noiseIntervalIndices = [floor(noiseIntervals(:,1)/lfpSamplingRate*datSamplingRat
 % (even with epsilon=0s) because it ensures the points immediately preceding 
 % and immediately following the boundaries (e.g. noiseIntervalIndices(j,1)-1 
 % and noiseIntervalIndices(j,2)+1) are noise-free and we can interpolate from them
-noiseIntervals = ConsolidateIntervals(noiseIntervals,'epsilon',5/1000*datSamplingRate); % epsilon = 5ms
+noiseIntervalIndices = ConsolidateIntervals(noiseIntervals,'epsilon',5/1000*datSamplingRate); % epsilon = 5ms
 
 warning(['Removing a total of ' num2str(sum(diff(noiseIntervalIndices,[],2))/datSamplingRate) 's of noisy data from the .dat file']);
 %%

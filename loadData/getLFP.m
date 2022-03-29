@@ -149,7 +149,11 @@ end
 
 session = getSession('basepath',basepath);
 
-samplingRate = session.extracellular.srLfp;
+if fromDat
+    samplingRate = session.extracellular.sr;
+else
+    samplingRate = session.extracellular.srLfp;
+end
 
 samplingRateLFP_out = samplingRate./downsamplefactor;
 

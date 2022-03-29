@@ -196,7 +196,11 @@ for i = 1:nIntervals
         lfp(i).interval(2) = length(lfp(i).timestamps)/lfp(i).samplingRate;
         lfp(i).duration = (lfp(i).interval(i,2)-lfp(i).interval(i,1));
     end
-    
+    if lfp(i).interval(1)>0 % shift the timestamps accordingly
+        add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; % in practice, the interval starts at the nearest lfp timestamp
+        lfp(i).timestamps = lfp(i).timestamps + add; 
+        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
+    end
     if isfield(session,'brainRegions') && isfield(session,'channels')
         [~,~,regionidx] = intersect(lfp(i).channels,session.channels,'stable');
         lfp(i).region = session.brainRegions(regionidx); % match region order to channel order..

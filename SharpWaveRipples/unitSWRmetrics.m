@@ -34,7 +34,7 @@ if isempty(ripSpk) || isempty(spikes)
     unitRip=[];
     return
 end
-
+unitRip.UID = spikes.UID;
 %% Prob of participation
 % for each unit
 temp = zeros(length(ripSpk.UnitAbs),length(ripSpk.EventAbs));

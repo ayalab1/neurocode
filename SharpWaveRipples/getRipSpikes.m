@@ -126,6 +126,9 @@ end
 spkEventTimes = {};
 spkEventTimes.padding = padding;
 
+% Add UID guide for later access to unit info
+spkEventTimes.UID = spikes.UID;
+
 % 1. Absolute and relative time of spikes by unit and by event
 for unit = 1:length(spikes.UID)
     if UIDs(unit)

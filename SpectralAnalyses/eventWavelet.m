@@ -101,6 +101,10 @@ elseif isnumeric(lfp)
     timestamps = [1:length(lfp)]'./samplingRate;
 end
 
+if (size(events,2)~=1)
+    error('events input must be an Nx1 array');
+end
+
 twin = p.Results.twin*samplingRate;
 events = round(events*samplingRate);
 

@@ -43,6 +43,9 @@ def move_back(basepath,local_drive_path):
         # if the csv exist, then move to origin basepath
         if len(cur_file_fullpath) > 0:
             destination = os.path.dirname(os.path.splitext(file)[0])
+            if not os.path.exists(destination):
+                print('WARNING: folder name change. can not copy results to '+destination)
+                continue
             if not os.path.exists(os.path.join(destination,os.path.basename(cur_file_fullpath[0]))):
 
                 print('copy: ' + cur_file_fullpath[0])

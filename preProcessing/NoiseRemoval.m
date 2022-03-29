@@ -1,57 +1,170 @@
 function NoiseRemoval(basepath)
-%must have already computed lfp
-% come back and fancify parameters
-% KM, 2021
+
+% Copyright (C) 2021 KM and 2022 Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 session = getSession('basepath',basepath);
-nChannels = session.extracellular.nChannels;
-sf = session.extracellular.srLfp;
-dat_path = [basepath,filesep, session.general.name, '.dat'];
-lfp = getLFP('all','basepath',basepath);
+datFile = [basepath,filesep, session.general.name, '.dat'];
+datSamplingRate = session.extracellular.sr;
 
+warning(['This function will change the file ' datFile '.']);
+nChannels = session.extracellular.nChannels;
+lfpStructure = getLFP('all','basepath',basepath);
+lfpSamplingRate = lfpStructure.samplingRate;
 
 % Identify Noise intervals
-mean_lfp = mean(lfp.data,2);
+lfp = mean(lfpStructure.data,2);
 
-[bb,aa] = butter(4,[62, 120]/sf*2, 'bandpass');
-hi_lfp = FilterM(bb,aa,mean_lfp);
-hi_pow = abs(hilbert((hi_lfp)));
-%kern = gausswin(round(.05*sf));
-%hi_pow_smoo = conv(hi_pow,kern,'same');
-%thresh = mean(hi_pow_smo) + 6 * std(hi_pow_smo);
-%above_thresh = hi_pow_smoo>thresh;
-%thresh = prctile(hi_pow,99);
+[b a] = cheby2(5,20,300/(lfpSamplingRate/2),'low');
+slow = filtfilt(b,a,lfp);
+filtered = lfp-slow; % this is the signal filtered in the 300Hz+ frequency band
+power = abs(hilbert(filtered));
 
-thresh = mean(hi_pow) + 9 * std(hi_pow);
-above_thresh = hi_pow>thresh;
+% Find noise outliers:
+q1 = quantile(power,0.25);
+q3 = quantile(power,0.75);
+d = q3-q1;
+threshold = q3+3*d; % this Tukey's definition of outliers that are "far out" (normal outliers would be at "q3+1.5*d" but we want to be conservative here)
+noiseIntervals = FindInterval(power>threshold);
+% add at least 2.5 ms before and after each interval
+noiseIntervals = bsxfun(@plus,noiseIntervals,[-2.5 +2.5]/1000*lfpSamplingRate);
 
-clear lfp;
+% the units of "noiseIntervals" are in lfp indices. Convert them to dat indices
+noiseIntervalIndices = [floor(noiseIntervals(:,1)/lfpSamplingRate*datSamplingRate) ceil(noiseIntervals(:,2)/lfpSamplingRate*datSamplingRate)];
 
-noiseIntsSlo = findIntervals(above_thresh);
+% Merge noise intervals within "epsilon" of each other. This step is important 
+% (even with epsilon=0s) because it ensures the points immediately preceding 
+% and immediately following the boundaries (e.g. noiseIntervalIndices(j,1)-1 
+% and noiseIntervalIndices(j,2)+1) are noise-free and we can interpolate from them
+noiseIntervals = ConsolidateIntervals(noiseIntervals,'epsilon',5/1000*datSamplingRate); % epsilon = 5ms
 
-noiseIntsFast = noiseIntsSlo*8; %adjust for 8x sampling rate in dat file [FIXTHIS]
-
+warning(['Removing a total of ' num2str(sum(diff(noiseIntervalIndices,[],2))/datSamplingRate) 's of noisy data from the .dat file']);
 %%
-% Replace in dat file
-% copied from cleanPulses by manu
-m = memmapfile(dat_path, 'Format','int16','Writable',true);
-nPnt = round(length(m.Data)/nChannels);
-intWindow = 5;
+m = memmapfile(datFile, 'Format','int16','Writable',true);
+nSamples = round(length(m.Data)/nChannels);
+% make sure that the very first and the very last points in the dat-file are not selected to be removed (this would make interpolation impossible)
+noiseIntervalIndices(noiseIntervalIndices<2) = 2; noiseIntervalIndices(noiseIntervalIndices>nSamples-1) = nSamples-1;
 
-for chIdx = 1:nChannels
-
-    for intIdx = 1:size(noiseIntsFast,1)
-        noiseInds = noiseIntsFast(intIdx,1):noiseIntsFast(intIdx,2);
-        frameInds = (noiseIntsFast(intIdx,1)-intWindow):(noiseIntsFast(intIdx,2)+intWindow);
-        frameInds(ismember(frameInds,noiseInds)) = [];
-        frameInds(frameInds>nPnt|frameInds<1) = []; 
-        frameIndsFlat = sub2ind([nChannels,nPnt],chIdx*ones(size(frameInds)),frameInds);
-        noiseIndsFlat = sub2ind([nChannels,nPnt],chIdx*ones(size(noiseInds)),noiseInds);
-        sig = m.Data(frameIndsFlat);
-        fillVals = interp1(frameInds,double(sig),noiseInds);
-        m.Data(noiseIndsFlat) = int16(fillVals);
-    end
-
+try
+    noiseIntervals = noiseIntervalIndices/datSamplingRate;
+    disp(['Saving noise intervals in ' fullfile(basepath,'noiseIntervals.events.mat')]);
+    save(fullfile(basepath,'noiseIntervals.events.mat'),'noiseIntervals');
+end
+for i = 1:nChannels
+    badTimeIndices = linspaceVector(noiseIntervalIndices(:,1),noiseIntervalIndices(:,2));
+    goodTimeIndices = sort([noiseIntervalIndices(:,1)-1; noiseIntervalIndices(:,2)+1]);
+    badIndices = sub2ind([nChannels,nSamples],i*ones(size(badTimeIndices)),badTimeIndices);
+    goodIndices = sub2ind([nChannels,nSamples],i*ones(size(goodTimeIndices)),goodTimeIndices);
+    goodValues = m.Data(goodIndices);
+    interpolated = interp1(goodTimeIndices,double(goodValues),badTimeIndices);
+    m.Data(badIndices) = int16(interpolated);
 end
 
+
+% ------------------------------- Helper functions -------------------------------
+
+function y = linspaceVector(d1, d2)
+
+% It's like linspace, but d1 and d2 and vectors
+% It's a faster equivalent to a loop calling linscape for each [d1 d2] pair:
+% for i=1:length(d1),y = [y;linspace(d1(i),d2(i))']; end
+%
+% Example:
+% linspaceVector([2;5;23],[2;8;23]) = [2;5;6;7;8;23]
+%
+% Copyright (C) 2020 Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
+n = d2-d1;
+
+% repeat original value n times
+y0 = repelem(d1,n+1);
+nRows = size(y0,1);
+
+% add 1 for each additional value after d1
+indicesOfOriginalValues = cumsum([0;n(1:end-1)]+1);
+originalValues = Unfind(indicesOfOriginalValues,nRows);
+toAdd = CumSum(ones(nRows,1),originalValues)-1;
+
+y = y0 + toAdd;
+
+
+function Logical = Unfind(indices, n)
+
+% When you have a logical vector, 'find' is useful as it gives you the
+% indices of the non-zero values.
+% This function performs the opposite operation, giving you a logical
+% vector with ones in the positions of the indices provided.
+%
+% If you want the length of the resulting logical to be different from the
+% last index provided, provide n (default = last index).
+%
+% Copyright (C) 2016 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+ 
+if nargin<2,
+    n=max(indices);
 end
+ 
+Logical = false(n,1);
+Logical(indices) = true;
+
+function s = CumSum(data,stops)
+
+%CumSum - Cumulative sum of elements. Partial sums can also be computed.
+%
+%  USAGE
+%
+%    sum = CumSum(data,stops)
+%
+%    data           data to sum
+%    stops          optional logical indices where sum should be restarted
+%
+%  EXAMPLE
+%
+%    % Simple cumulative sum
+%    s = CumSum([1 4 6 2 13]);
+%
+%    % Partial cumulative sums
+%    s = CumSum([1 4 6 2 13 2 4 6 5 10 1],[1 0 0 0 0 1 0 0 0 0 0])
+%
+
+% Copyright (C) 2004-2011 by Michaël Zugaro
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
+
+data = data(:);
+if nargin == 2,
+	stops = logical(stops(:));
+end
+
+% Simple cumulative sum
+s = cumsum(data);
+if nargin == 1, return; end
+
+% Use stops to restart cumulative sum (tricky vector computation)
+stops(1) = 0;
+i = find(stops);
+k = s(i-1);
+dk = diff([0;k]);
+z = zeros(size(data));
+z(i) = dk;
+s = s-cumsum(z);
+
+

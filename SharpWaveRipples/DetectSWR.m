@@ -897,7 +897,7 @@ for ep_i = 1:Nepochs
             t = featureTs/1250; % timestamps for candidate ripple events
             bad = false(size(t));
             try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[6 Inf]);
+                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thesholds',[6 Inf],'manual',true);
                 bad = bad | InIntervals(t,badIntervals);
             end
             try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
@@ -963,7 +963,7 @@ for ep_i = 1:Nepochs
                 xlim(xlims); ylim(ylims);
                 hold on;
                 scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
-%                 clabel('Estimated ripple score');
+                set(get(colorbar,'YLabel'),'String','Estimated ripple score');
                 xlabel('Sharp wave depth'); ylabel('Ripple power');
 
                 title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});

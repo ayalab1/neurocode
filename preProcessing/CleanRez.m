@@ -25,6 +25,7 @@ function rez = CleanRez(rez,varargin)
 %                       default = 12). 
 %     'minNumberOfSpikes'   clusters with nSpikes<minNumberOfSpikes will be 
 %                       removed (default = 20).
+%     'verbose'         Display progress messages (default = true).
 %    =========================================================================
 %
 %  OUTPUT
@@ -41,6 +42,7 @@ function rez = CleanRez(rez,varargin)
 
 minNumberOfSpikes = 20;
 mahalThreshold  = 12;
+verbose = true;
 
 % Parse parameter list
 for i = 1:2:length(varargin)
@@ -56,7 +58,12 @@ for i = 1:2:length(varargin)
         case 'mahalthreshold'
             mahalThreshold = varargin{i+1};
             if ~isnumeric(mahalThreshold)
-                error('Incorrect value for property ''savepath'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
+                error('Incorrect value for property ''mahalThreshold'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
+            end
+        case 'verbose'
+            verbose = varargin{i+1};
+            if ~islogical(verbose)
+                error('Incorrect value for property ''verbose'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
             end
         otherwise
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).']);
@@ -67,7 +74,7 @@ end
 %% Impose a Mahalanobis distance threshold on each cluster
 
 if mahalThreshold<Inf && exist('savepath','var') && exist(savepath,'dir')
-    disp(['Removing spikes exceeding a Mahalanobis distance of ' num2str(mahalThreshold)]); 
+    if verbose, disp(['Removing spikes exceeding a Mahalanobis distance of ' num2str(mahalThreshold)]); end
 
     % Read the .clu file indicating which cluster every spike is associated with
     clu = double(readNPY(fullfile(savepath, 'spike_clusters.npy')));
@@ -86,7 +93,7 @@ if mahalThreshold<Inf && exist('savepath','var') && exist(savepath,'dir')
             clu(indices(bad)) = badCluster;
         end
     end
-    disp(['Removed a total of ' num2str(sum(nSpikesRemoved)) ' bad spikes (Mahalanobis threshold) to unused cluster ' num2str(badCluster) ' in phy.']);
+    if verbose, disp(['Removed a total of ' num2str(sum(nSpikesRemoved)) ' bad spikes (Mahalanobis threshold) to unused cluster ' num2str(badCluster) ' in phy.']); end
     writeNPY(uint32(clu), fullfile(savepath, 'spike_clusters.npy'));
 elseif mahalThreshold<Inf
     warning('You did not provide a phy path. Mahalanobis threshold will not be implemented.');
@@ -126,6 +133,7 @@ end
 % signal to noise ratio (snr) below 4 is noisy (imperically defined)
 snr = signal./noise;
 detectedOnAllElectrodes = snr<3.5;
+if verbose, disp([num2str(sum(detectedOnAllElectrodes)) '/' num2str(nClusters) ' clusters are detected on all channels']); end
 
 % Make sure the trough/peak is not a single deviation, but part of at least a couple of points deviating together
 % (peak/trough on first or last bin not allowed)
@@ -147,6 +155,7 @@ for i=1:nClusters
     d(i,1) = waveform(idx1)/waveform(idx);
 end
 singleBin = ~ (d>0);
+if verbose, disp([num2str(sum(singleBin)) '/' num2str(nClusters) ' clusters are a single-bin spike']); end
 
 % Some waveforms look like a noisy oscillation: no single peak/trough:
 nPeaksAndTroughs = nan(nClusters,1);
@@ -167,6 +176,7 @@ for i=1:nClusters
     end
 end
 multiplePeaksAndTroughs = nPeaksAndTroughs>1;
+if verbose, disp([num2str(sum(multiplePeaksAndTroughs)) '/' num2str(nClusters) ' have too many troughs/peaks']); end
 
 isiViolation = false(nClusters,1);
 for i=1:nClusters
@@ -182,8 +192,9 @@ for i=1:nClusters
 end
 
 % We can also delete clusters with less than a certain number of spikes, e.g. 5
-nSpikes = accumarray(rez.st3(:,2),1);
+nSpikes = accumarray(rez.st3(rez.st3(:,2)>0,2),1);
 tooFew = nSpikes<minNumberOfSpikes;
+if verbose, disp([num2str(sum(tooFew)) '/' num2str(nClusters) ' have too few assigned spikes']); end
 
 detectedOnAllElectrodes(end+1:nClusters) = false;
 singleBin(end+1:nClusters) = false;
@@ -192,6 +203,7 @@ tooFew(end+1:nClusters) = false;
 
 % Clusters selected by any of the above criteria are marked as "noisy"
 noisy = detectedOnAllElectrodes | singleBin | multiplePeaksAndTroughs | isiViolation | tooFew;
+if verbose, disp([num2str(sum(noisy)) '/' num2str(nClusters) ' clusters removed in total']); end
 
 % delete noisy clusters to clean the rez file
 rez.cProj(ismember(rez.st3(:,2),find(noisy)),:) = [];

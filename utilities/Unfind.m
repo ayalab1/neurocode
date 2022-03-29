@@ -9,22 +9,12 @@ function Logical = Unfind(indices, n)
 % If you want the length of the resulting logical to be different from the
 % last index provided, provide n (default = last index).
 %
- 
-%% OLD WAY
-% 
-% Logical = full(sparse(unique(indices), ones(size(unique(indices))), ones(size(unique(indices)))));
-% 
-% if exist('n', 'var'),
-%     if length(Logical)<n,
-%         Logical(n) = 0; % add zeroes to the end of the logical so that now it is of length n
-%     else
-%         Logical = (Logical(1:n)); % if it is shorter, crop it to match n
-%     end
-% end
-% 
-% Logical = logical(Logical(:));
-% 
-%% NEW WAY (17 Feb 2016)
+% Copyright (C) 2016 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
  
 if nargin<2,
     n=max(indices);

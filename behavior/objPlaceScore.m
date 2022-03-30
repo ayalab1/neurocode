@@ -107,10 +107,10 @@ else
     object_training_3(2,:) = sum(data_training_3.dur{1,3}(times_train3_2));
     
     
-    times_test = find(data_test_multi.timestampsOn{2}<timeTh(2));
-    times_test = find(data_test_multi.timestampsOn{3}<timeTh(2));
-    object_test_multi(1,:) = sum(data_test_multi.dur{1,2}(times_test)); 
-    object_test_multi(2,:) = sum(data_test_multi.dur{1,3}(times_test));     
+    times_test_1 = find(data_test_multi.timestampsOn{2}<timeTh(2));
+    times_test_2 = find(data_test_multi.timestampsOn{3}<timeTh(2));
+    object_test_multi(1,:) = sum(data_test_multi.dur{1,2}(times_test_1)); 
+    object_test_multi(2,:) = sum(data_test_multi.dur{1,3}(times_test_2));     
 end
 
 

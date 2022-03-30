@@ -122,7 +122,6 @@ object_B_test = object_test_multi(2,:);
 
 else
     
-    
 cd([basepath '\' nsespaths{find(sessionsSeq == 1)}]);
 data_training = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
 cd([basepath '\' nsespaths{find(sessionsSeq == 2)}]);
@@ -143,8 +142,8 @@ else
     object_train(1,:) = sum(data_training.dur{1,2}(times1)); 
     object_train(2,:) = sum(data_training.dur{1,3}(times2)); 
     
-    times3 = find(data_test.timestampsOn{2}<timeTh(2));
-    times4 = find(data_test.timestampsOn{3}<timeTh(2));
+    times3 = find(data_test_single.timestampsOn{2}<timeTh(2));
+    times4 = find(data_test_single.timestampsOn{3}<timeTh(2));
     object_test(1,:) = sum(data_test_single.dur{1,2}(times3)); 
     object_test(2,:) = sum(data_test_single.dur{1,3}(times4));     
 end

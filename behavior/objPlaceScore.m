@@ -114,8 +114,8 @@ else
 end
 
 
-object_A_training = (object_training_1(1,:) + object_training_2(1,:) + object_training_3(1,:))/3; %mean in order to not skew object preference score HLR 03/2022
-object_B_training = (object_training_1(2,:) + object_training_2(2,:) + object_training_3(2,:))/3; %mean in order to not skew object preference score HLR 03/2022
+object_A_training = (object_training_1(1,:) + object_training_2(1,:) + object_training_3(1,:)); 
+object_B_training = (object_training_1(2,:) + object_training_2(2,:) + object_training_3(2,:)); 
 object_A_test = object_test_multi(1,:);
 object_B_test = object_test_multi(2,:);   
     

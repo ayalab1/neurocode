@@ -98,7 +98,7 @@ for ep = 1:size(linear_epochs,1)
     [~,lin,~] = pca(xy);
     linpos = lin(:,1);
     % min to zero
-    linpos = linpos - min(linpos);
+    %linpos = linpos - min(linpos);
     if ~isempty(maze_sizes)
         pos_range = max(linpos) - min(linpos);
         convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
@@ -225,6 +225,7 @@ end
 %% Generate output variables
 if savemat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    save([basepath,filesep,[basename,'.trials.mat']],'trials');
 end
 
 end

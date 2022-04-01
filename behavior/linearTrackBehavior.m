@@ -39,6 +39,7 @@ addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & lin
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
 addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
+addParameter(p,'split_linearize',false,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -50,6 +51,7 @@ savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
+split_linearize = p.Results.split_linearize;
 
 basename = basenameFromBasepath(basepath);
 
@@ -87,32 +89,61 @@ linear_epochs = [startTime,stopTime];
 
 % make all coords outside linear track to nan
 behavior.position.linearized = NaN(1,length(behavior.timestamps));
-
-% make linear epoch by epoch to account for different maze positions
+xy = [];
 for ep = 1:size(linear_epochs,1)
     % find intervals in epoch
     [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
     % pull out xy
-    xy = [behavior.position.x(idx)',behavior.position.y(idx)'];
-    % make linear
-    [~,lin,~] = pca(xy);
-    linpos = lin(:,1);
-    % min to zero
-    linpos = linpos - min(linpos);
-    if ~isempty(maze_sizes)
-        pos_range = max(linpos) - min(linpos);
-        convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
-        linpos = linpos / convert_pix_to_cm_ratio;
-        % convert xy to cm as well
-        behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-        behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+    xy = [xy; behavior.position.x(idx)',behavior.position.y(idx)'];
+end
+% make linear
+[~,lin,~] = pca(xy);
+linpos = lin(:,1);
+% min to zero
+%linpos = linpos - min(linpos);
+if ~isempty(maze_sizes)
+    pos_range = max(linpos) - min(linpos);
+    convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+    linpos = linpos / convert_pix_to_cm_ratio;
+    % convert xy to cm as well
+    behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
+    behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+end
+% normalize?
+if norm_zero_to_one
+    linpos = ZeroToOne(linpos);
+end
+% add linear with interval epoch
+behavior.position.linearized = linpos';
+
+if split_linearize % if want to linearize tracking epoch bu epoch
+    
+    % make linear epoch by epoch to account for different maze positions
+    for ep = 1:size(linear_epochs,1)
+        % find intervals in epoch
+        [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+        % pull out xy
+        xy = [behavior.position.x(idx)',behavior.position.y(idx)'];
+        % make linear
+        [~,lin,~] = pca(xy);
+        linpos = lin(:,1);
+        % min to zero
+        %linpos = linpos - min(linpos);
+        if ~isempty(maze_sizes)
+            pos_range = max(linpos) - min(linpos);
+            convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+            linpos = linpos / convert_pix_to_cm_ratio;
+            % convert xy to cm as well
+            behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
+            behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+        end
+        % normalize?
+        if norm_zero_to_one
+            linpos = ZeroToOne(linpos);
+        end
+        % add linear with interval epoch
+        behavior.position.linearized(idx) = linpos';
     end
-    % normalize?
-    if norm_zero_to_one
-        linpos = ZeroToOne(linpos);
-    end
-    % add linear with interval epoch
-    behavior.position.linearized(idx) = linpos';
 end
 
 %% Get laps
@@ -211,20 +242,21 @@ end
 % needs improvement
 if show_fig
     figure;
-    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
+    plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'k','LineWidth',2);hold on;
     plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
     PlotIntervals(behavior.trials(behavior.trialID(:,1)==1,:),'color','b','alpha',.5);hold on;
     PlotIntervals(behavior.trials(behavior.trialID(:,1)==2,:),'color','g','alpha',.5);hold on;
     if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
         PlotIntervals(pulses.intsPeriods,'color','k','alpha',.5);hold on;
     end
-    ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
+    ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
 
 %% Generate output variables
 if savemat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    save([basepath,filesep,[basename,'.trials.mat']],'trials');
 end
 
 end

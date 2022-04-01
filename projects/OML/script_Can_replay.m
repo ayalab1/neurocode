@@ -1,0 +1,567 @@
+basepath = 'M:\Data\Can\OLM21\day10';
+basename = basenameFromBasepath(basepath);
+[parentFolder,dayName] = fileparts(basepath);
+[~,projectName] = fileparts(parentFolder);
+sessionID = [projectName '_' dayName];
+
+load(fullfile(basepath,[basename '.animal.behavior.mat']),'behavior');
+load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'cell_metrics');
+load(fullfile(basepath,[basename '.ripples.events.mat']),'ripples');
+stim = behavior.stimON;
+
+load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
+sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:));
+load(fullfile(basepath,[basename '.SleepState.states.mat']));
+sws = SleepState.ints.NREMstate;
+preSleep = SubtractIntervals(sleep(1,:), SubtractIntervals([0 Inf],sws));
+postSleep = SubtractIntervals(sleep(2:end,:), SubtractIntervals([0 Inf],sws));
+
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok); 
+speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
+run = t(FindInterval(speed(:,2)>100));
+run = ConsolidateIntervals(run,'epsilon',0.01);
+[in,w] = InIntervals(behavior.timestamps(:),run);
+peak = Accumulate(w(in),behavior.speed(in)','mode','max');
+
+% remove outliers (data in between sessions gives outlier speeds)
+peak = RemoveOutliers(peak);
+% remove run epochs that don't reach the speed threshold
+run(peak<0.1,:) = [];
+run(IntervalsIntersect(run,sleep),:) = [];
+
+% load spikes
+spikesCell = cell_metrics.spikes.times';
+nSpikes = cellfun(@(x) sum(x(:,1)>run(1) & x(:,1)<run(end)), spikesCell);
+pyr = cellfun(@(x) ~isempty(strfind(x,'Pyramidal')), cell_metrics.putativeCellType)';
+spikes = Group(spikesCell{pyr & nSpikes>200});
+regions = cell_metrics.brainRegion;
+regionNames = unique(regions);
+regionCell = zeros(length(regions),1);
+for i=1:length(regionNames)
+    regionCell(strcmp(regions,regionNames{i})) = i;
+end
+
+% Make sure the saved linearized positions go from 0 to 1
+minimum = min([min(behavior.positionTrials{1}(:,2)) min(behavior.positionTrials{2}(:,2))]);
+maximum = max([max(behavior.positionTrials{1}(:,2)) max(behavior.positionTrials{2}(:,2))]);
+behavior.positionTrials{1}(:,2) = (behavior.positionTrials{1}(:,2) - minimum)./(maximum-minimum);
+behavior.positionTrials{2}(:,2) = (behavior.positionTrials{2}(:,2) - minimum)./(maximum-minimum);
+pos0 = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}(:,1) 2-behavior.positionTrials{2}(:,2)]);
+pos1 = Restrict(behavior.positionTrials{1},run);
+pos2 = Restrict(behavior.positionTrials{2},run); pos2(:,2) = 1-pos2(:,2);
+
+% the first direction is stim (for labels in later analyses)
+if sum(InIntervals(pos2,stim)) > sum(InIntervals(pos1,stim)) % otherwise, swap them
+    pos1 = pos2; pos2 = Restrict(behavior.positionTrials{1},run);  pos2(:,2) = 1-pos2(:,2);
+end
+stimIntervals = SubtractIntervals(run,SubtractIntervals([0 Inf],stim)); % only stim run periods
+nonstimIntervals = SubtractIntervals(run,stim); 
+pos = sortrows([Restrict(pos1,stimIntervals) ; Restrict([pos2(:,1) 1+pos2(:,2)],nonstimIntervals)]);
+pos(:,2) = pos(:,2)./2;
+
+% compute firing curves
+clear curves curves1 curves2
+for i=1:max(spikes(:,2))
+    map = FiringCurve(Restrict(pos1,stimIntervals,'shift','on'),Restrict(spikes(spikes(:,2)==i),stimIntervals,'shift','on'));
+    curves1(i,:) = map.rate;
+    map = FiringCurve(Restrict(pos2,nonstimIntervals,'shift','on'),Restrict(spikes(spikes(:,2)==i),nonstimIntervals,'shift','on'));
+    curves2(i,:) = map.rate;
+    map = FiringCurve(Restrict(pos,run,'shift','on'),Restrict(spikes(spikes(:,2)==i),run,'shift','on'));
+    curves(i,:) = map.rate;
+end
+
+[~,m] = max(Smooth(curves,[0 2],'type','cc'),[],2);
+PlotColorMap(sortby(nanzscore([curves],[],2),m))
+PlotColorMap(sortby(nanzscore([curves1 curves2 curves],[],2),m))
+
+
+load(fullfile(basepath,'thetaCyclesTask.mat'),'cycles');
+bad = IntervalsIntersect(cycles, SubtractIntervals([0 Inf],run));
+cycles(bad,:) = [];
+
+%%
+
+% r = ripples.timestamps(:,1:2);
+[splitCycles] = SplitIntervals(cycles,'nPieces',6);
+id = repmat((1:6)',length(cycles),1);
+in = repelem(InIntervals(cycles,stim),6,1);
+
+[estimations,actual,errors,average] = ReconstructPosition(pos1,spikes,splitCycles(in,:),'training',stimIntervals,'id',id(in));
+on = nanmean(reshape(errors,size(errors,1),6,[]),3);
+
+[estimations,actual,errors,average] = ReconstructPosition(pos2,spikes,splitCycles(~in,:),'training',nonstimIntervals,'id',id(~in));
+off = nanmean(reshape(errors,size(errors,1),6,[]),3);
+% [estimations,actual,errors,average] = ReconstructPosition(pos,spikes,splitCycles(in,:),'training',run,'id',id(in));
+% on = nanmean(reshape(errors,size(errors,1),6,[]),3);
+% 
+% [estimations,actual,errors,average] = ReconstructPosition(pos,spikes,splitCycles(~in,:),'training',run,'id',id(~in));
+% off = nanmean(reshape(errors,size(errors,1),6,[]),3);
+
+subplot(1,2,1);
+average = on;
+[score,p,a,b,~,~,~,c,cShuffled] = FindReplayScore(average,'circular','off','wcorr','on');
+PlotColorMap(repmat(average,1,2));
+hold on; plot([1 6 6.5 [1 6]+6],[a b nan a b],'k--','linewidth',2);
+plot([1 6 6.5 [1 6]+6],[a b nan a b]-15,'k','linewidth',1); plot([1 6 6.5 [1 6]+6],[a b nan a b]+15,'k','linewidth',1);
+set(gca,'ytick',100,'yticklabel','0','xtick','');
+PlotHVLines(100,'h','w--','linewidth',2);
+ylabel('(decoded position) - (current position)');
+title(strrep([sessionID ' stim ON'],'_','-'));
+
+subplot(1,2,2);
+average = off;
+[score,p,a,b,~,~,~,c,cShuffled] = FindReplayScore(average,'circular','off','wcorr','on');
+PlotColorMap(repmat(average,1,2));
+hold on;
+plot([1 6 6.5 [1 6]+6],[a b nan a b],'k--','linewidth',2);
+plot([1 6 6.5 [1 6]+6],[a b nan a b]-15,'k','linewidth',1); plot([1 6 6.5 [1 6]+6],[a b nan a b]+15,'k','linewidth',1);
+set(gca,'ytick',100,'yticklabel','0','xtick','');
+PlotHVLines(100,'h','w--','linewidth',2);
+ylabel('(decoded position) - (current position)');
+title(strrep([sessionID ' stim OFF'],'_','-'));
+
+% ylim([50.5 150.5]);
+
+clims
+SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-theta-sequences-On-Off']))
+
+%% Replay
+
+% bursts = FindBursts(spikes,'thresholds',[0 3],'smooth',0.01);
+bursts = FindBursts(Restrict(spikes,sws,'shift','on'),'thresholds',[0 3],'smooth',0.01);
+bursts(:) = Unshift(bursts(:),sws);
+duration = diff(bursts(:,[1 3]),[],2);
+bursts(duration>1,:) = [];
+
+pre = InIntervals(bursts,preSleep);
+post = InIntervals(bursts,postSleep);
+
+r = bursts(:,[1 3]); leeway = 0.01;
+intervals = r; intervals0 = intervals;
+intervals(1:end-1,2) = min([intervals0(1:end-1,2)+leeway mean([intervals0(1:end-1,2) intervals0(2:end,1)],2)],[],2); intervals(end,2) = intervals0(end,2) + leeway;
+intervals(2:end,1) = max([intervals0(2:end,1)-leeway mean([intervals0(2:end,1) intervals0(1:end-1,2)],2)],[],2); intervals(1,1) = intervals0(1,1) - leeway;
+[rWindows,rID] = SplitIntervals(intervals,'pieceSize',0.02);
+
+% % First, off
+% nonstimIntervals = SubtractIntervals(run,stim);
+% [rEstimations] = ReconstructPosition(pos2,spikes,rWindows,'training',nonstimIntervals);
+% empty = (max(rEstimations)==min(rEstimations))';
+% [score,pValue,seqStartStop,stops] = deal(nan(size(r,1),1)); seqStartStop(:,2) = nan;
+% rEstimationsCell = cell(size(r,1),1);
+% for i=1:size(r,1)
+%     rEstimationsCell{i,1} = rEstimations(:,rID==i);
+% end
+% parfor i=1:length(r)
+%     if sum(rID==i & ~empty)>=3
+%         [score(i),pValue(i),seqStartStop(i),stops(i)] = FindReplayScore(rEstimationsCell{i},'circular','off');
+%     end
+%     if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
+% end
+% seqStartStop(:,2) = stops;
+% % save(['M:\home\raly\Documents\code\new\tempFiles\' name],'estimations','actual','errors','average','rEstimations','score','pValue','seqStartStop','bursts');
+
+% First, off
+name = [sessionID '_OML_off_Cell.mat'];
+[rEstimations] = ReconstructPosition(pos2,spikes,rWindows,'training',nonstimIntervals);
+empty = (max(rEstimations)==min(rEstimations))';
+rEstimationsCell = cell(size(r,1),1);
+for i=1:size(r,1)
+    rEstimationsCell{i,1} = rEstimations(:,rID==i);
+end
+
+outputs = cell(size(r,1),13);
+for i=1:size(r,1)
+    if sum(rID==i & ~empty)>=3
+        outputs(i,:) = FindReplayScoreCell(rEstimationsCell{i},'circular','off');
+    end
+    if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
+end
+toc
+save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos2');
+outputsOff = outputs; rEstimationsCellOff = rEstimationsCell;
+
+% Then, on
+name = [sessionID '_OML_on_Cell.mat'];
+[rEstimations] = ReconstructPosition(pos1,spikes,rWindows,'training',stimIntervals);
+tic
+rEstimationsCell = cell(size(r,1),1);
+for i=1:size(r,1)
+    rEstimationsCell{i,1} = rEstimations(:,rID==i);
+end
+toc
+outputs = cell(size(r,1),13);
+for i=1:size(r,1)
+    if sum(rID==i & ~empty)>=3
+        outputs(i,:) = FindReplayScoreCell(rEstimationsCell{i},'circular','off');
+    end
+    if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
+end
+toc
+save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos2');
+outputsOn = outputs; rEstimationsCellOn = rEstimationsCell;
+
+% Together (merged positions, on is from 0 to 0.5, off is from 0.5 to 1)
+name = [sessionID '_OML_Cell.mat'];
+[rEstimations] = ReconstructPosition(pos,spikes,rWindows,'training',run);
+tic
+rEstimationsCell = cell(size(r,1),1);
+for i=1:size(r,1)
+    rEstimationsCell{i,1} = rEstimations(:,rID==i);
+end
+toc
+outputs = cell(size(r,1),13);
+for i=1:size(r,1)
+    if sum(rID==i & ~empty)>=3
+        outputs(i,:) = FindReplayScoreCell(rEstimationsCell{i},'circular','off','threshold',10);
+    end
+    if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
+end
+toc
+save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos2');
+outputsBoth = outputs; rEstimationsCellBoth = rEstimationsCell;
+
+
+
+% outsputs are [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled]
+
+%%
+nBins = [101 25];
+bad = cellfun(@isempty,outputs(:,1));
+outputs = outputsOff;
+smooth = [0 1];
+clf
+reOn = false(size(outputsOn,1),1);
+reOff = false(size(outputsOn,1),1);
+for i=1:size(outputsOn,1), try reOn(i,1) = outputsOn{i,1}>outputsOff{i,1}; end; end
+for i=1:size(outputsOn,1), try reOff(i,1) = outputsOn{i,1}<outputsOff{i,1}; end; end
+conditionNames = {strrep([sessionID ' ON'],'_','-'),strrep([sessionID ' OFF'],'_','-')};
+periodNames = {'pre-task sleep','post-task sws'};
+for condition = 1:2
+    if condition==1
+        outputs = outputsOn;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOn);
+    else
+        outputs = outputsOff;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOff);
+    end
+    for k=1:2
+        if k==1
+            ok = ~bad & pre;
+        else
+            ok = ~bad & post;
+        end
+        subplot(2,2,k+(condition-1)*2);
+        scores = cell2mat(outputs(ok,1));
+        nShuffles = size(outputs{find(ok,1),5},1);
+        shuffleID = repmat((1:nShuffles)',size(scores,1),1);
+        shuffledScores = cell2mat(outputs(ok,5));
+        duration = diff(r(ok,:),[],2);
+        slopes = (cell2mat(outputs(ok,4))-cell2mat(outputs(ok,3)))/size(rEstimations,1)*4./duration; % in m/s
+        shuffledSlopes = (cell2mat(outputs(ok,7))-cell2mat(outputs(ok,6)))/size(rEstimations,1)*4./repelem(duration,nShuffles);
+        normalizedShuffledSlopes = (shuffledSlopes+100)./200; % from -100 to 100 m/s
+        normalizedSlopes = (slopes+100)./200; % from -100 to 100 m/s
+
+        % slopes = cell2mat(outputs(ok,4))-cell2mat(outputs(ok,3));
+        % shuffledSlopes = cell2mat(outputs(ok,7))-cell2mat(outputs(ok,6));
+        % normalizedShuffledSlopes = (shuffledSlopes+size(rEstimations,1))/(size(rEstimations,1)*2);
+        % normalizedSlopes = (slopes+size(rEstimations,1))/(size(rEstimations,1)*2);
+
+        mapsShuffled = nan([nBins([2 1]) nShuffles]);
+        for i=1:nShuffles
+            mapsShuffled(:,:,i) = DensityMap(shuffledSlopes(shuffleID==i),shuffledScores(shuffleID==i)*0.8,'nBins',nBins,'smooth',0,'show','off');
+        end
+        map = DensityMap(normalizedSlopes,scores*0.8,'nBins',nBins,'smooth',0,'show','off');
+        mShuffled = Smooth(nanmean(mapsShuffled,3),0); stdShuffled = Smooth(nanstd(mapsShuffled,[],3),0);
+        zmap = (map-mShuffled)./stdShuffled; zmap(zmap==Inf) = max(zmap(zmap~=Inf));
+        smoothed = zmap; smoothed(isnan(zmap)) = 0; 
+        PlotColorMap(Smooth(smoothed,smooth),'x',linspace(-100,100,nBins(1)),'y',linspace(0,1/0.8,nBins(2)));
+        PlotHVLines(0,'v','w--','linewidth',2);
+        xlim([-1 1]*20); ylim([0 1]);
+        title([conditionNames{condition} ' ' periodNames{k}]);
+        ylabel('score'); xlabel('slope (m/s)');
+        drawnow
+    end
+end
+clims([0 20]);
+
+SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-JointReplayScoreSlope-On-Off']))
+
+%% Barplots
+clf
+
+for condition = 1:2
+    if condition==1
+        outputs = outputsOn;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad;% | ~(reOn);
+    else
+        outputs = outputsOff;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad;% | ~(reOff);
+    end
+    for k=1:2
+        if k==1
+            ok = ~bad & pre;
+        else
+            ok = ~bad & post;
+        end
+%         subplot(2,2,k+(condition-1)*2);
+        scores = cell2mat(outputs(ok,1));
+        pValues = cell2mat(outputs(ok,2));
+        nShuffles = size(outputs{find(ok,1),5},1);
+        shuffleID = repmat((1:nShuffles)',size(scores,1),1);
+        shuffledScores = cell2mat(outputs(ok,5));
+        duration = diff(r(ok,:),[],2);
+        slopes = (cell2mat(outputs(ok,4))-cell2mat(outputs(ok,3)))/size(rEstimations,1)*4./duration; % in m/s
+        shuffledSlopes = (cell2mat(outputs(ok,7))-cell2mat(outputs(ok,6)))/size(rEstimations,1)*4./repelem(duration,nShuffles);
+        normalizedShuffledSlopes = (shuffledSlopes+100)./200; % from -100 to 100 m/s
+        normalizedSlopes = (slopes+100)./200; % from -100 to 100 m/s
+        these{condition,k} = [scores pValues slopes];
+    end
+end
+
+g = Group(these{:});
+gg = g; gg(ismember(gg(:,end),[1 3]),1) = (gg(ismember(gg(:,end),[1 3]),1) - nanmedian(gg(gg(:,end)==1,1)))./diff(quantile(gg(gg(:,end)==1,1),[0.25 0.75]));
+gg(ismember(gg(:,end),[2 4]),1) = (gg(ismember(gg(:,end),[2 4]),1) - nanmedian(gg(gg(:,end)==2,1)))./diff(quantile(gg(gg(:,end)==2,1),[0.25 0.75]));
+
+subplot(3,2,1);
+ok = g(:,end)>2;
+kruskalbar(gg(ok,1),g(ok,end)-2)
+title([strrep(sessionID,'_','-') ' all bursts (simplest, use this): ' num2str(round(nanmedian(gg(gg(:,end)==3,1))*1000)/1000) ', ' num2str(round(1000*nanmedian(gg(gg(:,end)==4,1)))/1000)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{'on','off'},'box','off');
+ylabel('score relative to baseline');
+% subplot(2,2,2);
+% q = Accumulate(g(:,end),g(:,2)<0.05)./Accumulate(g(:,end),1); 
+% q = Accumulate(g(:,end),g(:,3)>0)./Accumulate(g(:,end),1); 
+% q = q(3:4)./q(1:2); bar(q-1);
+% title(['all bursts: ' num2str(round(q(1)*1000)/1000) ', ' num2str(round(1000*q(2))/1000)]);
+% set(gca,'tickdir','out','xtick',1:2,'xticklabel',{'on','off'},'box','off');
+% set(gca,'yticklabel',get(gca,'ytick')+1);
+% ylabel('proportion replay (post/baseline)');
+% 
+
+subplot(3,4,3);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion replay (post/baseline)');
+
+subplot(3,4,4);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05 & g(:,3)>0);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion forward replay (post/baseline)');
+
+reOn = false(size(outputsOn,1),1);
+reOff = false(size(outputsOn,1),1);
+for i=1:size(outputsOn,1), try reOn(i,1) = outputsOn{i,1}>outputsOff{i,1}; end; end
+for i=1:size(outputsOn,1), try reOff(i,1) = outputsOn{i,1}<outputsOff{i,1}; end; end
+for condition = 1:2
+    if condition==1
+        outputs = outputsOn;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOn);
+    else
+        outputs = outputsOff;
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOff);
+    end
+    for k=1:2
+        if k==1
+            ok = ~bad & pre;
+        else
+            ok = ~bad & post;
+        end
+%         subplot(2,2,k+(condition-1)*2);
+        scores = cell2mat(outputs(ok,1));
+        pValues = cell2mat(outputs(ok,2));
+        nShuffles = size(outputs{find(ok,1),5},1);
+        shuffleID = repmat((1:nShuffles)',size(scores,1),1);
+        shuffledScores = cell2mat(outputs(ok,5));
+        duration = diff(r(ok,:),[],2);
+        slopes = (cell2mat(outputs(ok,4))-cell2mat(outputs(ok,3)))/size(rEstimations,1)*4./duration; % in m/s
+        shuffledSlopes = (cell2mat(outputs(ok,7))-cell2mat(outputs(ok,6)))/size(rEstimations,1)*4./repelem(duration,nShuffles);
+        normalizedShuffledSlopes = (shuffledSlopes+100)./200; % from -100 to 100 m/s
+        normalizedSlopes = (slopes+100)./200; % from -100 to 100 m/s
+        these{condition,k} = [scores pValues slopes];
+    end
+end
+
+g = Group(these{:});
+gg = g; gg(ismember(gg(:,end),[1 3]),1) = (gg(ismember(gg(:,end),[1 3]),1) - nanmedian(gg(gg(:,end)==1,1)))./diff(quantile(gg(gg(:,end)==1,1),[0.25 0.75]));
+gg(ismember(gg(:,end),[2 4]),1) = (gg(ismember(gg(:,end),[2 4]),1) - nanmedian(gg(gg(:,end)==2,1)))./diff(quantile(gg(gg(:,end)==2,1),[0.25 0.75]));
+
+subplot(3,2,3);
+ok = g(:,end)>2;
+kruskalbar(gg(ok,1),g(ok,end)-2)
+title(['better fit (on/off): ' num2str(round(nanmedian(gg(gg(:,end)==3,1))*1000)/1000) ', ' num2str(round(1000*nanmedian(gg(gg(:,end)==4,1)))/1000)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{'on','off'},'box','off');
+ylabel('score relative to baseline');
+
+subplot(3,4,7);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion replay (post/baseline)');
+
+
+subplot(3,4,8);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05 & g(:,3)>0);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion forward replay (post/baseline)');
+
+% cla
+% anovabar(g(:,3)>0,g(:,end));
+
+
+outputs = outputsBoth;
+reOn = false(size(outputs,1),1);
+reOff = false(size(outputs,1),1);
+for i=1:size(outputsOn,1), try reOn(i,1) = outputs{i,3}<=size(rEstimations,1)/2; end; end
+for i=1:size(outputsOn,1), try reOff(i,1) = outputs{i,3}>size(rEstimations,1)/2; end; end
+for condition = 1:2
+    if condition==1
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOn);
+    else
+        bad = cellfun(@isempty,outputs(:,1));
+        bad = bad | ~(reOff);
+    end
+    for k=1:2
+        if k==1
+            ok = ~bad & pre;
+        else
+            ok = ~bad & post;
+        end
+%         subplot(2,2,k+(condition-1)*2);
+        scores = cell2mat(outputs(ok,1));
+        pValues = cell2mat(outputs(ok,2));
+        nShuffles = size(outputs{find(ok,1),5},1);
+        shuffleID = repmat((1:nShuffles)',size(scores,1),1);
+        shuffledScores = cell2mat(outputs(ok,5));
+        duration = diff(r(ok,:),[],2);
+        slopes = (cell2mat(outputs(ok,4))-cell2mat(outputs(ok,3)))/size(rEstimations,1)*4./duration; % in m/s
+        shuffledSlopes = (cell2mat(outputs(ok,7))-cell2mat(outputs(ok,6)))/size(rEstimations,1)*4./repelem(duration,nShuffles);
+        normalizedShuffledSlopes = (shuffledSlopes+100)./200; % from -100 to 100 m/s
+        normalizedSlopes = (slopes+100)./200; % from -100 to 100 m/s
+        these{condition,k} = [scores pValues slopes];
+    end
+end
+
+g = Group(these{:});
+gg = g; gg(ismember(gg(:,end),[1 3]),1) = (gg(ismember(gg(:,end),[1 3]),1) - nanmedian(gg(gg(:,end)==1,1)))./diff(quantile(gg(gg(:,end)==1,1),[0.25 0.75]));
+gg(ismember(gg(:,end),[2 4]),1) = (gg(ismember(gg(:,end),[2 4]),1) - nanmedian(gg(gg(:,end)==2,1)))./diff(quantile(gg(gg(:,end)==2,1),[0.25 0.75]));
+
+subplot(3,2,5);
+ok = g(:,end)>2;
+kruskalbar(gg(ok,1),g(ok,end)-2)
+title(['decoded together (sorted posthoc): ' num2str(round(nanmedian(gg(gg(:,end)==3,1))*1000)/1000) ', ' num2str(round(1000*nanmedian(gg(gg(:,end)==4,1)))/1000)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{'on','off'},'box','off');
+ylabel('score relative to baseline');
+
+subplot(3,4,11);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion replay (post/baseline)');
+
+
+subplot(3,4,12);
+ns = Accumulate(g(:,end),1);
+q = Accumulate(g(:,end),g(:,2)<0.05 & g(:,3)>0);
+z = zBinomialComparison(q(3),ns(3),q(1),ns(1));
+z(2) = zBinomialComparison(q(4),ns(4),q(2),ns(2));
+prediction = (q(3)./ns(3))/(q(1)./ns(1))*(q(2)/ns(2));
+p = z2p(zBinomialComparison(q(4),ns(4),prediction));
+q = q./ns; q = q(3:4)./q(1:2); 
+bar(q-1);
+text(1,(q(1)-1)/2,num2str(round(q(1)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+text(2,(q(2)-1)/2,num2str(round(q(2)*1000)/1000),'FontSize',12,'HorizontalAlignment','center','Rotation',90,'Color','w')
+title(['p_d=' num2str(p)]);
+set(gca,'tickdir','out','xtick',1:2,'xticklabel',{['on,p=' num2str(z2p(z(1)))],['off,p=' num2str(z2p(z(2)))]},'box','off');
+set(gca,'yticklabel',get(gca,'ytick')+1);
+ylabel('proportion forward replay (post/baseline)');
+
+
+subplot(3,2,1); y = ylim; subplot(3,2,3); y = [min([min(ylim) y(1)]) max([max(ylim) y(2)])]; ylim(y); subplot(3,2,1); ylim(y);
+subplot(3,4,3); y = ylim; 
+for k=[4 7 8 11 12], subplot(3,4,k); y = [min([min(ylim) y(1)]) max([max(ylim) y(2)])]; end
+for k=[3 4 7 8 11 12], subplot(3,4,k); ylim(y); set(gca,'yticklabel',get(gca,'ytick')+1); end
+
+
+SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-Replay-barplots']))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

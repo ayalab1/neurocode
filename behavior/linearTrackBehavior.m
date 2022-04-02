@@ -116,7 +116,7 @@ end
 % add linear with interval epoch
 behavior.position.linearized = linpos';
 
-if split_linearize % if want to linearize tracking epoch bu epoch
+if split_linearize % if want to linearize tracking epoch by epoch
     
     % make linear epoch by epoch to account for different maze positions
     for ep = 1:size(linear_epochs,1)
@@ -172,34 +172,41 @@ behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
 %% Get periods of runnig
-% this method works better than LinearVelocity.m
-[~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
-v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
-behavior.speed =v'; % overriding the original speed variable (obtained with LinearVelocity.m)
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok); 
+speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
+interpolated = Interpolate(speed,behavior.timestamps);
+behavior.speed = [interpolated(:,2)' 0];
+% TODO: v needs to be transformed to cm/s
 
 if isempty(maze_sizes)
     warning('data is not standardized in cm')
     if isempty(speedTh)
-        speedTh = prctile(v(~isoutlier(v)),10);
+        speedTh = 100;%prctile(behavior.speed(~isoutlier(behavior.speed)),10);
     end
 end
 
-% probably we don't need this
-[quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
-trials{1}.timestamps = [inbound_start inbound_stop];
-trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-trials{2}.timestamps = [outbound_start outbound_stop];
-trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
-for i = 1:2
-    trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);
-end
+run = t(FindInterval(speed(:,2)>100));
+run = ConsolidateIntervals(run,'epsilon',0.01);
+[in,w] = InIntervals(behavior.timestamps(:),run);
+peak = Accumulate(w(in),behavior.speed(in)','mode','max');
+peak = RemoveOutliers(peak); % remove outliers (data in between sessions gives outlier speeds)
+run(peak<0.1,:) = [];
+behavior.run = run;
 
 %% Separate positions for each direction of running
 % this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
+
+% probably we don't need this
+trials{1}.timestamps = [inbound_start inbound_stop];
+%trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
+trials{2}.timestamps = [outbound_start outbound_stop];
+%trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
+
 for i = 1:2
     behavior.positionTrials{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
     % probably we don't need this
-    behavior.positionTrialsRun{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestampsRun);
+    behavior.positionTrialsRun{i}=Restrict(behavior.positionTrials{i},run);
+    trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps, SubtractIntervals([0 Inf],run));
 end
 
 %% Manipulations
@@ -216,7 +223,7 @@ if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.m
     % the intersection of intervals for each trials with stimON
     stimTrials=[];
     for i = 1:numel(trials)
-        t = InIntervals(behavior.stimON,trials{i}.timestampsRun);
+        t = InIntervals(behavior.stimON,trials{i}.timestamps);
         if sum(t) > 5 % I'm not sure why there are a few stim trials in the wrong direction
             stimTrials(i,1) = 1;
             behavior.trialIDname{i,2} = 'stimON';
@@ -235,7 +242,7 @@ if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.m
            behavior.trialID(i,2) = stimTrials(2);            
         end
     end
-    
+
 end
 
 %% Plots to check results
@@ -243,11 +250,11 @@ end
 if show_fig
     figure;
     plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'k','LineWidth',2);hold on;
-    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID(:,1)==1,:),'color','b','alpha',.5);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID(:,1)==2,:),'color','g','alpha',.5);hold on;
+    plot(behavior.timestamps,behavior.speed,'r','LineWidth',2);hold on;
+    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
+    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
     if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
-        PlotIntervals(pulses.intsPeriods,'color','k','alpha',.5);hold on;
+        PlotIntervals(behavior.stimON ,'color','k','alpha',.5);hold on;
     end
     ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);

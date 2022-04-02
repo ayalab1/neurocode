@@ -28,7 +28,7 @@ import find_and_move_videos
 print('moving videos and results')
 find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'D:\dlc_videos\social_plus_maze_v2')
 
-deeplabcut.analyze_videos(path_config_file,videos_folder,shuffle=1,save_as_csv=True)
+deeplabcut.analyze_videos(path_config_file,videos_folder,shuffle=1,save_as_csv=True,dynamic=(True, .5, 10))
 
 print('moving videos and results')
 find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'D:\dlc_videos\social_plus_maze_v2')

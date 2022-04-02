@@ -29,7 +29,7 @@ print('moving videos and results')
 find_and_move_videos.main(r'Y:\V1test\AO52',r'D:\dlc_videos\v1_implanted')
 find_and_move_videos.main(r'Y:\V1test\V1Jean',r'D:\dlc_videos\v1_implanted')
 
-deeplabcut.analyze_videos(path_config_file,videos_folder,shuffle=1,save_as_csv=True)
+deeplabcut.analyze_videos(path_config_file,videos_folder,shuffle=1,save_as_csv=True,dynamic=(True, .5, 10))
 
 print('moving videos and results')
 find_and_move_videos.main(r'Y:\V1test\AO52',r'D:\dlc_videos\v1_implanted')

@@ -34,7 +34,7 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'behavior',[],@isnumeric);
 addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
-addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times 
+addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
@@ -85,38 +85,46 @@ end
 linear_epochs = [startTime,stopTime];
 
 %% Linearize postions
-% add method to select best LED/ marker
-
 % make all coords outside linear track to nan
-behavior.position.linearized = NaN(1,length(behavior.timestamps));
-xy = [];
-for ep = 1:size(linear_epochs,1)
-    % find intervals in epoch
-    [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
-    % pull out xy
-    xy = [xy; behavior.position.x(idx)',behavior.position.y(idx)'];
-end
-% make linear
-[~,lin,~] = pca(xy);
-linpos = lin(:,1);
-% min to zero
-%linpos = linpos - min(linpos);
-if ~isempty(maze_sizes)
-    pos_range = max(linpos) - min(linpos);
-    convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
-    linpos = linpos / convert_pix_to_cm_ratio;
-    % convert xy to cm as well
-    behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-    behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
-end
-% normalize?
-if norm_zero_to_one
-    linpos = ZeroToOne(linpos);
-end
-% add linear with interval epoch
-behavior.position.linearized = linpos';
+behavior.position.linearized = NaN(1,length(behavior.position.x));
 
-if split_linearize % if want to linearize tracking epoch by epoch
+% make linear all linear track coords together across epochs
+if ~split_linearize 
+    xy = [];
+    idxs = [];
+    for ep = 1:size(linear_epochs,1)
+        % find intervals in epoch
+        [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+        % pull out xy
+        xy = [xy; behavior.position.x(idx)',behavior.position.y(idx)'];
+        % store index
+        idxs = [idxs,idx];
+    end
+    idxs = sum(idxs,2) > 0;
+    
+    % make linear
+    [~,lin,~] = pca(xy);
+    linpos = lin(:,1);
+    % min to zero
+    %linpos = linpos - min(linpos);
+    if ~isempty(maze_sizes)
+        pos_range = max(linpos) - min(linpos);
+        convert_pix_to_cm_ratio = (pos_range / maze_sizes(1)); % using first maze size
+        linpos = linpos / convert_pix_to_cm_ratio;
+        % convert xy to cm as well
+        behavior.position.x(idxs) = behavior.position.x(idxs) /...
+            convert_pix_to_cm_ratio;
+        behavior.position.y(idxs) = behavior.position.y(idxs) /...
+            convert_pix_to_cm_ratio;
+    end
+    % normalize?
+    if norm_zero_to_one
+        linpos = ZeroToOne(linpos);
+    end
+    % add linear with interval epoch
+    behavior.position.linearized(idxs) = linpos';
+    
+else % if want to linearize tracking epoch by epoch
     
     % make linear epoch by epoch to account for different maze positions
     for ep = 1:size(linear_epochs,1)
@@ -134,8 +142,10 @@ if split_linearize % if want to linearize tracking epoch by epoch
             convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
             linpos = linpos / convert_pix_to_cm_ratio;
             % convert xy to cm as well
-            behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-            behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+            behavior.position.x(idx) = behavior.position.x(idx) /...
+                convert_pix_to_cm_ratio;
+            behavior.position.y(idx) = behavior.position.y(idx) /...
+                convert_pix_to_cm_ratio;
         end
         % normalize?
         if norm_zero_to_one
@@ -161,7 +171,7 @@ for i = 1:length([laps.start_ts])-1
     end
 end
 
-% save lap information 
+% save lap information
 behavior.trials = [];
 behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
 behavior.trials(1:length(inbound_start),3) = 1;
@@ -172,14 +182,14 @@ behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
 %% Get periods of runnig
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok); 
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok);
 speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
 interpolated = Interpolate(speed,behavior.timestamps);
 behavior.speed = [interpolated(:,2)' 0];
 % TODO: v needs to be transformed to cm/s
 
 if isempty(maze_sizes)
-    warning('data is not standardized in cm')
+    warning('data is not in cm, it is highly recommended to convert to cm')
     if isempty(speedTh)
         speedTh = 100;%prctile(behavior.speed(~isoutlier(behavior.speed)),10);
     end
@@ -213,7 +223,7 @@ end
 if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
     load([basepath,filesep,[basename,'.pulses.events.mat']])
     behavior.manipulation = manipulation;
-    behavior.stimON = pulses.intsPeriods;    
+    behavior.stimON = pulses.intsPeriods;
     % we need something more general because manipualtions can be stored in
     % digitalin or come in different ways
     
@@ -237,12 +247,12 @@ if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.m
     end
     for i = 1:numel(behavior.trialID)
         if behavior.trialID(i) == 1
-           behavior.trialID(i,2) = stimTrials(1);
+            behavior.trialID(i,2) = stimTrials(1);
         elseif behavior.trialID(i) == 2
-           behavior.trialID(i,2) = stimTrials(2);            
+            behavior.trialID(i,2) = stimTrials(2);
         end
     end
-
+    
 end
 
 %% Plots to check results

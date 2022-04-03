@@ -10,6 +10,7 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 %               .times
 %   positions - [t x y ] or [t x] position matrix or
 %               cell with several of these matrices (for different conditions)
+%               speed threshold should already have been applied to these positons
 %      or
 %   behavior  - buzcode format behavior struct - NOT YET IMPLEMENTED
 %   <options>      optional list of property-value pairs (see table below)
@@ -83,7 +84,7 @@ elseif isvector(positions)
 end
 %%% TODO: conditions label
 
-%% Calculate -- NEEDS TO BE CHANGED
+%% Calculate -- NEEDS TO BE CHANGED, KalmanVel not working well
 % Erase positions below speed threshold
 if ~isempty(speedThresh)
     for iCond = 1:size(positions,2)

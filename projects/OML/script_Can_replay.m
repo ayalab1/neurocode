@@ -24,9 +24,9 @@ run = ConsolidateIntervals(run,'epsilon',0.01);
 peak = Accumulate(w(in),behavior.speed(in)','mode','max');
 
 % remove outliers (data in between sessions gives outlier speeds)
-peak = RemoveOutliers(peak);
+[~,isOutlier] = RemoveOutliers(peak);
 % remove run epochs that don't reach the speed threshold
-run(peak<0.1,:) = [];
+run(peak<0.1 | isOutlier,:) = [];
 run(IntervalsIntersect(run,sleep),:) = [];
 
 % load spikes

@@ -162,7 +162,7 @@ end
 if saveMat
     save(fullfile(basepath,...
         [basenameFromBasepath(firingMapsLaps.sessionName),...
-        '.firingMapsLaps.cellinfo.mat']),'firingMapsLaps');
+        '.firingMapsLaps.mat']),'firingMapsLaps');
 end
 
 end

@@ -154,7 +154,7 @@ if any(dlc_flag)
             extra_points.(name{1}) = extra_points.(name{1})(1:length(t));
         end
     end
-
+    
     if isfield(tracking, 'events')
         if isfield(tracking.events,'subSessions')
             trials = tracking.events.subSessions;
@@ -403,6 +403,39 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     %     end
     %
 else
+    warning('No video detected...')
+    disp('attempting to add ttls from digitalIn')
+    if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
+        count = 1;
+        for ii = 1:size(MergePoints.foldernames,2)
+            tempTracking{count} = sync_ttl(basepath,MergePoints.foldernames{ii});
+            trackFolder(count) = ii;
+            count = count + 1;
+        end
+    end
+    % Concatenate and sync timestamps
+    ts = []; subSessions = []; maskSessions = [];
+    if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
+        for ii = 1:length(trackFolder)
+            if strcmpi(fullfile(basepath,MergePoints.foldernames{trackFolder(ii)}),tempTracking{ii}.folder)
+                sumTs = tempTracking{ii}.timestamps + MergePoints.timestamps(trackFolder(ii),1);
+                subSessions = [subSessions; MergePoints.timestamps(trackFolder(ii),1:2)];
+                maskSessions = [maskSessions; ones(size(sumTs))*ii];
+                ts = [ts; sumTs];
+            else
+                error('Folders name does not match!!');
+            end
+        end
+    else
+        warning('No MergePoints file found. Concatenating timestamps...');
+        for ii = 1:length(trackFolder)
+            sumTs = max(ts)+ tempTracking{ii}.timestamps;
+            subSessions = [subSessions; [sumTs(1) sumTs(end)]];
+            ts = [ts; sumTs];
+        end
+    end
     warning('write another loader here')
     return
 end
@@ -440,6 +473,28 @@ end
 
 end
 
+function tracking = sync_ttl(basepath,folder)
+
+if ~exist(fullfile(basepath,folder,'digitalIn.events.mat'),'file')
+    digitalIn = getDigitalIn('all','folder',fullfile(basepath,folder));
+end
+load(fullfile(fullfile(basepath,folder),'digitalIn.events.mat'))
+
+Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
+[~,idx] = max(cell2mat(Len));
+bazlerTtl = digitalIn.timestampsOn{idx};
+fs = mode(diff(bazlerTtl));
+%check for extra pulses of much shorter distance than they should
+extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*0.01);
+bazlerTtl(extra_pulses) = [];
+
+[~,folder_name] = fileparts(folder);
+tracking.timestamps = bazlerTtl;
+tracking.folder = fullfile(basepath,folder);
+tracking.samplingRate = fs;
+tracking.description = '';
+end
+
 % find led with best tracking
 function [x,y] = find_best_columns(positions,fs)
 for col = 1:size(positions,2)
@@ -452,5 +507,147 @@ columns{2} = [3,4];
 x = positions(:,columns{idx}(1));
 y = positions(:,columns{idx}(2));
 %     [~,idx] = min([sum(isnan(positions(:,1))),sum(isnan(positions(:,3)))]);
+
+end
+
+function [digitalIn] = getDigitalIn(ch,varargin)
+% [pul, val, dur] = getDigitalIn(d,varargin)
+%
+% Find digital In pulses
+%
+% INPUTS
+% ch            Default all.
+% <OPTIONALS>
+% fs            Sampling frequency (in Hz), default 30000, or try to
+%               recover for rhd
+% offset        Offset subtracted (in seconds), default 0.
+% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 5s)
+% filename      File to get pulses from. Default, digitalin.dat file with folder
+%               name in current directory
+%
+%
+% OUTPUTS
+%               digitalIn - events struct with the following fields
+% ints          C x 2  matrix with pulse times in seconds. First column of C
+%               are the beggining of the pulses, second column of C are the end of
+%               the pulses.
+% dur           Duration of the pulses. Note that default fs is 30000.
+% timestampsOn  Beggining of all ON pulses
+% timestampsOff Beggining of all OFF pulses
+% intsPeriods   Stimulation periods, as defined by perioLag
+%
+% MV-BuzsakiLab 2019
+% Based on Process_IntanDigitalChannels by P Petersen
+
+% Parse options
+if exist('ch') ~= 1
+    ch = 'all';
+end
+
+p = inputParser;
+addParameter(p,'fs',[],@isnumeric)
+addParameter(p,'offset',0,@isnumeric)
+addParameter(p,'filename',[],@isstring)
+addParameter(p,'periodLag',5,@isnumeric)
+addParameter(p,'folder',pwd,@isfolder)
+
+parse(p, varargin{:});
+fs = p.Results.fs;
+offset = p.Results.offset;
+filename = p.Results.filename;
+lag = p.Results.periodLag;
+folder = p.Results.folder;
+
+if ~isempty(dir(fullfile(folder,'*.xml')))
+    %sess = bz_getSessionInfo(pwd,'noPrompts',true);
+    sess = getSession('basepath',fileparts(folder));
+end
+if ~isempty(dir(fullfile(folder,'*DigitalIn.events.mat')))
+    disp('Pulses already detected! Loading file.');
+    file = dir(fullfile(folder,'*DigitalIn.events.mat'));
+    load(fullfile(file.folder,file.name));
+    return
+end
+
+if isempty(filename)
+    filename=dir(fullfile(folder,'digitalIn.dat'));
+    filename = filename.name;
+elseif exist('filename','var')
+    disp(['Using input: ',filename])
+else
+    disp('No digitalIn file indicated...');
+end
+
+try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+        board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...
+        read_Intan_RHD2000_file_bz('basepath',folder);
+    fs = frequency_parameters.board_dig_in_sample_rate;
+catch
+    disp('File ''info.rhd'' not found. (Type ''help <a href="matlab:help loadAnalog">loadAnalog</a>'' for details) ');
+end
+
+disp('Loading digital channels...');
+m = memmapfile(fullfile(folder,filename),'Format','uint16','writable',false);
+digital_word2 = double(m.Data);
+clear m
+Nchan = 16;
+Nchan2 = 17;
+for k = 1:Nchan
+    tester(:,Nchan2-k) = (digital_word2 - 2^(Nchan-k))>=0;
+    digital_word2 = digital_word2 - tester(:,Nchan2-k)*2^(Nchan-k);
+    test = tester(:,Nchan2-k) == 1;
+    test2 = diff(test);
+    pulses{Nchan2-k} = find(test2 == 1);
+    pulses2{Nchan2-k} = find(test2 == -1);
+    data(k,:) = test;
+end
+digital_on = pulses;
+digital_off = pulses2;
+disp('Done!');
+
+for ii = 1:size(digital_on,2)
+    if ~isempty(digital_on{ii})
+        % take timestamp in seconds
+        digitalIn.timestampsOn{ii} = digital_on{ii}/fs;
+        digitalIn.timestampsOff{ii} = digital_off{ii}/fs;
+        
+        % intervals
+        d = zeros(2,max([size(digitalIn.timestampsOn{ii},1) size(digitalIn.timestampsOff{ii},1)]));
+        d(1,1:size(digitalIn.timestampsOn{ii},1)) = digitalIn.timestampsOn{ii};
+        d(2,1:size(digitalIn.timestampsOff{ii},1)) = digitalIn.timestampsOff{ii};
+        if d(1,1) > d(2,1)
+            d = flip(d,1);
+        end
+        if d(2,end) == 0; d(2,end) = nan; end
+        digitalIn.ints{ii} = d;
+        digitalIn.dur{ii} = digitalIn.ints{ii}(2,:) - digitalIn.ints{ii}(1,:); % durantion
+        
+        clear intsPeriods
+        intsPeriods(1,1) = d(1,1); % find stimulation intervals
+        intPeaks =find(diff(d(1,:))>lag);
+        for jj = 1:length(intPeaks)
+            intsPeriods(jj,2) = d(2,intPeaks(jj));
+            intsPeriods(jj+1,1) = d(1,intPeaks(jj)+1);
+        end
+        intsPeriods(end,2) = d(2,end);
+        digitalIn.intsPeriods{ii} = intsPeriods;
+    end
+end
+
+if exist('digitalIn','var')==1
+    xt = linspace(0,size(data,2)/fs,size(data,2));
+    data = flip(data);
+    data = data(1:size(digitalIn.intsPeriods,2),:);
+    
+    h=figure;
+    imagesc(xt,1:size(data,2),data);
+    xlabel('s'); ylabel('Channels'); colormap gray
+    mkdir(fullfile(folder,'Pulses'));
+    saveas(h,fullfile(folder,'Pulses','digitalIn.png'));
+    
+    save(fullfile(folder,'digitalIn.events.mat'),'digitalIn');
+else
+    digitalIn = [];
+end
 
 end

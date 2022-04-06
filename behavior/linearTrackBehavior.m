@@ -184,8 +184,8 @@ behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is corr
 %% Get periods of runnig
 ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok);
 speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
-interpolated = Interpolate(speed,behavior.timestamps);
-behavior.speed = [interpolated(:,2)' 0];
+interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
+behavior.speed = interpolated(:,2); %[interpolated(:,2)' 0];
 % TODO: v needs to be transformed to cm/s
 
 if isempty(maze_sizes)
@@ -195,12 +195,16 @@ if isempty(maze_sizes)
     end
 end
 
-run = t(FindInterval(speed(:,2)>100));
+run = t(FindInterval(speed(:,2)>speedTh));
 run = ConsolidateIntervals(run,'epsilon',0.01);
 [in,w] = InIntervals(behavior.timestamps(:),run);
 peak = Accumulate(w(in),behavior.speed(in)','mode','max');
-peak = RemoveOutliers(peak); % remove outliers (data in between sessions gives outlier speeds)
-run(peak<0.1,:) = [];
+% remove outliers (data in between sessions gives outlier speeds)
+[~,isOutlier] = RemoveOutliers(peak);
+% remove run epochs that don't reach the speed threshold
+run(peak<0.1 | isOutlier,:) = [];
+runDur = run(:,2)-run(:,1);
+run(runDur<0.8 | runDur>15,:) = []; % remove run epochs that's too short or too long
 behavior.run = run;
 
 %% Separate positions for each direction of running

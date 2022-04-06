@@ -1,4 +1,4 @@
-function samples = Restrict(samples,intervals,varargin)
+function [samples, idx] = Restrict(samples,intervals,varargin)
 
 %Restrict - Keep only samples that fall in a given list of time intervals.
 %
@@ -28,6 +28,8 @@ function samples = Restrict(samples,intervals,varargin)
 %  NOTE
 %
 %    For more advanced time restriction of samples, use <a href="matlab:help InIntervals">InIntervals</a>.
+%
+%    *Also note that the idx output is not implemented for when sep=true
 %
 %  SEE
 %
@@ -81,6 +83,7 @@ for i = 1:2:length(varargin),
 end
 
 % Restrict
+idx = [];
 if ~isempty(samples)
     [status,interval,index] = InIntervals(samples,intervals);
     if sep
@@ -92,12 +95,13 @@ if ~isempty(samples)
         samples = temp;
     else
         samples = samples(status,:);
+        idx = find(status==1);
     end
 elseif isempty(samples)
     samples = [];
     disp('No samples to restrict');
 end
-    
+idx = unique(idx);    
 % Shift?
 if strcmp(shift,'on'),
 	% Discard interval IDs for samples which belong to none of the intervals

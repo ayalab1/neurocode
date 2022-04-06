@@ -203,6 +203,10 @@ peak = Accumulate(w(in),behavior.speed(in)','mode','max');
 [~,isOutlier] = RemoveOutliers(peak);
 % remove run epochs that don't reach the speed threshold
 run(peak<0.1 | isOutlier,:) = [];
+
+% remove trial boundaries. The purpose of this is that the "turning" motion ending one trial would get separated from the
+% running epoch on following trial and it can then be removed with the duration threshold
+run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.001)); 
 runDur = run(:,2)-run(:,1);
 run(runDur<0.8 | runDur>15,:) = []; % remove run epochs that's too short or too long
 behavior.run = run;

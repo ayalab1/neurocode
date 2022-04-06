@@ -1,4 +1,4 @@
-basepath = 'M:\Data\Can\OLM21\day10';
+% basepath = 'M:\Data\Can\OLM21\day10';
 basename = basenameFromBasepath(basepath);
 [parentFolder,dayName] = fileparts(basepath);
 [~,projectName] = fileparts(parentFolder);
@@ -18,7 +18,7 @@ postSleep = SubtractIntervals(sleep(2:end,:), SubtractIntervals([0 Inf],sws));
 
 ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok); 
 speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
-run = t(FindInterval(speed(:,2)>100));
+run = t(FindInterval(speed(:,2)>10));
 run = ConsolidateIntervals(run,'epsilon',0.01);
 [in,w] = InIntervals(behavior.timestamps(:),run);
 peak = Accumulate(w(in),behavior.speed(in)','mode','max');
@@ -28,6 +28,10 @@ peak = Accumulate(w(in),behavior.speed(in)','mode','max');
 % remove run epochs that don't reach the speed threshold
 run(peak<0.1 | isOutlier,:) = [];
 run(IntervalsIntersect(run,sleep),:) = [];
+
+% Make sure our each run epoch is confined within the same trial: no run epoch should begin in one trial and continue over the next trial
+run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.00001));
+run(diff(run,[],2)<0.5,:) = []; % remove run epochs lasting for less than 0.5s
 
 % load spikes
 spikesCell = cell_metrics.spikes.times';
@@ -49,13 +53,18 @@ behavior.positionTrials{2}(:,2) = (behavior.positionTrials{2}(:,2) - minimum)./(
 pos0 = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}(:,1) 2-behavior.positionTrials{2}(:,2)]);
 pos1 = Restrict(behavior.positionTrials{1},run);
 pos2 = Restrict(behavior.positionTrials{2},run); pos2(:,2) = 1-pos2(:,2);
+onTrials = behavior.trials(behavior.trialID(:,2)==1,:); % Can promises that behavior.trialID(:,2)==1 is always stim and 0 is always nonstim trials
+offTrials = behavior.trials(behavior.trialID(:,2)==0,:);
 
 % the first direction is stim (for labels in later analyses)
 if sum(InIntervals(pos2,stim)) > sum(InIntervals(pos1,stim)) % otherwise, swap them
-    pos1 = pos2; pos2 = Restrict(behavior.positionTrials{1},run);  pos2(:,2) = 1-pos2(:,2);
+    pos1 = Restrict(behavior.positionTrials{2},run);
+    pos2 = Restrict(behavior.positionTrials{1},run);  pos2(:,2) = 1-pos2(:,2);
 end
+
 stimIntervals = SubtractIntervals(run,SubtractIntervals([0 Inf],stim)); % only stim run periods
 nonstimIntervals = SubtractIntervals(run,stim); 
+nonstimIntervals = SubtractIntervals(nonstimIntervals,SubtractIntervals([0 Inf],offTrials)); % make sure nonstimIntervals only take place during offTrials
 pos = sortrows([Restrict(pos1,stimIntervals) ; Restrict([pos2(:,1) 1+pos2(:,2)],nonstimIntervals)]);
 pos(:,2) = pos(:,2)./2;
 
@@ -80,7 +89,7 @@ bad = IntervalsIntersect(cycles, SubtractIntervals([0 Inf],run));
 cycles(bad,:) = [];
 
 %%
-
+figure
 % r = ripples.timestamps(:,1:2);
 [splitCycles] = SplitIntervals(cycles,'nPieces',6);
 id = repmat((1:6)',length(cycles),1);
@@ -89,7 +98,8 @@ in = repelem(InIntervals(cycles,stim),6,1);
 [estimations,actual,errors,average] = ReconstructPosition(pos1,spikes,splitCycles(in,:),'training',stimIntervals,'id',id(in));
 on = nanmean(reshape(errors,size(errors,1),6,[]),3);
 
-[estimations,actual,errors,average] = ReconstructPosition(pos2,spikes,splitCycles(~in,:),'training',nonstimIntervals,'id',id(~in));
+ok = InIntervals(splitCycles,nonstimIntervals) & ~in;
+[estimations,actual,errors,average] = ReconstructPosition(pos2,spikes,splitCycles(ok,:),'training',nonstimIntervals,'id',id(ok));
 off = nanmean(reshape(errors,size(errors,1),6,[]),3);
 % [estimations,actual,errors,average] = ReconstructPosition(pos,spikes,splitCycles(in,:),'training',run,'id',id(in));
 % on = nanmean(reshape(errors,size(errors,1),6,[]),3);
@@ -124,6 +134,52 @@ title(strrep([sessionID ' stim OFF'],'_','-'));
 
 clims
 SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-theta-sequences-On-Off']))
+
+%% Check if spikes are enough to reconstruct current position
+
+clf
+pieceSize = 0.5; step = 0.01;
+x = [67 77];
+subplot(1,2,1);
+% on
+% intervals = stimIntervals;
+intervals = SubtractIntervals(onTrials,SubtractIntervals([0 Inf],run));
+bins = Bins(0,sum(diff(intervals,[],2)),pieceSize,step);
+bins(:,1) = Unshift(bins(:,1),intervals);
+bins(:,2) = Unshift(bins(:,2),intervals);
+bins(diff(bins,[],2)>pieceSize*1.0001,:) = [];
+[estimations,actual,errors] = ReconstructPosition(pos1,spikes,bins,'training',intervals);
+relative_t = (1:size(estimations,2))'*step;
+imagesc(estimations,'x',relative_t);
+set(gca,'YDir','normal','tickdir','out');
+hold all
+plot(relative_t,actual*200,'k.-')
+clim([0 0.05])
+xlim(x);
+ColorMap(gca,[1 1 1],[1 0 0]);
+xlabel('time (s) (time is restricted to on-trials)');
+title(['on trials: ' num2str(pieceSize*1000) 'ms widnows and ' num2str(step*1000) 'ms step.']);
+
+subplot(1,2,2);
+% off
+intervals = nonstimIntervals;
+bins = Bins(0,sum(diff(intervals,[],2)),pieceSize,step);
+bins(:,1) = Unshift(bins(:,1),intervals);
+bins(:,2) = Unshift(bins(:,2),intervals);
+bins(diff(bins,[],2)>pieceSize*1.0001,:) = [];
+[estimations,actual,errors] = ReconstructPosition(pos2,spikes,bins,'training',intervals);
+relative_t = (1:size(estimations,2))'*step;
+imagesc(estimations,'x',relative_t);
+set(gca,'YDir','normal','tickdir','out');
+hold all
+plot(relative_t,actual*200,'k.-')
+clim([0 0.05])
+xlim(x);
+ColorMap(gca,[1 1 1],[0 0 1]);
+xlabel('time (s) (time is restricted to off-trials)');
+title(['off trials: ' num2str(pieceSize*1000) 'ms widnows and ' num2str(step*1000) 'ms step.']);
+
+SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-General-Reconstruction-Quality']))
 
 %% Replay
 
@@ -197,7 +253,7 @@ for i=1:size(r,1)
     if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
 end
 toc
-save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos2');
+save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos1');
 outputsOn = outputs; rEstimationsCellOn = rEstimationsCell;
 
 % Together (merged positions, on is from 0 to 0.5, off is from 0.5 to 1)
@@ -217,7 +273,7 @@ for i=1:size(r,1)
     if rem(i,100)==0, display([num2str(i) '/' num2str(size(r,1))]); end
 end
 toc
-save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos2');
+save(['M:\home\raly\Documents\code\new\tempFiles\' name],'bursts','rEstimationsCell','outputs','intervals','pos');
 outputsBoth = outputs; rEstimationsCellBoth = rEstimationsCell;
 
 

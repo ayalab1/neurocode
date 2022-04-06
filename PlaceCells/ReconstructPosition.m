@@ -171,8 +171,8 @@ else
 end
 %% TRAINING
 
-trainingPositions = Restrict(positions,training);
-trainingSpikes = Restrict(spikes,training);
+trainingPositions = Restrict(positions,training,'shift','on');
+trainingSpikes = Restrict(spikes,training,'shift','on');
 
 % Compute average firing probability lambda for each unit (i.e. firing maps)
 lambda = nan(prod(nBins),nUnits);

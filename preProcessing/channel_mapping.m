@@ -27,10 +27,10 @@ function channel_mapping(varargin)
 % Note: 
 % * if you make a manual edit in the .csv, make sure to run this
 %       function again to propagate that change to basename.session. 
-% * Likewise, if you manually edit basename.session via gui_session, run
-%       this function again to update the .csv
-% * If you run ProcessCellMetrics after this, it will incorporate brain
-%       region for every cell
+%
+% TODO: Add functionality to optionally pull regions from basename.session
+%           to populate the .csv after .csv has been populated. One may 
+%           wish to update either basename.session or .csv. 
 %
 % Ryan H 2021
 

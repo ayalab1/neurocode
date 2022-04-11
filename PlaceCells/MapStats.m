@@ -30,6 +30,8 @@ function stats = MapStats(map,varargin)
 %                   linear, 'lc' if X is linear and Y circular, or 'cc' if X
 %                   and Y are circular - for 1D data, a single letter is used
 %                   (default = 'll')
+%     'localmax'    request that the field contains a local maximum
+%                   (reject valleys between two fields, default = 'off')
 %     'verbose'     display processing information (default = 'off')
 %    =========================================================================
 %
@@ -43,7 +45,7 @@ function stats = MapStats(map,varargin)
 %    stats.field         field (1 = bin in field, 0 = bin not in field)
 %    stats.fieldX        field x boundaries (in bins)
 %    stats.fieldY        field y boundaries (in bins)
-%    stats.specificity   spatial specificity (Skaggs et al., 1993)
+%    stats.specificity   spatial specificity (in bits, see Skaggs et al., 1993)
 %
 %    For 1D circular data:
 %
@@ -65,12 +67,12 @@ function stats = MapStats(map,varargin)
 
 % Check number of parameters
 if nargin < 1 | mod(length(varargin),2) ~= 0,
-  error('Incorrect number of parameters (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+    error('Incorrect number of parameters (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
 end
 
 if ~isfield(map,'z'),
-	map.z = map.rate;
-	map = rmfield(map,'rate');
+    map.z = map.rate;
+    map = rmfield(map,'rate');
 end
 
 % Default values
@@ -78,56 +80,63 @@ threshold = 0.2;
 minPeak = 1;
 type = 'll';
 verbose = 0;
+localmax = 'off';
 
 nDims = sum(size(map.z)>=2);
 if nDims == 2,
-	minSize = 100;
+    minSize = 100;
 else
-	minSize = 10;
+    minSize = 10;
 end
 
 % Parse parameter list
 for i = 1:2:length(varargin),
-	if ~ischar(varargin{i}),
-		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).']);
-	end
-	switch(lower(varargin{i})),
-
-		case 'threshold',
-			threshold = varargin{i+1};
-			if ~isdscalar(threshold,'>=0','<=1'),
-				error('Incorrect value for property ''threshold'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
-			end
-
-		case 'minsize',
-			minSize = varargin{i+1};
-			if ~isdscalar(minSize,'>=0'),
-				error('Incorrect value for property ''minSize'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
-			end
-
-		case 'minpeak',
-			minPeak = varargin{i+1};
-			if ~isdscalar(minPeak,'>=0'),
-				error('Incorrect value for property ''minPeak'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
-			end
-
-		case 'type',
-			type = lower(varargin{i+1});
-			if (nDims == 1 && ~isstring_FMAT(type,'c','l')) || (nDims == 2 && ~isstring_FMAT(type,'cc','cl','lc','ll')),
-				error('Incorrect value for property ''type'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
-			end
-
-		case {'verbose','debug'},
-			verbose = lower(varargin{i+1});
-			if ~isstring_FMAT(verbose,'on','off'),
-				error('Incorrect value for property ''verbose'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
-			end
-			verbose = strcmp(verbose,'on');
-
-		otherwise,
-			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).']);
-
-  end
+    if ~ischar(varargin{i}),
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).']);
+    end
+    switch(lower(varargin{i})),
+        
+        case 'threshold',
+	  threshold = varargin{i+1};
+	  if ~isdscalar(threshold,'>=0','<=1'),
+	      error('Incorrect value for property ''threshold'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  
+        case 'minsize',
+	  minSize = varargin{i+1};
+	  if ~isdscalar(minSize,'>=0'),
+	      error('Incorrect value for property ''minSize'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  
+        case 'minpeak',
+	  minPeak = varargin{i+1};
+	  if ~isdscalar(minPeak,'>=0'),
+	      error('Incorrect value for property ''minPeak'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  
+        case 'type',
+	  type = lower(varargin{i+1});
+	  if (nDims == 1 && ~isastring(type,'c','l')) || (nDims == 2 && ~isastring(type,'cc','cl','lc','ll')),
+	      error('Incorrect value for property ''type'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  
+        case 'localmax',
+	  localmax = lower(varargin{i+1});
+	  if ~isastring(localmax,'on','off'),
+	      error('Incorrect value for property ''localmax'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  
+        case {'verbose','debug'},
+	  verbose = lower(varargin{i+1});
+	  if ~isastring(verbose,'on','off'),
+	      error('Incorrect value for property ''verbose'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+	  end
+	  verbose = strcmp(verbose,'on');
+	  
+        otherwise,
+	  error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).']);
+	  
+    end
 end
 
 % Are X and/or Y circular?
@@ -151,30 +160,24 @@ stats.k = nan;
 
 if isempty(map.z), return; end
 
-% Compute the spatial specificity of the map, based on the formula proposed by Skaggs et al. (1993).
-T = sum(sum(map.time));
-if T == 0,
-  stats.specificity = 0;
-else
-  occupancy = map.time/(T+eps);
-  m = sum(sum(map.count))/(sum(sum(map.time)+eps));
-  if m == 0,
+% Compute the spatial specificity of the map, based on the formula proposed by Skaggs et al. (1993):
+%  specificity = SUM { p(i) . lambda(i)/lambda . log2(lambda(i)/lambda) }
+T = sum(map.time(:));
+p_i = map.time/(T+eps); % Probability of the animal occupying bin 'i'
+lambda_i = map.z;
+lambda = lambda_i(:)'*p_i(:);
+if T == 0 || lambda == 0,
     stats.specificity = 0;
-  else
-    logArg = map.count/m;
-    logArg(logArg <= 1) = 1;
-
-%      stats.specificity = sum(sum(map.count.smooth.*log2(logArg).*occupancy))/m;
-    stats.specificity = sum(sum(map.count.*log2(logArg).*occupancy))/m;
-  end
+else
+    stats.specificity = sum(sum(p_i.*lambda_i/lambda.*log2(lambda_i/lambda)));
 end
 
 % Determine the field as the connex area around the peak where the value or rate is > threshold*peak
 % There can be two or more fields
 
 if max(max(map.z)) == 0,
-  stats.field = logical(zeros(size(map.z)));
-  return;
+    stats.field = logical(zeros(size(map.z)));
+    return;
 end
 
 nBinsX = max([1 length(map.x)]);	% minimum number of bins is 1
@@ -182,65 +185,73 @@ nBinsY = max([1 length(map.y)]);
 
 % Each time we find a field, we will remove it from the map; make a copy first
 z = map.z;
+
+if strcmp(localmax,'on');
+    % A field should peak at a local maximum (otherwise we can falsely detect a valley between two fields as a field, after detecting and excluding the two real peaks around)
+    localMax = FindLocalMaxima([(1:numel(z))' z(:)]); % acceptable field peaks are local maxima only
+else
+    localMax = 1:numel(z); % no criterion; any point will do
+end
+
 % Try to find more fields until no remaining bin exceeds min value
 i = 1;
 while true,
-	% Are there any candidate (unvisited) peaks left?
-	[peak,idx] = max(z(:));
-	if peak < minPeak, break; end
-	% Determine coordinates of largest candidate peak
-	[y,x] = ind2sub(size(z),idx);
-	% Find field (using min threshold for inclusion)
-	field1 = FindField(z,x,y,peak*threshold,circX,circY);
-	size1 = sum(field1(:));
-	% Does this field include two coalescent subfields?
-	% To answer this question, we simply re-run the same field-searching procedure on the field
-	% we then either keep the original field or choose the subfield if the latter is less than
-	% 1/2 the size of the former
-	m = peak*threshold;
-	field2 = FindField(z-m,x,y,(peak-m)*threshold,circX,circY);
-	size2 = sum(field2(:));
-	if size2< 1/2*size1,
-		field = field2;
-		tc = ' ';sc = '*'; % for debugging messages
-	else
-		field = field1;
-		tc = '*';sc = ' '; % for debugging messages
-	end
-	% Display debugging info
-	if verbose,
-		disp([int2zstr(i,2) ') peak  ' num2str(peak) ' @ (' int2str(x) ',' int2str(y) ')']);
-		disp([' ' tc ' field size       ' int2str(size1)]);
-		disp([' ' sc ' subfield size    ' int2str(size2)]);
-		disp(' ');
-		figure;
-		if nDims == 1,
-			plot(z);hold on;
-			PlotIntervals(ToIntervals(field1),'rectangles');
-			PlotIntervals(ToIntervals(field2),'bars');
-			ylabel(tc);
-		else
-			subplot(3,1,1);imagesc(z);xlabel('Data');
-			subplot(3,1,2);imagesc(field1);clim([0 1]);xlabel('Field');
-			subplot(3,1,3);imagesc(field2);clim([0 1]);ylabel(tc);xlabel('Subfield');
-		end
-	end
-	fieldSize = sum(field(:));
-	% Keep this field if its size is sufficient
-	if fieldSize > minSize,
-		stats.field(:,:,i) = field;
-		stats.size(i) = fieldSize;
-		stats.peak(i) = peak;
-		stats.mean(i) = mean(z(field));
-		idx = find(field & z == peak);
-		[stats.y(i),stats.x(i)] = ind2sub(size(z),idx(1));
-		[x,y] = FieldBoundaries(field,circX,circY);
-		[stats.fieldX(i,:),stats.fieldY(i,:)] = FieldBoundaries(field,circX,circY);
-		i = i + 1;
-	end
-	% Mark field bins as visited
-	z(field) = NaN;
-	if all(isnan(z)), break; end
+    % Are there any candidate (unvisited) peaks left?
+    [peak,idx] = max(z(:));
+    if peak < minPeak, break; end
+    % Determine coordinates of largest candidate peak
+    [y,x] = ind2sub(size(z),idx);
+    % Find field (using min threshold for inclusion)
+    field1 = FindField(z,x,y,peak*threshold,circX,circY);
+    size1 = sum(field1(:));
+    % Does this field include two coalescent subfields?
+    % To answer this question, we simply re-run the same field-searching procedure on the field
+    % we then either keep the original field or choose the subfield if the latter is less than
+    % 1/2 the size of the former
+    m = peak*threshold;
+    field2 = FindField(z-m,x,y,(peak-m)*threshold,circX,circY);
+    size2 = sum(field2(:));
+    if size2< 1/2*size1,
+        field = field2;
+        tc = ' ';sc = '*'; % for debugging messages
+    else
+        field = field1;
+        tc = '*';sc = ' '; % for debugging messages
+    end
+    % Display debugging info
+    if verbose,
+        disp([int2zstr(i,2) ') peak  ' num2str(peak) ' @ (' int2str(x) ',' int2str(y) ')']);
+        disp([' ' tc ' field size       ' int2str(size1)]);
+        disp([' ' sc ' subfield size    ' int2str(size2)]);
+        disp(' ');
+        figure;
+        if nDims == 1,
+	  plot(z);hold on;
+	  PlotIntervals(ToIntervals(field1),'rectangles');
+	  PlotIntervals(ToIntervals(field2),'bars');
+	  ylabel(tc);
+        else
+	  subplot(3,1,1);imagesc(z);xlabel('Data');
+	  subplot(3,1,2);imagesc(field1);clim([0 1]);xlabel('Field');
+	  subplot(3,1,3);imagesc(field2);clim([0 1]);ylabel(tc);xlabel('Subfield');
+        end
+    end
+    fieldSize = sum(field(:));
+    % Keep this field if its size is sufficient
+    if fieldSize > minSize && ismember(idx,localMax), % localMax defined above; either contains all possible points (no criterion) or local maxima only (when localMaxCondition = 'on')
+        stats.field(:,:,i) = field;
+        stats.size(i) = fieldSize;
+        stats.peak(i) = peak;
+        stats.mean(i) = mean(z(field));
+        idx = find(field & z == peak);
+        [stats.y(i),stats.x(i)] = ind2sub(size(z),idx(1));
+        [x,y] = FieldBoundaries(field,circX,circY);
+        [stats.fieldX(i,:),stats.fieldY(i,:)] = FieldBoundaries(field,circX,circY);
+        i = i + 1;
+    end
+    % Mark field bins as visited
+    z(field) = NaN;
+    if all(isnan(z)), break; end
 end
 
 % ----------------------------- Circular statistics -----------------------------
@@ -257,11 +268,11 @@ stats.mode = TMax*2*pi;
 
 % Compute kappa (Fisher, "Statistical Analysis of Circular Data" p.88)
 if stats.r < 0.53,
-	stats.k = 2*stats.r+stats.r^3+5*stats.r^5/6;
+    stats.k = 2*stats.r+stats.r^3+5*stats.r^5/6;
 elseif stats.r < 0.85,
-	stats.k = -0.4+1.39*stats.r+0.43/(1-stats.r);
+    stats.k = -0.4+1.39*stats.r+0.43/(1-stats.r);
 else
-	stats.k = 1/(stats.r^3-4*stats.r^2+3*stats.r);
+    stats.k = 1/(stats.r^3-4*stats.r^2+3*stats.r);
 end
 
 % ------------------------------- Helper functions -------------------------------
@@ -273,30 +284,30 @@ function [x,y] = FieldBoundaries(field,circX,circY)
 % Find boundaries
 x = find(any(field,1));
 if isempty(x),
-	x = [NaN NaN];
+    x = [NaN NaN];
 else
-	x = [x(1) x(end)];
+    x = [x(1) x(end)];
 end
 y = find(any(field,2));
 if isempty(y),
-	y = [NaN NaN];
+    y = [NaN NaN];
 else
-	y = [y(1) y(end)];
+    y = [y(1) y(end)];
 end
 
 % The above works in almost all cases; it fails however for circular coordinates if the field extends
 % around an edge, e.g. for angles between 350° and 30°
 
 if circX && x(1) == 1 && x(2) == size(field,2),
-	xx = find(~all(field,1));
-	if ~isempty(xx),
-		x = [xx(end) xx(1)];
-	end
+    xx = find(~all(field,1));
+    if ~isempty(xx),
+        x = [xx(end) xx(1)];
+    end
 end
 if circY && y(1) == 1 && y(2) == size(field,1),
-	yy = find(~all(field,2));
-	if ~isempty(yy),
-		y = [yy(end) yy(1)];
-	end
+    yy = find(~all(field,2));
+    if ~isempty(yy),
+        y = [yy(end) yy(1)];
+    end
 end
 

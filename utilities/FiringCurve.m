@@ -34,6 +34,9 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 %                   and ignored (default = 10)
 %     'minPeak'     peaks smaller than this size are considered spurious
 %                   and ignored (default = 1)
+%     'mode'        'interpolate' to interpolate missing points (< minTime),
+%                   or 'discard' to discard them (default)
+%     'maxDistance' maximal distance for interpolation (default = 5)
 %     'verbose'     display processing information (default = 'off')
 %    =========================================================================
 %
@@ -69,7 +72,7 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 %
 %    See also Map, MapStats, FiringMap, PlotXY.
 
-% Copyright (C) 2005-2013 by Michaël Zugaro
+% Copyright (C) 2005-2016 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -103,7 +106,7 @@ for i = 1:2:length(varargin),
 			argsm{im} = 'type';
 			argsm{im+1} = [varargin{i+1}(1) 'l'];
 			im = im+2;
-		case {'threshold','minsize','minpeak','verbose','debug'},
+		case {'threshold','minsize','minpeak','verbose','debug','localmax'},
 			argss{is} = varargin{i};
 			argss{is+1} = varargin{i+1};
 			is = is+2;

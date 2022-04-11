@@ -1,15 +1,12 @@
-
 function [ csd ] = CSD (lfp, varargin)
 
-% [ CSD ] = CSD (lfp, varargin)
-% Calculates the 1D approximation of current source density (CSD) from a
-% linear array of LFPs
-
+% CSD - Calculate the 1D approximation of current source density (CSD) from LFPs
+%
 % INPUT
 %    lfp            a buzcode structure with fields lfp.data,
 %                                                   lfp.timestamps
 %                                                   lfp.samplingRate
-%                   -lfp can also be a [t x 1] timeseries signal. in which
+%                   -lfp can also be a [timstamps signal] signal. in which
 %                   case you need to input 'samplingRate'
 %    <options>      optional list of property-value pairs (see table below)
 %
@@ -30,15 +27,32 @@ function [ csd ] = CSD (lfp, varargin)
 %                                                   csd.samplingRate
 %                                                   csd.channels 
 %                                                   csd.params
-
-% Antonio FR, 7/18
+%
+% Copyright (C) 2018 Antonio Fernandez-Ruiz
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% Parse inputs
 
+%lfp input
+if isstruct(lfp)
+    data = lfp.data;
+    timestamps = lfp.timestamps;
+elseif iscell(lfp) %for multiple trials
+    celllengths = cellfun(@length,lfp);
+    data = vertcat(lfp{:});
+elseif isnumeric(lfp)
+    timestamps = lfp(:,1);
+    data = lfp(:,2:end);
+end
+
 p = inputParser;
-addParameter(p,'channels',1:size(lfp.data,2),@isvector);
+addParameter(p,'channels',1:size(data,2),@isvector);
 addParameter(p,'samplingRate',1250,@isnumeric);
-addParameter(p,'win',[lfp.timestamps(1) lfp.timestamps(end)],@isnumeric);
+addParameter(p,'win',[timestamps(1) timestamps(end)],@isnumeric);
 addParameter(p,'spat_sm',0,@isnumeric);
 addParameter(p,'temp_sm',0,@isnumeric);
 addParameter(p,'doDetrend',false,@islogical);
@@ -46,10 +60,9 @@ addParameter(p,'plotCSD',true,@islogical);
 addParameter(p,'plotLFP',true,@islogical);
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'rearrange_by_xml',true,@islogical);
-
 parse(p,varargin{:});
 channels = p.Results.channels;
-samplingRate = p.Results.samplingRate;
+if ~exist('samplingRate','var'), samplingRate = p.Results.samplingRate; end
 spat_sm = p.Results.spat_sm;
 temp_sm = p.Results.temp_sm;
 doDetrend = p.Results.doDetrend;
@@ -57,19 +70,7 @@ plotCSD = p.Results.plotCSD;
 plotLFP = p.Results.plotLFP;
 basepath = p.Results.basepath;
 rearrange_by_xml = p.Results.rearrange_by_xml;
-%lfp input
-if isstruct(lfp)
-    data = lfp.data;
-    timestamps = lfp.timestamps;
-    samplingRate = lfp.samplingRate;
-elseif iscell(lfp) %for multiple trials
-    celllengths = cellfun(@length,lfp);
-    data = vertcat(lfp{:});
-elseif isnumeric(lfp)
-    data = lfp;
-    timestamps = [1:length(lfp)]'./samplingRate;
-end
-
+if ~exist('timestamps','var'), timestamps = (1:size(data,1))'/samplingRate; end
 win = (p.Results.win*samplingRate)+1;
 
 

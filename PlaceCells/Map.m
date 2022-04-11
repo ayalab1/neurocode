@@ -1,4 +1,4 @@
-function [map,stats] = Map(v,z,varargin)
+function [map] = Map(v,z,varargin)
 
 %Map - Map z on (x,y) where x, y and z are time-varying variables (samples).
 %
@@ -42,6 +42,7 @@ function [map,stats] = Map(v,z,varargin)
 %                   cating which coordinates are linear ('l') and which are
 %                   circular ('c') - for 1D data, only two letters are used
 %                   (default 'lll')
+%     'limits'      [maxX maxY] positions limits (default = [0 1])
 %    =========================================================================
 %
 %  OUTPUT
@@ -96,6 +97,7 @@ type = 'lll';
 modePointProcess = 'discard';
 modeContinuous = 'interpolate';
 maxDistance = 5;
+limits = [];
 
 if isempty(v) || size(v,1) < 2, return; end
 
@@ -163,6 +165,12 @@ for i = 1:2:length(varargin),
                 error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Map">Map</a>'' for details).');
             end
 
+        case 'limits',
+            limits = lower(varargin{i+1});
+            if  ~isdvector(limits,'>=0') || length(limits) > 2
+                error('Incorrect value for property ''limits'' (type ''help <a href="matlab:help Map">Map</a>'' for details).');
+            end
+
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help Map">Map</a>'' for details).']);
 
@@ -170,14 +178,26 @@ for i = 1:2:length(varargin),
 end
 
 % Make sure x and y are normalized
-if max(x) > 1 || min(x) < 0,
-    x = ZeroToOne(x);
-    warning('Parameter ''x'' should contain values in [0 1]. The data will now be transformed accordingly.');
+if max(x) > 1 || min(x) < 0 || ~isempty(limits),
+    if isempty(limits),
+        xLimits = [min(x) max(x)];
+    else
+        xLimits = [0 limits(1)]; 
+    end
+    x = (x-xLimits(1))/diff(xLimits);
+else
+    xLimits = [0 1];
 end
 if ~isempty(y),
-    if max(y) > 1 || min(y) < 0,
-        y = ZeroToOne(y);
-        warning('Parameter ''y'' should contain values in [0 1]. The data will now be transformed accordingly.');
+    if max(y) > 1 || min(y) < 0 || ~isempty(limits),
+        if isempty(limits),
+            yLimits = [min(y) max(y)];
+        else
+            yLimits = [0 limits(2)]; 
+        end
+        y = (y-yLimits(1))/diff(yLimits);
+    else
+        yLimits = [0 1];
     end
 end
 
@@ -222,38 +242,39 @@ end
 % Computations
 if isempty(y),
     % 1D (only x)
-    map.x = linspace(0,1,nBinsX);
-    map.count = Accumulate(x,n,nBinsX);
-    map.time = Accumulate(x,dt,nBinsX);
+    map.x = linspace(xLimits(1),xLimits(2),nBinsX);
+    map.count = Accumulate(x,n,'size',nBinsX);
+    map.time = Accumulate(x,dt,'size',nBinsX);
     valid = map.time > minTime;
     map.count = Smooth(Interpolate1(map.x,map.count,valid,mode,maxDistance),smooth,'type',type(1))';
     map.time = Smooth(Interpolate1(map.x,map.time,valid,mode,maxDistance),smooth,'type',type(1))';
     if pointProcess,
         map.z = map.count./(map.time+eps);
     else
-        map.z = Accumulate(x,z(:,2),nBinsX);
+        map.z = Accumulate(x,z(:,2),'size',nBinsX);
         map.z = Smooth(Interpolate1(map.x,map.z,valid,mode,maxDistance),smooth,'type',type(1))';
         map.z = map.z./(map.count+eps);
     end
 else
     % 2D (x and y)
-    map.x = linspace(0,1,nBinsX);
-    map.y = linspace(0,1,nBinsY);
-    map.count = Accumulate([x y],n,nBins);
-    map.time = Accumulate([x y],dt,nBins);
+     map.x = linspace(xLimits(1),xLimits(2),nBinsX);
+    map.y = linspace(yLimits(1),yLimits(2),nBinsY);
+    map.count = Accumulate([x y],n,'size',nBins);
+    map.time = Accumulate([x y],dt,'size',nBins);
     valid = map.time > minTime;
     map.count = Smooth(Interpolate2(map.x,map.y,map.count,valid,mode,maxDistance),smooth,'type',type(1:2))';
     map.time = Smooth(Interpolate2(map.x,map.y,map.time,valid,mode,maxDistance),smooth,'type',type(1:2))';
     if pointProcess,
         map.z = map.count./(map.time+eps);
     else
-        map.z = Accumulate([x y],z(:,2),nBins);
+        map.z = Accumulate([x y],z(:,2),'size',nBins);
         map.z = Smooth(Interpolate2(map.x,map.y,map.z,valid,mode,maxDistance),smooth,'type',type(1:2)).';
         map.z = map.z./(map.count+eps);
     end
 end
 
 % Circular z
+if ~exist('range','var'),range=1;end
 if strcmp(type(end),'c'), map.z = wrap(angle(map.z),range); end
 
 

@@ -1,3 +1,4 @@
+from logging import exception
 import scipy.io as sio
 import sys,os
 import pandas as pd
@@ -26,7 +27,8 @@ def loadXML(basepath):
     """
     # check if saved file exists
     try:
-        filename = glob.glob(os.path.join(basepath,'*.xml'))[0]
+        basename = os.path.basename(basepath)
+        filename = glob.glob(os.path.join(basepath,basename+'.xml'))[0]
     except:
         warnings.warn("file does not exist")
         return 
@@ -38,7 +40,11 @@ def loadXML(basepath):
     fs = xmldoc.getElementsByTagName('fieldPotentials')[0].getElementsByTagName('lfpSamplingRate')[0].firstChild.data
 
     shank_to_channel = {}
-    groups = xmldoc.getElementsByTagName('anatomicalDescription')[0].getElementsByTagName('channelGroups')[0].getElementsByTagName('group')
+    groups = (
+        xmldoc.getElementsByTagName("anatomicalDescription")[0]
+        .getElementsByTagName("channelGroups")[0]
+        .getElementsByTagName("group")
+    )
     for i in range(len(groups)):
         shank_to_channel[i] = [int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')]
     return int(nChannels), int(fs), int(fs_dat), shank_to_channel
@@ -93,86 +99,6 @@ def loadLFP(basepath, n_channels=90, channel=64, frequency=1250.0, precision='in
             if os.path.exists(lfp_ts_path):
                 timestep = np.load(lfp_ts_path).reshape(-1)
             return data,timestep # nts.TsdFrame(timestep, data, time_units = 's')
-
-def loadChunk(fid, nChannels, channels, nSamples, precision):
-	size = int(nChannels * nSamples * precision)
-	nSamples = int(nSamples)
-	data = fid.read(size)
-	# fromstring to read the data as int16
-	# reshape to give it the appropiate shape (nSamples x nChannels)
-	data = np.fromstring(data, dtype=np.int16).reshape(nSamples, len(channels))
-	data = data[:, channels]
-	return data
-
-def bz_LoadBinary(filename, nChannels, channels, sampleSize, verbose=False):
-
-	if (len(channels) > nChannels):
-		print("Cannot load specified channels (listed channel IDs inconsistent with total number of channels).")
-		return
-
-	#aqui iria CdE de filename
-	with open(filename, "rb") as f:
-		dataOffset = 0
-
-		# Determine total number of samples in file
-		fileStart = f.tell()
-		if verbose:
-			print("fileStart ", fileStart)
-		status = f.seek(0, 2) # Go to the end of the file
-		fileStop = f.tell()
-		f.seek(0, 0) # Back to the begining
-		if verbose:
-			print("fileStop ", fileStop)
-
-		# (floor in case all channels do not have the same number of samples)
-		maxNSamplesPerChannel = math.floor(((fileStop-fileStart)/nChannels/sampleSize))
-		nSamplesPerChannel = maxNSamplesPerChannel
-
-		# For large amounts of data, read chunk by chunk
-		maxSamplesPerChunk = 10000
-		nSamples = int(nSamplesPerChannel*nChannels)
-
-		if verbose:
-			print("nSamples ", nSamples)
-
-		if nSamples <= maxNSamplesPerChannel:
-			data = loadChunk(f, nChannels, channels, nSamples, sampleSize)
-		else:
-			# Determine chunk duration and number of chunks
-			nSamplesPerChunk = math.floor(maxSamplesPerChunk/nChannels)*nChannels
-			nChunks = math.floor(nSamples/nSamplesPerChunk)
-
-			if verbose:
-				print("nSamplesPerChannel ", nSamplesPerChannel)
-				print("nSamplesPerChunk ", nSamplesPerChunk)
-
-			# Preallocate memory
-			data = np.zeros((nSamplesPerChannel,len(channels)), dtype=np.int16)
-
-			if verbose:
-				print("size data ", np.size(data, 0))
-
-			# Read all chuncks
-			i = 0
-			for j in range(nChunks):
-				d = loadChunk(f, nChannels, channels, nSamplesPerChunk/nChannels, sampleSize)
-				m = np.size(d, 0)
-
-				if m == 0:
-					break
-
-				data[i:i+m, :] = d
-				i = i+m
-
-			# If the data size is not a multiple of the chunk size, read the remainder
-			remainder = nSamples - nChunks*nSamplesPerChunk
-			if remainder != 0:
-				d = loadChunk(f, nChannels, channels, remainder/nChannels, sampleSize)
-				m = np.size(d, 0)
-
-				if m != 0:
-					data[i:i+m, :] = d
-	return data
 
 def load_position(basepath,fs=39.0625):
     if not os.path.exists(basepath):
@@ -506,7 +432,58 @@ def load_ripples_events(basepath):
 
     return df
 
+def load_dentate_spike(basepath):
+    """
+    load info from DS*.events.mat and store within df
+    basepath: path to your session where DS*.events.mat is
 
+    returns pandas dataframe with the following fields
+        start: start time of DS
+        stop: end time of DS
+        peaks: peak time of DS
+        amplitude: envlope value at peak time
+        duration: DS duration
+        detectorName: the name of DS detector used
+        basepath: path name
+        basename: session id
+        animal: animal id *
+        * Note that basepath/basename/animal relies on specific folder
+        structure and may be incorrect for some data structures
+    """
+
+    def extract_data(s_type, data):
+        # make data frame of known fields
+        df = pd.DataFrame()
+        df["start"] = data[s_type]["timestamps"][0][0][:, 0]
+        df["stop"] = data[s_type]["timestamps"][0][0][:, 1]
+        df["peaks"] = data[s_type]["peaks"][0][0]
+        df["event_label"] = s_type
+        df["amplitude"] = data[s_type]["amplitudes"][0][0]
+        df["duration"] = data[s_type]["duration"][0][0]
+        df["amplitudeUnits"] = data[s_type]["amplitudeUnits"][0][0][0]
+        df["detectorName"] = data[s_type]["detectorinfo"][0][0]["detectorname"][0][0][0]
+        df["ml_channel"] = data[s_type]["detectorinfo"][0][0]["ml_channel"][0][0][0][0]
+        df["h_channel"] = data[s_type]["detectorinfo"][0][0]["h_channel"][0][0][0][0]
+        return df
+
+    # locate .mat file
+    df = pd.DataFrame()
+    for s_type in ["DS1", "DS2"]:
+        filename = glob.glob(basepath + os.sep + "*" + s_type + ".events.mat")[0]
+        # load matfile
+        data = sio.loadmat(filename)
+        # pull out data
+        df = pd.concat([df,extract_data(s_type, data)], ignore_index=True)
+
+    # get basename and animal
+    normalized_path = os.path.normpath(filename)
+    path_components = normalized_path.split(os.sep)
+    df["basepath"] = basepath
+    df["basename"] = path_components[-2]
+    df["animal"] = path_components[-3]
+
+    return df
+    
 def load_theta_rem_shift(basepath):
     """
     load_theta_rem_shift: loads matlab structure from get_rem_shift.m
@@ -706,6 +683,38 @@ def load_epoch(basepath):
     df_save['environment'] = environment
 
     return df_save
+    
+def load_brain_regions(basepath):
+    """
+    Loads brain region info from cell explorer basename.session and stores in dict
+
+    Example:
+        Input:
+            brainRegions = load_epoch("Z:\\Data\\GirardeauG\\Rat09\\Rat09-20140327")
+            print(brainRegions.keys())
+            print(brainRegions['CA1'].keys())
+            print(brainRegions['CA1']['channels'])
+            print(brainRegions['CA1']['electrodeGroups'])
+        output:
+            dict_keys(['CA1', 'Unknown', 'blv', 'bmp', 'ven'])
+            dict_keys(['channels', 'electrodeGroups'])
+            [145 146 147 148 149 153 155 157 150 151 154 159 156 152 158 160 137 140
+            129 136 138 134 130 132 142 143 144 141 131 139 133 135]
+            [17 18 19 20]
+    """
+    filename = glob.glob(os.path.join(basepath, "*.session.mat"))[0]
+
+    # load file
+    data = sio.loadmat(filename)
+    data = data["session"]
+    brainRegions = {}
+    for dn in data["brainRegions"][0][0].dtype.names:
+        brainRegions[dn] = {
+            "channels": data["brainRegions"][0][0][dn][0][0][0][0][0][0],
+            "electrodeGroups": data["brainRegions"][0][0][dn][0][0][0][0][1][0],
+        }
+
+    return brainRegions
 
 def get_animal_id(basepath):
     """ return animal ID from basepath using basename.session.mat"""
@@ -783,3 +792,92 @@ def load_spikes(basepath,
             st = st[state_epoch]
 
     return st,cell_metrics
+
+def load_deepSuperficialfromRipple(basepath,bypass_mismatch_exception=False):
+    """
+    Load deepSuperficialfromRipple file created by classification_DeepSuperficial.m
+    
+    """
+    # locate .mat file
+    file_type = "*.deepSuperficialfromRipple.channelinfo.mat"
+    filename = glob.glob(basepath + os.sep + file_type)[0]
+
+    # load matfile
+    data = sio.loadmat(filename)
+
+    channel_df = pd.DataFrame()
+    name = "deepSuperficialfromRipple"
+
+    # sometimes more channels positons will be in deepSuperficialfromRipple than in xml
+    #   this is because they used channel id as an index. 
+    channel_df = pd.DataFrame()
+    channels = np.hstack(data[name]["channel"][0][0])*np.nan
+    shanks = np.hstack(data[name]["channel"][0][0])*np.nan
+
+    channels_, shanks_ = zip(
+        *[(values[0], np.tile(shank, len(values[0]))) for shank, values in enumerate(data[name]["ripple_channels"][0][0][0])]
+    )
+    channel_sort_idx = np.hstack(channels_)-1
+    channels[channel_sort_idx] = np.hstack(channels_)
+    shanks[channel_sort_idx] = np.hstack(shanks_) + 1
+
+    channel_df["channel"] = channels
+    channel_df.loc[np.arange(len(channel_sort_idx)),"channel_sort_idx"] = channel_sort_idx
+    channel_df["shank"] = shanks
+
+    # add distance from pyr layer (will only be accurate if polarity rev)
+    channel_df["channelDistance"] = data[name]["channelDistance"][0][0].T[0]
+
+    # add channel class (deep or superficial)
+    channelClass = []
+    for item in data[name]["channelClass"][0][0]:
+        try:
+            channelClass.append(item[0][0])
+        except:
+            channelClass.append("unknown")
+    channel_df["channelClass"] = channelClass
+
+    # add if shank has polarity reversal
+    for shank in channel_df.shank.unique():
+        if channel_df[channel_df.shank == shank].channelClass.unique().shape[0] == 2:
+            channel_df.loc[channel_df.shank == shank, "polarity_reversal"] = True
+        else:
+            channel_df.loc[channel_df.shank == shank, "polarity_reversal"] = False
+
+    # add ripple and sharp wave features        
+    labels = ["ripple_power", "ripple_amplitude", "SWR_diff", "SWR_amplitude"]
+    for label in labels: 
+        try:
+            channel_df.loc[channel_sort_idx,label] = np.hstack(data[name][label][0][0][0])[0]
+        except:
+            x = np.arange(len(channel_sort_idx))*np.nan
+            x[0:len(np.hstack(data[name][label][0][0][0])[0])] = np.hstack(data[name][label][0][0][0])[0]
+            channel_df.loc[channel_sort_idx,label] = x
+
+    # pull put avg ripple traces and ts
+    ripple_time_axis = data[name]["ripple_time_axis"][0][0][0]
+    ripple_average = np.ones([channel_df.shape[0],len(ripple_time_axis)])*np.nan
+
+    rip_map = []
+    for values in data[name]["ripple_average"][0][0][0]:
+        if values.shape[1]>0:
+            rip_map.append(values)
+    
+    ripple_average[channel_sort_idx] = np.hstack(rip_map).T
+
+    brainRegions = load_brain_regions(basepath)
+    for key, value in brainRegions.items():
+        if 'ca1' in key.lower():
+            for shank in value['electrodeGroups']:
+                channel_df.loc[channel_df.shank == shank,"ca1_shank"] = True
+
+    if (ripple_average.shape[0] != channel_df.shape[0]) & (~bypass_mismatch_exception):
+        raise Exception('size mismatch '+
+                        str(np.hstack(ripple_average).shape[1]) +
+                        ' and ' +
+                        str(channel_df.shape[0])
+        )
+
+    channel_df['basepath'] = basepath
+
+    return channel_df, ripple_average, ripple_time_axis

@@ -23,7 +23,7 @@ path_config_file = r"D:\dlc_videos\social_plus_maze_dlc\social_plus_maze-harvey-
 videos_folder = [r'D:\dlc_videos\social_plus_maze_v2']
 
 import sys
-sys.path.append(r"D:\github\neurocode\preProcessing")
+sys.path.append(r"D:\github\neurocode\behavior")
 import find_and_move_videos
 print('moving videos and results')
 find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'D:\dlc_videos\social_plus_maze_v2')

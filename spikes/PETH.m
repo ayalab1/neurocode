@@ -63,7 +63,7 @@ function varargout = PETH(samples, events, varargin)
 %  SEE
 %
 %    See also Sync, SyncHist, SyncMap, PlotSync, PETHTransition.
-
+%
 % Copyright (C) 2018 by Ralitsa Todorova, Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify

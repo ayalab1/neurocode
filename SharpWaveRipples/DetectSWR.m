@@ -892,6 +892,8 @@ for ep_i = 1:Nepochs
             'Note that noisy periods need not participate in either group.']);
         keyboard
 
+        idx2(swDiffAll>mean(swDiffAll(idx1))) = 0;
+        idx2(ripPowerAll>mean(ripPowerAll(idx1))) = 0; 
         if false % optional code to help you find which points are ripples
 
             % First, remove points that occur in noisy lfp periods

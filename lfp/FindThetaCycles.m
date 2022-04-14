@@ -1,5 +1,18 @@
 function [peaktopeak troughs] = FindThetaCycles(lfp)
 
+% FindThetaCycles: find intervals that qualify as theta cycles from the lfp signal
+% 
+% lfp should be in the [timestamps signal] format. Using CleanLFP before
+% calling this function is recommended. The [start stop] intervals as well
+% as the troughs take theta asymmetry into account.
+%
+% Copyright (C) 2018 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 thetaFiltered = FilterLFP(lfp, 'passband', 'theta');
 [~, amplitude, ~] = Phase(thetaFiltered);
 

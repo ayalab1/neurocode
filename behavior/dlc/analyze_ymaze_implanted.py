@@ -23,7 +23,7 @@ path_config_file = r"D:\dlc_videos\v1_implanted_dlc\v1-harvey-2022-03-11\config.
 videos_folder = [r'D:\dlc_videos\v1_implanted']
 
 import sys
-sys.path.append(r"D:\github\neurocode\preProcessing")
+sys.path.append(r"D:\github\neurocode\behavior")
 import find_and_move_videos
 print('moving videos and results')
 find_and_move_videos.main(r'Y:\V1test\AO52',r'D:\dlc_videos\v1_implanted')

@@ -1,14 +1,19 @@
 function grouped = Group(varargin)
 
 % Provide as many vectors as you want. They will be grouped in a matrix
-% in the same format as spikes are grouped:
+% in the same format as spikes are grouped ([values id])
 % vector1 1
 % vector2 2
 % ... and so on. Useful for creating grouped events.
 % ATTENTION: rows are automatically sorted.
+%
+% Copyright (C) 2018 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
-
-%% Loop equivalent
 grouped = [];
 % Are we dealing with vectors?
 if any(cellfun(@(x) min(size(x)), varargin)==1),
@@ -26,9 +31,4 @@ for i=1:length(varargin),
 	end
 end
 
-% %% Vectorized version code (not actually faster)
-% values = cell2mat(cellfun(@(x)cat(1,x(:)),varargin','UniformOutput',false));
-% groups = repelem(1:length(varargin),cellfun(@numel,varargin));
-% grouped = [values groups];
-%
 grouped = sortrows(grouped);

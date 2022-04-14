@@ -22,6 +22,8 @@ function smoothed = Smooth(data,smooth,varargin)
 %                   - for 1D data, only one letter is used (default 'll')
 %     'kernel'      either 'gaussian' (default), 'rectangular' (running
 %                   average), or 'triangular' (weighted running average)
+%     'nans'        set to 'on' to ignore nans and force the smooth 
+%                   (default = 'off')
 %    =========================================================================
 %
 
@@ -33,12 +35,13 @@ function smoothed = Smooth(data,smooth,varargin)
 % (at your option) any later version.
 
 maxSize = 10001;
-
+ignoreNans = 'off';
 if nargin < 2,
 	error('Incorrect number of parameters (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
 end
 
 vector = isvector(data);
+
 matrix = (~vector & length(size(data)) == 2);
 if ~vector & ~matrix,
 	error('Smoothing applies only to vectors or matrices (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
@@ -68,17 +71,30 @@ for i = 1:2:length(varargin),
 		case 'type',
 			type = lower(varargin{i+1});
 			if (vector && ~isastring(type,'c','l')) || (~vector && ~isastring(type,'cc','cl','lc','ll')),
-				error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
-			end
-		case 'kernel',
-			kernel = lower(varargin{i+1});
-			if ~isastring(kernel,'gaussian','rectangular','triangular'),
-				error('Incorrect value for property ''kernel'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
-			end
-		otherwise,
+                error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
+            end
+        case 'kernel',
+            kernel = lower(varargin{i+1});
+            if ~isastring(kernel,'gaussian','rectangular','triangular'),
+                error('Incorrect value for property ''kernel'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
+            end
+        case 'nans',
+            ignoreNans = lower(varargin{i+1});
+            if ~isastring(ignoreNans,'off','on'),
+                error('Incorrect value for property ''kernel'' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
+            end
+        otherwise,
 			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).']);
 
   end
+end
+
+if strcmp(ignoreNans,'on') && vector && any(isnan(data)),
+    smoothed = data;
+    nans = isnan(data);
+    data(nans) = [];
+    smoothed(~nans) = Smooth(data, smooth, varargin{:});
+    return
 end
 
 % Check kernel parameters

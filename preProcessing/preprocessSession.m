@@ -184,7 +184,7 @@ if stateScore
             thetaEpochs(basepath);
         end
     catch
-        disp('Problem with SleepScore skyping...');
+        warning('Problem with SleepScore scoring... unable to calculate');
     end
 end
 

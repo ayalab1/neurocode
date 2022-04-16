@@ -1,5 +1,6 @@
 function Logical = Unfind(indices, n)
  
+%Unfind - the inverse operation of 'find': x = find(y); y = Unfind(x);
 %
 % When you have a logical vector, 'find' is useful as it gives you the
 % indices of the non-zero values.

@@ -23,12 +23,12 @@ function [m,r,p] = CircularMean(angles,weights,d)
 %
 %  EXAMPLE
 %
-% [m,r,p] = meanangle(Phase(theta,spikes(:,1)),1,spikes(:,2));
+% [m,r,p] = CircularMean(Phase(theta,spikes(:,1)),1,spikes(:,2));
 % m,r, and p are vectors of n elements, where n is the largest spike id provided.
 %
 % [~,gAmplitude] = Phase(FilterLFP(lfp,'passband','gamma'));
 % phases = Phase(FilterLFP(lfp,'passband','theta'))
-% [m,r,p] = meanangle(phases(:,2),gAmplitude(:,2));
+% [m,r,p] = CircularMean(phases(:,2),gAmplitude(:,2));
 % will give the stats (m,r, and p) for gamma amplitude modulation to theta phase.
 %
 % Copyright (C) 2004-2022 by Michaël Zugaro & Ralitsa Todorova
@@ -66,9 +66,9 @@ m = atan2(imag(mid),real(mid));
 r = sqrt(imag(mid).^2+real(mid).^2);
 p = exp(sqrt(1+4.*n+4*(n.^2-(n.*r).^2))-(1+2.*n)); % Zar, Biostatistical Analysis, p. 617
 
-if nargout==2,
-r = r.*(n-1)./n;
-end
+% if nargout==2,
+% r = r.*(n-1)./n;
+% end
 
 
 

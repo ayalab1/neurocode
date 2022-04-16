@@ -1,7 +1,7 @@
 function [pieces ids] = SplitIntervals(intervals,varargin)
 
-% Splits intervals into even pieces. There are two different ways to call this
-% function: by either providing 'pieceSize' or 'nPieces'.
+%SplitIntervals - split intervals into even pieces. 
+% Specify either 'pieceSize' or 'nPieces'.
 % EXAMPLE 1 (with pieceSize): 
 % SplitIntervals([2 5; 6 10], 'pieceSize', 2) (i.e. split these intervals into 2-second pieces)
 % gives intervals = [2 4; 6 8; 8 10] and ids = [1; 2; 2]
@@ -26,6 +26,13 @@ function [pieces ids] = SplitIntervals(intervals,varargin)
 %    =========================================================================
 % Hint: to get overlapping windows, simply use
 % sortrows([SplitIntervals(intervals, window); SplitIntervals(intervals+window/2, window)])
+%
+% Copyright (C) 2019 Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 pieceSize = 0.02;
 nPieces = [];

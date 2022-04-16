@@ -21,6 +21,7 @@ function PlotIntervals(intervals,varargin)
 %     'direction'   'h' for horizontal, or 'v' for vertical (default)
 %     'color'       rectangle color ('rectangles' mode, default = grey)
 %     'alpha'       rectangle transparency ('rectangles' mode, default = 1)
+%     'ylim'        desired y-coordinates of the plotted areas
 %    =========================================================================
 %
 
@@ -36,6 +37,7 @@ color = [0.9 0.9 0.9];
 alphaValue = 1;
 style = 'rectangles';
 direction = 'v';
+yLim = ylim;
 
 if nargin < 1,
   error('Incorrect number of parameters (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).');
@@ -78,10 +80,15 @@ if ~parsed,
 					error('Incorrect value for property ''direction'' (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).');
 				end
 			case 'alpha',
-				alphaValue = varargin{i+1};
-				if ~isdscalar(alphaValue,'>=0','<=1'),
-					error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).');
-				end
+                alphaValue = varargin{i+1};
+                if ~isdscalar(alphaValue,'>=0','<=1'),
+                    error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).');
+                end
+            case 'ylim',
+                yLim = varargin{i+1};
+                if ~isdvector(yLim,'<'),
+                    error('Incorrect value for property ''yLim'' (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).');
+                end
 			otherwise,
 				error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help PlotIntervals">PlotIntervals</a>'' for details).']);
 		end
@@ -89,7 +96,6 @@ if ~parsed,
 end
 
 hold on;
-yLim = ylim;
 xLim = xlim;
 if strcmp(style,'bars'),
 	for i = 1:size(intervals,1),

@@ -1,5 +1,13 @@
-function ColorMap(axis,varargin)
+function varargout = ColorMap(axis,varargin)
 
+%ColorMap - changes the current axis' color map to a custom color map,
+% a gradient of the desired colors. The desired colors should be 2 at the minimum 
+% [start stop], and can be any number above that.
+% EXAMPLE:
+% ColorMap(gca,[1 1 1],[1 0 0]); % changes the colormap to a gradient from white ([1 1 1]) to red ([1 0 0])
+% ColorMap(gca,[0 0 0.2],[0 0.5 0.3],[1 1 0]); % will change the colormap to a map gradiating from dark blue to dark green to yellow
+%
+% Copyright (C) 2018 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -43,4 +51,9 @@ end
 cMap(cMap>1) = 1;cMap(cMap<0) = 0;
 
 colormap(axis,cMap);
+
+% optionally, provide output
+if nargout>0
+    varargout{1} = cMap;
+end
 

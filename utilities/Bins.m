@@ -1,7 +1,9 @@
 function bins = Bins(startpoint,endpoint,window,step)
 
+%Bins - build temporal bins with specifying start and end points, window and step.  
 % Just a quick function to make bins spanning from
 % t=startpoint to t=endpoint, with a given window and step
+%
 % Copyright (C) 2019 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

@@ -1,7 +1,7 @@
 function session = getSession(varargin)
 
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstr)
+addParameter(p,'basepath',pwd,@isfolder)
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;

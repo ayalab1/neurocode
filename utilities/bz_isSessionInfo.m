@@ -17,6 +17,8 @@ function [isSessionInfo] = bz_isSessionInfo(SessionInfo)
 %
 % written by david tingley, 2017
 
+warning('bz_getSessionInfo is depreciated')
+
 
 if isfield(SessionInfo,'channels')
      if isvector(SessionInfo.channels) 

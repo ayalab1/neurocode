@@ -149,6 +149,7 @@ if size(samples,2)==2 % if the provided data is a signal rather than events
         m = atan2(smoothed(:,1),smoothed(:,2));
     end
     if strcmpi(show,'on'), plot(t', m, pictureoptions{:}); end
+    if nargout>0, varargout{1} = mat; varargout{2} = t; varargout{3} = m; end
     return
 else % the samples are a point process
     [sync, j] = Sync(samples, events, 'durations', duration);

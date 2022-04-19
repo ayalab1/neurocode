@@ -13,18 +13,19 @@ smooth = 2; % for the semplots
 
 z2p = @(z) cdf('norm',-(abs(z)),0,1)*2; % predefine a function converting z-values to p-values
 
+
 files = dir(basepath);
 for i=1:length(files)
     filenames{i,1} = files(i).name;
 end
-indices = find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')), filenames));
-
+indices = find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')), filenames)); 
 data = []; currentTime = 0; currentTrial = 0;
 for i=1:length(indices)
     filename = fullfile(basepath,filenames{indices(i)});
     loaded = load(filename);
     loaded(2:end,1) = loaded(2:end,1)+currentTime; 
-    nTrialsPerSession(i) = loaded(end,4);
+    endTrial = loaded(loaded(:,2)<-15 & loaded(:,2)>-40,:); % only -20 and -30 crossing (left vs right, respectively) qualify
+    nTrialsPerSession(i) = endTrial(end,4);
     loaded(:,4) = loaded(:,4)+currentTrial;
     currentTime = loaded(end,1); currentTrial = loaded(end,4);
     data = [data; loaded];
@@ -115,8 +116,8 @@ subplot(2,2,3); cla
 colors = get(gca,'ColorOrder');
 plot(trialID,skipStart,'ko-','markersize',markersize/2,'linewidth',2);
 hold all
-plot(trialID(~correct),skipStart(~correct),'r.','markersize',markersize,'color',colors(1,:));
-plot(trialID(correct),skipStart(correct),'.','markersize',markersize,'color',colors(2,:));
+plot(trialID(~correct),skipStart(~correct),'.','markersize',markersize,'color',colors(2,:));
+plot(trialID(correct),skipStart(correct),'.','markersize',markersize,'color',colors(1,:));
 PlotHVLines(0.5,'h','k--','linewidth',2);
 
 nans = ones(nTrials,nTrials);
@@ -137,8 +138,8 @@ subplot(2,2,4); cla
 colors = get(gca,'ColorOrder');
 plot(trialID,trialDuration,'ko-','markersize',markersize/2,'linewidth',2);
 hold all
-plot(trialID(~correct),trialDuration(~correct),'r.','markersize',markersize,'color',colors(1,:));
-plot(trialID(correct),trialDuration(correct),'.','markersize',markersize,'color',colors(2,:));
+plot(trialID(~correct),trialDuration(~correct),'r.','markersize',markersize,'color',colors(2,:));
+plot(trialID(correct),trialDuration(correct),'.','markersize',markersize,'color',colors(1,:));
 
 nans = ones(nTrials,nTrials);
 matrix = double(repmat(trialDuration,1,nTrials));
@@ -262,7 +263,7 @@ set(gca,'FontSize',fontsize);
 title({'Task engagement',' '});
 
 drawnow
-if true | ~exist(fullfile(basepath,[sessionID '_behavioral_performance_quantification.fig']))
+if true | ~exist(fullfile(basepath,[sessionID '_behavioral_performance_quantification.fig'])) %only save if there is not already an existing figure.
     SaveFig(fullfile(basepath,[sessionID '_behavioral_performance_quantification']));
 end
 

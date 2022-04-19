@@ -36,6 +36,12 @@ if isempty(index)
 end
 filename = filenames{index};
 [parts] = strsplit(filename,'.');
-variableName = parts{end-2}; % parts{end} is mat
-struct = load(filename,variableName);
-struct = struct.(variableName);
+try
+    variableName = parts{end-1}; % parts{end} is mat
+    struct = load(filename,variableName);
+    struct = struct.(variableName);
+catch
+    variableName = parts{end-2}; 
+    struct = load(filename,variableName);
+    struct = struct.(variableName);
+end

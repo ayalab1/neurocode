@@ -19,6 +19,7 @@ function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 %                   in z-units (default = [5 10])
 %     'aroundArtefact'  time around artefact boundaries that should be removed
 %                   (default = [2 0.1]) seconds.
+%     'manual'      choose your thresholds manually in debug mode
 %    =========================================================================
 %
 %  OUTPUT
@@ -39,6 +40,7 @@ function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 % Default values:
 thresholds = [5 10];
 aroundArtefact = [2 0.1];
+manual = false;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -54,6 +56,11 @@ for i = 1:2:length(varargin),
             aroundArtefact = varargin{i+1};
             if ~isvector(aroundArtefact) || length(aroundArtefact) ~= 2,
                 error('Incorrect value for property ''aroundArtefact'' (type ''help <a href="matlab:help CleanLFP">CleanLFP</a>'' for details).');
+            end
+        case 'manual',
+            manual = varargin{i+1};
+            if ~islogical(manual) || length(manual) ~= 1,
+                error('Incorrect value for property ''manual'' (type ''help <a href="matlab:help CleanLFP">CleanLFP</a>'' for details).');
             end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help CleanLFP">CleanLFP</a>'' for details).']);
@@ -75,6 +82,15 @@ z = zscore(values);
 d = [diff(z);0];
 bad = false(size(values));
 
+if manual
+    figure; plot(t,z); hold all; plot(xlim,ones(1,2)*threshold1,'r--'); ylabel('lfp signal (z-units'); legend('signal','threshold1');
+    disp('Feel free to change "threshold1" and type "dbcont" to continue.')
+    keyboard;
+    if false % Optionally, take a look at the threshold for the derivative
+        clf; plot(t,d); hold all; plot(xlim,ones(1,2)*threshold2,'r--'); ylabel('lfp derivative (z-units'); legend('derivative','threshold2');
+        disp('Change "threshold2" manually.')
+    end
+end
 % Detect large global artefacts (1)
 artefactInterval = t(FindInterval(abs(z)>threshold1));
 if numel(artefactInterval)==2,artefactInterval=artefactInterval(:)';end

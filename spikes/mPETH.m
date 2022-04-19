@@ -1,8 +1,13 @@
 function [m,t] = mPETH(data, event, varargin)
 
 % [m,t] = mPETH(data,events,<options>).
-% returns the mean PETH
-
+% returns the mean PETH (see <a href="matlab:help PETH">PETH</a>)
+% Copyright (C) 2018 by Ralitsa Todorova, Michaël Zugaro
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 
 % default values

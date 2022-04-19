@@ -1,4 +1,4 @@
-function [spkEventTimes] = getRipSpikes(varargin)
+function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
 %
 %    [spkEventTimes] = getRipSpikes(varargin)
 % Saves spike times of all units inside given events in different ways:
@@ -72,9 +72,6 @@ function [spkEventTimes] = getRipSpikes(varargin)
 % Parse inputs 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'events',[], @(x) isnumeric(x) || isstruct(x));
-addParameter(p,'spikes',{},@isstruct);
-addParameter(p,'UIDs',[],@islogical);
 addParameter(p,'padding',0.05,@isnumeric);
 addParameter(p,'savePath',pwd,@isstring);
 addParameter(p,'saveNum',0,@isnumeric);
@@ -82,13 +79,36 @@ addParameter(p,'saveMat', true, @islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
-events = p.Results.events;
-spikes = p.Results.spikes;
-UIDs = p.Results.UIDs;
 padding = p.Results.padding;
 savePath = p.Results.savePath;
 saveNum = p.Results.saveNum;
 saveMat = p.Results.saveMat;
+
+%double check that there are events in this chunk
+if isempty(events)
+    spkEventTimes=[];
+    return
+elseif isstruct(events)&&isfield(events,'timestamps')
+    %this comes from a work around to Restrict when empty intervals
+    if isempty(events.timestamps)
+        spkEventTimes=[];
+        return
+    else
+        timestamps = events.timestamps;
+    end
+elseif isnumeric(events)
+    timestamps = events;
+else 
+    error('Events must be either a Nx2 vector or a bz event structure!');
+end
+
+% Default events, UIDs, and spikes
+if isempty(spikes)
+    spkEventTimes=[];
+    return
+else
+    UIDs=spikes.UID;
+end
 
 % Get session info
 basename = basenameFromBasepath(basepath);
@@ -100,33 +120,14 @@ else
     sesEnd = max(cat(1,spikes.times{:}));
 end
 
-% Default events, UIDs, and spikes
-if isempty(spikes)
-    spikes = load([basepath filesep basename '.spikes.cellinfo.mat']);
-    spikes = spikes.spikes;
-end
-if isempty(UIDs)
-    UIDs = ones(size(spikes.UID));
-end
-if isempty(events)
-    events = load([basepath filesep basename '.ripples.events.mat']);
-    events = events.ripples;
-end
-
-% Starting and ending timestamps
-if isnumeric(events)
-    timestamps = events;
-elseif isstruct(events)
-    timestamps = events.timestamps;
-else
-    warning('Events must be either a Nx2 vector or a bz event structure!');
-end
-
 %% Get spikes for each unit and each ripple
 
 % We will save spike times of different units in different ways:
 spkEventTimes = {};
 spkEventTimes.padding = padding;
+
+% Add UID guide for later access to unit info
+spkEventTimes.UID = spikes.UID;
 
 % 1. Absolute and relative time of spikes by unit and by event
 for unit = 1:length(spikes.UID)

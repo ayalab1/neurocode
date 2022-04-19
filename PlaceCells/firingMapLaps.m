@@ -1,4 +1,4 @@
-function [firingMapsLaps] = firingMapLaps(positions,spikes,trials,varargin)
+function [firingMapsLaps] = firingMapLaps(spikes,behavior,varargin)
 
 % USAGE
 % [firingMaps] = firingMapLap(positions,spikes,trials,varargin)
@@ -8,12 +8,8 @@ function [firingMapsLaps] = firingMapLaps(positions,spikes,trials,varargin)
 %
 %   spikes    - buzcode format .cellinfo. struct with the following fields
 %               .times
-%   positions - [t x y ] or [t x] position matrix or
-%               cell with several of these matrices (for different conditions)
-%   trials      - time intervals [trialstart trailstop] of each lap
+%   behavior  - new behavior structure that contains positions, timestamps, trials ...
 %
-%      or
-%   behavior  - buzcode format behavior struct - NOT YET IMPLEMENTED
 %   <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
@@ -76,8 +72,6 @@ maxDistance = p.Results.maxDistance;
 order = p.Results.orderKalmanVel;
 basepath = p.Results.basepath;
 
-% number of conditions
-conditions = numel(trials);
 %%% TODO: conditions label
 
 %% Calculate
@@ -109,15 +103,20 @@ end
 %}
 
 %%
+trials = behavior.trials; positions = [behavior.timestamps' behavior.position.linearized'];
+% get number of conditions
+conditions = size(behavior.trialIDname,1);
+
 % get firign rate maps
-for unit = 1:length(spikes.times)
-    for c = 1:conditions
-        for t = 1:size(trials{1,1}.timestamps,1)
-            
-            trial_run_time = Restrict(trials{1,c}.timestampsRun,trials{1,c}.timestamps(t,:)); % find run time intervals of each trial
-            position = Restrict(positions,trial_run_time); % find run position for each trial
-            map{unit}{c}{t} = Map(position,spikes.times{unit},'smooth',smooth,'minTime',minTime,...
-            'nBins',nBins,'maxGap',maxGap,'mode',mode,'maxDistance',maxDistance);
+for unit = 1:length(spikes.times) % for each unit
+    for c = 1:conditions % for each condition
+        conditionTrial = trials(behavior.trialID(:,1)==c,:);
+        for t = 1:size(conditionTrial,1) % for each trial of a particulat condition
+            trial_run = Restrict(behavior.positionTrialsRun{1,c},conditionTrial(t,:)); % find run time intervals of each trial
+            if ~isempty(trial_run)
+                map{unit}{c}{t} = Map(trial_run,spikes.times{unit},'smooth',smooth,'minTime',minTime,...
+                'nBins',nBins,'maxGap',maxGap,'mode',mode,'maxDistance',maxDistance);
+            end
         end
     end
 end
@@ -141,18 +140,21 @@ end
 firingMapsLaps.params.smooth = smooth;
 firingMapsLaps.params.minTime = minTime;
 firingMapsLaps.params.nBins = nBins;
-firingMapsLaps.params.x = map{1,1}{1,1}{1,1}.x;
-firingMapsLaps.params.y = map{1,1}{1,1}{1,1}.y;
+%firingMapsLaps.params.x = map{1,1}{1,1}{1,1}.x;
+%firingMapsLaps.params.y = map{1,1}{1,1}{1,1}.y;
 firingMapsLaps.params.maxGap = maxGap;
 firingMapsLaps.params.mode = mode;
 firingMapsLaps.params.maxDistance = maxDistance;
 
 for unit = 1:length(spikes.times)
     for c = 1:conditions
-        for t = 1:size(trials{1,1}.timestamps,1)
-            firingMapsLaps.rateMaps{unit,1}{t,c} = map{unit}{c}{t}.z;
-            firingMapsLaps.countMaps{unit,1}{t,c} = map{unit}{c}{t}.count;
-            firingMapsLaps.occupancy{unit,1}{t,c} = map{unit}{c}{t}.time;
+        conditionTrial = trials(behavior.trialID(:,1)==c,:);
+        for t = 1:size(conditionTrial,1)
+            if ~isempty(map{unit}{c}{t})
+                firingMapsLaps.rateMaps{unit,1}{t,c} = map{unit}{c}{t}.z;
+                firingMapsLaps.countMaps{unit,1}{t,c} = map{unit}{c}{t}.count;
+                firingMapsLaps.occupancy{unit,1}{t,c} = map{unit}{c}{t}.time;
+            end
         end
     end
 end
@@ -160,7 +162,7 @@ end
 if saveMat
     save(fullfile(basepath,...
         [basenameFromBasepath(firingMapsLaps.sessionName),...
-        '.firingMapsLaps.cellinfo.mat']),'firingMapsLaps');
+        '.firingMapsLaps.mat']),'firingMapsLaps');
 end
 
 end

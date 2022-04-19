@@ -196,6 +196,7 @@ addParameter(p, 'DEBUG', false, @islogical);
 addParameter(p, 'MAXGIGS', 16, @isnumeric); 			% GigaBytes
 addParameter(p, 'noPrompts', true, @islogical);
 addParameter(p, 'useSPW', true, @islogical);
+addParameter(p, 'useEEG', false, @islogical);           % if you want the function to look for a .eeg file before looking for the .lfp
 
 parse(p,varargin{:});
 
@@ -223,6 +224,7 @@ DEBUG = p.Results.DEBUG;
 MAXGIGS = p.Results.MAXGIGS;
 noPrompts = p.Results.noPrompts;
 useSPW = p.Results.useSPW;
+useEEG = p.Results.useEEG;
 
 
 
@@ -284,11 +286,11 @@ end
 Nchan       = length(Channels);
 
 % Access lfp looking for an .lfp file first and a .lfp file second
-if ~isempty(dir([Filebase '.lfp']))
+if ~isempty(dir([Filebase '.lfp'])) && ~useEEG
     lfp_file = [Filebase '.lfp'];
     lfp_info = dir(lfp_file);
 elseif ~isempty(dir([Filebase '.eeg']))
-    lfp_file = [Filebase '.eeg'];
+    lfp_file = [Filebase '.eeg']; 1
     lfp_info = dir(lfp_file);
 else
     error(['%s: Field potential file could not be found\n', ...
@@ -854,7 +856,7 @@ for ep_i = 1:Nepochs
         else
             %aza
             try
-                ripPowerAll(MaxCounter) = max(ripPower0(maxSample-HalfWinSize:maxSample+HalfWinSize,1));
+                ripPowerAll(MaxCounter) = max(ripPower0(max([maxSample-HalfWinSize,1]):min([maxSample+HalfWinSize,length(ripPower0)]),1));
             catch
                 ripPowerAll(MaxCounter) = max(ripPower0(maxSample-10:maxSample+10,1));
             end
@@ -890,6 +892,8 @@ for ep_i = 1:Nepochs
             'Note that noisy periods need not participate in either group.']);
         keyboard
 
+        idx2(swDiffAll>mean(swDiffAll(idx1))) = 0;
+        idx2(ripPowerAll>mean(ripPowerAll(idx1))) = 0; 
         if false % optional code to help you find which points are ripples
 
             % First, remove points that occur in noisy lfp periods
@@ -897,7 +901,7 @@ for ep_i = 1:Nepochs
             t = featureTs/1250; % timestamps for candidate ripple events
             bad = false(size(t));
             try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,2))],'thresholds',[6 Inf]);
+                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,1))],'thresholds',[6 Inf],'manual',true);
                 bad = bad | InIntervals(t,badIntervals);
             end
             try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
@@ -959,11 +963,11 @@ for ep_i = 1:Nepochs
                 idx1 = selected & ~bad; % final ripples
                 idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
 
-                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); clim([0 1]);
+                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); set(gca,'CLim',[0 1])
                 xlim(xlims); ylim(ylims);
                 hold on;
                 scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
-                clabel('Estimated ripple score');
+                set(get(colorbar,'YLabel'),'String','Estimated ripple score');
                 xlabel('Sharp wave depth'); ylabel('Ripple power');
 
                 title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});

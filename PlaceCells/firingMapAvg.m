@@ -10,6 +10,7 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 %               .times
 %   positions - [t x y ] or [t x] position matrix or
 %               cell with several of these matrices (for different conditions)
+%               speed threshold should already have been applied to these positons
 %      or
 %   behavior  - buzcode format behavior struct - NOT YET IMPLEMENTED
 %   <options>      optional list of property-value pairs (see table below)
@@ -19,7 +20,8 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 %    -------------------------------------------------------------------------
 %     'smooth'			smoothing size in bins (0 = no smoothing, default = 2)
 %     'nBins'			number of bins (default = 50)
-%     'speedThresh'		speed threshold to compute firing rate
+%     'speedThresh'		speed threshold to compute firing rate (defalt =
+%                       [], assumes postions are already speed-thresholded)
 %     'minTime'			minimum time spent in each bin (in s, default = 0)
 %     'mode'			interpolate' to interpolate missing points (< minTime),
 %                   	or 'discard' to discard them (default)
@@ -50,7 +52,7 @@ function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 %% parse inputs
 p=inputParser;
 addParameter(p,'smooth',2,@isnumeric);
-addParameter(p,'speedThresh',0.1,@isnumeric);
+addParameter(p,'speedThresh',[],@isnumeric);
 addParameter(p,'nBins',50,@isnumeric);
 addParameter(p,'maxGap',0.1,@isnumeric);
 addParameter(p,'minTime',0,@isnumeric);
@@ -82,9 +84,10 @@ elseif isvector(positions)
 end
 %%% TODO: conditions label
 
-%% Calculate
+%% Calculate -- NEEDS TO BE CHANGED, KalmanVel not working well
 % Erase positions below speed threshold
-for iCond = 1:size(positions,2)
+if ~isempty(speedThresh)
+    for iCond = 1:size(positions,2)
     % Compute speed
     post = positions{iCond}(:,1);
     % - 1D
@@ -103,6 +106,7 @@ for iCond = 1:size(positions,2)
     
     % Compute timestamps where speed is under threshold
     positions{iCond}(v<speedThresh,:) = [];
+    end
 end
 
 %%

@@ -21,6 +21,9 @@ function [sessionInfo] = bz_getSessionInfo(basePath,varargin)
 %
 %2017 DLevenstein and DTingley
 %% inputs and defaults
+
+warning('bz_getSessionInfo is depreciated')
+
 p = inputParser;
 addParameter(p,'basename',[]);
 addParameter(p,'noPrompts',false,@islogical);

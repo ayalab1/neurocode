@@ -34,11 +34,12 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'behavior',[],@isnumeric);
 addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
 addParameter(p,'lapStart',20,@isnumeric); % percent of linear track to sep laps
-addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times 
+addParameter(p,'speedTh',4,@isnumeric); % speed cm/sec threshold for stop/run times
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
 addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
+addParameter(p,'split_linearize',false,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -50,6 +51,7 @@ savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
+split_linearize = p.Results.split_linearize;
 
 basename = basenameFromBasepath(basepath);
 
@@ -83,36 +85,75 @@ end
 linear_epochs = [startTime,stopTime];
 
 %% Linearize postions
-% add method to select best LED/ marker
-
 % make all coords outside linear track to nan
-behavior.position.linearized = NaN(1,length(behavior.timestamps));
+behavior.position.linearized = NaN(1,length(behavior.position.x));
 
-% make linear epoch by epoch to account for different maze positions
-for ep = 1:size(linear_epochs,1)
-    % find intervals in epoch
-    [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
-    % pull out xy
-    xy = [behavior.position.x(idx)',behavior.position.y(idx)'];
+% make linear all linear track coords together across epochs
+if ~split_linearize 
+    xy = [];
+    idxs = [];
+    for ep = 1:size(linear_epochs,1)
+        % find intervals in epoch
+        [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+        % pull out xy
+        xy = [xy; behavior.position.x(idx)',behavior.position.y(idx)'];
+        % store index
+        idxs = [idxs,idx];
+    end
+    idxs = sum(idxs,2) > 0;
+    
     % make linear
     [~,lin,~] = pca(xy);
     linpos = lin(:,1);
     % min to zero
-    linpos = linpos - min(linpos);
+    %linpos = linpos - min(linpos);
     if ~isempty(maze_sizes)
         pos_range = max(linpos) - min(linpos);
-        convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+        convert_pix_to_cm_ratio = (pos_range / maze_sizes(1)); % using first maze size
         linpos = linpos / convert_pix_to_cm_ratio;
         % convert xy to cm as well
-        behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-        behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+        behavior.position.x(idxs) = behavior.position.x(idxs) /...
+            convert_pix_to_cm_ratio;
+        behavior.position.y(idxs) = behavior.position.y(idxs) /...
+            convert_pix_to_cm_ratio;
     end
     % normalize?
     if norm_zero_to_one
         linpos = ZeroToOne(linpos);
     end
     % add linear with interval epoch
-    behavior.position.linearized(idx) = linpos';
+    behavior.position.linearized(idxs) = linpos';
+    
+else % if want to linearize tracking epoch by epoch
+    
+    % make linear epoch by epoch to account for different maze positions
+    for ep = 1:size(linear_epochs,1)
+        % find intervals in epoch
+        [idx,~,~] = InIntervals(behavior.timestamps,linear_epochs(ep,:));
+        % pull out xy
+        xy = [behavior.position.x(idx)',behavior.position.y(idx)'];
+        % make linear
+        [~,lin,~] = pca(xy);
+        linpos = lin(:,1);
+        % min to zero
+        %linpos = linpos - min(linpos);
+        if ~isempty(maze_sizes)
+            pos_range = max(linpos) - min(linpos);
+            convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+            linpos = linpos / convert_pix_to_cm_ratio;
+            % convert xy to cm as well
+            behavior.position.x(idx) = behavior.position.x(idx) /...
+                convert_pix_to_cm_ratio;
+            behavior.position.y(idx) = behavior.position.y(idx) /...
+                convert_pix_to_cm_ratio;
+        end
+        % normalize?
+        if norm_zero_to_one
+            linpos = ZeroToOne(linpos);
+        end
+        % add linear with interval epoch
+        behavior.position.linearized(idx) = linpos';
+    end
 end
 
 %% Get laps
@@ -130,7 +171,7 @@ for i = 1:length([laps.start_ts])-1
     end
 end
 
-% save lap information 
+% save lap information
 behavior.trials = [];
 behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
 behavior.trials(1:length(inbound_start),3) = 1;
@@ -141,41 +182,56 @@ behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
 %% Get periods of runnig
-% this method works better than LinearVelocity.m
-[~,~,~,vx,vy,~,~] = KalmanVel(behavior.position.linearized,behavior.position.linearized*0,behavior.timestamps,2);
-v = sqrt(vx.^2+vy.^2); % TODO: v needs to be transformed to cm/s
-behavior.speed =v'; % overriding the original speed variable (obtained with LinearVelocity.m)
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok);
+speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
+interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
+behavior.speed = interpolated(:,2); %[interpolated(:,2)' 0];
+% TODO: v needs to be transformed to cm/s
 
 if isempty(maze_sizes)
-    warning('data is not standardized in cm')
+    warning('data is not in cm, it is highly recommended to convert to cm')
     if isempty(speedTh)
-        speedTh = prctile(v(~isoutlier(v)),10);
+        speedTh = 100;%prctile(behavior.speed(~isoutlier(behavior.speed)),10);
     end
 end
 
-% probably we don't need this
-[quiet,quiescence] = QuietPeriods([behavior.timestamps' v],speedTh,0.5);
-trials{1}.timestamps = [outbound_start outbound_stop];
-trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-trials{2}.timestamps = [inbound_start inbound_stop];
-trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
-for i = 1:2
-    trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps,quiet);
-end
+run = t(FindInterval(speed(:,2)>speedTh));
+run = ConsolidateIntervals(run,'epsilon',0.01);
+[in,w] = InIntervals(behavior.timestamps(:),run);
+peak = Accumulate(w(in),behavior.speed(in)','mode','max');
+% remove outliers (data in between sessions gives outlier speeds)
+[~,isOutlier] = RemoveOutliers(peak);
+% remove run epochs that don't reach the speed threshold
+run(peak<0.1 | isOutlier,:) = [];
+
+% remove trial boundaries. The purpose of this is that the "turning" motion ending one trial would get separated from the
+% running epoch on following trial and it can then be removed with the duration threshold
+run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.001)); 
+runDur = run(:,2)-run(:,1);
+run(runDur<0.8 | runDur>15,:) = []; % remove run epochs that's too short or too long
+behavior.run = run;
 
 %% Separate positions for each direction of running
 % this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
+
+% probably we don't need this
+trials{1}.timestamps = [inbound_start inbound_stop];
+%trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
+trials{2}.timestamps = [outbound_start outbound_stop];
+%trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
+
 for i = 1:2
     behavior.positionTrials{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
     % probably we don't need this
-    behavior.positionTrialsRun{i}=Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestampsRun);
+    behavior.positionTrialsRun{i}=Restrict(behavior.positionTrials{i},run);
+    trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps, SubtractIntervals([0 Inf],run));
 end
 
 %% Manipulations
 if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
     load([basepath,filesep,[basename,'.pulses.events.mat']])
     behavior.manipulation = manipulation;
-    behavior.stimON = pulses.intsPeriods;    
+    behavior.stimON = pulses.intsPeriods;
     % we need something more general because manipualtions can be stored in
     % digitalin or come in different ways
     
@@ -185,7 +241,7 @@ if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.m
     % the intersection of intervals for each trials with stimON
     stimTrials=[];
     for i = 1:numel(trials)
-        t = InIntervals(behavior.stimON,trials{i}.timestampsRun);
+        t = InIntervals(behavior.stimON,trials{i}.timestamps);
         if sum(t) > 5 % I'm not sure why there are a few stim trials in the wrong direction
             stimTrials(i,1) = 1;
             behavior.trialIDname{i,2} = 'stimON';
@@ -199,9 +255,9 @@ if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.m
     end
     for i = 1:numel(behavior.trialID)
         if behavior.trialID(i) == 1
-           behavior.trialID(i,2) = stimTrials(1);
+            behavior.trialID(i,2) = stimTrials(1);
         elseif behavior.trialID(i) == 2
-           behavior.trialID(i,2) = stimTrials(2);            
+            behavior.trialID(i,2) = stimTrials(2);
         end
     end
     
@@ -211,20 +267,21 @@ end
 % needs improvement
 if show_fig
     figure;
-    plot(behavior.timestamps,behavior.position.linearized,'k','LineWidth',2);hold on;
-    plot(behavior.timestamps,v,'r','LineWidth',2);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID(:,1)==1,:),'color','b','alpha',.5);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID(:,1)==2,:),'color','g','alpha',.5);hold on;
+    plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'k','LineWidth',2);hold on;
+    plot(behavior.timestamps,behavior.speed,'r','LineWidth',2);hold on;
+    PlotIntervals(trials{1}.timestampsRun,'color','b','alpha',.5);hold on;
+    PlotIntervals(trials{2}.timestampsRun,'color','g','alpha',.5);hold on;
     if ~isempty(manipulation) && exist([basepath,filesep,[basename,'.pulses.events.mat']],'file')
-        PlotIntervals(pulses.intsPeriods,'color','k','alpha',.5);hold on;
+        PlotIntervals(behavior.stimON ,'color','k','alpha',.5);hold on;
     end
-    ylim([min(behavior.position.linearized),max(behavior.position.linearized)])
+    ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
 
 %% Generate output variables
 if savemat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    save([basepath,filesep,[basename,'.trials.mat']],'trials');
 end
 
 end

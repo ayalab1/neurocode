@@ -69,9 +69,9 @@ if ~isdvector(x),
 	error('Data is not a vector (type ''help <a href="matlab:help Bin">Bin</a>'' for details).');
 end
 
-%  if ~isdvector(a),
-%  	error('Incorrect second parameter (type ''help <a href="matlab:help Bin">Bin</a>'' for details).');
-%  end
+if ~isdvector(a),
+	error('Incorrect second parameter (type ''help <a href="matlab:help Bin">Bin</a>'' for details).');
+end
 
 if length(a) == 1,
 	% Second parameter is a scalar, i.e. the number of bins
@@ -116,7 +116,10 @@ end
 
 bins = floor((x-limits(1))/(limits(2)-limits(1))*nBins)+1;
 
-if ~trim,
+% The following fixes boundary issues but also Matlab rounding errors
+if trim,
+	bins(bins>nBins) = nan;
+else
 	bins(bins>nBins) = nBins;
 end
 

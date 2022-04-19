@@ -69,9 +69,11 @@ t = spikes(:);
 dt = diff(t);
 
 if strcmp(mode,'bursts'),
+    if ~exist('isi','var'), isi = isiBursts; end
 	b = dt<isi;
 	selected = logical([0;b])|logical([b;0]); % either next or previous isi < threshold
 else
+    if ~exist('isi','var'), isi = isiSpikes; end
 	s = dt>isi;
 	selected = logical([0;s])&logical([s;0]); % either next or previous isi < threshold
 end

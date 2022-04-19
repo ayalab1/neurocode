@@ -11,7 +11,8 @@ function channel_mapping(varargin)
 %       1. To be ran after basename.session is created to set up initial
 %       anatomical map for an animal. This will set up a unlabeled .csv.
 %       You are then to label each channel and run this function again to
-%       add that data to basename.session.
+%       add that data to basename.session. IMPORTANT NOTE: Label the .csv 
+%       just as you see the channels in Neuroscope Multi-column view. 
 %
 %       2. Run gui_session(session) and update brain
 %       region manually, then run this function to be consistent.
@@ -26,10 +27,10 @@ function channel_mapping(varargin)
 % Note: 
 % * if you make a manual edit in the .csv, make sure to run this
 %       function again to propagate that change to basename.session. 
-% * Likewise, if you manually edit basename.session via gui_session, run
-%       this function again to update the .csv
-% * If you run ProcessCellMetrics after this, it will incorporate brain
-%       region for every cell
+%
+% TODO: Add functionality to optionally pull regions from basename.session
+%           to populate the .csv after .csv has been populated. One may 
+%           wish to update either basename.session or .csv. 
 %
 % Ryan H 2021
 
@@ -114,7 +115,8 @@ if save_csv
 end
 
 % update cell labels in cell metrics
-if save_cell_metrics
+if save_cell_metrics &&...
+        exist(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'file')
     disp('updating units in cell metrics')
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']))
     chListBrainRegions = findBrainRegion(session);

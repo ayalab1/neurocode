@@ -150,7 +150,7 @@ RefrenceRippleChannel_test=Refrence_chan(RefrenceShnak,3);
 disp(['Reference Ripple Channel for test is : ' num2str(RefrenceRippleChannel_test) ]);
 
 %% Get Ripple
-[ripples] = FindRipples(basepath,RefrenceRippleChannel_test);
+[ripples] = FindRipples('basepath',basepath,'channel',RefrenceRippleChannel_test);
 Win=70;
 LfpSamplingrate = lfp.samplingRate;
 % Removing short startting and the end ripples

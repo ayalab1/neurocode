@@ -14,7 +14,7 @@ function [ripples] = FindRipples(varargin)
 %    from a previous call.  The estimated EMG can be used as an additional
 %    exclusion criteria
 %
-% INPUTS - note these are NOT name-value pairs... just raw values
+% INPUTS - note these are also name-value pairs.
 %    lfp            unfiltered LFP (one channel) to use
 %	 timestamps	    timestamps to match filtered variable
 %    <options>      optional list of property-value pairs (see tables below)
@@ -77,6 +77,8 @@ function [ripples] = FindRipples(varargin)
 
 % Default values
 p = inputParser;
+addParameter(p,'basepath',pwd,@isstr)
+addParameter(p,'channel',1,@isnumeric)
 addParameter(p,'thresholds',[0.5 2.5],@isnumeric)
 addParameter(p,'durations',[50 500],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
@@ -92,8 +94,8 @@ addParameter(p,'minDuration',25,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)
 
 if isstr(varargin{1})  % if first arg is basepath
-    addRequired(p, 'basepath',@isstr);
-    addRequired(p,'channel',@isnumeric) 
+%     addRequired(p, 'basepath',@isstr);
+%     addRequired(p,'channel',@isnumeric) 
     parse(p,varargin{:})
     basename = basenameFromBasepath(p.Results.basepath);
     passband = p.Results.passband;
@@ -102,7 +104,7 @@ if isstr(varargin{1})  % if first arg is basepath
     signal = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
     timestamps = lfp.timestamps;
     basepath = p.Results.basepath;
-            
+    channel = p.Results.channel;
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP
     addRequired(p,'lfp',@isnumeric)
     addRequired(p,'timestamps',@isnumeric)
@@ -110,7 +112,6 @@ elseif isnumeric(varargin{1}) % if first arg is filtered LFP
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
     basepath = p.Results.basepath;
-    EMGFromLFP = p.Results.EMGFromLFP;
     timestamps = p.Results.timestamps;
     
     % package into struct for bz_Filter, so we can return struct

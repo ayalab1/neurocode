@@ -54,6 +54,12 @@ function [lfp] = getLFP(varargin)
 % Copyright (C) 2004-2011 by Michaël Zugaro
 % editied by David Tingley, 2017
 % kathryn mcclain 2020
+% Ralitsa Todorova 2022
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 %
 % NOTES
 % -'select' option has been removed, it allowed switching between 0 and 1
@@ -149,7 +155,11 @@ end
 
 session = getSession('basepath',basepath);
 
-samplingRate = session.extracellular.srLfp;
+if fromDat
+    samplingRate = session.extracellular.sr;
+else
+    samplingRate = session.extracellular.srLfp;
+end
 
 samplingRateLFP_out = samplingRate./downsamplefactor;
 
@@ -184,9 +194,7 @@ for i = 1:nIntervals
                   'frequency',samplingRate,'nchannels',session.extracellular.nChannels,...
                   'start',double(lfp(i).interval(1)),'channels',channels,...
                   'downsample',downsamplefactor);
-    lfp(i).timestamps = [lfp(i).interval(1):(1/samplingRateLFP_out):...
-                        (lfp(i).interval(1)+(length(lfp(i).data)-1)/...
-                        samplingRateLFP_out)]';
+    lfp(i).timestamps = (1:length(lfp(i).data))'/samplingRateLFP_out;
     lfp(i).channels = channels;
     lfp(i).samplingRate = samplingRateLFP_out;
     % check if duration is inf, and reset to actual duration...
@@ -194,7 +202,11 @@ for i = 1:nIntervals
         lfp(i).interval(2) = length(lfp(i).timestamps)/lfp(i).samplingRate;
         lfp(i).duration = (lfp(i).interval(i,2)-lfp(i).interval(i,1));
     end
-    
+    if lfp(i).interval(1)>0 % shift the timestamps accordingly
+        add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; % in practice, the interval starts at the nearest lfp timestamp
+        lfp(i).timestamps = lfp(i).timestamps + add; 
+        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
+    end
     if isfield(session,'brainRegions') && isfield(session,'channels')
         [~,~,regionidx] = intersect(lfp(i).channels,session.channels,'stable');
         lfp(i).region = session.brainRegions(regionidx); % match region order to channel order..

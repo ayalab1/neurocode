@@ -247,6 +247,40 @@ SWRspikes=[];
 
     % add some plots here...
     
+%%
+% Participation
+A = SWRunitMetrics.pre.particip; B = SWRunitMetrics.task.particip; C = SWRunitMetrics.post.particip;
+D = SWRunitMetrics.task.particip - SWRunitMetrics.pre.particip;
+E = SWRunitMetrics.post.particip - SWRunitMetrics.pre.particip;
+
+g = [ones(size(A)); 2*ones(size(B)); 3*ones(size(C))];
+subplot(1,2,1)
+boxplot([A;B;C],g);hold on
+scatter([1,2,3],[A B C],100,'r','.')
+set(gca,'XTickLabel',{'PRE','TASK','POST'});ylabel('Fraction of events');title('Participation');
+subplot(1,2,2)
+g = [ones(size(D)); 2*ones(size(E))];
+boxplot([D;E],g);hold on
+scatter([1,2],[D E],100,'r','.')
+set(gca,'XTickLabel',{'Task - Pre','Post - Pre'});ylabel('(B-A)/(B+A)');title('Participation');
+
+% Friing rate of neurons during participated events
+A = SWRunitMetrics.pre.FRparticip; B = SWRunitMetrics.task.FRparticip; C = SWRunitMetrics.post.FRparticip;
+D = SWRunitMetrics.task.FRparticip - SWRunitMetrics.pre.FRparticip;
+E = SWRunitMetrics.post.FRparticip - SWRunitMetrics.pre.FRparticip;
+
+g = [ones(size(A)); 2*ones(size(B)); 3*ones(size(C))];
+subplot(1,2,1)
+boxplot([A;B;C],g);hold on
+scatter([1,2,3],[A B C],100,'r','.')
+set(gca,'XTickLabel',{'PRE','TASK','POST'});ylabel('Fring rate (Hz)');title('Firing rate in participated events');
+subplot(1,2,2)
+g = [ones(size(D)); 2*ones(size(E))];
+boxplot([D;E],g);hold on
+scatter([1,2],[D E],100,'r','.')
+set(gca,'XTickLabel',{'Task - Pre','Post - Pre'});ylabel('(B-A)/(B+A)');title('Firing rate change in participated events');
+
+
 
 
 

@@ -1,17 +1,13 @@
-N:\Praveen\uLED\uLED1\day7 % HPC only
-N:\OJRproject\OJR42\day11
-N:\OJRproject\OJR42\day12
-N:\OJRproject\OJR43\day3
-N:\OJRproject\OJR43\day7
+% N:\Praveen\uLED\uLED1\day7 % HPC only
+% N:\OJRproject\OJR42\day11 % too superficial PFC
+% N:\OJRproject\OJR42\day12 % too superficial PFC
+% N:\OJRproject\OJR43\day3
+% N:\OJRproject\OJR43\day7
 N:\OJRproject\OJR43\day10
 N:\OJRproject\OJR49\day6  
 
 % Wires:
-% N:\OJRproject\OJR44\day16 % I don't see ripples
-% N:\OJRproject\OJR45\day9 % I see ripples only during the period where most channels were not plugged in
-% N:\OJRproject\OJR45\day12 % I see delta waves only during the period where most channels were not plugged in
-% N:\OJRproject\OJR46\day15 % I don't see ripples
-% N:\OJRproject\OJR46\day16 % I don't see ripples
+% N:\OJRproject\OJR44\day16 % Need to reextract lfp with 39 channels
 N:\OJRproject\OJR47\day10 
 N:\OJRproject\OJR47\day11
 N:\OJRproject\OJR48\day10

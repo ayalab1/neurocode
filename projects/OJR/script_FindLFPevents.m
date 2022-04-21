@@ -61,6 +61,7 @@ if exist(fullfile(basepath,[basename '.deltaWaves.events.mat']),'file')
         deltas = repmat(deltaWaves.peaks,1,2);
     end
 else
+    tic;
     lfp = GetAyaLFP(channel);
     display(['loaded! @' num2str(toc)]);
     [clean,~,badIntervals] = CleanLFP(lfp,'thresholds',[6 10],'manual',true);
@@ -68,9 +69,10 @@ else
     % Optionally, view the PFC firing around the detected events
 %     [h,ht] = PETH(pfc(:,1),deltas0(:,2));
 %     PlotColorMap(Shrink(sortby(h,-(deltas0(:,5)-deltas0(:,6))),72,1),'x',ht);
-    deltas = deltas0(deltas0(:,5)-deltas0(:,6)>4,:); % these thresholds should be manually refined for each session
-    deltaWaves.timestamps = deltas(:,[1 3]); deltaWaves.peaks = deltas(:,2);  deltaWaves.peakNormedPower = deltas(:,5); deltaWaves.detectorName = ['channel ' num2str(channel) '(+1), CleanLFP, FindDeltaPeaks, peak-trough>3'];
-    save(fullfile(basepath,[basename '.deltaWaves.events.mat']),'deltaWaves');
+    deltas = deltas0(deltas0(:,5)-deltas0(:,6)>3.5,:); % these thresholds should be manually refined for each session
+    deltaWaves.timestamps = deltas(:,[1 3]); deltaWaves.peaks = deltas(:,2);  deltaWaves.peakNormedPower = deltas(:,5); deltaWaves.detectorName = ['channel ' num2str(channel) '(+1), CleanLFP, FindDeltaPeaks, peak-trough>3.5'];
+    save(fullfile(basepath,[basenameFromBasepath(basepath) '.deltaWaves.events.mat']),'deltaWaves');
+    SaveCustomEvents(fullfile(basepath,'deltas.del.evt'),deltas(:,1:3),{'deltas start','delta peak','deltas stop'});
 end
 
 

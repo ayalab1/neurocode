@@ -1,7 +1,6 @@
-animals = {'Unimplanted\m01','Unimplanted\m02','Unimplanted\m03','Unimplanted\m04','V1Jean','AO52'}; % Creates a cell with all the animals.
-add = [0 0 0 0 17 8];% Animals sessions have different numbers for the same day, so adding 17 and 8 to V1Jean and AO56 put them in the same number.
+animals = {'Unimplanted\m07','Unimplanted\m08','Unimplanted\m09','Unimplanted\m10'}; % Creates a cell with all the animals.
 fontsize = 15;% Just initiating some parameters.
-listOfDays = [24 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46]; % Specify the days of interest
+listOfDays = [1 2 3 4 5]; % Specify the days of interest
 
 [n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number). 
 skipStartCell = cell(length(animals),length(listOfDays));% Creates a cell
@@ -9,7 +8,7 @@ for i=1:length(animals) % This looks for all the animals going through all of th
     animal = animals{i};
     for dayNumber = 1:length(listOfDays) % and through all the days/sessions
         day = listOfDays(dayNumber);
-        folder = fullfile('N:\V1test\',animal,['day' num2str(day + add(i))]);  % creates a name for each session for each animal
+        folder = fullfile('N:\V1test\',animal,['day' num2str(day)]);  % creates a name for each session for each animal
         try % takes the values to the matrix that were created earlier
             [correct,right,skipStart] = PlotYmazePerformance(folder); % "PlotYmazePerformance" is another function that Raly has prepared and it loads the values from the task files.
 %             midpoint = round(length(correct)/2);

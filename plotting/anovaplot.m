@@ -257,7 +257,7 @@ if ~grouped || size(data,2)==1
         for i=1:size(comparison,1)
             s = sign(Portion(yData(:)>0)./(Portion(yData(:)>0 | yData(:)<0))-0.5); if s==0,s=sign(nanmean(yData(:)));end
             smallnumber = nanmean(yData(:)); %for display purposes, so things don't overlap
-            y1 = s*max(yData2(:,i))+smallnumber/3*(comparison(i,2)-comparison(i,1));
+            y1 = s*max(yData2(i))+smallnumber/3*(comparison(i,2)-comparison(i,1));
             y2 = y1+smallnumber;
             x1 = xData(comparison(i,1));
             x2 = xData(comparison(i,2));

@@ -220,7 +220,7 @@ SWRspikes=[];
         clear var stateMatrix M
         eval( ['stateMatrix=' inputLabels{states} ';']);
        if ~isempty(stateMatrix)
-          M = getRipSpikes('spikes',spikes,'events',stateMatrix  ,'saveMat',false); 
+          M = getRipSpikes(spikes,stateMatrix  ,'saveMat',false); 
           eval([outputLabels{states} '=M;']);
        else
           eval([outputLabels{states} '=[];']); 

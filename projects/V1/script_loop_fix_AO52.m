@@ -1,10 +1,9 @@
-% nDays = 43;
-nDays = 55;
+nDays = 54;
 
 folders = cell(nDays,1);
 for i=1:length(folders),
-%     folders{i} = ['N:\V1test\AO52\day' num2str(i)];
-    folders{i} = ['N:\V1test\V1Jean\day' num2str(i)];
+    folders{i} = ['N:\V1test\AO52\day' num2str(i)];
+%     folders{i} = ['N:\V1test\V1Jean\day' num2str(i)];
 end
 
 fillMissingDatFiles = false;

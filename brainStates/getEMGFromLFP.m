@@ -49,7 +49,7 @@ function [EMGFromLFP] = getEMGFromLFP(basepath,varargin)
 % Updated: Rachel Swanson 5/2017
 
 %% Buzcode name of the EMGCorr.LFP.mat file
-[datasetfolder,recordingname] = fileparts(basepath);
+recordingname = basenameFromBasepath(basepath);
 matfilename = fullfile(basepath,[recordingname,'.EMGFromLFP.LFP.mat']);
 
 %% xmlPameters

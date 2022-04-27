@@ -181,12 +181,12 @@ behavior.trialID = behavior.trials(:,3);
 behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
-%% Get periods of runnig
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok);
-speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
+%% Get periods of running
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); 
+t = behavior.timestamps(ok);
+speed = LinearVelocity([behavior.timestamps(ok)', behavior.position.x(ok)', behavior.position.y(ok)'],5);
 interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
-behavior.speed = interpolated(:,2); %[interpolated(:,2)' 0];
-% TODO: v needs to be transformed to cm/s
+behavior.speed = interpolated(:,2)';
 
 if isempty(maze_sizes)
     warning('data is not in cm, it is highly recommended to convert to cm')

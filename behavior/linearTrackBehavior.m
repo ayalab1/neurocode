@@ -37,8 +37,9 @@ addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & lin
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
 addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
-addParameter(p,'split_linearize',false,@islogical);
+addParameter(p,'split_linearize',false,@islogical); % make linear epoch by epoch
 addParameter(p,'remove_extra_fields',false,@islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
+addParameter(p,'just_save_animal_behavior',false,@islogical); % true will only save animal behav file
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -52,6 +53,7 @@ norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
 split_linearize = p.Results.split_linearize;
 remove_extra_fields = p.Results.remove_extra_fields;
+just_save_animal_behavior = p.Results.just_save_animal_behavior;
 
 basename = basenameFromBasepath(basepath);
 
@@ -284,8 +286,12 @@ end
 
 %% Generate output variables
 if savemat
-    save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
-    save([basepath,filesep,[basename,'.trials.mat']],'trials');
+    if just_save_animal_behavior
+        save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    else
+        save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+        save([basepath,filesep,[basename,'.trials.mat']],'trials');
+    end
 end
 
 end

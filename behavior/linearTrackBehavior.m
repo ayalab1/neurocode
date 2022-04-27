@@ -20,12 +20,10 @@ function [behavior] = linearTrackBehavior(varargin)
 % Can, Ryan, Antonio; 02/22
 %
 % TODO:
-%       -find best way to store output trials. Ideally, should be easy to
-%           identify, maybe table so human readable.
+%       -Current implementation does not conform to cell explorer:
+%           https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %       -Improve output figure
 %       -add option to get laps from tracking or from sensors
-%       -detect laps seperately per epoch in case linear track lengths are
-%       different
 
 %% parse inputs
 
@@ -40,6 +38,7 @@ addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
 addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
 addParameter(p,'split_linearize',false,@islogical);
+addParameter(p,'remove_extra_fields',false,@islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -52,6 +51,7 @@ show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
 split_linearize = p.Results.split_linearize;
+remove_extra_fields = p.Results.remove_extra_fields;
 
 basename = basenameFromBasepath(basepath);
 
@@ -276,6 +276,10 @@ if show_fig
     end
     ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
+end
+
+if remove_extra_fields
+    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});
 end
 
 %% Generate output variables

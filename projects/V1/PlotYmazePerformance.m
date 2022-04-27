@@ -50,7 +50,7 @@ for i=1:nTrials
     skipStart(i) = length(photodetectors)-1;
 end
 
-if exist(fullfile(basepath,[sessionID '_behavioral_performance.fig']),'file')
+if exist(fullfile(basepath,[sessionID '_behavioral_performance_quantification.fig']),'file')
     return
 end
 
@@ -192,7 +192,7 @@ handle = line(nan, nan, 'Linestyle', 'none', 'Marker', 'none', 'Color', 'none');
 legend(handle,['p=' num2str(z2p(z))],'box','off');
 
 subplot(2,6,5);
-half = floor(length(correct)/2);
+half = floor(length(correct)/2); 
 counts = [sum(correct(1:half)) half 0.5];
 BinomialBar(counts)
 PlotHVLines(50,'h','k--');
@@ -256,7 +256,7 @@ legend(handle,['p=' num2str(z2p(z))],'box','off');
 
 subplot(2,4,8); cla
 block = ceil((1:nTrials)'/10)*10;
-anovabar(trialDuration,block,0.05,false,true); 
+try anovabar(trialDuration,block,0.05,false,true); end
 ylabel('mean trial duration (s)');
 xlabel('trial number (blocks of 10)');
 set(gca,'FontSize',fontsize);

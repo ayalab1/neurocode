@@ -12,6 +12,11 @@ function behavior = general_behavior_file(varargin)
 %   .whl, posTrials.mat, basename.posTrials.mat, position.behavior.mat, position_info.mat,
 %   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
 %
+% TODO: 
+%       make so you can choose (w/ varargin) which method to use (some sessions meet several)
+%           This will require making each method into a sub/local function
+%
+%
 % Ryan H 2021
 
 p=inputParser;

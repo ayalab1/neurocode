@@ -79,6 +79,7 @@ bursts(:,[1 3]) = t(ToIntervals(z>thresholds(1)));
 [peak,idx] = Accumulate(id(in),z(in),'mode','max');
 t = t(in);
 bursts(:,2) = t(idx);
+bursts(:,4) = peak;
 
 % Apply high threshold
 pass = peak>thresholds(2);

@@ -36,12 +36,15 @@ if isempty(index)
 end
 filename = filenames{index};
 [parts] = strsplit(filename,'.');
+
+state = warning; state = state(1).state; warning('off'); % supress warnings for the following code
 try
-    variableName = parts{end-1}; % parts{end} is mat
+    variableName = parts{end-2}; % parts{end} is mat
     struct = load(filename,variableName);
     struct = struct.(variableName);
 catch
-    variableName = parts{end-2}; 
+    variableName = parts{end-1}; 
     struct = load(filename,variableName);
     struct = struct.(variableName);
 end
+warning(state); % return to previous warning state

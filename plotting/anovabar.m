@@ -168,7 +168,7 @@ else
     if paired, testpaired = @(x) friedman(x,1,'off'); else testpaired = testbetween; end
 end
 
-if nargin==1 || isempty(grouped)
+if nargin==1 || isempty(groups)
     if sum(sum(~isnan(data))==0) > 0, %if one of the groups contains no real values
         return
     end

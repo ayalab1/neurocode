@@ -9,8 +9,13 @@ function behavior = general_behavior_file(varargin)
 % customized.
 %
 % Currently compatible with the following sources:
-%   .whl, posTrials.mat, position.behavior.mat, position_info.mat,
+%   .whl, posTrials.mat, basename.posTrials.mat, position.behavior.mat, position_info.mat,
 %   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
+%
+% TODO: 
+%       make so you can choose (w/ varargin) which method to use (some sessions meet several)
+%           This will require making each method into a sub/local function
+%
 %
 % Ryan H 2021
 
@@ -56,7 +61,7 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
     load([basepath,filesep,[basename,'.animal.behavior.mat']]);
 end
 
-[t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points] =...
+[t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood);
 
 load([basepath,filesep,[basename,'.session.mat']]);
@@ -71,6 +76,8 @@ behavior.position.units = units;
 behavior.speed = v';
 behavior.acceleration = [0,diff(behavior.speed)];
 behavior.trials = trials;
+behavior.states = states;
+behavior.stateNames = stateNames;
 behavior.notes = notes;
 behavior.epochs = session.epochs;
 behavior.processinginfo.date = date;
@@ -89,8 +96,8 @@ if save_mat
 end
 end
 
-function [t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points] =...
-    extract_tracking(basepath,basename,fs,primary_coords,likelihood)
+function [t,x,y, z,v,trials,units,source,linearized,fs,notes,extra_points,...
+    stateNames,states] = extract_tracking(basepath,basename,fs,primary_coords,likelihood)
 
 t = [];
 x = [];
@@ -103,6 +110,8 @@ source = [];
 linearized = [];
 notes = [];
 extra_points = [];
+stateNames = [];
+states = [];
 % below are many methods on locating tracking data from many formats
 
 
@@ -271,6 +280,41 @@ elseif exist([basepath,filesep,['posTrials.mat']],'file')
         [~,idx] = sort(temp_trials(:,1));
         trials = temp_trials(idx,:);
     end
+elseif exist([basepath,filesep,[basename,'.posTrials.mat']],'file')
+    disp('detected basename.posTrials.mat')
+    load([basepath,filesep,[basename,'.posTrials.mat']]);
+    
+    positions = [];
+    linearized = [];
+    states_temp = [];
+    trials = [];
+    for ep = 1:length(posTrials)
+        positions = [positions;posTrials{ep}.pos];
+        linearized = [linearized;posTrials{ep}.linpos];
+        states_temp = [states_temp;repmat({posTrials{ep}.type},length(posTrials{ep}.linpos),1)];
+        trials = [trials;posTrials{ep}.int];
+    end
+    
+    [~,idx] = sort(positions(:,1));
+    positions = positions(idx,:);
+    
+    [~,idx] = sort(linearized(:,1));
+    linearized = linearized(idx,1);
+    
+    states_temp = states_temp(idx,:);
+    
+    stateNames = unique(states_temp)';
+    states = zeros(1,length(states_temp));
+    for i = 1:length(stateNames)
+        states(contains(states_temp,stateNames{i})) = i;
+    end
+    
+    t = positions(:,1);
+    x = positions(:,2);
+    y = positions(:,3);
+    
+    units = 'normalize';
+    source = 'basename.posTrials.mat';
     
     % posTrials is sometimes moved
 elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')

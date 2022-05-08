@@ -49,7 +49,7 @@ checkFile('basepath',basepath,'filename',filename,'fileType','.csv');
 %% Import and correct data
 
 dat = importdata([basepath, filesep, filename]);
-dat = bz_scrubTracking(dat); % modified by AFR
+% dat = bz_scrubTracking(dat); % modified by AFR
 pos = dat.data; % all tracking variables   
 
 % read optitrack sync channel

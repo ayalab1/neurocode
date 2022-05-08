@@ -51,7 +51,7 @@ if nargin<3,
 end
 
 rt = nan(length(t),size(intervals,2)-1);
-for i=1:size(intervals,2)-1.
+for i=1:size(intervals,2)-1
     [rt(:,i),intervalID(:,i)] = RelativeTime(t,intervals(:,[i i+1]));
 end
 
@@ -67,3 +67,37 @@ for i=1:size(intervals,2)-1,
 end
 
 rt = rt(indicesToKeep); intervalID = intervalID(indicesToKeep);
+
+% ------------------------------- Helper function -------------------------------
+
+function [rt, intervalID] = RelativeTime(t, intervals)
+
+t = t(:,1); %only timestamps are taken
+
+if any(diff(intervals(:,1))<0) % we need to order the intervals so that they are monotonically increasing
+    sorting = true;
+    [~,order] = sort(intervals(:,1));
+    intervals = intervals(order,:);
+else
+    sorting = false;
+end
+
+rt = nan(size(t));
+
+if size(intervals,2)==3,
+    intervalID = zeros(length(t), size(intervals,2)-1);
+    for i=1:size(intervals,2)-1,
+        theseIntervals = intervals(:,i:i+1);
+        [inIntervals,intervalID(:,i)] = InIntervals(t, theseIntervals);
+        rt(inIntervals) = RelativeTime(t(inIntervals), theseIntervals)+i-1;
+    end
+    return
+end
+[inIntervals intervalID] = InIntervals(t, intervals);
+rt(inIntervals,1) = (t(inIntervals) - intervals(intervalID(inIntervals),1))./...
+    (intervals(intervalID(inIntervals),end) - intervals(intervalID(inIntervals),1));
+
+if sorting
+    intervalID(intervalID>0) = order(intervalID(intervalID>0));
+end
+

@@ -10,7 +10,7 @@ function behavior = general_behavior_file(varargin)
 %
 % Currently compatible with the following sources:
 %   .whl, posTrials.mat, basename.posTrials.mat, position.behavior.mat, position_info.mat,
-%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
+%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut, optitrack.behavior.mat
 %
 % TODO: 
 %       make so you can choose (w/ varargin) which method to use (some sessions meet several)
@@ -172,6 +172,17 @@ if any(dlc_flag)
     notes = ['primary_coords: ',num2str(primary_coords),...
         ', likelihood: ',num2str(likelihood)];
     notes = {notes,tracking.notes};
+    
+elseif exist([basepath,filesep,[basename,'.optitrack.behavior.mat']],'file')
+    disp('detected optitrack')
+    load([basepath,filesep,[basename,'.optitrack.behavior.mat']])
+    t = optitrack.timestamps;
+    x = optitrack.position.x';
+    y = optitrack.position.y';
+    z = optitrack.position.z';
+    fs = optitrack.sr;
+    units = 'pixels';
+    source = 'optitrack.behavior.mat';
     
     % standard whl file xyxy format
 elseif exist([basepath,filesep,[basename,'.whl']],'file')

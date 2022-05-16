@@ -470,7 +470,7 @@ else
         end
     end
     % Concatenate and sync timestamps
-    ts = []; subSessions = []; maskSessions = [];
+    t = []; subSessions = []; maskSessions = [];
     if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
         load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
         for ii = 1:length(trackFolder)
@@ -478,21 +478,21 @@ else
                 sumTs = tempTracking{ii}.timestamps + MergePoints.timestamps(trackFolder(ii),1);
                 subSessions = [subSessions; MergePoints.timestamps(trackFolder(ii),1:2)];
                 maskSessions = [maskSessions; ones(size(sumTs))*ii];
-                ts = [ts; sumTs];
+                t = [t; sumTs];
             else
                 error('Folders name does not match!!');
             end
         end
+        fs = 1/mode(diff(t));
     else
         warning('No MergePoints file found. Concatenating timestamps...');
         for ii = 1:length(trackFolder)
-            sumTs = max(ts)+ tempTracking{ii}.timestamps;
+            sumTs = max(t)+ tempTracking{ii}.timestamps;
             subSessions = [subSessions; [sumTs(1) sumTs(end)]];
-            ts = [ts; sumTs];
+            t = [t; sumTs];
         end
+        fs = 1/mode(diff(t));
     end
-    warning('write another loader here')
-    return
 end
 
 % trials can sometimes have extra columns
@@ -522,8 +522,12 @@ try
         v = v(:,2);
     end
 catch
-    v = LinearVelocity([t,linearized,linearized*0]);
-    v = v(:,2);
+    try
+        v = LinearVelocity([t,linearized,linearized*0]);
+        v = v(:,2);
+    catch
+        warning('no tracking data')
+    end
 end
 
 end
@@ -538,7 +542,7 @@ load(fullfile(fullfile(basepath,folder),'digitalIn.events.mat'))
 Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
 [~,idx] = max(cell2mat(Len));
 bazlerTtl = digitalIn.timestampsOn{idx};
-fs = mode(diff(bazlerTtl));
+fs = 1/mode(diff(bazlerTtl));
 %check for extra pulses of much shorter distance than they should
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*0.01);
 bazlerTtl(extra_pulses) = [];

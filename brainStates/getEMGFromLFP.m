@@ -168,6 +168,7 @@ else
     % get list of spike groups (aka shanks) that should be used
     usablechannels = [];
     spkgrpstouse = [];
+    if length(SpkGrps)>1, n=1; else n=5; end
     for gidx = 1:length(SpkGrps)
         usableshankchannels{gidx} = setdiff(SpkGrps{gidx},rejectChannels);
         usablechannels = cat(2,usablechannels,usableshankchannels{gidx});
@@ -187,7 +188,7 @@ else
 
        %grab random channel on each shank
        if ~isempty(usableshankchannels{gidx})
-          randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx})));
+          randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx}),n,1));
           xcorr_chs = [xcorr_chs,randChfromShank];
 
        end
@@ -267,6 +268,9 @@ EMGFromLFP.channels = xcorr_chs;
 EMGFromLFP.detectorName = 'getEMGFromLFP';
 EMGFromLFP.samplingFrequency = samplingFrequency; 
 
+if ~any(~isnan(EMGFromLFP.data)),
+    keyboard
+end
 if saveMat
     %Save in buzcodeformat
     save(matfilename,'EMGFromLFP');

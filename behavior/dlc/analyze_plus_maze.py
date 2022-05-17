@@ -18,17 +18,17 @@ os.environ["DLClight"] = "True"
 
 import deeplabcut
 
-path_config_file = r"D:\dlc_videos\social_plus_maze_dlc\social_plus_maze-harvey-2022-03-03\config.yaml"
+path_config_file = r"Y:\Praveen\social_plus_maze_multi_animal_dlc\social_plus_maze_multi_animal-ryanh-2022-04-23\config.yaml"
 
-videos_folder = [r'D:\dlc_videos\social_plus_maze_v2']
+videos_folder = [r'Y:\Praveen\social_plus_maze_multi_animal_dlc\social_plus_maze_multi_animal-ryanh-2022-04-23\videos']
 
 import sys
-sys.path.append(r"D:\github\neurocode\behavior")
+sys.path.append(r"C:\Users\praveen\Documents\GitHub\neurocode\behavior")
 import find_and_move_videos
 print('moving videos and results')
-find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'D:\dlc_videos\social_plus_maze_v2')
+find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'Y:\Praveen\social_plus_maze_multi_animal_dlc\social_plus_maze_multi_animal-ryanh-2022-04-23\videos')
 
 deeplabcut.analyze_videos(path_config_file,videos_folder,shuffle=1,save_as_csv=True,dynamic=(True, .5, 10))
 
 print('moving videos and results')
-find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'D:\dlc_videos\social_plus_maze_v2')
+find_and_move_videos.main(r'Y:\Praveen\SocialBehavior',r'Y:\Praveen\social_plus_maze_multi_animal_dlc\social_plus_maze_multi_animal-ryanh-2022-04-23\videos')

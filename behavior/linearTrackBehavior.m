@@ -118,6 +118,7 @@ if ~split_linearize
             convert_pix_to_cm_ratio;
         behavior.position.y(idxs) = behavior.position.y(idxs) /...
             convert_pix_to_cm_ratio;
+        behavior.position.units = 'cm';
     end
     % normalize?
     if norm_zero_to_one
@@ -148,6 +149,7 @@ else % if want to linearize tracking epoch by epoch
                 convert_pix_to_cm_ratio;
             behavior.position.y(idx) = behavior.position.y(idx) /...
                 convert_pix_to_cm_ratio;
+            behavior.position.units = 'cm';
         end
         % normalize?
         if norm_zero_to_one

@@ -111,13 +111,13 @@ paired = true;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
-        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
     end
     switch(lower(varargin{i})),
-        case 'thresholds',
+        case 'alpha',
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
-                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -125,7 +125,7 @@ for i = 1:2:length(varargin),
                 if strcmpi(parametric,'on'); parametric = true; else, parametric = false; end
             end
             if ~islogical(parametric) || length(parametric)>1
-                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'paired',
             paired = varargin{i+1};
@@ -133,20 +133,20 @@ for i = 1:2:length(varargin),
                 if strcmpi(paired,'on'); paired = true; else, paired = false; end
             end
             if ~islogical(paired) || length(paired)>1
-                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'correction'
             correction = varargin{i+1};
             if ~isastring(correction)
-                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'precedence'
             precedence = varargin{i+1};
             if ~isdvector(precedence,'#1'),
-                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         otherwise,
-            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
+            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
     end
 end
 
@@ -257,8 +257,8 @@ if ~grouped || size(data,2)==1
         for i=1:size(comparison,1)
             s = sign(Portion(yData(:)>0)./(Portion(yData(:)>0 | yData(:)<0))-0.5); if s==0,s=sign(nanmean(yData(:)));end
             smallnumber = nanmean(yData(:)); %for display purposes, so things don't overlap
-            y1 = s*max(yData2(i))+smallnumber/3*(comparison(i,2)-comparison(i,1));
-            y2 = y1+smallnumber;
+            y1 = s*max(yData2(comparison(i,1:2)))+smallnumber/2*((comparison(i,2)-comparison(i,1)-0.5));
+            y2 = y1+smallnumber*0.1;
             x1 = xData(comparison(i,1));
             x2 = xData(comparison(i,2));
             if comparison(i,3)==0

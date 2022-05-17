@@ -11,7 +11,7 @@ function [pulses] = getAnalogPulses(varargin)
 %               greater than 1.
 % samplingRate            Sampling frequency (in Hz), default 20000.
 % offset        Offset subtracted (in seconds), default 0.
-% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 5s)    
+% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 20s)    
 % filename      File to get pulses from. Default, data file with folder
 %               name in current directory
 % manualThr     Check manually threslhold amplitude (default, false)

@@ -167,7 +167,9 @@ function [ripples] = DetectSWR(Channels, varargin)
 %               dependency, R2013a, which I believe requires different
 %               commands in later versions. I can update this if this
 %               routine becomes widely used.
-
+%
+% TODO: 'check' option needs documentation and to be refactored
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SET DEFAULT FREE PARAMETERS %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

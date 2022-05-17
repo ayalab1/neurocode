@@ -10,9 +10,11 @@ function behavior = general_behavior_file(varargin)
 %
 % Currently compatible with the following sources:
 %   .whl, posTrials.mat, basename.posTrials.mat, position.behavior.mat, position_info.mat,
-%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut
+%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut,
+%   optitrack.behavior.mat, optitrack .csv file
 %
-% TODO: 
+%
+% TODO:
 %       make so you can choose (w/ varargin) which method to use (some sessions meet several)
 %           This will require making each method into a sub/local function
 %
@@ -129,6 +131,21 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
 else
     dlc_flag = false;
 end
+
+% search for optitrack flag
+if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
+    
+    load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+    for k = 1:length(MergePoints.foldernames)
+        opti_flag(k) = ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*.tak')));
+    end
+    files = dir(basepath);
+    files = files(~contains({files.name},'Kilosort'),:);
+    opti_flag(k+1) = ~isempty(dir(fullfile(files(1).folder,'*.tak')));
+else
+    opti_flag = false;
+end
+
 if any(dlc_flag)
     disp('detected deeplabcut')
     [tracking,field_names] = process_and_sync_dlc('basepath',basepath,...
@@ -172,6 +189,73 @@ if any(dlc_flag)
     notes = ['primary_coords: ',num2str(primary_coords),...
         ', likelihood: ',num2str(likelihood)];
     notes = {notes,tracking.notes};
+    
+elseif any(opti_flag)
+    disp('detected optitrack .tak file...')
+    disp('using optitrack .csv file')
+    
+    % load in merge points to iter over later
+    load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+    % load in digital in to get video ttl time stamps
+    load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
+    
+    % get ttl timestamps from digitalin using the channel with the most signals
+    Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
+    [~,idx] = max(cell2mat(Len));
+    digitalIn_ttl = digitalIn.timestampsOn{idx};
+    
+    % calc sample rate from ttls
+    fs = 1/mode(diff(digitalIn_ttl));
+    
+    %check for extra pulses of much shorter distance than they should
+    extra_pulses = diff(digitalIn_ttl)<((1/fs)-(1/fs)*0.01);
+    digitalIn_ttl(extra_pulses) = [];
+    
+    % iter over mergepoint folders to extract tracking
+    for k = 1:length(MergePoints.foldernames)
+        % search for optitrack .tak file as there may be many .csv files
+        if ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*.tak')))
+            % locate the .tak file in this subfolder
+            file = dir(fullfile(basepath,MergePoints.foldernames{k},'*.tak'));
+            % use func from cellexplorer to load tracking data
+            % here we are using the .csv
+            optitrack = optitrack2buzcode('basepath', basepath,...
+                'basename', basename,...
+                'filenames',fullfile(MergePoints.foldernames{k},[extractBefore(file.name,'.tak'),'.csv']),...
+                'unit_normalization',1,...
+                'saveMat',false,...
+                'saveFig',false,...
+                'plot_on',false);
+            % store xyz
+            x = [x,optitrack.position.x];
+            y = [y,optitrack.position.y];
+            z = [z,optitrack.position.z];
+        end
+    end
+    % align ttl timestamps,
+    % there always are differences in n ttls vs. n coords, so we interp
+    simulated_ts = linspace(min(digitalIn_ttl),max(digitalIn_ttl),length(x));
+    t = interp1(digitalIn_ttl,digitalIn_ttl,simulated_ts)';
+    
+    % transpose xyz to accommodate all the other formats
+    x = x';
+    y = y';
+    z = z';
+    
+    % update unit and source metadata
+    units = 'cm';
+    source = 'optitrack .csv file';
+    
+elseif exist([basepath,filesep,[basename,'.optitrack.behavior.mat']],'file')
+    disp('detected optitrack')
+    load([basepath,filesep,[basename,'.optitrack.behavior.mat']])
+    t = optitrack.timestamps;
+    x = optitrack.position.x';
+    y = optitrack.position.y';
+    z = optitrack.position.z';
+    fs = optitrack.sr;
+    units = 'cm';
+    source = 'optitrack.behavior.mat';
     
     % standard whl file xyxy format
 elseif exist([basepath,filesep,[basename,'.whl']],'file')
@@ -459,7 +543,7 @@ else
         end
     end
     % Concatenate and sync timestamps
-    ts = []; subSessions = []; maskSessions = [];
+    t = []; subSessions = []; maskSessions = [];
     if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
         load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
         for ii = 1:length(trackFolder)
@@ -467,21 +551,21 @@ else
                 sumTs = tempTracking{ii}.timestamps + MergePoints.timestamps(trackFolder(ii),1);
                 subSessions = [subSessions; MergePoints.timestamps(trackFolder(ii),1:2)];
                 maskSessions = [maskSessions; ones(size(sumTs))*ii];
-                ts = [ts; sumTs];
+                t = [t; sumTs];
             else
                 error('Folders name does not match!!');
             end
         end
+        fs = 1/mode(diff(t));
     else
         warning('No MergePoints file found. Concatenating timestamps...');
         for ii = 1:length(trackFolder)
-            sumTs = max(ts)+ tempTracking{ii}.timestamps;
+            sumTs = max(t)+ tempTracking{ii}.timestamps;
             subSessions = [subSessions; [sumTs(1) sumTs(end)]];
-            ts = [ts; sumTs];
+            t = [t; sumTs];
         end
+        fs = 1/mode(diff(t));
     end
-    warning('write another loader here')
-    return
 end
 
 % trials can sometimes have extra columns
@@ -511,8 +595,12 @@ try
         v = v(:,2);
     end
 catch
-    v = LinearVelocity([t,linearized,linearized*0]);
-    v = v(:,2);
+    try
+        v = LinearVelocity([t,linearized,linearized*0]);
+        v = v(:,2);
+    catch
+        warning('no tracking data')
+    end
 end
 
 end
@@ -527,7 +615,7 @@ load(fullfile(fullfile(basepath,folder),'digitalIn.events.mat'))
 Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
 [~,idx] = max(cell2mat(Len));
 bazlerTtl = digitalIn.timestampsOn{idx};
-fs = mode(diff(bazlerTtl));
+fs = 1/mode(diff(bazlerTtl));
 %check for extra pulses of much shorter distance than they should
 extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*0.01);
 bazlerTtl(extra_pulses) = [];

@@ -103,7 +103,11 @@ SpkGrps = session.extracellular.spikeGroups.channels;
 Fs = session.extracellular.srLfp;
 lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
 lfpFile = [basepath filesep lfpFile(1).name];
-
+if fromDat
+    datFile = checkFile('basepath',basepath,'fileTypes',{'.dat'});
+    datFile = [basepath filesep datFile(1).name];
+    datFs = session.extracellular.sr;
+end
 %% get basics about.lfp/lfp file
 % if ~isempty(chInfo)
 %     nChannels = chInfo.nChannel;

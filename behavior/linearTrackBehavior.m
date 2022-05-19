@@ -185,6 +185,10 @@ behavior.trialID = behavior.trials(:,3);
 behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
+% save speed threshold which might be different for each session
+
+behavior.speedTh = speedTh;
+
 %% Get periods of running
 ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); 
 t = behavior.timestamps(ok);

@@ -201,11 +201,16 @@ for jj = 1 : length(analogCh)
 
     temp2 = temp;
     temp(2,:) = 0;
-    parfor ii = 1 : length(temp2) % pair begining and end of the pulse
-        try temp(2,ii) =  locsB(find(locsB - temp2(ii) ==...
-            min(locsB(locsB > temp2(ii)) - temp2(ii))));
-        catch
-            keyboard;
+
+    try
+        [~,temp(2,:)] = FindClosest(locsB,temp2,'higher'); % Raly: this is much faster in FindClosest is in the path
+    catch
+        for ii = 1 : length(temp2) % pair begining and end of the pulse
+            try temp(2,ii) =  locsB(find(locsB - temp2(ii) ==...
+                    min(locsB(locsB > temp2(ii)) - temp2(ii))));
+            catch
+                keyboard;
+            end
         end
     end
     temp(:,find(temp(1,:) == 0)) = [];
@@ -221,7 +226,7 @@ for jj = 1 : length(analogCh)
     
     pul{jj} = pul{jj} - offset;
     % discard pulses < 2 * median(abs(x)/0.6745) as noise or pulses in negatives times
-    idx = find((val{jj} < thr*0.4) | pul{jj}(1,:)<0);
+    idx = find((val{jj} < (thr-baseline_d)*0.4) | pul{jj}(1,:)<0);
     val{jj}(idx) = [];
     pul{jj}(:,idx) = [];
     

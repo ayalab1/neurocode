@@ -1,7 +1,7 @@
-function [errorsOn,errorsOff,outputsOn,outputsOff,outputsBoth,basepath] = BatchCanReplay(basepath)
+function [errorsOn,errorsOff,outputsOn,outputsOff,outputsBoth,pre,post,durations,basepath] = BatchCanReplay(basepath)
 
 
-% basepath = 'M:\Data\Can\OLM21\day10';
+%% basepath = 'M:\Data\Can\OLM21\day10';
 basename = basenameFromBasepath(basepath);
 [parentFolder,dayName] = fileparts(basepath);
 [~,projectName] = fileparts(parentFolder);
@@ -51,23 +51,31 @@ sws = SleepState.ints.NREMstate;
 preSleep = SubtractIntervals(sleep(1,:), SubtractIntervals([0 Inf],sws));
 postSleep = SubtractIntervals(sleep(2:end,:), SubtractIntervals([0 Inf],sws));
 
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok); 
-speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
-allPositions = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}]);
-[up,down] = ZeroCrossings([allPositions(:,1),allPositions(:,2)-0.5]); 
-midpoints = allPositions(up|down,1);
-topSpeed = interp1(speed(:,1),speed(:,2),midpoints);
-threshold = median(topSpeed)/10; % the threshold is 10% of the peak speed
-run = t(FindInterval(speed(:,2)>threshold));
-run = ConsolidateIntervals(run,'epsilon',0.01);
-[in,w] = InIntervals(behavior.timestamps(:),run);
-peak = Accumulate(w(in),behavior.speed(in)','mode','max');
+try
+    run = behavior.run;
+catch
+    % Old way to define running:
+    ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:));
+    interpolated = interp1(behavior.timestamps(ok)',[behavior.timestamps(ok)' behavior.position.x(ok)',behavior.position.y(ok)'],behavior.timestamps');
+    interpolated(isnan(interpolated(:,1)),:) = [];
+    speed = LinearVelocity(interpolated,5); t = speed(:,1);
+    allPositions = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}]);
+    [up,down] = ZeroCrossings([allPositions(:,1),allPositions(:,2)-0.5]);
+    midpoints = allPositions(up|down,1);
+    topSpeed = interp1(speed(:,1),speed(:,2),midpoints);
+    threshold = nanmedian(topSpeed)/10; % the threshold is 10% of the peak speed
+    run = t(FindInterval(speed(:,2)>threshold));
+    run = ConsolidateIntervals(run,'epsilon',0.01);
+    [in,w] = InIntervals(behavior.timestamps(:),run);
+    peak = Accumulate(w(in),behavior.speed(in)','mode','max');
 
-% remove outliers (data in between sessions gives outlier speeds)
-[~,isOutlier] = RemoveOutliers(peak);
-% remove run epochs that don't reach the speed threshold
-run(peak<0.1 | isOutlier,:) = [];
-run(IntervalsIntersect(run,sleep),:) = [];
+    % remove outliers (data in between sessions gives outlier speeds)
+    [~,isOutlier] = RemoveOutliers(peak);
+    % remove run epochs that don't reach the speed threshold
+    run(peak<0.1 | isOutlier,:) = [];
+    run(IntervalsIntersect(run,sleep),:) = [];
+end
+
 
 % Make sure our each run epoch is confined within the same trial: no run epoch should begin in one trial and continue over the next trial
 run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.00001));
@@ -91,15 +99,22 @@ maximum = max([max(behavior.positionTrials{1}(:,2)) max(behavior.positionTrials{
 behavior.positionTrials{1}(:,2) = (behavior.positionTrials{1}(:,2) - minimum)./(maximum-minimum);
 behavior.positionTrials{2}(:,2) = (behavior.positionTrials{2}(:,2) - minimum)./(maximum-minimum);
 pos0 = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}(:,1) 2-behavior.positionTrials{2}(:,2)]);
-pos1 = Restrict(behavior.positionTrials{1},run);
-pos2 = Restrict(behavior.positionTrials{2},run); pos2(:,2) = 1-pos2(:,2);
-onTrials = behavior.trials(behavior.trialID(:,2)==1,:); % Can promises that behavior.trialID(:,2)==1 is always stim and 0 is always nonstim trials
-offTrials = behavior.trials(behavior.trialID(:,2)==0,:);
+if sum(diff(pos0(:,2))<0) > sum(diff(pos0(:,2))>0) % backwards, needs to be flipped!
+    pos0(:,2) = 2-pos0(:,2);
+end
+pos1 = Restrict(pos0(pos0(:,2)<1,:),run);
+pos2 = Restrict(pos0(pos0(:,2)>1,:),run); pos2(:,2) = pos2(:,2)-1;
+try
+    onTrials = behavior.trials(behavior.trialID(:,2)==1,:); % Can promises that behavior.trialID(:,2)==1 is always stim and 0 is always nonstim trials
+    offTrials = behavior.trials(behavior.trialID(:,2)==0,:);
+catch
+    onTrials = behavior.trials(IntervalsIntersect(behavior.trials,stim),:);
+    offTrials = behavior.trials(~IntervalsIntersect(behavior.trials,stim),:);
+end
 
 % the first direction is stim (for labels in later analyses)
 if sum(InIntervals(pos2,stim)) > sum(InIntervals(pos1,stim)) % otherwise, swap them
-    pos1 = Restrict(behavior.positionTrials{2},run);
-    pos2 = Restrict(behavior.positionTrials{1},run);  pos2(:,2) = 1-pos2(:,2);
+    this = pos1; pos1 = pos2; pos2 = this;
 end
 
 stimIntervals = SubtractIntervals(run,SubtractIntervals([0 Inf],stim)); % only stim run periods
@@ -125,14 +140,14 @@ PlotColorMap(sortby(nanzscore([curves],[],2),m))
 PlotColorMap(sortby(nanzscore([curves1 curves2 curves],[],2),m))
 
 SaveFig(fullfile('M:\home\raly\results\OML',[sessionID '-Place_field_coverage']))
+
+%%
 clf
 try load(fullfile(basepath,'thetaCyclesTask.mat'),'cycles');
 catch load(fullfile(basepath,'thetaCyclesTrack.mat'),'cycles');
 end
 bad = IntervalsIntersect(cycles, SubtractIntervals([0 Inf],run));
 cycles(bad,:) = [];
-
-%%
 
 % r = ripples.timestamps(:,1:2);
 [splitCycles] = SplitIntervals(cycles,'nPieces',6);
@@ -239,6 +254,7 @@ pre = InIntervals(bursts,preSleep);
 post = InIntervals(bursts,postSleep);
 
 r = bursts(:,[1 3]); leeway = 0.01;
+durations = diff(r,[],2);
 intervals = r; intervals0 = intervals;
 intervals(1:end-1,2) = min([intervals0(1:end-1,2)+leeway mean([intervals0(1:end-1,2) intervals0(2:end,1)],2)],[],2); intervals(end,2) = intervals0(end,2) + leeway;
 intervals(2:end,1) = max([intervals0(2:end,1)-leeway mean([intervals0(2:end,1) intervals0(1:end-1,2)],2)],[],2); intervals(1,1) = intervals0(1,1) - leeway;

@@ -99,20 +99,21 @@ evtstart = evtstart(goodHSE);
 evtstop = evtstop(goodHSE);
 evtdur = evtdur(goodHSE);
 evtpeak = evtpeak(goodHSE);
+evtamp = evtamp(goodHSE);
 
 %% Create buzcode event structure and save it
 HSE.timestamps = cat(2,evtstart',evtstop');
 HSE.peaks = evtpeak';
-HSE.amplitudes = evtamp;
+HSE.amplitudes = evtamp';
 HSE.amplitudeUnits = 'spikes';
-HSE.eventID = ones(size(evtpeak));
+HSE.eventID = ones(size(evtpeak))';
 HSE.eventIDlabels = repmat({name},length(evtpeak),1);
 HSE.eventIDbinary = false(length(evtpeak),1);
-HSE.duration = evtdur;
-HSE.center = evtstart + evtdur/2;
+HSE.duration = evtdur';
+HSE.center = (evtstart + evtdur/2)';
 
 HSE.detectorinfo.detectorname = 'find_HSE';
-HSE.detectorinfo.detectionparms = [];
+HSE.detectorinfo.detectionparms = p.Results;
 HSE.detectorinfo.detectionintervals = [0 Inf];
 HSE.detectorinfo.detectiondate = datetime('today');
 

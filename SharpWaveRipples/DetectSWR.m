@@ -292,7 +292,7 @@ if ~isempty(dir([Filebase '.lfp'])) && ~useEEG
     lfp_file = [Filebase '.lfp'];
     lfp_info = dir(lfp_file);
 elseif ~isempty(dir([Filebase '.eeg']))
-    lfp_file = [Filebase '.eeg']; 1
+    lfp_file = [Filebase '.eeg'];
     lfp_info = dir(lfp_file);
 else
     error(['%s: Field potential file could not be found\n', ...

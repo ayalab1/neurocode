@@ -111,13 +111,13 @@ paired = true;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
-        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
     end
     switch(lower(varargin{i})),
-        case 'thresholds',
+        case 'alpha',
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
-                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -125,7 +125,7 @@ for i = 1:2:length(varargin),
                 if strcmpi(parametric,'on'); parametric = true; else, parametric = false; end
             end
             if ~islogical(parametric) || length(parametric)>1
-                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'paired',
             paired = varargin{i+1};
@@ -133,20 +133,20 @@ for i = 1:2:length(varargin),
                 if strcmpi(paired,'on'); paired = true; else, paired = false; end
             end
             if ~islogical(paired) || length(paired)>1
-                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'correction'
             correction = varargin{i+1};
             if ~isastring(correction)
-                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         case 'precedence'
             precedence = varargin{i+1};
             if ~isdvector(precedence,'#1'),
-                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
             end
         otherwise,
-            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
+            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
     end
 end
 
@@ -256,9 +256,11 @@ if ~grouped || size(data,2)==1
         % Now to plot them:
         for i=1:size(comparison,1)
             s = sign(Portion(yData(:)>0)./(Portion(yData(:)>0 | yData(:)<0))-0.5); if s==0,s=sign(nanmean(yData(:)));end
-            smallnumber = nanmean(yData(:)); %for display purposes, so things don't overlap
-            y1 = s*max(yData2(i))+smallnumber/3*(comparison(i,2)-comparison(i,1));
-            y2 = y1+smallnumber;
+            smallnumber = 0.1*diff(ylim); %for display purposes, so things don't overlap
+            y1 = s*max(yData2(comparison(i,1:2)))+smallnumber/2*((comparison(i,2)-comparison(i,1)-0.5));
+            y2 = y1+smallnumber*0.1;
+            % make sure the stars are not outside the axis
+            if y2>max(ylim), y2 = max(ylim); y1 = y2-smallnumber*0.05; end
             x1 = xData(comparison(i,1));
             x2 = xData(comparison(i,2));
             if comparison(i,3)==0
@@ -310,7 +312,7 @@ else
             comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
             sigFor2Groups(j,1) = comparison(1,3);
             for i=1:size(comparison,1)
-                smallnumber = nanmean(abs(yData(:)))/10; %for display purposes, so things don't overlap
+                smallnumber = 0.1*diff(ylim); %for display purposes, so things don't overlap
                 if precedence==1, 
                     s = sign(nanmean(nanmean(data(groups==u(j),:)))); 
                     y1 = s*max(yData2(j,:))+smallnumber/3*(comparison(i,2)-comparison(i,1));
@@ -322,7 +324,7 @@ else
                     x1 = xData(comparison(i,1),j);
                     x2 = xData(comparison(i,2),j);
                 end
-                y2 = y1+smallnumber;
+                y2 = min([y1+smallnumber,max(ylim)]);
                 if x1>x2, this = x1; x1 = x2; x2 = x1; end
                 smallnumberx = diff(sort(xData(:)))/10; smallnumberx = smallnumberx(1);
                 x1 = x1 + smallnumberx; x2 = x2 - smallnumberx;
@@ -330,7 +332,7 @@ else
                     plot([x1 x2], [y1 y1], 'k');
                     plot([x1 x1], [y1 y1-smallnumber/10], 'k');
                     plot([x2 x2], [y1 y1-smallnumber/10], 'k');
-                    text(mean([x1 x2]), y2, '*','HorizontalAlignment','center');
+                    text(mean([x1 x2]), y2, '*','HorizontalAlignment','center'); 
                 elseif comparison(i,3)==2
                     plot([x1 x2], [y1 y1], 'k');
                     plot([x1 x1], [y1 y1-smallnumber/10], 'k');

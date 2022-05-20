@@ -1,4 +1,3 @@
-
 function channel_mapping(varargin)
 % channel_mapping: updates basename.session with brain regions per channel
 % and creates a adjustable .csv with brain region labels.
@@ -251,12 +250,16 @@ for i = 1:length(anatomical_map_vec)
     label{i} = [anatomical_map_vec{i},' ',num2str(channel_map_vec(i))];
 end
 
-chanMap = generateChannelMap(session,'reorder',false);
+try
+   chanMap = generateChannelMap(session,'reorder',false);
+catch
+   chanMap = createChannelMap(session,'reorder',false);
+end
 chanCoords.x = chanMap.xcoords(:);
 chanCoords.y = chanMap.ycoords(:);
-chanCoords.source = chanMap.source;
-chanCoords.layout = chanMap.layout;
-chanCoords.shankSpacing = chanMap.shankSpacing;
+% chanCoords.source = chanMap.source;
+% chanCoords.layout = chanMap.layout;
+% chanCoords.shankSpacing = chanMap.shankSpacing;
 
 x_range = range(chanCoords.x);
 y_range = range(chanCoords.y);

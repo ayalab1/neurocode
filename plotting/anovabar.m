@@ -243,7 +243,7 @@ else % New code for Matlab 2016 and above
         hErrorbar = zeros(1,nCols);
         for col = 1:nCols
             x = bsxfun(@plus, hbar(col).XData, [hbar(col).XOffset]');
-            hErrorbar(col) = errorbar(x, values(xOrder,col), errors(xOrder,col), errors(xOrder, col), '.k');
+            hErrorbar(col) = errorbar(x, values(1:length(xOrder),col), errors(1:length(xOrder),col), errors(1:length(xOrder), col), '.k');
             set(hErrorbar(col), 'marker', 'none')
         end
     else

@@ -3,21 +3,30 @@ function behavior = general_behavior_file(varargin)
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %
 % This was writed to standardize xy coordinates and trials in several older data sets
-% This is not the cleanest code, but takes care of most cases
 %
 % check extract_tracking below to preview methods. Can be further
 % customized.
 %
 % Currently compatible with the following sources:
-%   .whl, posTrials.mat, basename.posTrials.mat, position.behavior.mat, position_info.mat,
-%   _TXVt.mat, tracking.behavior.mat, Tracking.behavior.mat, DeepLabCut,
-%   optitrack.behavior.mat, optitrack .csv file
+%   .whl
+%   posTrials.mat
+%   basename.posTrials.mat
+%   position.behavior.mat
+%   position_info.mat
+%   _TXVt.mat
+%   tracking.behavior.mat
+%   Tracking.behavior.mat
+%   DeepLabCut .csv
+%   optitrack.behavior.mat
+%   optitrack .csv file
 %
 %
 % TODO:
-%       make so you can choose (w/ varargin) which method to use (some sessions meet several)
+%       -make so you can choose (w/ varargin) which method to use (some sessions meet several)
 %           This will require making each method into a sub/local function
 %
+%       -Needs refactored as many functions are redundant. 
+%           ex. kilosort dir skipper is written twice, .whl files in subdirs
 %
 % Ryan H 2021
 
@@ -43,6 +52,7 @@ if ~iscell(basepaths)
     basepaths = {basepaths};
 end
 
+% iterate over basepaths and extract tracking
 for i = 1:length(basepaths)
     basepath = basepaths{i};
     basename = basenameFromBasepath(basepath);
@@ -63,11 +73,13 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
     load([basepath,filesep,[basename,'.animal.behavior.mat']]);
 end
 
+% call extract_tracking which contains many extraction methods
 [t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood);
 
 load([basepath,filesep,[basename,'.session.mat']]);
 
+% package results
 behavior.sr = fs;
 behavior.timestamps = t';
 behavior.position.x = x';
@@ -86,6 +98,7 @@ behavior.processinginfo.date = date;
 behavior.processinginfo.function = 'general_behavioral_file.mat';
 behavior.processinginfo.source = source;
 
+% deeplabcut will often have many tracking points, add them here
 if ~isempty(extra_points)
     for field = fieldnames(extra_points)'
         field = field{1};
@@ -117,8 +130,7 @@ states = [];
 % below are many methods on locating tracking data from many formats
 
 
-% search for DLC csv within basepath and subdirs, but not kilosort folder
-%       (takes too long)
+% search for DLC csv within basepath and subdirs, but not kilosort folder (takes too long)
 if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
     
     load(fullfile(basepath,[basename,'.MergePoints.events.mat']))

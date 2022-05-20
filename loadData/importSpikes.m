@@ -116,8 +116,8 @@ if ~isempty(type)
     keepUID = []; keepTimes = [];
     for i = 1:length(type)
         tempUID = []; tempTimes = [];
-        tempUID = spikes.UID(strcmp(cell_metrics.putativeCellType, type(i)));
-        tempTimes = spikes.times(strcmp(cell_metrics.putativeCellType, type(i)));
+        tempUID = spikes.UID(contains(cell_metrics.putativeCellType, type(i)));
+        tempTimes = spikes.times(contains(cell_metrics.putativeCellType, type(i)));
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)

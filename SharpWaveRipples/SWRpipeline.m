@@ -16,7 +16,7 @@ basename = basenameFromBasepath(basepath);
     % preferred method (index base 1)
      ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel swrCh.Noise_Channel],'saveMat',true);
      % only use this is you don't have sharp-wave
-     ripples = FindRipples(basepath,swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
+     ripples = FindRipples('basepath',basepath,'channel',swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
      
 % optional steps     
      

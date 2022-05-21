@@ -21,12 +21,13 @@ function HSE = find_HSE(spikes,varargin)
 %% Input handling
 p = inputParser;
 addParameter(p,'nSigma',3,@isnumeric);
-addParameter(p,'tSmooth',.015,@isnumeric); % in s
+addParameter(p,'tSmooth',.016,@isnumeric); % in s
 addParameter(p,'binsz',.001,@isnumeric); % in s
 addParameter(p,'UIDs',[],@isnumeric);
 addParameter(p,'name','HSE',@ischar);
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'save_evts',true,@islogical);
+addParameter(p,'save_classic_event_log',true,@islogical);
 addParameter(p,'mindur',.05,@isnumeric);
 addParameter(p,'maxdur',.5,@isnumeric);
 
@@ -39,6 +40,7 @@ UIDs = p.Results.UIDs;
 name = p.Results.name;
 basepath = p.Results.basepath;
 save_evts = p.Results.save_evts;
+save_classic_event_log = p.Results.save_classic_event_log;
 mindur = p.Results.mindur;
 maxdur = p.Results.maxdur;
 
@@ -48,7 +50,7 @@ basename = basenameFromBasepath(basepath);
 if isempty(UIDs)
     UIDs = spikes.UID;
     % UIDs is used as an index later on so check and correct
-    if ~all(diff(UIDs)==1)
+    if ~all(diff(UIDs)==1) || length(UIDs) == 1 || min(UIDs) ~= 1
         UIDs = 1:length(UIDs);
     end
 end
@@ -123,7 +125,7 @@ end
 
 %% Create FMA .evt structure and save it
 % .evt (FMA standard)
-if save_evts
+if save_evts && save_classic_event_log
     n = length(evtstart);
     d1 = cat(1,evtstart,evtpeak,evtstop);
     events1.time = d1(:);
@@ -132,7 +134,8 @@ if save_evts
         events1.description{i+1,1} = [name ' peak'];
         events1.description{i+2,1} = [name ' stop'];
     end
-    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2), 'saveName', 'H','basepath',basepath);
+    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2),...
+        'saveName', 'H','basepath',basepath,'savePath',basepath);
 end
 
 end

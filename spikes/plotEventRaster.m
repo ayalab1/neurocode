@@ -14,6 +14,7 @@ function  plotEventRaster(event,varargin)
 %   tag2    = feature for shape of the raster. Now supporting: cellType,
 %               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
 %   saveFig = default false
+%   pad     = Amount of time surrounding each event, default 0.25s
 
 %   TO DO: 
 %   add legend to plot 
@@ -33,6 +34,7 @@ addParameter(p,'loadDat',false,@islogical);
 addParameter(p,'regions',[],@isstring);
 addParameter(p,'SleepState',[],@isstruct);
 addParameter(p,'saveFig',false,@islogical);
+addParameter(p,'pad',0.25,@isnumeric);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -46,6 +48,7 @@ loadDat = p.Results.loadDat;
 regions = p.Results.regions;
 SleepState = p.Results.SleepState;
 saveFig = p.Results.saveFig;
+pad = p.Results.pad;
 
 basename = basenameFromBasepath(basepath);
 animName = animalFromBasepath(basepath);
@@ -62,7 +65,6 @@ end
 
 sr = session.extracellular.sr;
 
-pad = 0.25; % padding time
 for e = 1:size(event,1)
     event(e,1) = event(e,1)-pad;
     event(e,2) = event(e,2)+pad;
@@ -92,7 +94,7 @@ if ~isempty(lfpChan)
     elseif loadDat
         figure('Position',[800 400 900 500]);  
         for e = 1:size(event,1)
-            lfpdat = LoadBinary([basename '.dat'],'frequency',sr,'nChannels',session.extracellular.nChannels,...
+            lfpdat = LoadBinary([basename '.dat'],'basepath',basepath,'frequency',sr,'nChannels',session.extracellular.nChannels,...
                 'channels',lfpChan,'start',event(e,1),'duration',event(e,2)-event(e,1));  
             lfp(e).data = lfpdat; 
             t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:size(lfp(e).data(:,1),1))'; %sometimes the time array doesn't match?

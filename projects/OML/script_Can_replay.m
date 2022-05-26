@@ -7,7 +7,6 @@ sessionID = [projectName '_' dayName];
 load(fullfile(basepath,[basename '.animal.behavior.mat']),'behavior');
 load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'cell_metrics');
 load(fullfile(basepath,[basename '.ripples.events.mat']),'ripples');
-stim = behavior.stimON;
 
 load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
 sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:));
@@ -225,6 +224,7 @@ for i=1:size(r,1)
     rEstimationsCell{i,1} = rEstimations(:,rID==i);
 end
 
+tic
 outputs = cell(size(r,1),13);
 for i=1:size(r,1)
     if sum(rID==i & ~empty)>=3

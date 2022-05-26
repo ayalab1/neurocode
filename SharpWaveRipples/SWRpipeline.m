@@ -16,7 +16,7 @@ basename = basenameFromBasepath(basepath);
     % preferred method (index base 1)
      ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel swrCh.Noise_Channel],'saveMat',true);
      % only use this is you don't have sharp-wave
-     ripples = FindRipples(basepath,swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
+     ripples = FindRipples('basepath',basepath,'channel',swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
      
 % optional steps     
      
@@ -220,7 +220,7 @@ SWRspikes=[];
         clear var stateMatrix M
         eval( ['stateMatrix=' inputLabels{states} ';']);
        if ~isempty(stateMatrix)
-          M = getRipSpikes('spikes',spikes,'events',stateMatrix  ,'saveMat',false); 
+          M = getRipSpikes(spikes,stateMatrix  ,'saveMat',false); 
           eval([outputLabels{states} '=M;']);
        else
           eval([outputLabels{states} '=[];']); 

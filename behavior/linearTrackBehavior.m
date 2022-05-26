@@ -20,12 +20,10 @@ function [behavior] = linearTrackBehavior(varargin)
 % Can, Ryan, Antonio; 02/22
 %
 % TODO:
-%       -find best way to store output trials. Ideally, should be easy to
-%           identify, maybe table so human readable.
+%       -Current implementation does not conform to cell explorer:
+%           https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %       -Improve output figure
 %       -add option to get laps from tracking or from sensors
-%       -detect laps seperately per epoch in case linear track lengths are
-%       different
 
 %% parse inputs
 
@@ -39,7 +37,9 @@ addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & lin
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
 addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must correspond with linear epochs)
-addParameter(p,'split_linearize',false,@islogical);
+addParameter(p,'split_linearize',false,@islogical); % make linear epoch by epoch
+addParameter(p,'remove_extra_fields',false,@islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
+addParameter(p,'just_save_animal_behavior',false,@islogical); % true will only save animal behav file
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -52,6 +52,8 @@ show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
 split_linearize = p.Results.split_linearize;
+remove_extra_fields = p.Results.remove_extra_fields;
+just_save_animal_behavior = p.Results.just_save_animal_behavior;
 
 basename = basenameFromBasepath(basepath);
 
@@ -116,6 +118,7 @@ if ~split_linearize
             convert_pix_to_cm_ratio;
         behavior.position.y(idxs) = behavior.position.y(idxs) /...
             convert_pix_to_cm_ratio;
+        behavior.position.units = 'cm';
     end
     % normalize?
     if norm_zero_to_one
@@ -146,6 +149,7 @@ else % if want to linearize tracking epoch by epoch
                 convert_pix_to_cm_ratio;
             behavior.position.y(idx) = behavior.position.y(idx) /...
                 convert_pix_to_cm_ratio;
+            behavior.position.units = 'cm';
         end
         % normalize?
         if norm_zero_to_one
@@ -181,12 +185,16 @@ behavior.trialID = behavior.trials(:,3);
 behavior.trials = behavior.trials(:,1:2);
 behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is correct
 
-%% Get periods of runnig
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); t = behavior.timestamps(ok);
-speed = LinearVelocity([behavior.timestamps(ok)' behavior.position.x(ok)' behavior.position.y(ok)'],5);
+% save speed threshold which might be different for each session
+
+behavior.speedTh = speedTh;
+
+%% Get periods of running
+ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); 
+t = behavior.timestamps(ok);
+speed = LinearVelocity([behavior.timestamps(ok)', behavior.position.x(ok)', behavior.position.y(ok)'],5);
 interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
-behavior.speed = interpolated(:,2); %[interpolated(:,2)' 0];
-% TODO: v needs to be transformed to cm/s
+behavior.speed = interpolated(:,2)';
 
 if isempty(maze_sizes)
     warning('data is not in cm, it is highly recommended to convert to cm')
@@ -278,10 +286,18 @@ if show_fig
     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
 end
 
+if remove_extra_fields
+    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});
+end
+
 %% Generate output variables
 if savemat
-    save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
-    save([basepath,filesep,[basename,'.trials.mat']],'trials');
+    if just_save_animal_behavior
+        save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    else
+        save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+        save([basepath,filesep,[basename,'.trials.mat']],'trials');
+    end
 end
 
 end

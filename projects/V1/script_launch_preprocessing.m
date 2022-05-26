@@ -1,8 +1,10 @@
-nDays = 26;
+% nDays = 43;
+nDays = 55;
 
 folders = cell(nDays,1);
 for i=1:length(folders),
-    folders{i} = ['N:\V1test\AO52\day' num2str(i)];
+%     folders{i} = ['N:\V1test\AO52\day' num2str(i)];
+    folders{i} = ['N:\V1test\V1Jean\day' num2str(i)];
 end
 
 fillMissingDatFiles = false;
@@ -19,13 +21,17 @@ getPos = false;
 removeNoise = false;
 runSummary = false;
 SSD_path = 'D:\KiloSort';
-
-
-for i=length(folders):-1:1
+done = false(nDays,1);
+for i=1:nDays
     try
         basepath = folders{i}
 
         cd(basepath);
+        f = dir('Kilosort*');
+        if ~isempty(f), 
+            done(i,1) = true;
+            error('done');
+        end
 
         %% Pull meta data
 
@@ -35,12 +41,18 @@ for i=length(folders):-1:1
         end
         [~,basename] = fileparts(basepath);
 
-        % Get xml file in order
-        xmlFile = checkFile('fileType','.xml','searchSubdirs',true);
-        xmlFile = xmlFile(1);
-        if ~(strcmp(xmlFile.folder,basepath)&&strcmp(xmlFile.name(1:end-4),basename))
-            copyfile([xmlFile.folder,filesep,xmlFile.name],[basepath,filesep,basename,'.xml'])
-        end
+        % Get xml file from the parent folder
+        [parentFolder,dayName] = fileparts(basepath);
+        [~,projectName] = fileparts(parentFolder);
+        parentXml = fullfile(parentFolder,[projectName '.xml']);
+        xmlFile = fullfile(basepath,[dayName '.xml']);
+        if ~exist(xmlFile,'file'), copyfile(parentXml,xmlFile); end
+%         % Get xml file in order
+%         xmlFile = checkFile('fileType','.xml','searchSubdirs',true);
+%         xmlFile = xmlFile(1);
+%         if ~(strcmp(xmlFile.folder,basepath)&&strcmp(xmlFile.name(1:end-4),basename))
+%             copyfile([xmlFile.folder,filesep,xmlFile.name],[basepath,filesep,basename,'.xml'])
+%         end
 
         % Check info.rhd
         % (assumes this will be the same across subsessions)
@@ -136,7 +148,7 @@ for i=length(folders):-1:1
         end
 
         %% Kilosort concatenated sessions
-        if spikeSort
+        if isempty(dir('KilosortGT*')) && spikeSort
             kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
             load(fullfile(kilosortFolder,'rez.mat'),'rez');
             CleanRez(rez,'savepath',kilosortFolder);

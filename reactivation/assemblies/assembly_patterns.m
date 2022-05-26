@@ -1,5 +1,5 @@
 % function AssemblyTemplates = assembly_patterns(SpikeCount,opts)
-function [AssemblyTemplates,AssemblyIDs,time_projection] = assembly_patterns(varargin)
+function [AssemblyTemplates,AssemblyIDs,time_projection] = assembly_patterns(SpikeCount, varargin)
 
 % Patterns = assembly_patterns(Activitymatrix,opts): extracts assembly patterns from the spike matrix.
 % 
@@ -28,14 +28,11 @@ function [AssemblyTemplates,AssemblyIDs,time_projection] = assembly_patterns(var
 % (2013) Detecting cell assemblies in large neuronal populations, 
 % Journal of Neuroscience Methods.
 %
-% Adapted by aza
+% Adapted to neurocode by aza
 
 % Parse inputs 
 p=inputParser;
-addParameter(p,'spikes',{},@isstruct);
-addParameter(p,'Interval',[],@isnumeric);
-addParameter(p,'bin',20e-3,@isnumeric);
-addParameter(p,'window',20e-3,@isnumeric);
+% addParameter(p,'SpikeCount',[],@isnumeric);
 addParameter(p,'n_perm',100,@isnumeric);
 addParameter(p,'n_perm_percentile',95,@isnumeric);
 addParameter(p,'n_iter',500,@isnumeric);
@@ -43,12 +40,8 @@ addParameter(p,'n_SD',2,@isnumeric);
 addParameter(p,'patterns_method','ICA',@ischar);
 addParameter(p,'threshold_method','MarcenkoPastur',@ischar);
 
-
-parse(p,varargin{:});
-spikes = p.Results.spikes;
-Interval = p.Results.Interval;
-bin = p.Results.bin;
-window = p.Results.window;
+parse(p,varargin{:})
+% SpikeCount = p.SpikeCount;
 n_perm = p.Results.n_perm;
 n_perm_percentile = p.Results.n_perm_percentile;
 n_iter = p.Results.n_iter;
@@ -56,31 +49,7 @@ n_SD = p.Results.n_SD;
 patterns_method = p.Results.patterns_method;
 threshold_method = p.Results.threshold_method;
 
-%test input
-if isempty(spikes)
-    error(['No spikes data']);
-end
-
-% working on this
-% if ~isempty(Intervals)
-%     t1=Intervals(1,1)*spikes.sr;
-%     t2=Intervals(1,2)*spikes.sr;
-%     bined_time = [t1:spikes.sr*bin:t2];
-% else
-    for i=1:length(spikes.ts)
-        max_t(1,i) = max(spikes.ts{1,i});
-    end  
-    t1=0;t2=max(max_t);
-    bined_time = [t1:spikes.sr*bin:t2];   
-% end
-
-%prepare spike train
-for i=1:length(spikes.ts)
-    spikes_tmp{1,i} = spikes.ts{1,i}(find(spikes.ts{1,i}>=t1 & spikes.ts{1,i}<=t2)); 
-    SpikeCount(i,:) = histc(spikes_tmp{1,i},bined_time);
-end    
-
-%z-score
+%z-score spike count
 zSpikeCount = zscore(SpikeCount');
 
 %correlation matrix

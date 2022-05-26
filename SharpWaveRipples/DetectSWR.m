@@ -167,7 +167,9 @@ function [ripples] = DetectSWR(Channels, varargin)
 %               dependency, R2013a, which I believe requires different
 %               commands in later versions. I can update this if this
 %               routine becomes widely used.
-
+%
+% TODO: 'check' option needs documentation and to be refactored
+%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SET DEFAULT FREE PARAMETERS %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -290,7 +292,7 @@ if ~isempty(dir([Filebase '.lfp'])) && ~useEEG
     lfp_file = [Filebase '.lfp'];
     lfp_info = dir(lfp_file);
 elseif ~isempty(dir([Filebase '.eeg']))
-    lfp_file = [Filebase '.eeg']; 1
+    lfp_file = [Filebase '.eeg'];
     lfp_info = dir(lfp_file);
 else
     error(['%s: Field potential file could not be found\n', ...

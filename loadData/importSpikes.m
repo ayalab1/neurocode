@@ -56,6 +56,9 @@ if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 end
 
+spikeT.UID = [];
+spikeT.times = {};
+            
 %% Remove bad channels before we start
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
 if isfield(cell_metrics, 'tags')
@@ -116,8 +119,8 @@ if ~isempty(type)
     keepUID = []; keepTimes = [];
     for i = 1:length(type)
         tempUID = []; tempTimes = [];
-        tempUID = spikes.UID(strcmp(cell_metrics.putativeCellType, type(i)));
-        tempTimes = spikes.times(strcmp(cell_metrics.putativeCellType, type(i)));
+        tempUID = spikes.UID(contains(cell_metrics.putativeCellType, type(i)));
+        tempTimes = spikes.times(contains(cell_metrics.putativeCellType, type(i)));
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)

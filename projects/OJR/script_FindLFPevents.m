@@ -1,6 +1,6 @@
 
-basepath =  'N:\OJRproject\OJR49\day7'; 
-channel = 86;
+basepath =  'N:\OJRproject\OJR49\day11'; 
+channel = 86; % consider 96
 rippleChannels = 1+[18 30]; % the channel that is lower during the sharp-wave is second 
 
 [parentFolder,basename] = fileparts(basepath);
@@ -61,16 +61,32 @@ if exist(fullfile(basepath,[basename '.deltaWaves.events.mat']),'file')
         deltas = repmat(deltaWaves.peaks,1,2);
     end
 else
+    tic;
     lfp = GetAyaLFP(channel);
-    display(['loaded! @' num2str(toc)]);
+    try display(['loaded! @' num2str(toc)]); end
     [clean,~,badIntervals] = CleanLFP(lfp,'thresholds',[6 10],'manual',true);
     deltas0 = FindDeltaPeaks(clean);
+    try EMG = getStruct(basepath,'EMG');
+        immobility = EMG.timestamps(FindInterval(EMG.data<0.6)); immobility(diff(immobility,[],2)<1,:) = [];
+        deltas0 = Restrict(deltas0,immobility);
+        immobilityCheck = true;
+    catch
+        disp('No EMG detected. No immobility restriction'); immobilityCheck = false;
+    end
+
     % Optionally, view the PFC firing around the detected events
-%     [h,ht] = PETH(pfc(:,1),deltas0(:,2));
-%     PlotColorMap(Shrink(sortby(h,-(deltas0(:,5)-deltas0(:,6))),72,1),'x',ht);
-    deltas = deltas0(deltas0(:,5)-deltas0(:,6)>4,:); % these thresholds should be manually refined for each session
-    deltaWaves.timestamps = deltas(:,[1 3]); deltaWaves.peaks = deltas(:,2);  deltaWaves.peakNormedPower = deltas(:,5); deltaWaves.detectorName = ['channel ' num2str(channel) '(+1), CleanLFP, FindDeltaPeaks, peak-trough>3'];
-    save(fullfile(basepath,[basename '.deltaWaves.events.mat']),'deltaWaves');
+    %     [h,ht] = PETH(pfc(:,1),deltas0(:,2));
+    %     PlotColorMap(Shrink(sortby(h,-(deltas0(:,5)-deltas0(:,6))),72,1),'x',ht);
+    threshold = 3;
+    deltas = deltas0(deltas0(:,5)-deltas0(:,6)>threshold,:); % these thresholds should be manually refined for each session
+    deltaWaves.timestamps = deltas(:,[1 3]); deltaWaves.peaks = deltas(:,2);  deltaWaves.peakNormedPower = deltas(:,5);
+    if immobilityCheck
+        deltaWaves.detectorName = ['channel ' num2str(channel) '(+1), CleanLFP, FindDeltaPeaks, EMG.data<0.6, peak-trough>' num2str(threshold)];
+    else
+        deltaWaves.detectorName = ['channel ' num2str(channel) '(+1), CleanLFP, FindDeltaPeaks, peak-trough>' num2str(threshold)];
+    end
+    save(fullfile(basepath,[basenameFromBasepath(basepath) '.deltaWaves.events.mat']),'deltaWaves');
+    SaveCustomEvents(fullfile(basepath,'deltas.del.evt'),deltas(:,1:3),{'deltas start','delta peak','deltas stop'});
 end
 
 

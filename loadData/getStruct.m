@@ -1,4 +1,4 @@
-function struct = getStruct(basepath,extension)
+function struct = getStruct(basepath,extension,fieldName)
 
 % Load custom data extensions associated with a given session.
 % This is a helper function similar to CellExplorer's loadStruct.
@@ -34,8 +34,18 @@ if isempty(index)
     error(['No ''' extension ''' file found in ' basepath]);
     return
 end
+if nargin<3,fieldName = extension; end
 filename = filenames{index};
 [parts] = strsplit(filename,'.');
-variableName = parts{end-2}; % parts{end} is mat
-struct = load(filename,variableName);
-struct = struct.(variableName);
+
+state = warning; state = state(1).state; warning('off'); % supress warnings for the following code
+try
+%     fieldName = parts{end-2}; % parts{end} is mat
+    struct = load(fullfile(basepath,filename),fieldName);
+    struct = struct.(fieldName);
+catch
+    fieldName = parts{end-1}; 
+    struct = load(fullfile(basepath,filename),fieldName);
+    struct = struct.(fieldName);
+end
+warning(state); % return to previous warning state

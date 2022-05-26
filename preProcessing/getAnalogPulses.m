@@ -11,7 +11,7 @@ function [pulses] = getAnalogPulses(varargin)
 %               greater than 1.
 % samplingRate            Sampling frequency (in Hz), default 20000.
 % offset        Offset subtracted (in seconds), default 0.
-% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 5s)    
+% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 20s)    
 % filename      File to get pulses from. Default, data file with folder
 %               name in current directory
 % manualThr     Check manually threslhold amplitude (default, false)
@@ -201,11 +201,16 @@ for jj = 1 : length(analogCh)
 
     temp2 = temp;
     temp(2,:) = 0;
-    parfor ii = 1 : length(temp2) % pair begining and end of the pulse
-        try temp(2,ii) =  locsB(find(locsB - temp2(ii) ==...
-            min(locsB(locsB > temp2(ii)) - temp2(ii))));
-        catch
-            keyboard;
+
+    try
+        [~,temp(2,:)] = FindClosest(locsB,temp2,'higher'); % Raly: this is much faster in FindClosest is in the path
+    catch
+        for ii = 1 : length(temp2) % pair begining and end of the pulse
+            try temp(2,ii) =  locsB(find(locsB - temp2(ii) ==...
+                    min(locsB(locsB > temp2(ii)) - temp2(ii))));
+            catch
+                keyboard;
+            end
         end
     end
     temp(:,find(temp(1,:) == 0)) = [];
@@ -221,7 +226,7 @@ for jj = 1 : length(analogCh)
     
     pul{jj} = pul{jj} - offset;
     % discard pulses < 2 * median(abs(x)/0.6745) as noise or pulses in negatives times
-    idx = find((val{jj} < thr*0.4) | pul{jj}(1,:)<0);
+    idx = find((val{jj} < (thr-baseline_d)*0.4) | pul{jj}(1,:)<0);
     val{jj}(idx) = [];
     pul{jj}(:,idx) = [];
     

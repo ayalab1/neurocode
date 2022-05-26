@@ -191,11 +191,11 @@ end
 input('Indicate when you are done with phy spike sorting')
 % movefile(fullfile(kilosortFolder,[basename '.dat']),fullfile(basepath,[basename '.dat']));
 cd(basepath);
-session = sessionTemplate(pwd,'showGUI',true);
+session = sessionTemplate(pwd,'showGUI',true,'remove_folder_date',true);
 f = dir('Kilosort*');
 
 spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
-cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false);
+cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false,'removeMetrics','deepSuperficial');
 channel_mapping
 close all
 % copyfile(fullfile(kilosortFolder,[basename '.session.mat']),fullfile(basepath,[basename '.session.mat']));

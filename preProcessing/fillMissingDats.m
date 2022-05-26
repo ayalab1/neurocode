@@ -1,7 +1,7 @@
 function fillMissingDats(varargin)
 
 p = inputParser;
-otherdattypes = {'analogin';'digitalin';'auxiliary'};
+otherdattypes = {'analogin';'digitalin';'auxiliary';'time';'supply'};
 isFileType = @(x) sum(strcmp(x,otherdattypes))==1;
 addParameter(p,'basepath',cd,@isstr)
 addParameter(p,'fileType',[],isFileType)

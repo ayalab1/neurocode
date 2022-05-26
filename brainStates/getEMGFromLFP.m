@@ -49,7 +49,7 @@ function [EMGFromLFP] = getEMGFromLFP(basepath,varargin)
 % Updated: Rachel Swanson 5/2017
 
 %% Buzcode name of the EMGCorr.LFP.mat file
-[datasetfolder,recordingname] = fileparts(basepath);
+recordingname = basenameFromBasepath(basepath);
 matfilename = fullfile(basepath,[recordingname,'.EMGFromLFP.LFP.mat']);
 
 %% xmlPameters
@@ -103,7 +103,11 @@ SpkGrps = session.extracellular.spikeGroups.channels;
 Fs = session.extracellular.srLfp;
 lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
 lfpFile = [basepath filesep lfpFile(1).name];
-
+if fromDat
+    datFile = checkFile('basepath',basepath,'fileTypes',{'.dat'});
+    datFile = [basepath filesep datFile(1).name];
+    datFs = session.extracellular.sr;
+end
 %% get basics about.lfp/lfp file
 % if ~isempty(chInfo)
 %     nChannels = chInfo.nChannel;
@@ -168,6 +172,7 @@ else
     % get list of spike groups (aka shanks) that should be used
     usablechannels = [];
     spkgrpstouse = [];
+    if length(SpkGrps)>1, n=1; else n=5; end
     for gidx = 1:length(SpkGrps)
         usableshankchannels{gidx} = setdiff(SpkGrps{gidx},rejectChannels);
         usablechannels = cat(2,usablechannels,usableshankchannels{gidx});
@@ -187,7 +192,7 @@ else
 
        %grab random channel on each shank
        if ~isempty(usableshankchannels{gidx})
-          randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx})));
+          randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx}),n,1));
           xcorr_chs = [xcorr_chs,randChfromShank];
 
        end
@@ -267,6 +272,9 @@ EMGFromLFP.channels = xcorr_chs;
 EMGFromLFP.detectorName = 'getEMGFromLFP';
 EMGFromLFP.samplingFrequency = samplingFrequency; 
 
+if ~any(~isnan(EMGFromLFP.data)),
+    keyboard
+end
 if saveMat
     %Save in buzcodeformat
     save(matfilename,'EMGFromLFP');

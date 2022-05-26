@@ -18,7 +18,7 @@ files = dir(basepath);
 for i=1:length(files)
     filenames{i,1} = files(i).name;
 end
-indices = find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')), filenames)); 
+indices = find(cellfun(@(x) ~isempty(strfind(x,'task-ymaze-')) & isempty(strfind(x,'block')), filenames)); 
 data = []; currentTime = 0; currentTrial = 0;
 for i=1:length(indices)
     filename = fullfile(basepath,filenames{indices(i)});
@@ -30,7 +30,7 @@ for i=1:length(indices)
     currentTime = loaded(end,1); currentTrial = loaded(end,4);
     data = [data; loaded];
 end
-
+ 
 choice = find(abs(data(:,3))==50);
 trials = data(choice,:);
 trialID = trials(:,4);

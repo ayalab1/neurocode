@@ -140,7 +140,7 @@ for jj = 1 : length(analogCh)
     if IntanBuzEd
         d = bz_LoadBinary(analogFile, 'frequency', samplingRate, 'nChannels', nChannels,'channels', analogCh(jj));
     else
-        d = dataAnalogIn(analogCh(jj),:);
+        d = dataAnalogIn(analogCh(jj)-(min(analogCh)-1),:);
     end    
     xt = linspace(1,length(d)/samplingRate,length(d));
     

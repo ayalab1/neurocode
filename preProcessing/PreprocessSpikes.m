@@ -8,22 +8,35 @@
 % Do manual curation using Phy2
 
 %% 1- extract spike times and waveforms for sorted clusters
-ifMultiKiloSort = 0; %if you intend to concatenate multiple kilosort runs into one spikes structure
+%if you intend to concatenate multiple kilosort runs into one spikes structure
+ifMultiKiloSort = 0; 
 session = sessionTemplate(pwd,'showGUI',false);
 f = dir('Kilosort*');
 % Make sure there is only one KiloSort folder before running, unless you needed to spike sort probes separately
 % The hippocampal KiloSort folder should be listed first in the session folder for organization, but this is not necessary for running
+
+% check if spikes.cellinfo has already been created
+pre_exist_spike_files = dir('*spikes*.cellinfo.mat');
 if (size(f,1) > 1) && ifMultiKiloSort
     for i = 1:size(f,1)
         session.spikeSorting{1,1}.relativePath = f(i).name;
-        tempSpikes{i} = loadSpikes('session',session,'clusteringpath',[f(i).folder filesep f(i).name], 'savemat', false);
+        
+        % if all the spike files exist, load instead of making from scratch
+        if length(pre_exist_spike_files) == length(f)
+            temp_spikes = load(pre_exist_spike_files(i).name);
+            tempSpikes{i} = temp_spikes.spikes;
+        else
+            tempSpikes{i} = loadSpikes('session',session,...
+                'clusteringpath',[f(i).folder filesep f(i).name],...
+                'savemat', false);
+        end
         if i == 1
             spikes = tempSpikes{i};
         else
             fields{1}= fieldnames(spikes);
             fields{2} = fieldnames(tempSpikes{i});
             if length(fields{1}) >= length(fields{2})
-               base = 1; comp = 2;
+                base = 1; comp = 2;
             else
                 base = 2; comp = 1;
             end

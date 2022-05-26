@@ -8,7 +8,6 @@ import nelpy as nel
 import warnings
 from warnings import simplefilter
 simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-import math
 
 def loadXML(basepath):
     """
@@ -881,3 +880,133 @@ def load_deepSuperficialfromRipple(basepath,bypass_mismatch_exception=False):
     channel_df['basepath'] = basepath
 
     return channel_df, ripple_average, ripple_time_axis
+
+def load_mua_events(basepath):
+    """
+    Loads the MUA data from the basepath.
+    Meant to load .mat file created by find_HSE.m
+
+    input:
+        basepath: str
+            The path to the folder containing the MUA data.
+    output:
+        mua_data: pandas.DataFrame
+            The pandas.DataFrame containing the MUA data
+
+    TODO: if none exist in basepath, create one
+    """
+
+    # locate .mat file
+    try:
+        filename = glob.glob(basepath+os.sep+'*mua_ca1_pyr.events.mat')[0]
+    except:
+        warnings.warn("file does not exist")
+        return pd.DataFrame()
+
+    # load matfile
+    data = sio.loadmat(filename)
+
+    # pull out and package data
+    df = pd.DataFrame()
+    df["start"] = data['HSE']["timestamps"][0][0][:, 0]
+    df["stop"] = data['HSE']["timestamps"][0][0][:, 1]
+    df["peaks"] = data['HSE']["peaks"][0][0]
+    df["center"] = data['HSE']["center"][0][0]
+    df["duration"] = data['HSE']["duration"][0][0]
+    df["amplitude"] = data['HSE']["amplitudes"][0][0]
+    df["amplitudeUnits"] = data['HSE']["amplitudeUnits"][0][0][0]
+    df["detectorName"] = data['HSE']["detectorinfo"][0][0]["detectorname"][0][0][0]
+
+    # get basename and animal
+    normalized_path = os.path.normpath(filename)
+    path_components = normalized_path.split(os.sep)
+    df["basepath"] = basepath
+    df["basename"] = path_components[-2]
+    df["animal"] = path_components[-3]
+
+    return df
+
+def load_manipulation(
+    basepath, struct_name=None, return_epoch_array=True, merge_gap=None
+):
+    """
+    Loads the data from the basename.eventName.manipulations.mat file and returns a pandas dataframe
+
+    file structure defined here:
+        https://cellexplorer.org/datastructure/data-structure-and-format/#manipulations
+
+    inputs:
+        basepath: string, path to the basename.eventName.manipulations.mat file
+        struct_name: string, name of the structure in the mat file to load. If None, loads all the manipulation files.
+        return_epoch_array: bool, if True, returns only the epoch array
+        merge_gap: int, if not None, merges the epochs that are separated by less than merge_gap (sec). return_epoch_array must be True.
+    outputs:
+        df: pandas dataframe, with the following columns:
+            - start (float): start time of the manipulation in frames
+            - stop (float): stop time of the manipulation in frames
+            - peaks (float): list of the peak times of the manipulation in frames
+            - center (float): center time of the manipulation in frames
+            - duration (float): duration of the manipulation in frames
+            - amplitude (float): amplitude of the manipulation
+            - amplitudeUnit (string): unit of the amplitude
+    Example:
+        >> basepath = r"Z:\Data\Can\OML22\day8"
+        >> df_manipulation = load_manipulation(basepath,struct_name="optoStim",return_epoch_array=False)
+        >> df_manipulation.head(2)
+
+                start	    stop	    peaks	    center	    duration amplitude amplitudeUnits
+        0	8426.83650	8426.84845	8426.842475	8426.842475	0.01195	19651	pulse_respect_baseline
+        1	8426.85245	8426.86745	8426.859950	8426.859950	0.01500	17516	pulse_respect_baseline
+
+        >> basepath = r"Z:\Data\Can\OML22\day8"
+        >> df_manipulation = load_manipulation(basepath,struct_name="optoStim",return_epoch_array=True)
+        >> df_manipulation
+
+        <EpochArray at 0x1faba577520: 5,774 epochs> of length 1:25:656 minutes
+    """
+    try:
+        if struct_name is None:
+            filename = glob.glob(basepath + os.sep + "*manipulation.mat")
+            print(filename)
+            if len(filename) > 1:
+                raise ValueError(
+                    "multi-file not implemented yet...than one manipulation file found"
+                )
+            filename = filename[0]
+        else:
+            filename = glob.glob(
+                basepath + os.sep + "*" + struct_name + ".manipulation.mat"
+            )[0]
+    except:
+        return None
+    # load matfile
+    data = sio.loadmat(filename)
+
+    if struct_name is None:
+        struct_name = list(data.keys())[-1]
+
+    df = pd.DataFrame()
+    df["start"] = data[struct_name]["timestamps"][0][0][:, 0]
+    df["stop"] = data[struct_name]["timestamps"][0][0][:, 1]
+    df["peaks"] = data[struct_name]["peaks"][0][0]
+    df["center"] = data[struct_name]["center"][0][0]
+    df["duration"] = data[struct_name]["duration"][0][0]
+    df["amplitude"] = data[struct_name]["amplitude"][0][0]
+    df["amplitudeUnits"] = data[struct_name]["amplitudeUnits"][0][0][0]
+
+    if return_epoch_array:
+        # get session epochs to add support for epochs
+        epoch_df = load_epoch(basepath)
+        # get session bounds to provide support
+        session_bounds = nel.EpochArray(
+            [epoch_df.startTime.iloc[0], epoch_df.stopTime.iloc[-1]]
+        )
+        manipulation_epoch = nel.EpochArray(
+            np.array([df["start"], df["stop"]]).T, domain=session_bounds
+        )
+        if merge_gap is not None:
+            manipulation_epoch = manipulation_epoch.merge(gap=merge_gap)
+
+        return manipulation_epoch
+    else:
+        return df

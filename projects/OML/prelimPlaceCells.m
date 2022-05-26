@@ -1,6 +1,6 @@
 %% prelimnary place cell analysis Can's linear track experiment 
 
-%%
+%% Behavior
 
 % preprocessSession (label environment with gui_session)
 
@@ -14,7 +14,7 @@ general_behavior_file('primary_coords_dlc',4);
 
 % get linear trial behavior (trials, running periods, etc); needs to set
 % different speedTh for each session
-linearTrackBehavior('manipulation',"true",'lapStart',15,'maze_sizes',300,'speedTh',20);
+linearTrackBehavior('manipulation',"true",'lapStart',15,'maze_sizes',300,'speedTh',15);
 
 %%
 % trials.outboundPos=Restrict([behavior.time' linpos],trials.outboundTs);
@@ -253,14 +253,15 @@ trials = SubtractIntervals(behavior.trials,quiet);
 trials = [trials{1,1}.timestampsRun;trials{1,2}.timestampsRun];
 trials = sortrows(trials);
 
+thetaCh = 49;
 % Find theta cycles
 try
     load([basepath,filesep,basename,'.thetaCyclesTask.mat'],'cycles');
 catch
     lfpstruct = getLFP(thetaCh); % lfpstruct = lfp;
     lfp = lfpstruct.timestamps; lfp(:,2) = lfpstruct.data; % need to set it as timestamps first and load "data" later because "data" is an integer (and "lfp" should not be)
-    [cycles,~] = FindThetaCycles(Restrict(lfp,trials));
-    save([basepath,filesep,'.thetaCyclesTask.mat'],'cycles');
+    [cycles,~] = FindThetaCycles(Restrict(lfp,[min(behavior.timestamps) max(behavior.timestamps)]));
+    save([basepath,filesep,'thetaCyclesTask.mat'],'cycles');
 end
 [windows] = SplitIntervals(cycles,'nPieces',6);
 id = repmat((1:6)',length(cycles),1);

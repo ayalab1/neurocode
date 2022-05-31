@@ -1,4 +1,4 @@
-function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath)
+function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,doSort)
 
 % Loads the spikes of the session in "basepath" in a matrix [timestamp id] format
 % This is a simple function loading data saved in CellExplorer format into
@@ -13,19 +13,19 @@ function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath)
 %
 %  OUTPUT
 %
-%    spikes         list of [t,ID] couples, where the IDs are ordered according 
+%    spikes         list of [t,ID] couples, where the IDs are ordered according
 %                   to brain region
-%    regionID       list of brain region identifiers matched for each ID of 
+%    regionID       list of brain region identifiers matched for each ID of
 %                   "spikes"
-%    regionNames    list of the names of all the brain regions as labelled in 
+%    regionNames    list of the names of all the brain regions as labelled in
 %                   cell_metrics.brainRegion
 %
 %  EXAMPLE
-% 
+%
 %  [spikes,regionID,regionNames] = GetAyaSpikes('N:\V1test\AO52\day3');
-% The first spike of the session was fired at spikes(1,1) seconds (e.g. 0.1578 seconds). 
-% This spike was fired by unit spikes(1,2) (e.g. unit 4). This unit corresponds to the brain 
-% region labelled as regionNames{regionID(spikes(1,2))}. Here, regionID(4) was 3, so the third 
+% The first spike of the session was fired at spikes(1,1) seconds (e.g. 0.1578 seconds).
+% This spike was fired by unit spikes(1,2) (e.g. unit 4). This unit corresponds to the brain
+% region labelled as regionNames{regionID(spikes(1,2))}. Here, regionID(4) was 3, so the third
 % brain region (alphabetical order), corresponding to regionNames{3}, which was 'SomatosensoryCx'.
 %
 % Copyright (C) 2022 by Ralitsa Todorova
@@ -35,6 +35,7 @@ function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
+if nargin<2, doSort = false; end
 basename = basenameFromBasepath(basepath);
 if exist(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'file')
     load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'cell_metrics');
@@ -46,11 +47,14 @@ if exist(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'file')
     end
     spikesCell = cell_metrics.spikes.times';
     % reorder based on region:
-    [regionID,order] = sort(regionCell);
+    if doSort,
+        [regionID,order] = sort(regionCell);
+    else, order = 1:length(spikesCell); regionID = regionCell;
+    end
     spikesCell = spikesCell(order);
     % make a second ID column
     for u=1:length(spikesCell)
-        spikesCell{u,1}(:,2) = u; 
+        spikesCell{u,1}(:,2) = u;
     end
     spikes = sortrows(cell2mat(spikesCell));
     spikesCell = cell_metrics.spikes.times(order)';

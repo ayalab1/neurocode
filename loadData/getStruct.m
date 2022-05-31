@@ -44,8 +44,12 @@ try
     struct = load(fullfile(basepath,filename),fieldName);
     struct = struct.(fieldName);
 catch
-    fieldName = parts{end-1}; 
-    struct = load(fullfile(basepath,filename),fieldName);
-    struct = struct.(fieldName);
+    try fieldName = parts{end-1};
+        struct = load(fullfile(basepath,filename),fieldName);
+        struct = struct.(fieldName);
+    catch fieldName = parts{end-2};
+        struct = load(fullfile(basepath,filename),fieldName);
+        struct = struct.(fieldName);
+    end
 end
 warning(state); % return to previous warning state

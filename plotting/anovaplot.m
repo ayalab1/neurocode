@@ -192,7 +192,7 @@ if ~isempty(groups)
         yData2 = yData02 + 0.2*sqrt(std([yData01(:);yData02(:)]));
         yData1 = yData01 - 0.2*sqrt(std([yData01(:);yData02(:)]));
         yData = nanmean(cat(3,yData01,yData02),3);
-        ylim(mmax([yData1(:);yData2(:)]));
+        try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end
         yData2 = yData02 + 0.1*sqrt(std([yData01(:);yData02(:)]));
     else
         % separate the columns of 'data'; test difference between groups provided by the grouping variable in the same column
@@ -218,7 +218,7 @@ else
      yData2 = yData02 + 2*sqrt(std([yData01(:);yData02(:)]));
      yData1 = yData01 - 2*sqrt(std([yData01(:);yData02(:)]));
      yData = nanmean(cat(3,yData01,yData02),3);
-     ylim(mmax([yData1(:);yData2(:)]));
+     try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end
      yData2 = yData02 + sqrt(std([yData01(:);yData02(:)]));
 end
 hold on;

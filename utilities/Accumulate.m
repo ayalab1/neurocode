@@ -145,7 +145,7 @@ if size(values,1) == 1, values = values'; end
 if ~isivector(variables,'>=0') & ~isimatrix(variables,'>=0'),
 	error('Incorrect variables (type ''help <a href="matlab:help Accumulate">Accumulate</a>'' for details)');
 end
-if size(variables,1) == 1, variables = variables'; end
+if size(variables,1) == 1 && numel(outputSize)==1, variables = variables'; end
 
 % If 'values' is a scalar, make it a vector the same length as 'variables'
 if length(values) == 1,
@@ -166,9 +166,9 @@ if size(values,1) ~= size(variables,1),
 end
 
 % Drop NaN and Inf values
-i = any(isnan(variables)|isinf(variables),2)|isnan(values)|isinf(values);
-variables(i,:) = [];
-values(i,:) = [];
+nans = any(isnan(variables)|isinf(variables),2)|isnan(values)|isinf(values);
+variables(nans,:) = [];
+values(nans,:) = [];
 
 % No variable should be outside the output size range
 if any(max(variables,[],1)>outputSize),
@@ -241,8 +241,8 @@ switch mode,
 		if nargout >= 2,
 			b = nan(outputSize);
 			b(linearIndex) = indices;
-		end
-		
+        end
+        if any(nans), notnans = find(~nans); b(~isnan(b)) = notnans(b(~isnan(b))); end
 	case 'max',
 		% When a vector element gets assigned multiple times, the last assignment overrides all previous assignments,
 		% e.g. a([1 1 2]) = [4 3 6] yields a = [3 6] because a(1)=3 overrides a(1)=4. Thus, we sort values in ascending
@@ -257,7 +257,7 @@ switch mode,
 		   b = nan(outputSize);
 		   b(linearIndex) = indices;
 		end
-		
+		if any(nans), notnans = find(~nans); b = notnans(b); end
 end
 
 

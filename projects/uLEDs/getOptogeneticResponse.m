@@ -11,7 +11,7 @@ function [optogeneticResponses] = getOptogeneticResponse(varargin)
 %                   none.
 % spikes        buzcode spikes structure, if not provided tries loadSpikes.
 % basepath      By default pwd.
-% numRep        For boostraping, default, 500. If 0, no boostraping.
+% numRep        For bootstrapping, default, 0 - no bootstrapping; recommended 500 if using.
 % binSize       In seconds, default, 0.001.
 % winSize       In seconds, default, 0.5.
 % rasterPlot    Default true.
@@ -29,7 +29,7 @@ addParameter(p,'analogCh',[],@isnumeric);
 addParameter(p,'digitalCh',[],@isnumeric);
 addParameter(p,'spikes',[],@isstruct);
 addParameter(p,'basepath',pwd,@ischar);
-addParameter(p,'numRep',500,@isnumeric);
+addParameter(p,'numRep',0,@isnumeric);
 addParameter(p,'binSize',0.001,@isnumeric);
 addParameter(p,'winSize',1,@isnumeric);
 addParameter(p,'rasterPlot',true,@islogical);

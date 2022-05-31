@@ -40,7 +40,7 @@ function uLEDPulses = combineULEDPulses(varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Defaults and Parms
 p = inputParser;
-addParameter(p,'basepath',pwd,@isdir);
+addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'analogPulses',[],@isstruct);
 addParameter(p,'digitalPulses',[],@isstruct);
 addParameter(p,'ledLayout',[],@iscell);

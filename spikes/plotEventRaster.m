@@ -1,4 +1,4 @@
-function  plotEventRaster(event,varargin)
+function  H = plotEventRaster(event,varargin)
 %
 %   Plot spike raster for invidual events (such as ripples), sorting cells
 %   by firing order and color code them according to diverse features
@@ -478,6 +478,8 @@ if saveFig
     end
     saveas(gcf,[savePath '\' animName '.' basename '.rastEvt' useFileN '.png']);
 end
+
+H = gcf; %save current figure as output
 
 end
 

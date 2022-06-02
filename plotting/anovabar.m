@@ -116,7 +116,7 @@ for i = 1:2:length(varargin),
         error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
     end
     switch(lower(varargin{i})),
-        case 'thresholds',
+        case 'alpha',
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
                 error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');

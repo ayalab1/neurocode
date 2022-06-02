@@ -70,7 +70,9 @@ function behavior = main(basepath,basename,fs,save_mat,force_overwrite,primary_c
 
 if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
-    load([basepath,filesep,[basename,'.animal.behavior.mat']]);
+    load([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    disp([basepath,filesep,[basename,'.animal.behavior.mat already detected. Loading file...']]);
+    return
 end
 
 % call extract_tracking which contains many extraction methods

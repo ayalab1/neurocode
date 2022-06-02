@@ -136,6 +136,16 @@ for unit = 1:length(firingMaps.rateMaps)
         % There can be two or more fields
         z = firingMaps.rateMaps{unit}{c};
         x = 1:length( firingMaps.rateMaps{1}{1});
+
+        % Compute the spatial specificity of the map, based on the formula proposed by Skaggs et al. (1993):
+        %  specificity = SUM { p(i) . lambda(i)/lambda . log2(lambda(i)/lambda) }
+        T = sum(firingMaps.occupancy{unit}{c}(:));
+        p_i = firingMaps.occupancy{unit}{c}/(T+eps); % Probability of the animal occupying bin 'i'
+        lambda_i = z;
+        lambda = lambda_i(:)'*p_i(:);
+        if T > 0 && lambda ~= 0,
+            mapStats{unit,1}{c}.specificity = sum(sum(p_i.*lambda_i/lambda.*log2(lambda_i/lambda)));
+        end
         
         % Maximum FR along maze
         maxFR = max(max(z));

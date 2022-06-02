@@ -152,9 +152,7 @@ for unit = 1:length(spikes.times)
 end
 
 if saveMat
-    save(fullfile(basepath,...
-        [basenameFromBasepath(firingMaps.sessionName),...
-        '.firingMapsAvg.cellinfo.mat']),'firingMaps');
+    save(fullfile(basepath, [basenameFromBasepath(basepath),'.firingMapsAvg.cellinfo.mat']),'firingMaps');
 end
 
 end

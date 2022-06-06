@@ -19,6 +19,7 @@ function behavior = general_behavior_file(varargin)
 %   DeepLabCut .csv
 %   optitrack.behavior.mat
 %   optitrack .csv file
+%   *_Behavior*.mat file from crcns_pfc-2_data
 %
 %
 % TODO:
@@ -70,7 +71,9 @@ function behavior = main(basepath,basename,fs,save_mat,force_overwrite,primary_c
 
 if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
-    load([basepath,filesep,[basename,'.animal.behavior.mat']]);
+    load([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
+    disp([basepath,filesep,[basename,'.animal.behavior.mat already detected. Loading file...']]);
+    return
 end
 
 % call extract_tracking which contains many extraction methods
@@ -542,6 +545,19 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     %         disp(file)
     %     end
     %
+elseif ~isempty(dir(fullfile(basepath,'**','*_Behavior*.mat')))
+    % crcns_pfc-2_data behavior file
+    
+    file = dir(fullfile(basepath,'**','*_Behavior*.mat'));
+    load(fullfile(file(1).folder,file(1).name),'whlrld');
+    t = (0:length(whlrld)-1)'/fs;
+    whlrld(whlrld(:,1) == -1,1:4) = NaN;
+    % find led with best tracking
+    [x,y] = find_best_columns(whlrld,fs);
+    units = 'cm';
+    source = '.whl';
+%     trials = whlrld(:,6)+1;
+    linearized = whlrld(:,7);
 else
     warning('No video detected...')
     disp('attempting to add ttls from digitalIn')
@@ -600,6 +616,11 @@ try
     try
         v = LinearVelocity([t,x,y]);
         v = v(:,2);
+        if length(v) ~= length(x)
+            DX = Diff([t,x,y],'smooth',0);
+            Y = DX(:,2:3).*DX(:,2:3);
+            v = sqrt(Y(:,1)+Y(:,2));
+        end
     catch
         [~,idx,idx1] = unique(t);
         v = LinearVelocity([t(idx),x(idx),y(idx)]);

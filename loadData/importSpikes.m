@@ -56,6 +56,9 @@ if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat'])
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 end
 
+spikeT.UID = [];
+spikeT.times = {};
+            
 %% Remove bad channels before we start
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
 if isfield(cell_metrics, 'tags')

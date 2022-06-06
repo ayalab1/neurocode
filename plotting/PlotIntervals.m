@@ -34,7 +34,7 @@ function PlotIntervals(intervals,varargin)
 
 % Default values
 color = [0.9 0.9 0.9];
-alphaValue = 1;
+alphaValue = 0.5;
 style = 'rectangles';
 direction = 'v';
 yLim = ylim;

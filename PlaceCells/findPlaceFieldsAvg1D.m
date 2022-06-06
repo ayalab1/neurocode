@@ -18,7 +18,7 @@ function [placeFieldStats] = findPlaceFieldsAvg1D(varargin)
 %                   ouput structure from bz_firingMapAvg. If not provided,
 %                   it loads it from 'basepath' or current folder
 %     'threshold'   values above threshold*peak belong to the field
-%                   (default = 0.2)
+%                   (default = 0.15)
 %     'minSize'     fields smaller than this percentage of the maze size 
 %                   are considered spurious and ignored (default = 0.05)
 %     'maxSize'     fields larger than this percentage of the maze size 
@@ -136,12 +136,22 @@ for unit = 1:length(firingMaps.rateMaps)
         % There can be two or more fields
         z = firingMaps.rateMaps{unit}{c};
         x = 1:length( firingMaps.rateMaps{1}{1});
+
+        % Compute the spatial specificity of the map, based on the formula proposed by Skaggs et al. (1993):
+        %  specificity = SUM { p(i) . lambda(i)/lambda . log2(lambda(i)/lambda) }
+        T = sum(firingMaps.occupancy{unit}{c}(:));
+        p_i = firingMaps.occupancy{unit}{c}/(T+eps); % Probability of the animal occupying bin 'i'
+        lambda_i = z;
+        lambda = lambda_i(:)'*p_i(:);
+        if T > 0 && lambda ~= 0,
+            mapStats{unit,1}{c}.specificity = sum(sum(p_i.*lambda_i/lambda.*log2(lambda_i/lambda)));
+        end
         
         % Maximum FR along maze
         maxFR = max(max(z));
 
         % If there is no firing rate, go to next unit
-        if maxFR == 0,
+        if isempty(maxFR) || maxFR == 0 
           mapStats{unit,1}{c}.field = logical(zeros(size(z)));
           continue;
         end
@@ -259,8 +269,9 @@ end
 %   PLOT    
 % ==========
 if doPlot
-    for unit = 1:length(firingMaps.rateMaps)
     figure;
+    for unit = 1:length(firingMaps.rateMaps)
+    clf
     for c = 1:length(firingMaps.rateMaps{1})
         subplot(2,2,c)
         plot(firingMaps.rateMaps{unit}{c},'k')
@@ -280,11 +291,10 @@ if doPlot
         mkdir(basepath,'newPCs');
     end
     saveas(gcf,[basepath,filesep,'newPCs',filesep ,'cell_' num2str(unit) '.png'],'png');
-    close all;
     end
 
     for c = 1:length(firingMaps.rateMaps{1})
-    figure;
+    clf
     set(gcf,'Position',[100 -100 2500 1200]);
     for unit = 1:length(firingMaps.rateMaps)
     subplot(7,ceil(length(firingMaps.rateMaps)/7),unit);

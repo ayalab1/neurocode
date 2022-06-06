@@ -1,43 +1,54 @@
-animals = {'Unimplanted\m07','Unimplanted\m08','Unimplanted\m09','Unimplanted\m10'}; % Creates a cell with all the animals.
+animals = {'Unimplanted\m07','Unimplanted\m08','Unimplanted\m09','Unimplanted\m10'}; % Create a cell with all the animals.
 fontsize = 15;% Just initiating some parameters.
-listOfDays = [1 2 3 4 5]; % Specify the days of interest
+% 
+% listOfDays = [1 2 3 4 5 6 7 8 9 10 11 12]; % Specify the days of interest
+nDays = length(dir('N:\V1test\Unimplanted\m07'))-2; % the number of folders inside m07, excluding the first two '.' and '..' fields
+listOfDays = 1:nDays;
 
-[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number). 
-skipStartCell = cell(length(animals),length(listOfDays));% Creates a cell
-for i=1:length(animals) % This looks for all the animals going through all of them
+[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Create four matrix made of NaN (not a number). The dimensions are the number of animals for rows and the number fo days for columns.
+skipStartCell = cell(length(animals),length(listOfDays));% Create a cell number of animals (rows) x number of days (columns)
+for i=1:length(animals) 
     animal = animals{i};
-    for dayNumber = 1:length(listOfDays) % and through all the days/sessions
+    for dayNumber = 1:length(listOfDays) 
         day = listOfDays(dayNumber);
-        folder = fullfile('N:\V1test\',animal,['day' num2str(day)]);  % creates a name for each session for each animal
+        folder = fullfile('N:\V1test\',animal,['day' num2str(day)]);  % create a name for each session for each animal
         try % takes the values to the matrix that were created earlier
             [correct,right,skipStart] = PlotYmazePerformance(folder); % "PlotYmazePerformance" is another function that Raly has prepared and it loads the values from the task files.
-%             midpoint = round(length(correct)/2);
-%             correct = correct(midpoint:end); right = right(midpoint:end); skipStart = skipStart(midpoint:end);
+            %             midpoint = round(length(correct)/2);
+            %             correct = correct(midpoint:end); right = right(midpoint:end); skipStart = skipStart(midpoint:end);
+%             n = length(correct); n = floor(n/2);
+%             correct = correct(1:n); right = right(1:n); 
+%             skipStart = skipStart(1:n); % only first half of the session.
+%             correct = correct(n+1:end); right = right(n+1:end);
+%             skipStart = skipStart(n+1:end); %second half of the session 
             n_correct(i,dayNumber) = sum(correct);
             n_right(i,dayNumber) = sum(right);
             n_skipStart(i,dayNumber) = sum(skipStart>0);
             n_trials(i,dayNumber) = length(correct);
             skipStartCell{i,dayNumber} = skipStart;
             correctCell{i,dayNumber} = correct';
+        catch
+            disp(['Problem with session ' folder])
         end
     end
 end
 
 %%
-
-clf
-maxNtrials = max(cellfun(@length,correctCell));
-for i=1:size(correctCell,2), for j=1:size(correctCell,1), correctCell{j,i} = double(correctCell{j,i}); correctCell{j,i}(end+1:maxNtrials(i)) = nan; end; end
-i=9; this = cell2mat(correctCell(:,i));
-PlotColorMap(nansmooth(this,[0 2]),~isnan(this));
-clim([0 0.8])
+% figure;
+% clf
+% maxNtrials = max(cellfun(@length,correctCell));
+% for i=1:size(correctCell,2), for j=1:size(correctCell,1), correctCell{j,i} = double(correctCell{j,i}); correctCell{j,i}(end+1:maxNtrials(i)) = nan; end; end
+% i=9; this = cell2mat(correctCell(:,i));
+% PlotColorMap(nansmooth(this,[0 2]),~isnan(this));
+% clim([0 0.8])
 
 %%
-
+figure(1) % write 'figure(2)' if we want to compare plots for the first half of the session versus the second half.
 clf
 p = (n_correct./n_trials); 
 p = p*100; %proportion of correct trials over the total number
-
+pPlot = p; pPlot(isnan(n_trials)) = 50;
+ 
 z = nan(1,length(listOfDays));
 for dayNumber = 1:length(listOfDays),z(dayNumber) = zBinomialComparison(sum(n_correct(:,dayNumber)),sum(n_trials(:,dayNumber)),0.5); end
 
@@ -45,7 +56,7 @@ for dayNumber = 1:length(listOfDays),z(dayNumber) = zBinomialComparison(sum(n_co
 clf
 
 handles{1} = subplot(2,3,1);
-imagesc(p); set(gca,'YDir','reverse')
+imagesc(pPlot); set(gca,'YDir','reverse')
 set(gca,'ytick',1:length(animals),'yticklabel',out2(@fileparts,animals));
 xlabel('training day');
 ylabel('animal');

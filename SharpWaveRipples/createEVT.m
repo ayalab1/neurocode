@@ -105,9 +105,7 @@ end
 filename = basenameFromBasepath(basepath);
 
 % Check if there is an existing .evt file in the current directory
-oldPath = cd(savePath);
-rippleFiles = dir(['*.' saveName '*.evt']);
-cd(oldPath);
+rippleFiles = dir(fullfile(savePath,['*.' saveName '*.evt']));
 if isempty(rippleFiles)
     fileN = 1;
 else

@@ -33,7 +33,7 @@ if ~strcmp(filename(end-3:end),'.xml') % we can now give LoadParameters.m the fo
     d = dir(fullfile(filename, '*xml')); 
     
     if length(d)>1 %if multiple .xmls, pick the one that matches baseName
-        baseName = bz_BasenameFromBasepath(filename);
+        baseName = basenameFromBasepath(filename);
         correctxmlfilename = cellfun(@(X) strcmp(X,[baseName,'.xml']),{d.name});
         d = d(correctxmlfilename);
         display(['Multiple .xml files in this folder, trying ',baseName,'.xml'])

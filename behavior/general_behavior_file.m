@@ -642,6 +642,13 @@ function tracking = sync_ttl(basepath,folder)
 
 if ~exist(fullfile(basepath,folder,'digitalIn.events.mat'),'file')
     digitalIn = getDigitalIn('all','folder',fullfile(basepath,folder));
+    if isempty(digitalIn)
+        tracking.timestamps = [];
+        tracking.folder = fullfile(basepath,folder);
+        tracking.samplingRate = [];
+        tracking.description = '';
+        return
+    end
 end
 load(fullfile(fullfile(basepath,folder),'digitalIn.events.mat'))
 

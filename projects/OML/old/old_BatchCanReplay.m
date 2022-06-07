@@ -14,17 +14,48 @@ try
 end
 disp(['Starting session ' basepath '...']);
 
+
 load(fullfile(basepath,[basename '.animal.behavior.mat']),'behavior');
 load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'cell_metrics');
-% load(fullfile(basepath,[basename '.ripples.events.mat']),'ripples');
-
-stim = behavior.stimON;
-run = behavior.run;
+% load(fullfile(basepath,[basename '.ripples.events.mat']),'ripples'); 
+try
+    stim = behavior.stimON;
+catch
+    % convert from old formats (for OML18 and OML19)
+    load(fullfile(basepath,'stimInt.mat'), 'stimInt');
+    stim = stimInt.On;
+    try 
+        load(fullfile(basepath,[basename '_Pos.mat']), 'Pos');
+        takeColumn = (diff(sum(Pos.ON(:,2:3)>0),[],2)>0)+2;
+        posOn = Pos.ON(:,[1 takeColumn]);
+        posOn(:,2) = posOn(:,2)-min(posOn(:,2)); posOn(:,2) = posOn(:,2)/max(posOn(:,2)); % normalize (separately as this was badly done for some directions)
+        takeColumn = (diff(sum(Pos.Off(:,2:3)>0),[],2)>0)+2;
+        posOff = Pos.Off(:,[1 takeColumn]);
+        posOff(:,2) = posOff(:,2)-min(posOff(:,2)); posOff(:,2) = posOff(:,2)/max(posOff(:,2)); % normalize (separately as this was badly done for some directions)
+        posOff(:,2) = 1-posOff(:,2); % flip because the code below expects it
+    catch  % OML18 days 5 6 7 don't have either structure, so load posTrials in those...
+        load(fullfile(basepath,['posTrials.mat']), 'posTrials');
+        posOn = posTrials{2}; posOff = posTrials{1};
+    end
+    q = sortrows([posOn; posOff]);
+    behavior.position.x = q(:,2)';
+    behavior.position.y = ones(size(q(:,2)))';
+    behavior.positionTrials{1} = posOn;
+    behavior.positionTrials{2} = posOff;
+    isBoundary = zscore(diff(posOn(:,1)))>1;
+    trialsOn = [posOn([true; isBoundary],1) posOn([isBoundary;true],1)];
+    isBoundary = zscore(diff(posOff(:,1)))>1;
+    trialsOff = [posOff([true; isBoundary],1) posOff([isBoundary;true],1)];
+    trials = Group(trialsOn,trialsOff);
+    trials(:,3) = 2-trials(:,3);
+    behavior.trials = trials(:,1:2);
+    behavior.trialID = trials(:,[3 3]);
+end
 
 load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
 sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:));
 try
-    load(fullfile(basepath,[basename '.SleepState.states.mat']));
+load(fullfile(basepath,[basename '.SleepState.states.mat']));
 catch
     SleepScoreMaster(basepath,'noPrompts',true,'rejectchannels',[]);
     load(fullfile(basepath,[basename '.SleepState.states.mat']));
@@ -33,6 +64,32 @@ end
 sws = SleepState.ints.NREMstate;
 preSleep = SubtractIntervals(sleep(1,:), SubtractIntervals([0 Inf],sws));
 postSleep = SubtractIntervals(sleep(2:end,:), SubtractIntervals([0 Inf],sws));
+
+try
+    run = behavior.run;
+catch
+    % Old way to define running:
+    ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:));
+    interpolated = interp1(behavior.timestamps(ok)',[behavior.timestamps(ok)' behavior.position.x(ok)',behavior.position.y(ok)'],behavior.timestamps');
+    interpolated(isnan(interpolated(:,1)),:) = [];
+    speed = LinearVelocity(interpolated,5); t = speed(:,1);
+    allPositions = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}]);
+    [up,down] = ZeroCrossings([allPositions(:,1),allPositions(:,2)-0.5]);
+    midpoints = allPositions(up|down,1);
+    topSpeed = interp1(speed(:,1),speed(:,2),midpoints);
+    threshold = nanmedian(topSpeed)/10; % the threshold is 10% of the peak speed
+    run = t(FindInterval(speed(:,2)>threshold));
+    run = ConsolidateIntervals(run,'epsilon',0.01);
+    [in,w] = InIntervals(behavior.timestamps(:),run);
+    peak = Accumulate(w(in),behavior.speed(in)','mode','max');
+
+    % remove outliers (data in between sessions gives outlier speeds)
+    [~,isOutlier] = RemoveOutliers(peak);
+    % remove run epochs that don't reach the speed threshold
+    run(peak<0.1 | isOutlier,:) = [];
+    run(IntervalsIntersect(run,sleep),:) = [];
+end
+
 
 % Make sure our each run epoch is confined within the same trial: no run epoch should begin in one trial and continue over the next trial
 run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.00001));
@@ -50,29 +107,42 @@ for i=1:length(regionNames)
     regionCell(strcmp(regions,regionNames{i})) = i;
 end
 
-nonrun = SubtractIntervals([0 Inf],run); nonstim = SubtractIntervals([0 Inf],stim);
+% Make sure the saved linearized positions go from 0 to 1
+minimum = min([min(behavior.positionTrials{1}(:,2)) min(behavior.positionTrials{2}(:,2))]);
+maximum = max([max(behavior.positionTrials{1}(:,2)) max(behavior.positionTrials{2}(:,2))]);
+behavior.positionTrials{1}(:,2) = (behavior.positionTrials{1}(:,2) - minimum)./(maximum-minimum);
+behavior.positionTrials{2}(:,2) = (behavior.positionTrials{2}(:,2) - minimum)./(maximum-minimum);
+pos0 = sortrows([behavior.positionTrials{1}; behavior.positionTrials{2}(:,1) 2-behavior.positionTrials{2}(:,2)]);
+if sum(diff(pos0(:,2))<0) > sum(diff(pos0(:,2))>0) % backwards, needs to be flipped!
+    pos0(:,2) = 2-pos0(:,2);
+end
+pos1 = Restrict(pos0(pos0(:,2)<1,:),run);
+pos2 = Restrict(pos0(pos0(:,2)>1,:),run); pos2(:,2) = pos2(:,2)-1;
+try
+    onTrials = behavior.trials(behavior.trialID(:,2)==1,:); % Can promises that behavior.trialID(:,2)==1 is always stim and 0 is always nonstim trials
+    offTrials = behavior.trials(behavior.trialID(:,2)==0,:);
+catch
+    onTrials = behavior.trials(IntervalsIntersect(behavior.trials,stim),:);
+    offTrials = behavior.trials(~IntervalsIntersect(behavior.trials,stim),:);
+end
 
-trials = behavior.trials;
-trialKind = 2-behavior.trialID(:,2);
-onTrials = SubtractIntervals(trials(trialKind==1,:),nonrun);
-offTrials = SubtractIntervals(trials(trialKind==2,:),nonrun);
-pos1 = behavior.positionTrials{1};
-pos2 = behavior.positionTrials{2};
+% the first direction is stim (for labels in later analyses)
+if sum(InIntervals(pos2,stim)) > sum(InIntervals(pos1,stim)) % otherwise, swap them
+    this = pos1; pos1 = pos2; pos2 = this;
+end
 
-tt = pos1(:,1); backward = tt(FindInterval(diff(pos1(:,2))<0)); 
-stimIntervals = SubtractIntervals(onTrials,ConsolidateIntervals([backward; nonstim; nonrun])); % only stim run periods
-tt = pos2(:,1); backward = tt(FindInterval(diff(pos2(:,2))<0)); 
-outsideOfRange = tt(FindInterval(~InIntervals(pos2(:,2),quantile(pos1(InIntervals(pos1,stim),2),[0.05 0.95]))));
-nonstimIntervals = SubtractIntervals(offTrials,ConsolidateIntervals([stim; backward; outsideOfRange; nonrun])); % make sure nonstimIntervals only take place during offTrials
-
-pos = sortrows([Restrict(pos1,stimIntervals) ; Restrict([pos2(:,1) 1+pos2(:,2)],nonstimIntervals)]); pos(:,2) = pos(:,2)./2;
+stimIntervals = SubtractIntervals(run,SubtractIntervals([0 Inf],stim)); % only stim run periods
+nonstimIntervals = SubtractIntervals(run,stim); 
+nonstimIntervals = SubtractIntervals(nonstimIntervals,SubtractIntervals([0 Inf],offTrials)); % make sure nonstimIntervals only take place during offTrials
+pos = sortrows([Restrict(pos1,stimIntervals) ; Restrict([pos2(:,1) 1+pos2(:,2)],nonstimIntervals)]);
+pos(:,2) = pos(:,2)./2;
 
 % compute firing curves
 clear curves curves1 curves2
 for i=1:max(spikes(:,2))
-    map = FiringCurve(Restrict(pos1,onTrials,'shift','on'),Restrict(spikes(spikes(:,2)==i),onTrials,'shift','on'));
+    map = FiringCurve(Restrict(pos1,stimIntervals,'shift','on'),Restrict(spikes(spikes(:,2)==i),stimIntervals,'shift','on'));
     curves1(i,:) = map.rate;
-    map = FiringCurve(Restrict(pos2,offTrials,'shift','on'),Restrict(spikes(spikes(:,2)==i),offTrials,'shift','on'));
+    map = FiringCurve(Restrict(pos2,nonstimIntervals,'shift','on'),Restrict(spikes(spikes(:,2)==i),nonstimIntervals,'shift','on'));
     curves2(i,:) = map.rate;
     map = FiringCurve(Restrict(pos,run,'shift','on'),Restrict(spikes(spikes(:,2)==i),run,'shift','on'));
     curves(i,:) = map.rate;
@@ -191,7 +261,7 @@ title(['off trials: ' num2str(pieceSize*1000) 'ms widnows and ' num2str(step*100
 % cycles_relative_t = relative_t(FindClosest(mean(bins,2),cycles));
 % PlotHVLines(Restrict(cycles_relative_t,xlim),'v','k--');
 
-% SaveFig(fullfile('M:\home\raly\results\OML\reconstructionQuality',[sessionID '-General-Reconstruction-Quality']))
+SaveFig(fullfile('M:\home\raly\results\OML\reconstructionQuality',[sessionID '-General-Reconstruction-Quality']))
 
 %% Replay
 clf

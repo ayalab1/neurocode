@@ -2,26 +2,27 @@ batch = StartBatch(@BatchCanPhasePrecession,'OMLproject.batch');
 X = get(batch,'UserData');
 
 %%
-X = get(batch,'UserData');
-X(1:11,:) = [];
+% X = get(batch,'UserData');
+% X(1:11,:) = [];
 SpectrogramCell{1} = cell2mat(X(:,1)); SpectrogramCell{2} = cell2mat(X(:,2));
+pyr = cell2mat(X(:,4)); for k=1:2, SpectrogramCell{k} = SpectrogramCell{k}(pyr,:); end
 f = X{1,3};
 
 M = [];
-interval = [0.5 1.5];
+interval = [-1 1]*0.5+1;
 thisF = f(InIntervals(f,interval));
 clf
 colors = {'r','k'};
 clear hmhm
 for k=1:2,
     sp = SpectrogramCell{k}(:,InIntervals(f,interval));
-    z = zscore(Smooth(sp,[0 0]),[],2);
+    z = zscore(Smooth(sp,[0 3]),[],2);
     [~,m] = max(z,[],2);
     % Remove cells without peaks around theta (+/- 25%)
     bad = ~InIntervals(thisF(m),[0.75 1.25]); 
     z(bad,:) = [];
     id = find(~bad);
-    [~,m] = max(z,[],2); [~,o] = sort(m); o = 1:length(o);
+    [~,m] = max(z,[],2); [~,o] = sort(m); %o = 1:length(o);
     z = z(o,:);
     subplot(2,3,(k-1)*3+1);hold off
     PlotColorMap(z,'x',thisF,'bar','on'); hold on;
@@ -34,7 +35,7 @@ for k=1:2,
     clim([-1 1]*2);
     subplot(2,3,(k-1)*3+2); hold off;
     %     semplot(f,z);
-    hist(thisF(m),30);
+    hist(thisF(m),linspace(0.5,1.5,51));
 %     hist(thisF(m),10);
     PlotHVLines(1,'v','k--','linewidth',2);
     m = m(:); m(:,2)=k; m(:,3) = id; 
@@ -55,7 +56,7 @@ value = thisF(M(:,1))-1;
 group = M(:,2);
 stats = [out2(@kstest2,value(group==1),value(group==2))];
 subplot(2,3,6); cla
-anovaplot(value+1,group,'parametric','off','alpha',[0 0.05]);
+anovaplot(value+1,group,'parametric','off','alpha',[0 0.05]); ylim([0.5 1.5]); PlotHVLines(1,'h','k--','linewidth',2);
 p = ranksum(value(group==1),value(group==2));
 title(['ranksum: stim vs nonstim, p=' num2str(p(1))]);
 p = [signrank(value(group==1),[],'tail','right'), signrank(value(group==2),[],'tail','right')];

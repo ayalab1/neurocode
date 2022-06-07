@@ -4,7 +4,7 @@ batch = StartBatch(@BatchCanThetaCompression,'OMLproject.batch');
 X0 = get(batch,'UserData'); % [dPeaks,dxCorr,dTheta,cmPerTrack,basepath]
 
 %%
-
+figure
 % X = X0; X(14:16,:) = [];
 % sessionID = 'OML18';
 % sessionID = 'OML19';
@@ -12,9 +12,9 @@ X0 = get(batch,'UserData'); % [dPeaks,dxCorr,dTheta,cmPerTrack,basepath]
 % sessionID = 'OML22';
 sessionID = 'O';
 X = X0;
-X = X0(14:16,:);
+% X = X0(14:16,:);
 X = X0; X(14:16,:) = [];
-% 
+ 
 ok = cellfun(@(x) ~isempty(strfind(x,sessionID)),X(:,end));
 
 X(~ok,:) = []; 
@@ -197,8 +197,8 @@ subplot(3,4,12); cla
 hist(d0(:,2),100);
 PlotHVLines(a2-a1,'v','r--','linewidth',2);
 legend('shuffled','observed'); legend('location','northwest','box','off')
-xlabel('difference in compression index: rOFF-rON');
+xlabel('difference in slope: slopeOFF-slopeON');
 title(['Permutation test: p=' num2str(Portion(d0(:,2)>=(a2-a1)))]);
 set(gca,'box','off','tickdir','out','fontsize',10);
 
-SaveFig(fullfile('M:\home\raly\results\OML\',['ThetaCompression-summary-results-excluding-678']))
+% SaveFig(fullfile('M:\home\raly\results\OML\',['ThetaCompression-summary-results-excluding-678']))

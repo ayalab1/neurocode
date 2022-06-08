@@ -31,6 +31,8 @@ function channel_mapping(varargin)
 %           to populate the .csv after .csv has been populated. One may 
 %           wish to update either basename.session or .csv. 
 %
+%       Fix bug where figure labels do not match correct channel labels
+%
 % Ryan H 2021
 
 p = inputParser;
@@ -250,13 +252,18 @@ for i = 1:length(anatomical_map_vec)
     label{i} = [anatomical_map_vec{i},' ',num2str(channel_map_vec(i))];
 end
 
-try
-   chanMap = generateChannelMap(session,'reorder',false);
-catch
-   chanMap = createChannelMap(session,'reorder',false);
+if isfield(session.extracellular,'chanCoords')
+    chanCoords.x = session.extracellular.chanCoords.x;
+    chanCoords.y = session.extracellular.chanCoords.y;
+else
+    try
+       chanMap = generateChannelMap(session,'reorder',false);
+    catch
+       chanMap = createChannelMap(session,'reorder',false);
+    end
+    chanCoords.x = chanMap.xcoords(:);
+    chanCoords.y = chanMap.ycoords(:);
 end
-chanCoords.x = chanMap.xcoords(:);
-chanCoords.y = chanMap.ycoords(:);
 % chanCoords.source = chanMap.source;
 % chanCoords.layout = chanMap.layout;
 % chanCoords.shankSpacing = chanMap.shankSpacing;

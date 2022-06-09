@@ -12,8 +12,15 @@
 ifMultiKiloSort = 0; 
 session = sessionTemplate(pwd,'showGUI',false);
 f = dir('Kilosort*');
-% Make sure there is only one KiloSort folder before running, unless you needed to spike sort probes separately
-% The hippocampal KiloSort folder should be listed first in the session folder for organization, but this is not necessary for running
+% Make sure there is only one KiloSort folder before running, unless you
+% needed to spike sort probes separately (ifMultiKiloSort=1).
+
+% The hippocampal KiloSort folder should be listed first in the session 
+% folder for organization, but this is not necessary for running
+
+% ADDITIONALLY: If combining multiple KiloSort files, MAKE SURE ALL
+% SPIKE GROUPS IN NEUROSCOPE ARE REACTIVATED (in yellow tab in neuroscope,
+% groups need to be assigned, no '?'). 
 
 % check if spikes.cellinfo has already been created
 pre_exist_spike_files = dir('*spikes*.cellinfo.mat');

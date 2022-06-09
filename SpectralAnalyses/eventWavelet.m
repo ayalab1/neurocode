@@ -105,7 +105,7 @@ if (size(events,2)~=1)
     error('events input must be an Nx1 array');
 end
 
-twin = p.Results.twin*samplingRate;
+twin = round(p.Results.twin*samplingRate);
 events = round(events*samplingRate);
 
 %% Conpute event-triggered LFP average
@@ -146,8 +146,12 @@ end
 %% Conpute wavelets
 
 for i = 1:length(events)
-    eventWin(i,1) = lfp.timestamps(events(i)-twin(1));
-    eventWin(i,2) = lfp.timestamps(events(i)+twin(2));
+    try
+        eventWin(i,1) = lfp.timestamps(events(i)-twin(1));
+        eventWin(i,2) = lfp.timestamps(events(i)+twin(2));
+    catch
+        disp('huh');
+    end
 end
 
 wavespec = WaveSpec(lfp,'intervals',eventWin,'frange',frange,'nfreqs',nfreqs,'roundfreqs',roundfreqs,...

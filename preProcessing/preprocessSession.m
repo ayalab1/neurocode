@@ -154,8 +154,16 @@ if getAcceleration
 end
 
 %% Make LFP
-
-LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+try
+    LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+catch
+    try
+        warning('LFPfromDat failed, trying ResampleBinary')
+        ResampleBinary([basepath '\' basename '.dat'],[basepath '\' basename '.lfp'],session.extracellular.nChannels,1,16);
+    catch
+        warning('LFP file could not be generated, moving on');
+    end
+end
 
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer

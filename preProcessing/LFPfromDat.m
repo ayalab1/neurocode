@@ -152,10 +152,20 @@ for ibatch = 1:nbChunks
     if ibatch>1
         fseek(fidI,((ibatch-1)*(nbChan*sizeInBytes*chunksize))-(nbChan*sizeInBytes*ntbuff),'bof');
         dat = fread(fidI,nbChan*(chunksize+2*ntbuff),'int16');
-        dat = reshape(dat,[nbChan (chunksize+2*ntbuff)]);
+        try
+            dat = reshape(dat,[nbChan (chunksize+2*ntbuff)]);
+        catch
+            warning('tell Raly!');
+            keyboard;
+        end
     else
         dat = fread(fidI,nbChan*(chunksize+ntbuff),'int16');
-        dat = reshape(dat,[nbChan (chunksize+ntbuff)]);
+        try
+            dat = reshape(dat,[nbChan (chunksize+ntbuff)]);
+        catch
+            warning('tell Raly!');
+            keyboard;
+        end
     end
     
     
@@ -196,7 +206,12 @@ remainder = nBytes/(sizeInBytes*nbChan) - nbChunks*chunksize;
 if ~isempty(remainder)
     fseek(fidI,((ibatch-1)*(nbChan*sizeInBytes*chunksize))-(nbChan*sizeInBytes*ntbuff),'bof');
     dat = fread(fidI,nbChan*(remainder+ntbuff),'int16');
-    dat = reshape(dat,[nbChan (remainder+ntbuff)]);
+    try
+        dat = reshape(dat,[nbChan (remainder+ntbuff)]);
+    catch
+        warning('tell Raly!');
+        keyboard;
+    end
  
     DATA = nan(size(dat,1),floor(remainder/sampleRatio));
     for ii = 1:size(dat,1)

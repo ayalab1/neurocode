@@ -246,11 +246,22 @@ elseif any(opti_flag)
             ts_idx = digitalIn_ttl >= MergePoints.timestamps(k,1) & digitalIn_ttl <= MergePoints.timestamps(k,2);
             ts = digitalIn_ttl(ts_idx);
             
+            % cut-to-size method of syncing ttls to frames
+            try
+                t = [t,ts(1:length(optitrack.position.x))'];
+            catch
+                t = [t,ts'];
+                x = [x,optitrack.position.x(1:length(ts))];
+                y = [y,optitrack.position.y(1:length(ts))];
+                z = [z,optitrack.position.z(1:length(ts))];
+                continue
+            end
+            
             % align ttl timestamps,
             % there always are differences in n ttls vs. n coords, so we interp
-            simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
-            ts = interp1(ts,ts,simulated_ts);
-            t = [t,ts];
+%             simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
+%             ts = interp1(ts,ts,simulated_ts);
+%             t = [t,ts];
             
             % store xyz
             x = [x,optitrack.position.x];

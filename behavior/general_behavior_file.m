@@ -241,17 +241,24 @@ elseif any(opti_flag)
                 'saveMat',false,...
                 'saveFig',false,...
                 'plot_on',false);
+            
+            % find timestamps within current session
+            ts_idx = digitalIn_ttl >= MergePoints.timestamps(k,1) & digitalIn_ttl <= MergePoints.timestamps(k,2);
+            ts = digitalIn_ttl(ts_idx);
+            
+            % align ttl timestamps,
+            % there always are differences in n ttls vs. n coords, so we interp
+            simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
+            ts = interp1(ts,ts,simulated_ts);
+            t = [t,ts];
+            
             % store xyz
             x = [x,optitrack.position.x];
             y = [y,optitrack.position.y];
             z = [z,optitrack.position.z];
         end
     end
-    % align ttl timestamps,
-    % there always are differences in n ttls vs. n coords, so we interp
-    simulated_ts = linspace(min(digitalIn_ttl),max(digitalIn_ttl),length(x));
-    t = interp1(digitalIn_ttl,digitalIn_ttl,simulated_ts)';
-    
+
     % transpose xyz to accommodate all the other formats
     x = x';
     y = y';

@@ -26,7 +26,7 @@ function behavior = general_behavior_file(varargin)
 %       -make so you can choose (w/ varargin) which method to use (some sessions meet several)
 %           This will require making each method into a sub/local function
 %
-%       -Needs refactored as many functions are redundant. 
+%       -Needs refactored as many functions are redundant.
 %           ex. kilosort dir skipper is written twice, .whl files in subdirs
 %
 % Ryan H 2021
@@ -212,8 +212,11 @@ elseif any(opti_flag)
     % load in merge points to iter over later
     load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
     % load in digital in to get video ttl time stamps
-    load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
-    
+    try
+        load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
+    catch
+        load(fullfile(basepath,'DigitalIn.events.mat'))
+    end
     % get ttl timestamps from digitalin using the channel with the most signals
     Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
     [~,idx] = max(cell2mat(Len));
@@ -229,19 +232,23 @@ elseif any(opti_flag)
     % iter over mergepoint folders to extract tracking
     for k = 1:length(MergePoints.foldernames)
         % search for optitrack .tak file as there may be many .csv files
-        if ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*.tak')))
+        if ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*.csv')))
             % locate the .tak file in this subfolder
-            file = dir(fullfile(basepath,MergePoints.foldernames{k},'*.tak'));
+            file = dir(fullfile(basepath,MergePoints.foldernames{k},'*.csv'));
             % use func from cellexplorer to load tracking data
             % here we are using the .csv
-            optitrack = optitrack2buzcode('basepath', basepath,...
-                'basename', basename,...
-                'filenames',fullfile(MergePoints.foldernames{k},[extractBefore(file.name,'.tak'),'.csv']),...
-                'unit_normalization',1,...
-                'saveMat',false,...
-                'saveFig',false,...
-                'plot_on',false);
-            
+            try
+                optitrack = optitrack2buzcode('basepath', basepath,...
+                    'basename', basename,...
+                    'filenames',fullfile(MergePoints.foldernames{k},[file.name]),...
+                    'unit_normalization',1,...
+                    'saveMat',false,...
+                    'saveFig',false,...
+                    'plot_on',false);
+            catch
+                warning(fullfile(MergePoints.foldernames{k},[file.name]),' IS NOT OPTITRACK FILE')
+                continue
+            end
             % find timestamps within current session
             ts_idx = digitalIn_ttl >= MergePoints.timestamps(k,1) & digitalIn_ttl <= MergePoints.timestamps(k,2);
             ts = digitalIn_ttl(ts_idx);
@@ -259,9 +266,9 @@ elseif any(opti_flag)
             
             % align ttl timestamps,
             % there always are differences in n ttls vs. n coords, so we interp
-%             simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
-%             ts = interp1(ts,ts,simulated_ts);
-%             t = [t,ts];
+            %             simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
+            %             ts = interp1(ts,ts,simulated_ts);
+            %             t = [t,ts];
             
             % store xyz
             x = [x,optitrack.position.x];
@@ -269,11 +276,12 @@ elseif any(opti_flag)
             z = [z,optitrack.position.z];
         end
     end
-
+    
     % transpose xyz to accommodate all the other formats
     x = x';
     y = y';
     z = z';
+    t = t';
     
     % update unit and source metadata
     units = 'cm';
@@ -574,7 +582,7 @@ elseif ~isempty(dir(fullfile(basepath,'**','*_Behavior*.mat')))
     [x,y] = find_best_columns(whlrld,fs);
     units = 'cm';
     source = '.whl';
-%     trials = whlrld(:,6)+1;
+    %     trials = whlrld(:,6)+1;
     linearized = whlrld(:,7);
 else
     warning('No video detected...')

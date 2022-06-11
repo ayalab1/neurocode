@@ -215,7 +215,7 @@ elseif any(opti_flag)
     try
         load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
     catch
-        load(fullfile(basepath,'DigitalIn.events.mat'))
+        load(fullfile(basepath,'digitalIn.events.mat'))
     end
     % get ttl timestamps from digitalin using the channel with the most signals
     Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);

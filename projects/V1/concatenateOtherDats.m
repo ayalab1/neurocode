@@ -1,9 +1,9 @@
 function concatenateOtherDats(basepath);
 
 deleteoriginaldatsbool = 0;
-sortFiles = 0;
+sortFiles = 1;
 basename = basenameFromBasepath(basepath);
-otherdattypes = {'analogin';'digitalin';'auxiliary';'time'};
+otherdattypes = {'analogin';'digitalin';'auxiliary';'time'}; otherdattypes = otherdattypes(2);
 bad_otherdattypes = [];
 for odidx = 1:length(otherdattypes)
     %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
@@ -16,6 +16,7 @@ datpaths = {};
 datsizes.amplifier = [];
 recordingnames = {};
 rcount = 0; %Count of good subfolders
+
 for a = 1:length(d)
     %look in each subfolder
     if any(~ismember(d(a).name,'.')) && d(a).isdir
@@ -52,6 +53,36 @@ for a = 1:length(d)
             end
         end
     end
+end
+
+
+if sortFiles
+    try
+        names2sort = cellfun(@(X) str2num(X(end-5:end)),recordingnames,'UniformOutput',false);
+        names2sort = cell2mat(names2sort);
+%         if isempty(names2sort{1}) && ~isempty(recordingnames{1})
+%             error('Last 6 digits were not numeric and therefore do not reflect the recording time.');
+%         end
+        disp('Assuming the last 6 digits reflect recording time.')
+        %disp('Don''t like it? Write in some new options for sorting.')
+    catch
+       % names2sort = 1:length(recordingnames);
+        disp('Last 6 digits not numeric... sorting alphabetically')
+    end
+
+    [~,I] = sort(names2sort);
+    recordingnames = recordingnames(I);
+    for odidx = 1:length(otherdattypes)
+        datpaths.(otherdattypes{odidx}) = datpaths.(otherdattypes{odidx})(I);
+        datsizes.(otherdattypes{odidx}) = datsizes.(otherdattypes{odidx})(I);
+    end
+
+%     % save txt with order of files to concatenate (moved to events.mat)
+%     fid = fopen(fullfile(basepath,'concatORDER.txt'),'w');
+%     for idx = 1:length(I)
+%         fprintf(fid,[recordingnames{idx} '\n']);
+%     end
+%     fclose(fid);
 end
 
 disp('Concatenating Other Dats..... continue to be patient')

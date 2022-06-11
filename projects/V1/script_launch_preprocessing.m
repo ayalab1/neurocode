@@ -1,13 +1,14 @@
 % nDays = 43;
-nDays = 55;
+nDays = 6;
+
+xmlFile = 'N:\V1test\V1JuanAntonio\V1JuanAntonio.xml';
 
 folders = cell(nDays,1);
 for i=1:length(folders),
-%     folders{i} = ['N:\V1test\AO52\day' num2str(i)];
-    folders{i} = ['N:\V1test\V1Jean\day' num2str(i)];
+    folders{i} = ['N:\V1test\V1JuanAntonio\V1JuanAntonio_22060' num2str(i)];
 end
 
-fillMissingDatFiles = false;
+fillMissingDatFiles = true;
 fillTypes = [];
 analogInputs = true;
 analogChannels = 1;
@@ -15,18 +16,19 @@ digitalInputs = true;
 digitalChannels = 1:4;
 getAcceleration = true;
 cleanArtifacts = false;
-stateScore = false;
+stateScore = true;
 spikeSort = true;
 getPos = false;
 removeNoise = false;
 runSummary = false;
 SSD_path = 'D:\KiloSort';
 done = false(nDays,1);
-for i=1:nDays
-    try
-        basepath = folders{i}
 
+for i=4:nDays
+%     try
+        basepath = folders{i}
         cd(basepath);
+
         f = dir('Kilosort*');
         if ~isempty(f), 
             done(i,1) = true;
@@ -40,6 +42,9 @@ for i=1:nDays
             basepath = basepath(1:end-1);
         end
         [~,basename] = fileparts(basepath);
+
+        copyfile(xmlFile,fullfile(basepath,[basename '.xml']));
+        disp([datestr(clock) ': xml copied to session ' basepath '...']);
 
         % Get xml file from the parent folder
         [parentFolder,dayName] = fileparts(basepath);
@@ -70,7 +75,7 @@ for i=1:nDays
         %% Fill missing dat files of zeros
         if fillMissingDatFiles
             if isempty(fillTypes)
-                fillTypes = {'analogin';'digitalin';'auxiliary';'time';'supply'};
+                fillTypes = {'analogin';'digitalin';'auxiliary';'time'};
             end
             for ii = 1:length(fillTypes)
                 fillMissingDats('basepath',basepath,'fileType',fillTypes{ii});
@@ -79,7 +84,7 @@ for i=1:nDays
         %% Concatenate sessions
         cd(basepath);
 
-        disp('Concatenate session folders...');
+        disp([datestr(clock) ': starting concatenateDats.m for session ' basepath '...']);
         concatenateDats(pwd,0,0);
 
         %% Process additional inputs - CHECK FOR OUR LAB
@@ -114,7 +119,7 @@ for i=1:nDays
 
         %% Make LFP
 
-        LFPfromDat(pwd,'outFs',1250,'useGPU',false);
+        LFPfromDat(basepath,'outFs',1250,'useGPU',false);
 
         % 'useGPU'=true ; gives an error if CellExplorer in the path. Need to test if
         % it is possible to remove the copy of iosr toolbox from CellExplorer
@@ -133,6 +138,7 @@ for i=1:nDays
 
         %% Get brain states
         % an automatic way of flaging bad channels is needed
+        disp([datestr(clock) ': detecting brain states for session ' basepath '...']);
         if stateScore
             try
                 if exist('pulses','var')
@@ -147,6 +153,9 @@ for i=1:nDays
             end
         end
 
+        disp([datestr(clock) ': starting script_remove_JA_noise.m for session ' basepath '...']);
+        script_remove_JA_noise
+        disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' basepath '...']);
         %% Kilosort concatenated sessions
         if isempty(dir('KilosortGT*')) && spikeSort
             kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
@@ -157,7 +166,7 @@ for i=1:nDays
         % move datfile to kilosort folder
         % movefile(fullfile(basepath,[basename '.dat']),fullfile(kilosortFolder,[basename '.dat']));
 
-    catch
-        warning(['Issue with session ' num2str(i)]);
-    end
+%     catch
+%         warning(['Issue with session ' num2str(i)]);
+%     end
 end

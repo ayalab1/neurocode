@@ -3,24 +3,29 @@ add = [0 0 0 0 17 8];% Animals sessions have different numbers for the same day,
 fontsize = 15;% Just initiating some parameters.
 listOfDays = [24 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44 45 46]; % Specify the days of interest
 
-[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number). 
+[n_correct,n_right,n_trials,n_skipStart] = deal(nan(length(animals),length(listOfDays)));% Creates four matrix made out of NaN (not a number).
 skipStartCell = cell(length(animals),length(listOfDays));% Creates a cell
 for i=1:length(animals) % This looks for all the animals going through all of them
     animal = animals{i};
     for dayNumber = 1:length(listOfDays) % and through all the days/sessions
         day = listOfDays(dayNumber);
         folder = fullfile('N:\V1test\',animal,['day' num2str(day + add(i))]);  % creates a name for each session for each animal
-        try % takes the values to the matrix that were created earlier
-            [correct,right,skipStart] = PlotYmazePerformance(folder); % "PlotYmazePerformance" is another function that Raly has prepared and it loads the values from the task files.
-%             midpoint = round(length(correct)/2);
-%             correct = correct(midpoint:end); right = right(midpoint:end); skipStart = skipStart(midpoint:end);
+%         try % takes the values to the matrix that were created earlier
+            [correct,right,skipStart,trialType] = PlotYmazePerformance(folder); % "PlotYmazePerformance" is another function that Raly has prepared and it loads the values from the task files.
+            %             midpoint = round(length(correct)/2);
+            %             correct = correct(midpoint:end); right = right(midpoint:end); skipStart = skipStart(midpoint:end);
+
             n_correct(i,dayNumber) = sum(correct);
             n_right(i,dayNumber) = sum(right);
             n_skipStart(i,dayNumber) = sum(skipStart>0);
             n_trials(i,dayNumber) = length(correct);
             skipStartCell{i,dayNumber} = skipStart;
             correctCell{i,dayNumber} = correct';
-        end
+            alternationGuess = [0; 1-trialType(1:end-1)]; % opposite of previous trial
+            n_guess(i,dayNumber) = sum(alternationGuess==trialType);
+            switched = diff(right)~=0;
+            saved{i,dayNumber} = [switched correct(1:end-1)];
+%         end
     end
 end
 
@@ -36,7 +41,7 @@ clim([0 0.8])
 %%
 
 clf
-p = (n_correct./n_trials); 
+p = (n_correct./n_trials);
 p = p*100; %proportion of correct trials over the total number
 
 z = nan(1,length(listOfDays));
@@ -69,7 +74,7 @@ set(gca,'FontSize',fontsize);
 posAxes{2} = get(gca,'Position');
 
 
-p = (n_right./n_trials); 
+p = (n_right./n_trials);
 p = p*100;
 % p(mean(p,2)<50,:) = 100 - p(mean(p,2)<50,:);
 
@@ -104,7 +109,7 @@ posAxes{4} = get(gca,'Position');
 
 n_skipStart = cellfun(@(x) sum(x),skipStartCell);
 
-p = (n_skipStart./n_trials); 
+p = (n_skipStart./n_trials);
 p = p;
 % p(mean(p,2)<50,:) = 100 - p(mean(p,2)<50,:);
 

@@ -30,7 +30,7 @@ function [ripples] = FindRipples(varargin)
 %     'thresholds'  thresholds for ripple beginning/end and peak, in multiples
 %                   of the stdev (default = [2 5]); must be integer values
 %     'durations'   min inter-ripple interval and max ripple duration, in ms
-%                   (default = [30 100]). 
+%                   (default = [50 500]). 
 %     'minDuration' min ripple duration. Keeping this input nomenclature for backwards
 %                   compatibility
 %     'restrict'    interval used to compute normalization (default = all)

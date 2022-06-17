@@ -102,7 +102,8 @@ cell_metrics = CellExplorer('metrics',cell_metrics);
 % to the main session folder in the shared network drive
 
 %% To only load spike times for futher analysis
-[spikeT] = importSpikes('spikes',spikes,'UID',[]);
+% [spikeT] = importSpikes('spikes',spikes,'UID',[]);
+[spikeT] = importSpikes('spikes',spikes);
 
 %% To load multiple sessions into CellExplorer
 % After you have multiple sessions spike sorted and processed, you can open

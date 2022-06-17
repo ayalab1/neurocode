@@ -40,7 +40,7 @@ addParameter(p,'fillMissingDatFiles',false,@islogical);
 addParameter(p,'fillTypes',[],@iscellstr);
 addParameter(p,'analogInputs',false,@islogical);
 addParameter(p,'analogChannels',[],@isnumeric);
-addParameter(p,'digitalInputs',false,@islogical);
+addParameter(p,'digitalInputs',true,@islogical);
 addParameter(p,'digitalChannels',[],@isnumeric);
 addParameter(p,'getAcceleration',false,@islogical);
 addParameter(p,'cleanArtifacts',false,@islogical);
@@ -50,7 +50,7 @@ addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',false,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
-addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
+addParameter(p,'SSD_path','C:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -153,17 +153,17 @@ if getAcceleration
     accel = computeIntanAccel('saveMat',true);
 end
 
-%% Make LFP
-try
-    LFPfromDat(basepath,'outFs',1250,'useGPU',false);
-catch
-    try
-        warning('LFPfromDat failed, trying ResampleBinary')
+% %% Make LFP
+% try
+%     LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+% catch
+%     try
+%         warning('LFPfromDat failed, trying ResampleBinary')
         ResampleBinary([basepath '\' basename '.dat'],[basepath '\' basename '.lfp'],session.extracellular.nChannels,1,16);
-    catch
-        warning('LFP file could not be generated, moving on');
-    end
-end
+%     catch
+%         warning('LFP file could not be generated, moving on');
+%     end
+% end
 
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
 % it is possible to remove the copy of iosr toolbox from CellExplorer

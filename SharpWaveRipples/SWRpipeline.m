@@ -8,26 +8,34 @@ basename = basenameFromBasepath(basepath);
 %   - Spikes and cell_metrics are extraction in preprocessSpikes (after manual clustering)
 
 %% 1 - Automatic estimation of best channels for swr detection
-   swrCh = swrChannels('basepath',basepath);
-   % this code often doesn't work well if you have dentate gyrus channels 
+   swrCh = swrChannels('basepath',basepath); 
+   % this code often doesn't work well if you have dentate gyrus channels.
+   % You can still run it and manually change the channels if thgey dont
+   % look good
    
 %% 2 - SWR detection
 
     % preferred method (index base 1)
-     ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel swrCh.Noise_Channel],'saveMat',true);
+     ripples = DetectSWR([swrCh.Ripple_Channel swrCh.Sharpwave_Channel swrCh.Noise_Channel],'saveMat',true); % use noise channels where you dont expect SWR say, white matter or cortex
      % only use this is you don't have sharp-wave
      ripples = FindRipples('basepath',basepath,'channel',swrCh.Ripple_Channel,'noise',swrCh.Noise_Channel,'saveMat',true);
      
 % optional steps     
      
     % refine ripple detection using spiking level
-    spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA1");
-    ripplesTemp = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.4);
-    ripples = ripplesTemp;
-    if ~exist([basepath '\Ripple_Profile'])
-        mkdir('Ripple_Profile');
-    end
-    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,['Ripple_Profile\SWRmua.png']);
+    % skip this step if you have CA2
+    % get channel mapping first. Run this line and edit the csv file based
+    % your dat file. rerun the channel mapping again. It should label all
+    % celltypes
+%     channel_mapping
+    
+%     spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA1");
+%     ripplesTemp = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.4);
+%     ripples = ripplesTemp;
+%     if ~exist([basepath '\Ripple_Profile'])
+%         mkdir('Ripple_Profile');
+%     end
+%     save([basename '.ripples.events.mat'],'ripples');saveas(gcf,['Ripple_Profile\SWRmua.png']);
     
     % remove very large amplitude events (likely artifacts)
     ripples = removeArtifactsFromEvents(ripples,'stdThreshold',10);
@@ -49,7 +57,7 @@ basename = basenameFromBasepath(basepath);
     end
     lfpRip = getLFP(swrCh.Ripple_Channel, 'basename', basename);
     try
-        [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(1:500),'twin',[0.1 0.1]);
+        [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(50:end),'twin',[0.1 0.1]); %ripples.peaks(50:end) visualize only the ripples you want to see
     catch
         [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks,'twin',[0.1 0.1]);
     end
@@ -113,7 +121,7 @@ for epochs= 1:3
     title(names{epochs});
     end
 end   
-    saveas(gcf,['swrWaveletSample.png']);
+  
 
 %% 4-Compare SWR properties (duration, freq, power, rate) in each task block 
    colorR = {'b','k','r'};

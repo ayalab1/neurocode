@@ -1,6 +1,7 @@
 %% pool objScore across sessions 
 %longer training pool HLR 05/2022
-
+%TO DO add export to csv of pooled results/stats for things importing to py
+%TO DO if using matlab to graph change colors for finalization
 
 clearvars;
 dirData = 'N:\OJRproject\';

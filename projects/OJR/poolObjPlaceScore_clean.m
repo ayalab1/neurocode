@@ -1,5 +1,6 @@
 %% pool objScore across sessions 
-
+%TO DO add export to csv of pooled results/stats for things importing to py
+%TO DO if using matlab to graph change colors for finalization
 clearvars;
 dirData = 'Z:\ObjRipple\offline_analysis\';
 %dirData = 'Z:\ObjRipple\recordings\';

@@ -1,0 +1,214 @@
+%% pool objScore across sessions 
+
+clearvars;
+dirData = 'Z:\ObjRipple\offline_analysis\';
+%dirData = 'Z:\ObjRipple\recordings\';
+dirSave = dirData;
+
+animals = {'OJR6','OJR4', 'OJR7', 'OJR5', 'OJR9','OJR10','NG1','NG2','NG3',...
+           'NG4','NG5','NG6','OJR11','OJR12','OJR13','OJR18','OJR20','OJR21',...
+           'OJR23','OJR24','OJR25','OJR26','OJR27','OJR30','OJR31','OJR32','OJR33','OJR34',...
+           'OJR40','MDC7','MGC7'};
+days = {{'day2','day4'};{'day3','day9','day10'};{'day1','day4'};{'day3','day4','day7'};{'day2'};...
+        {'day1','day3','day4'};{'day9','day7'};{'day8','day9'};
+        {'day8','day9'};{'day13','day11'};{'day13','day11'};{'day13','day11'};{'day1','day2','day8'};{'day1'};{'day1'};...
+        {'day1','day2','day3','day4'};{'day1','day2','day3','day5','day6'};{'day1','day2','day4','day5','day6'};...
+        {'day1','day2'};{'day1','day2','day3','day4'};{'day3','day4','day5'};{'day1','day2'};...
+        {'day1','day2','day3','day4','day5','day6'};{'day1','day2','day4','day5','day6','day7'};...
+        {'day1','day2','day3','day4','day5'};{'day3','day4'};...
+        {'day5','day7','day8','day9','day10','day11'};{'day2','day3','day5','day6','day8'};...
+        {'day3','day4'};{'day1027','day1117'};{'day1110','day1118'}};
+condition = {[1 2];[2 1 3];[1 2];[2 1 3];[2];[1 3 2];...
+            [1 6];[1 6];[1 6];[1 6];[1 6];[1 6];[1 2 3];[1];[1];...
+            [4 5 8 7];[4 5 8 6 7];[5 4 8 7 6];...
+            [3 1];[1 3 2 6];[7 8 6];[4 6];...
+            [7 5 4 8 6 3];[4 5 3 7 8 2];...
+            [5 4 7 8 3];[8 7];
+            [4 5 7 8 1 6];[5 4 7 8 6];...
+            [2 3];[4 5];[4 5]}; 
+% 1=4h sham; 2=4h cl; 3=4h ol; 4=4h cl+PFC inh; 5=4h cl+PFC delay;
+% 6=1h sham; 7=1h PFC inh; 8=1h PFC delay
+
+%% pool
+DIcond = cell(8,1);OPcond = cell(8,1);trainT = cell(8,1);testT = cell(8,1);
+
+for a = 1:length(animals)
+    for d = 1:length(days{a})
+        cd([dirData animals{a} '\' days{a}{d}]);
+        load('objScore.mat');
+        
+        for c = 1:8
+            if condition{a}(d) == c
+               DIcond{c} = cat(1,DIcond{c},objScore.discrimination_index);
+               %OPcond{c} = cat(1,OPcond{c},objScore.object_preference);               
+               trainT{c} = cat(1,trainT{c},objScore.object_training_time(1)+objScore.object_training_time(2));
+               testT{c} = cat(1,testT{c},objScore.object_test_time(1)+objScore.object_test_time(2));
+            end
+        end
+        clear objScore;
+        
+    end
+end
+        
+%% %%%%%%%%%%%%%%%%% plot       
+
+%% Figure 1: control 
+boxCon = nan(20,2);
+boxCon(1:numel(DIcond{6}),1) = DIcond{6};
+boxCon(1:numel(DIcond{1}),2) = DIcond{1};
+
+figure; 
+boxplot(boxCon,'Notch','on','Labels',{'1h delay','4h delay'});hold on;
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+set(lines, 'Color', 'b','LineWidth',2);
+ylabel('discrimination index');title('control animals');
+%a = get(get(gca,'children'),'children');   % Get the handles of all the objects
+%box1 = a(7);   % The 7th object is the first box
+%set(a, 'Color', 'r');   % Set the color of the first box to green
+plot(xlim,[0 0],'--k');hold on;
+
+x=ones(numel(DIcond{6})).*(1+(rand(numel(DIcond{6}))-0.5)/5);
+x1=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/10);
+f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
+f2=scatter(x1(:,2).*2,DIcond{1},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+
+p1=signrank(DIcond{6});
+p2=signrank(DIcond{1});
+p3=ranksum(DIcond{6},DIcond{1});
+
+yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
+axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.3)])
+plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
+text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p3,2)],'FontSize',12);hold on;
+text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
+text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.fig');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.png');
+
+
+%% Figure 2: 4h experiment 
+box4h = nan(20,3);
+box4h(1:numel(DIcond{1}),1) = DIcond{1};
+box4h(1:numel(DIcond{2}),2) = DIcond{2};
+box4h(1:numel(DIcond{3}),3) = DIcond{3};
+
+figure; 
+boxplot(box4h,'Notch','on','Labels',{'control','closed loop','open loop'});hold on;
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+ylabel('discrimination index');title('4h delayed recall');
+set(lines, 'Color', 'b','LineWidth',2);
+plot(xlim,[0 0],'--k');hold on;
+
+x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
+x1=ones(numel(DIcond{2})).*(1+(rand(numel(DIcond{2}))-0.5)/10);
+x2=ones(numel(DIcond{3})).*(1+(rand(numel(DIcond{3}))-0.5)/15);
+f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
+f2=scatter(x1(:,2).*2,DIcond{2},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f3=scatter(x2(:,3).*3,DIcond{3},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+
+p1=signrank(DIcond{1});
+p2=signrank(DIcond{2});
+p3=signrank(DIcond{3});
+p4=ranksum(DIcond{2},DIcond{1});
+p5=ranksum(DIcond{3},DIcond{1});
+
+yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
+axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.4)])
+plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
+text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p4,2)],'FontSize',12);hold on;
+plot(xt([1 3]), [1 1]*max(yt)*1.25, '-k',  mean(xt([1 3])), max(yt)*1.3);hold on;
+text(mean([xt(2),xt(3)]),max(yt)*1.32,['p=' num2str(p5,2)],'FontSize',12);hold on;
+text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
+text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
+text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
+
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.fig');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.png');
+
+
+
+%% Figure 3: 4h PFC exp
+box4hPFC = nan(20,3);
+box4hPFC(1:numel(DIcond{1}),1) = DIcond{1};
+box4hPFC(1:numel(DIcond{4}),2) = DIcond{4};
+box4hPFC(1:numel(DIcond{5}),3) = DIcond{5};
+
+figure; 
+boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+ylabel('discrimination index');title('PFC: 4h delayed recall');
+set(lines, 'Color', 'b','LineWidth',2);
+plot(xlim,[0 0],'--k');hold on;
+
+x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
+x1=ones(numel(DIcond{4})).*(1+(rand(numel(DIcond{4}))-0.5)/10);
+x2=ones(numel(DIcond{5})).*(1+(rand(numel(DIcond{5}))-0.5)/15);
+f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
+f2=scatter(x1(:,2).*2,DIcond{4},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f3=scatter(x2(:,3).*3,DIcond{5},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+
+p1=signrank(DIcond{1});
+p2=signrank(DIcond{4});
+p3=signrank(DIcond{5});
+p4=ranksum(DIcond{4},DIcond{1});
+p5=ranksum(DIcond{5},DIcond{1});
+p6=ranksum(DIcond{4},DIcond{5});
+
+yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
+axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.4)])
+plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
+text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p4,2)],'FontSize',12);hold on;
+plot(xt([1 3]), [1 1]*max(yt)*1.25, '-k',  mean(xt([1 3])), max(yt)*1.3);hold on;
+text(mean([xt(2),xt(3)]),max(yt)*1.32,['p=' num2str(p5,2)],'FontSize',12);hold on;
+plot(xt([2 3]), [1 1]*max(yt)*1.15, '-k',  mean(xt([2 3])), max(yt)*1.2);hold on;
+text(mean([xt(2),xt(3)]),max(yt)*1.22,['p=' num2str(p6,2)],'FontSize',12);hold on;
+
+text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
+text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
+text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
+
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.fig');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.png');
+
+
+
+%% Figure 4: 1h PFC exp
+box4hPFC = nan(20,3);
+box4hPFC(1:numel(DIcond{6}),1) = DIcond{6};
+box4hPFC(1:numel(DIcond{7}),2) = DIcond{7};
+box4hPFC(1:numel(DIcond{8}),3) = DIcond{8};
+
+figure; 
+boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
+lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
+ylabel('discrimination index');title('PFC: 1h delayed recall');
+set(lines, 'Color', 'b','LineWidth',2);
+plot(xlim,[0 0],'--k');hold on;
+
+x=ones(numel(DIcond{6})).*(1+(rand(numel(DIcond{6}))-0.5)/5);
+x1=ones(numel(DIcond{7})).*(1+(rand(numel(DIcond{7}))-0.5)/10);
+x2=ones(numel(DIcond{8})).*(1+(rand(numel(DIcond{8}))-0.5)/15);
+f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
+f2=scatter(x1(:,2).*2,DIcond{7},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f3=scatter(x2(:,3).*3,DIcond{8},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+
+p1=signrank(DIcond{6});
+p2=signrank(DIcond{7});
+p3=signrank(DIcond{8});
+p4=ranksum(DIcond{7},DIcond{6});
+p5=ranksum(DIcond{8},DIcond{6});
+
+yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
+axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.4)])
+plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
+text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p4,2)],'FontSize',12);hold on;
+plot(xt([1 3]), [1 1]*max(yt)*1.25, '-k',  mean(xt([1 3])), max(yt)*1.3);hold on;
+text(mean([xt(2),xt(3)]),max(yt)*1.32,['p=' num2str(p5,2)],'FontSize',12);hold on;
+text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
+text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
+text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
+
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.fig');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.png');
+
+

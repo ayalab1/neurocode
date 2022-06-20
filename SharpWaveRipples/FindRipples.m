@@ -30,7 +30,7 @@ function [ripples] = FindRipples(varargin)
 %     'thresholds'  thresholds for ripple beginning/end and peak, in multiples
 %                   of the stdev (default = [2 5]); must be integer values
 %     'durations'   min inter-ripple interval and max ripple duration, in ms
-%                   (default = [30 100]). 
+%                   (default = [50 500]). 
 %     'minDuration' min ripple duration. Keeping this input nomenclature for backwards
 %                   compatibility
 %     'restrict'    interval used to compute normalization (default = all)
@@ -41,7 +41,7 @@ function [ripples] = FindRipples(varargin)
 %                   like noise (events also present on this channel are
 %                   discarded)
 %     'passband'    N x 2 matrix of frequencies to filter for ripple detection 
-%                   (default = [130 200])
+%                   (default = [80 250])
 %     'EMGThresh'   0-1 threshold of EMG to exclude noise
 %     'saveMat'     logical (default=false) to save in buzcode format
 %     'EVENTFILE'   logical (default=true) to save a .evt file for viewing

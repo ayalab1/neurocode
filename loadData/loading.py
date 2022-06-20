@@ -267,7 +267,10 @@ def load_cell_metrics(basepath,only_metrics=False):
     df['sex'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['sex'][0][0][0]
     df['species'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['species'][0][0][0]
     df['strain'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['strain'][0][0][0]
-    df['geneticLine'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['geneticLine'][0][0][0]
+    try:
+        df['geneticLine'] = data['cell_metrics']['general'][0][0]['animal'][0][0]['geneticLine'][0][0][0]
+    except:
+        pass
     df['cellCount'] = data['cell_metrics']['general'][0][0]['cellCount'][0][0][0][0]
 
     # fix nesting issue for strings
@@ -632,9 +635,14 @@ def load_animal_behavior(basepath):
         df['linearized'] = data['behavior']['position'][0][0]['linearized'][0][0][0]
     except:
         df['linearized'] = np.nan
-
-    df['speed'] = data['behavior']['speed'][0][0][0]
-    df['acceleration'] = data['behavior']['acceleration'][0][0][0]
+    try:
+        df['speed'] = data['behavior']['speed'][0][0][0]
+    except:
+        df['speed'] = np.nan
+    try:
+        df['acceleration'] = data['behavior']['acceleration'][0][0][0]
+    except:
+        df['acceleration'] = np.nan
 
     for t in range(trials.shape[0]):
         idx = (df.time >= trials[t,0]) & (df.time <= trials[t,1])
@@ -737,7 +745,9 @@ def load_spikes(basepath,
                 putativeCellType=[], # restrict spikes to putativeCellType
                 brainRegion=[], # restrict spikes to brainRegion
                 bad_unit=False, # false for not loading bad cells
-                brain_state=[] # restrict spikes to brainstate
+                brain_state=[], # restrict spikes to brainstate
+                other_metric=None, # restrict spikes to other_metric
+                other_metric_value=None # restrict spikes to other_metric_value
                 ):
     """ 
     Load specific cells' spike times
@@ -766,6 +776,24 @@ def load_spikes(basepath,
         restrict_idx = []
         for brain_region in brainRegion:
             restrict_idx.append(cell_metrics.brainRegion.str.contains(brain_region).values) 
+        restrict_idx = np.any(restrict_idx,axis=0)
+        cell_metrics = cell_metrics[restrict_idx]
+        st = st[restrict_idx]
+
+    # restrict cell metrics by arbitrary metric
+    if other_metric is not None:
+        # make other_metric_value a list if not already
+        if not isinstance(other_metric, list):
+            other_metric = [other_metric]
+        if not isinstance(other_metric_value, list):
+            other_metric_value = [other_metric_value]
+        # check that other_metric_value is the same length as other_metric
+        if len(other_metric) != len(other_metric_value):
+            raise ValueError('other_metric and other_metric_value must be of same length')
+
+        restrict_idx = []
+        for metric,value in zip(other_metric,other_metric_value):
+            restrict_idx.append(cell_metrics[metric].str.contains(value).values) 
         restrict_idx = np.any(restrict_idx,axis=0)
         cell_metrics = cell_metrics[restrict_idx]
         st = st[restrict_idx]
@@ -858,9 +886,11 @@ def load_deepSuperficialfromRipple(basepath,bypass_mismatch_exception=False):
     ripple_average = np.ones([channel_df.shape[0],len(ripple_time_axis)])*np.nan
 
     rip_map = []
-    for values in data[name]["ripple_average"][0][0][0]:
+    for ch,values in zip(channels_,data[name]["ripple_average"][0][0][0]):
         if values.shape[1]>0:
             rip_map.append(values)
+        else:
+            rip_map.append(np.zeros([len(ripple_time_axis),len(ch)])*np.nan)
     
     ripple_average[channel_sort_idx] = np.hstack(rip_map).T
 

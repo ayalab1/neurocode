@@ -1,18 +1,17 @@
 % N:\Praveen\uLED\uLED1\day7 % HPC only
-% N:\OJRproject\OJR42\day11 % too superficial PFC
-% N:\OJRproject\OJR42\day12 % too superficial PFC
-% N:\OJRproject\OJR43\day3
-% N:\OJRproject\OJR43\day7
+N:\OJRproject\OJR42\day11 % too superficial PFC
+N:\OJRproject\OJR42\day12 % too superficial PFC
+N:\OJRproject\OJR43\day3
+N:\OJRproject\OJR43\day7
 N:\OJRproject\OJR43\day10
 N:\OJRproject\OJR49\day6  
 N:\OJRproject\OJR49\day11 % followed by open-loop stim following test (3 different conditions)
 
 % new
-N:\OJRproject\OJR43\day10 % new
+N:\OJRproject\OJR51\day8 % open loop PFC inhibition
 N:\OJRproject\OJR53_V1JuanAntonio\day9
 N:\OJRproject\OJR53_V1JuanAntonio\day11
-% N:\OJRproject\OJR53_V1JuanAntonio\day12 % not yet sorted
-N:\OJRproject\OJR51\day8 % open loop PFC inhibition
+N:\OJRproject\OJR53_V1JuanAntonio\day12 % not yet sorted
 
 % Wires:
 % N:\OJRproject\OJR44\day16 % Need to reextract lfp with 39 channels

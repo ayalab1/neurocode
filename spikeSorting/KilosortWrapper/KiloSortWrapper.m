@@ -31,6 +31,7 @@ basepath = cd;
 addParameter(p,'basepath',basepath,@ischar)         % path to the folder containing the data
 addParameter(p,'basename',basename,@ischar)         % file basenames (of the dat and xml files)
 addParameter(p,'GPU_id',1,@isnumeric)               % Specify the GPU_id
+addParameter(p,'rejectchannels',[],@isnumeric)      % Specify list of channels to ignore while spike sorting (base 1, add 1 to neuroscope numbering)
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output into a subfolder
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
@@ -45,6 +46,7 @@ SSD_path = p.Results.SSD_path;
 CreateSubdirectory = p.Results.CreateSubdirectory;
 performAutoCluster = p.Results.performAutoCluster;
 config = p.Results.config;
+rejectChannels = p.Results.rejectchannels;
 
 cd(basepath)
 

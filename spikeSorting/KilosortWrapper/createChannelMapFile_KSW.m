@@ -1,4 +1,4 @@
-function createChannelMapFile_KSW(basepath,basename,electrode_type)
+function createChannelMapFile_KSW(basepath,basename,electrode_type,rejectChannels)
 % Original function by Brendon and Sam
 % electrode_type: Two options at this point: 'staggered' or 'neurogrid'
 % create a channel map file
@@ -8,6 +8,9 @@ if ~exist('basepath','var')
 end
 if ~exist('basename','var')
     [~,basename] = fileparts(basepath);
+end
+if ~exist('rejectChannels','var')
+    rejectChannels = [];
 end
 
 [par,rxml] = LoadXml(fullfile(basepath,[basename,'.xml']));
@@ -138,6 +141,7 @@ switch(electrode_type)
         end
 end
 connected = true(Nchannels, 1);
+connected(rejectChannels) = false;
 
 % Removing dead channels by the skip parameter in the xml
 % order = [par.AnatGrps.Channels];

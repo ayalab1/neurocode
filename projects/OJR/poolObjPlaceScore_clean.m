@@ -2,9 +2,9 @@
 %TO DO add export to csv of pooled results/stats for things importing to py
 %TO DO if using matlab to graph change colors for finalization
 clearvars;
-dirData = 'Z:\ObjRipple\offline_analysis\';
+dirData = 'N:\OJRproject\offline_analysis';
 %dirData = 'Z:\ObjRipple\recordings\';
-dirSave = dirData;
+dirSave = 'N:\OJRproject\analysis_repo\behavior';
 
 animals = {'OJR6','OJR4', 'OJR7', 'OJR5', 'OJR9','OJR10','NG1','NG2','NG3',...
            'NG4','NG5','NG6','OJR11','OJR12','OJR13','OJR18','OJR20','OJR21',...

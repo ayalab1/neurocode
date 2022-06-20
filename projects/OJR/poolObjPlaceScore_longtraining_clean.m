@@ -6,7 +6,7 @@
 clearvars;
 dirData = 'N:\OJRproject\';
 %dirData = 'Z:\ObjRipple\recordings\';
-dirSave = dirData;
+dirSave = 'N:\OJRproject\analysis_repo\behavior_longtraining';
 
 animals = {'OJR42','OJR43', 'OJR44', 'OJR45','OJR46','OJR47', 'OJR48','OJR51','OJR52'}; 
 
@@ -44,80 +44,8 @@ end
         
 %% %%%%%%%%%%%%%%%%% plot       
 
-%% Figure 1: control 
-boxCon = nan(20,2);
-boxCon(1:numel(DIcond{6}),1) = DIcond{6};
-boxCon(1:numel(DIcond{1}),2) = DIcond{1};
 
-figure; 
-boxplot(boxCon,'Notch','on','Labels',{'1h delay','4h delay'});hold on;
-lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-set(lines, 'Color', 'b','LineWidth',2);
-ylabel('discrimination index');title('control animals');
-%a = get(get(gca,'children'),'children');   % Get the handles of all the objects
-%box1 = a(7);   % The 7th object is the first box
-%set(a, 'Color', 'r');   % Set the color of the first box to green
-plot(xlim,[0 0],'--k');hold on;
-
-x=ones(numel(DIcond{6})).*(1+(rand(numel(DIcond{6}))-0.5)/5);
-x1=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/10);
-f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{1},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-
-p1=signrank(DIcond{6});
-p2=signrank(DIcond{1});
-p3=ranksum(DIcond{6},DIcond{1});
-
-yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
-axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.3)])
-plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
-text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p3,2)],'FontSize',12);hold on;
-text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
-text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining\longtraining.png');
-
-%% Figure 2: 4h experiment 
-box4h = nan(20,3);
-box4h(1:numel(DIcond{1}),1) = DIcond{1};
-box4h(1:numel(DIcond{2}),2) = DIcond{2};
-box4h(1:numel(DIcond{3}),3) = DIcond{5};
-
-figure; 
-boxplot(box4h,'Notch','on','Labels',{'control','closed loop','open loop'});hold on;
-lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-ylabel('discrimination index');title('4h delayed recall');
-set(lines, 'Color', 'b','LineWidth',2);
-plot(xlim,[0 0],'--k');hold on;
-
-x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
-x1=ones(numel(DIcond{2})).*(1+(rand(numel(DIcond{2}))-0.5)/10);
-x2=ones(numel(DIcond{3})).*(1+(rand(numel(DIcond{3}))-0.5)/15);
-f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{2},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-f3=scatter(x2(:,3).*3,DIcond{3},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-
-p1=signrank(DIcond{1});
-p2=signrank(DIcond{2});
-p3=signrank(DIcond{3});
-p4=ranksum(DIcond{2},DIcond{1});
-p5=ranksum(DIcond{3},DIcond{1});
-
-yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
-axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.4)])
-plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on;
-text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p4,2)],'FontSize',12);hold on;
-plot(xt([1 3]), [1 1]*max(yt)*1.25, '-k',  mean(xt([1 3])), max(yt)*1.3);hold on;
-text(mean([xt(2),xt(3)]),max(yt)*1.32,['p=' num2str(p5,2)],'FontSize',12);hold on;
-text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
-text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
-text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
-
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining\longtraining.png');
-
-
-%% Figure 3: 4h PFC exp
+%% Figure  4h PFC exp
 box4hPFC = nan(20,3);
 box4hPFC(1:numel(DIcond{1}),1) = DIcond{1};
 box4hPFC(1:numel(DIcond{4}),2) = DIcond{4};

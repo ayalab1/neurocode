@@ -50,7 +50,6 @@ for a = 1:length(animals)
         
     end
 end
-        
 %% %%%%%%%%%%%%%%%%% plot       
 
 %% Figure 1: control 

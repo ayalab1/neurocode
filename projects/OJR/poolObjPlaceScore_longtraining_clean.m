@@ -15,14 +15,13 @@ days = {{'day11','day12'};{'day7','day10'};{'day11','day16'};{'day8','day9','day
         {'day8','day15','day16'};{'day10','day11','day15'};{'day10','day11','day13'};{'day5','day8'};{'day13'}};
 
 
-condition = {[1 1]; [1 1]; [4 5]; [4 5 1]; [4 5 1]; [1 5 4]; [1 5 4]; [4 5]; [5]};
+condition = {[1 1]; [1 1]; [2 3]; [2 3 1]; [2 3 1]; [1 3 2]; [1 3 2]; [2 3]; [3]};
 
 
-% 1=4h sham; 2=4h cl; 3=4h ol; 4=4h cl+PFC inh; 5=4h cl+PFC delay;
-% 6=1h sham; 7=1h PFC inh; 8=1h PFC delay
+% 1=4h delay 3x training; 2=4h delay 3x training + PFC inh; 3=4h delay 3x training + PFC delay;
 
 %% pool
-DIcond = cell(8,1);OPcond = cell(8,1);trainT = cell(8,1);testT = cell(8,1);
+DIcond = cell(3,1);OPcond = cell(3,1);trainT = cell(3,1);testT = cell(3,1);
 
 for a = 1:length(animals)
     for d = 1:length(days{a})
@@ -48,29 +47,29 @@ end
 %% Figure  4h PFC exp
 box4hPFC = nan(20,3);
 box4hPFC(1:numel(DIcond{1}),1) = DIcond{1};
-box4hPFC(1:numel(DIcond{4}),2) = DIcond{4};
-box4hPFC(1:numel(DIcond{5}),3) = DIcond{5};
+box4hPFC(1:numel(DIcond{2}),2) = DIcond{2};
+box4hPFC(1:numel(DIcond{3}),3) = DIcond{3};
 
 figure; 
-boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
+boxplot(box4hPFC,'Notch','on','Labels',{'4h delay 3x training','4h delay 3x training + PFC inh','4h delay 3x training + PFC delay'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
 ylabel('discrimination index');title('PFC: 3x Training + 4h delayed recall');
 set(lines, 'Color', 'b','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
 
 x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
-x1=ones(numel(DIcond{4})).*(1+(rand(numel(DIcond{4}))-0.5)/10);
-x2=ones(numel(DIcond{5})).*(1+(rand(numel(DIcond{5}))-0.5)/15);
+x1=ones(numel(DIcond{2})).*(1+(rand(numel(DIcond{2}))-0.5)/10);
+x2=ones(numel(DIcond{3})).*(1+(rand(numel(DIcond{3}))-0.5)/15);
 f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{4},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-f3=scatter(x2(:,3).*3,DIcond{5},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f2=scatter(x1(:,2).*2,DIcond{2},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f3=scatter(x2(:,3).*3,DIcond{3},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
 
 p1=signrank(DIcond{1});
-p2=signrank(DIcond{4});
-p3=signrank(DIcond{5});
-p4=ranksum(DIcond{4},DIcond{1});
-p5=ranksum(DIcond{5},DIcond{1});
-p6=ranksum(DIcond{4},DIcond{5});
+p2=signrank(DIcond{2});
+p3=signrank(DIcond{3});
+p4=ranksum(DIcond{2},DIcond{1});
+p5=ranksum(DIcond{3},DIcond{1});
+p6=ranksum(DIcond{2},DIcond{3});
 
 yt = get(gca,'YTick');  xt = get(gca,'XTick');hold on
 axis([xlim floor(min(yt)*1.2) ceil(max(yt)*1.4)])

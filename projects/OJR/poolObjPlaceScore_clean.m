@@ -2,9 +2,9 @@
 %TO DO add export to csv of pooled results/stats for things importing to py
 %TO DO if using matlab to graph change colors for finalization
 clearvars;
-dirData = 'Z:\ObjRipple\offline_analysis\';
+dirData = 'N:\OJRproject\offline_analysis\';
 %dirData = 'Z:\ObjRipple\recordings\';
-dirSave = dirData;
+dirSave = 'N:\OJRproject\analysis_repo\behavior';
 
 animals = {'OJR6','OJR4', 'OJR7', 'OJR5', 'OJR9','OJR10','NG1','NG2','NG3',...
            'NG4','NG5','NG6','OJR11','OJR12','OJR13','OJR18','OJR20','OJR21',...
@@ -50,7 +50,6 @@ for a = 1:length(animals)
         
     end
 end
-        
 %% %%%%%%%%%%%%%%%%% plot       
 
 %% Figure 1: control 
@@ -58,20 +57,32 @@ boxCon = nan(20,2);
 boxCon(1:numel(DIcond{6}),1) = DIcond{6};
 boxCon(1:numel(DIcond{1}),2) = DIcond{1};
 
+
+c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
+c2=[.28 .68 .83]; %color2
+colors=[c2; c1]; %reverse
+
+
 figure; 
 boxplot(boxCon,'Notch','on','Labels',{'1h delay','4h delay'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-set(lines, 'Color', 'b','LineWidth',2);
+set(lines, 'Color', 'k','LineWidth',2);
 ylabel('discrimination index');title('control animals');
-%a = get(get(gca,'children'),'children');   % Get the handles of all the objects
-%box1 = a(7);   % The 7th object is the first box
-%set(a, 'Color', 'r');   % Set the color of the first box to green
+
 plot(xlim,[0 0],'--k');hold on;
+h = findobj(gca,'Tag','Box');
+for j=1:length(h)
+    patch(get(h(j),'XData'),get(h(j),'YData'),colors(j,:),'FaceAlpha',.4);
+    
+end
+
+
 
 x=ones(numel(DIcond{6})).*(1+(rand(numel(DIcond{6}))-0.5)/5);
 x1=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/10);
-f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{1},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.8;f1.MarkerFaceColor = c1;f1.MarkerEdgeColor = 'k';hold on 
+f2=scatter(x1(:,2).*2,DIcond{1},'k','filled');f2.MarkerFaceAlpha = 0.8;f2.MarkerFaceColor = c2;f2.MarkerEdgeColor = 'k';hold on
+
 
 p1=signrank(DIcond{6});
 p2=signrank(DIcond{1});
@@ -85,7 +96,7 @@ text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.fig');
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.png');
-
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.pdf');
 
 %% Figure 2: 4h experiment 
 box4h = nan(20,3);
@@ -93,19 +104,32 @@ box4h(1:numel(DIcond{1}),1) = DIcond{1};
 box4h(1:numel(DIcond{2}),2) = DIcond{2};
 box4h(1:numel(DIcond{3}),3) = DIcond{3};
 
+
+c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
+c2=[.28 .68 .83]; %color2
+c3=[.93 .31 .31]; %color3
+colors=[c3; c2; c1]; %reverse
+
 figure; 
 boxplot(box4h,'Notch','on','Labels',{'control','closed loop','open loop'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
 ylabel('discrimination index');title('4h delayed recall');
-set(lines, 'Color', 'b','LineWidth',2);
+set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
+h2 = findobj(gca,'Tag','Box');
+for k=1:length(h2)
+    patch(get(h2(k),'XData'),get(h2(k),'YData'),colors(k,:),'FaceAlpha',.4);
+    
+end
+
+
 
 x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
 x1=ones(numel(DIcond{2})).*(1+(rand(numel(DIcond{2}))-0.5)/10);
 x2=ones(numel(DIcond{3})).*(1+(rand(numel(DIcond{3}))-0.5)/15);
-f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{2},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-f3=scatter(x2(:,3).*3,DIcond{3},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f1=scatter(x(:,1),DIcond{1},'filled');f1.MarkerFaceAlpha = 0.8;f1.MarkerFaceColor = c1;f1.MarkerEdgeColor = 'k';hold on 
+f2=scatter(x1(:,2).*2,DIcond{2},'filled');f2.MarkerFaceAlpha = 0.8;f2.MarkerFaceColor = c2;f2.MarkerEdgeColor = 'k';hold on
+f3=scatter(x2(:,3).*3,DIcond{3},'filled');f3.MarkerFaceAlpha = 0.8;f3.MarkerFaceColor = c3;f3.MarkerEdgeColor = 'k';hold on
 
 p1=signrank(DIcond{1});
 p2=signrank(DIcond{2});
@@ -125,6 +149,7 @@ text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.fig');
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.png');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.pdf');
 
 
 
@@ -134,19 +159,32 @@ box4hPFC(1:numel(DIcond{1}),1) = DIcond{1};
 box4hPFC(1:numel(DIcond{4}),2) = DIcond{4};
 box4hPFC(1:numel(DIcond{5}),3) = DIcond{5};
 
+
+
+c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
+c2=[.28 .68 .83]; %color2
+c3=[.93 .31 .31]; %color3
+colors=[c3; c2; c1]; %reverse
+
 figure; 
 boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
 ylabel('discrimination index');title('PFC: 4h delayed recall');
-set(lines, 'Color', 'b','LineWidth',2);
+set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
+h3 = findobj(gca,'Tag','Box');
+for m=1:length(h3)
+    patch(get(h3(m),'XData'),get(h3(m),'YData'),colors(m,:),'FaceAlpha',.4);
+    
+end
 
 x=ones(numel(DIcond{1})).*(1+(rand(numel(DIcond{1}))-0.5)/5);
 x1=ones(numel(DIcond{4})).*(1+(rand(numel(DIcond{4}))-0.5)/10);
 x2=ones(numel(DIcond{5})).*(1+(rand(numel(DIcond{5}))-0.5)/15);
-f1=scatter(x(:,1),DIcond{1},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{4},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-f3=scatter(x2(:,3).*3,DIcond{5},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f1=scatter(x(:,1),DIcond{1},'filled');f1.MarkerFaceAlpha = 0.8;f1.MarkerFaceColor = c1;f1.MarkerEdgeColor = 'k';hold on 
+f2=scatter(x1(:,2).*2,DIcond{4},'filled');f2.MarkerFaceAlpha = 0.8;f2.MarkerFaceColor = c2;f2.MarkerEdgeColor = 'k';hold on
+f3=scatter(x2(:,3).*3,DIcond{5},'filled');f3.MarkerFaceAlpha = 0.8;f3.MarkerFaceColor = c3;f3.MarkerEdgeColor = 'k';hold on
+
 
 p1=signrank(DIcond{1});
 p2=signrank(DIcond{4});
@@ -170,6 +208,7 @@ text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.fig');
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.png');
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.pdf');
 
 
 
@@ -179,19 +218,34 @@ box4hPFC(1:numel(DIcond{6}),1) = DIcond{6};
 box4hPFC(1:numel(DIcond{7}),2) = DIcond{7};
 box4hPFC(1:numel(DIcond{8}),3) = DIcond{8};
 
+
+c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
+c2=[.28 .68 .83]; %color2
+c3=[.93 .31 .31]; %color3
+colors=[c3; c2; c1]; %reverse
+
+
 figure; 
 boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
 ylabel('discrimination index');title('PFC: 1h delayed recall');
-set(lines, 'Color', 'b','LineWidth',2);
+set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
+h4 = findobj(gca,'Tag','Box');
+for n=1:length(h4)
+    patch(get(h4(n),'XData'),get(h4(n),'YData'),colors(n,:),'FaceAlpha',.4);
+    
+end
+
 
 x=ones(numel(DIcond{6})).*(1+(rand(numel(DIcond{6}))-0.5)/5);
 x1=ones(numel(DIcond{7})).*(1+(rand(numel(DIcond{7}))-0.5)/10);
 x2=ones(numel(DIcond{8})).*(1+(rand(numel(DIcond{8}))-0.5)/15);
-f1=scatter(x(:,1),DIcond{6},'k','filled');f1.MarkerFaceAlpha = 0.4;hold on 
-f2=scatter(x1(:,2).*2,DIcond{7},'k','filled');f2.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
-f3=scatter(x2(:,3).*3,DIcond{8},'k','filled');f3.MarkerFaceAlpha = f1.MarkerFaceAlpha;hold on
+f1=scatter(x(:,1),DIcond{6},'filled');f1.MarkerFaceAlpha = 0.8;f1.MarkerFaceColor = c1;f1.MarkerEdgeColor = 'k';hold on 
+f2=scatter(x1(:,2).*2,DIcond{7},'filled');f2.MarkerFaceAlpha = 0.8;f2.MarkerFaceColor = c2;f2.MarkerEdgeColor = 'k';hold on
+f3=scatter(x2(:,3).*3,DIcond{8},'filled');f3.MarkerFaceAlpha = 0.8;f3.MarkerFaceColor = c3;f3.MarkerEdgeColor = 'k';hold on
+
+
 
 p1=signrank(DIcond{6});
 p2=signrank(DIcond{7});
@@ -211,5 +265,5 @@ text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.fig');
 saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.png');
-
+saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.pdf');
 

@@ -38,4 +38,8 @@ function lfp = GetAyaLFP(channels,varargin)
 % (at your option) any later version.
 
 lfpstruct = getLFP(channels+1,varargin{:});
-lfp = [lfpstruct.timestamps]; lfp(:,2) = lfpstruct.data;
+try lfp = [lfpstruct.timestamps]; 
+    lfp(:,(1:size(lfpstruct.data,2))+1) = lfpstruct.data;
+catch
+    keyboard
+end

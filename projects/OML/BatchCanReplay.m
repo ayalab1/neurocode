@@ -86,7 +86,7 @@ PlotColorMap(sortby(nanzscore([curves1 curves2 curves],[],2),m))
 SaveFig(fullfile('M:\home\raly\results\OML\fields',[sessionID '-Place_field_coverage']))
 
 %%
-% figure; 
+figure; 
 clf
 try load(fullfile(basepath,'thetaCyclesTask.mat'),'cycles');
 catch load(fullfile(basepath,'thetaCyclesTrack.mat'),'cycles');

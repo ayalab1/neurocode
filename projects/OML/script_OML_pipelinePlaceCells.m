@@ -122,7 +122,7 @@ catch
     peak = Accumulate(w(in),speed(in,2)','mode','max');
 
     % remove run epochs that don't reach the speed threshold
-    if strcmp(projectName,'OLM21') || strcmp(projectName,'OML22') % there is an issue with behavior.position.x in OML18
+    if strcmp(projectName,'OLM21') || strcmp(projectName,'OML22') || strcmp(projectName,'OML23')  % there is an issue with behavior.position.x in OML18
         run(peak<20,:) = [];
     elseif strcmp(projectName,'OML18') || strcmp(projectName,'OML19')
         run(peak<0.1,:) = [];
@@ -141,7 +141,7 @@ end
 % posTrials = behavior.positionTrials;
 
 % normalize positions from 0 to 1, with 0 and 1 corresponding to the actual beginning/end of a lap and not an outlier point
-if size(behavior.trialID,2)>1, trialKind = 2-behavior.trialID(:,2); % trialKind=1 is for stim trials, trialKind=1 is for Off trials
+if size(behavior.trialID,2)>1, trialKind = 2-behavior.trialID(:,2); % trialKind=1 is for stim trials, trialKind=0 is for Off trials
 else trialKind = behavior.trialID(:,1);
     if max(trialKind)==1, trialKind = 2-trialKind;
     end

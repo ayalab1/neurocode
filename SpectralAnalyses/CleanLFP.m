@@ -94,12 +94,12 @@ end
 % Detect large global artefacts (1)
 artefactInterval = t(FindInterval(abs(z)>threshold1));
 if numel(artefactInterval)==2,artefactInterval=artefactInterval(:)';end
-if ~isempty(artefactInterval),artefactInterval = ConsolidateIntervals([artefactInterval(:,1)-aroundArtefact1 artefactInterval(:,2)+aroundArtefact1]); bad = InIntervals(t,artefactInterval);end
+if ~isempty(artefactInterval),artefactInterval = ConsolidateIntervals([artefactInterval(:,1)-aroundArtefact1 artefactInterval(:,2)+aroundArtefact1]); bad = InIntervals(t,artefactInterval);else artefactInterval = zeros(0,2); end
 
 %Find noise using the derivative of the zscored signal (2)
 noisyInterval = t(FindInterval(abs(d)>threshold2));
 if numel(noisyInterval)==2,noisyInterval=noisyInterval(:)';end
-if ~isempty(noisyInterval),noisyInterval = ConsolidateIntervals([noisyInterval(:,1)-aroundArtefact2 noisyInterval(:,2)+aroundArtefact2]); bad = bad | InIntervals(t,noisyInterval);end
+if ~isempty(noisyInterval),noisyInterval = ConsolidateIntervals([noisyInterval(:,1)-aroundArtefact2 noisyInterval(:,2)+aroundArtefact2]); bad = bad | InIntervals(t,noisyInterval);else noisyInterval = zeros(0,2); end
 
 % Substitute noisy signal with interpolated signal as if artefact did not exist
 values(bad) = interp1(t(~bad),values(~bad),t(bad,1));

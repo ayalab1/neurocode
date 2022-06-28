@@ -25,7 +25,7 @@ function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent,fullLines)
 %               resulting file will contain a raster not a vector
 %               image. 
 % fullLines - for errBar = [2,length(x)] when the error bars provided are
-%             already added to and subtracted from the mean.
+%             already added to and subtracted from the mean. Default 0.
 % Outputs
 % H - a structure of handles to the generated plot objects.     
 %
@@ -91,7 +91,7 @@ if nargin<4, lineProps=defaultProps; end
 if isempty(lineProps), lineProps=defaultProps; end
 if ~iscell(lineProps), lineProps={lineProps}; end
 
-if nargin<5, transparent=0; end
+if nargin<5, transparent=0; fullLines = 0; end
 if nargin<6, fullLines = 0; end
 
 

@@ -40,11 +40,35 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             fs = obj.FrameRate;
             
             % load csv with proper header
-            opts = detectImportOptions(fullfile(file.folder,file.name),'NumHeaderLines',2);
-            df = readtable(fullfile(file.folder,file.name),opts);
-            % get names of fields, these will be as long as tracker points
-            % used times 3 because [x,y,likelihood]
-            field_names = fields(df);
+            % iter over different numbers of header rows in order to detect
+            % proper header number
+            header_i = 1;
+            while true
+                opts = detectImportOptions(fullfile(file.folder,file.name),'NumHeaderLines',header_i);
+                df = readtable(fullfile(file.folder,file.name),opts);
+                % get names of fields, these will be as long as tracker points
+                % used times 3 because [x,y,likelihood]
+                field_names = fields(df);
+                if any(contains(field_names,'x')) & any(contains(field_names,'y')) & any(contains(field_names,'likelihood'))
+                    break
+                end
+                header_i = header_i + 1;
+                
+                % error if x,y,likelihood not found
+                if header_i > 50
+                    error([file.name,' not a dlc file'])
+                end
+            end
+            
+            % fix df problem Praveen - some numbers appear as char
+            for i = 1:size(df,1)
+                for j = 50:size(df,2)
+                    if isstr(cell2mat(df(i,j)))
+                       df(i,j) = str2num(cell2mat(df(i,j)));
+                    end
+                end
+            end
+            
             % locate columns with [x,y,likelihood]
             x_col = find(contains(field_names,'x'));
             y_col = find(contains(field_names,'y'));

@@ -62,12 +62,18 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             
             % fix df problem Praveen - some numbers appear as char
             for i = 1:size(df,1)
-                for j = 50:size(df,2)
-                    if isstr(cell2mat(df(i,j)))
-                       df(i,j) = str2num(cell2mat(df(i,j)));
+                for j = 1:size(df,2)
+                    if isstr(cell2mat(df{i,j}))
+                       temp= str2num(cell2mat(df{i,j}));
+                       if ~isempty(temp)
+                           dft(i,j) = temp;
+                       else
+                           dft(i,j) =0;
+                       end
                     end
                 end
             end
+            df=dft;
             
             % locate columns with [x,y,likelihood]
             x_col = find(contains(field_names,'x'));

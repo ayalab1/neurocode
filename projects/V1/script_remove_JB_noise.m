@@ -1,13 +1,15 @@
 
-rejectChannels = 1+[49 29 7 12 6 13 5 14 4 15 8 11 9 10]; % for Juan Antonio
-nChannels = 96;
+rejectChannels = 1+[]; % for JB
+nChannels = 160;
+SSD_file = 'D:\test.dat';
 
 basename = basenameFromBasepath(basepath);
 datFile = [basepath,filesep, basename, '.dat'];
-m = memmapfile(datFile, 'Format','int16','Writable',true);
+copyfile(datFile,SSD_file); 
+m = memmapfile(SSD_file, 'Format','int16','Writable',true);
 data = reshape(m.data,nChannels,[]);
 nSamples = size(data,2);
-okChannels = ~ismember((1:size(data,1))',rejectChannels); okChannels = okChannels(1:3:end,:);
+okChannels = ~ismember((1:size(data,1))',rejectChannels); okChannels = okChannels(1:4:end,:);
 signal = mean(data(okChannels,:))';
 bad = [false; abs(diff(signal))>200];
 badIntervals = FindInterval(bad); badIntervals = [badIntervals(:,1)-1 badIntervals(:,2)+1];
@@ -32,6 +34,10 @@ for i = 1:nChannels
     end
     m.Data(badIndices) = int16(interpolated);
 end
+
+copyfile(SSD_file,datFile); 
+clear m
+
 
 
 

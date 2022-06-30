@@ -1,11 +1,15 @@
 % nDays = 43;
-nDays = 6;
+nDays = 20;
 
-xmlFile = 'N:\V1test\V1JuanAntonio\V1JuanAntonio.xml';
+% xmlFile = 'N:\V1test\V1JuanAntonio\V1JuanAntonio.xml';
+xmlFile = 'N:\V1test\V1JeanBaptiste\V1JeanBaptiste.xml';
 
 folders = cell(nDays,1);
-for i=1:length(folders),
-    folders{i} = ['N:\V1test\V1JuanAntonio\V1JuanAntonio_22060' num2str(i)];
+for i=4:9
+    folders{i} = ['N:\V1test\V1JeanBaptiste\V1JeanBaptiste_22060' num2str(i)];
+end
+for i=10:20
+    folders{i} = ['N:\V1test\V1JeanBaptiste\V1JeanBaptiste_2206' num2str(i)];
 end
 
 fillMissingDatFiles = true;
@@ -24,7 +28,8 @@ runSummary = false;
 SSD_path = 'D:\KiloSort';
 done = false(nDays,1);
 
-for i=4:nDays
+for i=[10:nDays]
+    if i==7 || i==18, continue; end
 %     try
         basepath = folders{i}
         cd(basepath);
@@ -32,7 +37,8 @@ for i=4:nDays
         f = dir('Kilosort*');
         if ~isempty(f), 
             done(i,1) = true;
-            error('done');
+%             error('done');
+continue
         end
 
         %% Pull meta data
@@ -153,12 +159,12 @@ for i=4:nDays
             end
         end
 
-        disp([datestr(clock) ': starting script_remove_JA_noise.m for session ' basepath '...']);
-        script_remove_JA_noise
+        disp([datestr(clock) ': starting script_remove_JB_noise.m for session ' basepath '...']);
+        script_remove_JB_noise
         disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' basepath '...']);
         %% Kilosort concatenated sessions
         if isempty(dir('KilosortGT*')) && spikeSort
-            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
+            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'NT',4*1024);
             load(fullfile(kilosortFolder,'rez.mat'),'rez');
             CleanRez(rez,'savepath',kilosortFolder);
             %     PhyAutoClustering(kilosortFolder);

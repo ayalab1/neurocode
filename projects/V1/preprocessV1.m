@@ -195,7 +195,7 @@ session = sessionTemplate(pwd,'showGUI',true,'remove_folder_date',true);
 f = dir('Kilosort*');
 
 spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
-cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false,'removeMetrics','deepSuperficial');
+cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial'});
 channel_mapping
 close all
 % copyfile(fullfile(kilosortFolder,[basename '.session.mat']),fullfile(basepath,[basename '.session.mat']));

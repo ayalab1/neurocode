@@ -31,7 +31,6 @@ function channel_mapping(varargin)
 %           to populate the .csv after .csv has been populated. One may 
 %           wish to update either basename.session or .csv. 
 %
-%       Fix bug where figure labels do not match correct channel labels
 %
 % Ryan H 2021
 
@@ -284,7 +283,8 @@ plot(chanCoords.x,chanCoords.y,'.k'), hold on
 xlim([min(chanCoords.x) - 50 ,max(chanCoords.x) + 50])
 ylim([min(chanCoords.y) - 50 ,max(chanCoords.y) + 50])
 
-text(chanCoords.x,chanCoords.y,anatomical_map_vec,...
+[~,idx] = sort(channel_map_vec);
+text(chanCoords.x,chanCoords.y,anatomical_map_vec(idx),...
     'VerticalAlignment','bottom','HorizontalAlignment','center','fontsize',8);
 title({' ','Channel map',' '}), xlabel('X (um)'), ylabel('Y (um)')
 

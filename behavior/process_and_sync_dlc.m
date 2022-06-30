@@ -40,12 +40,11 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             fs = obj.FrameRate;
             
             % load csv with proper header
-            opts = detectImportOptions(fullfile(file.folder,file.name),'NumHeaderLines',2);
-            df = readtable(fullfile(file.folder,file.name),opts);
-            % get names of fields, these will be as long as tracker points
-            % used times 3 because [x,y,likelihood]
-            field_names = fields(df);
+            df = load_dlc_csv(fullfile(file.folder,file.name));
+            
             % locate columns with [x,y,likelihood]
+            field_names = df.Properties.VariableNames;
+
             x_col = find(contains(field_names,'x'));
             y_col = find(contains(field_names,'y'));
             likelihood_col = find(contains(field_names,'likelihood'));

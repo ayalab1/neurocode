@@ -1,4 +1,4 @@
-function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
+function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent,fullLines)
 % function H=shadedErrorBar(x,y,errBar,lineProps,transparent)
 %
 % Purpose 
@@ -24,7 +24,8 @@ function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
 %               to be openGl. However, if this is saved as .eps the
 %               resulting file will contain a raster not a vector
 %               image. 
-%
+% fullLines - for errBar = [2,length(x)] when the error bars provided are
+%             already added to and subtracted from the mean. Default 0.
 % Outputs
 % H - a structure of handles to the generated plot objects.     
 %
@@ -50,7 +51,7 @@ function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent)
     
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
 % Error checking    
-error(nargchk(3,5,nargin))
+error(nargchk(3,6,nargin))
 
 
 %Process y using function handles if needed to make the error bar
@@ -69,7 +70,6 @@ if isempty(x)
 else
     x=x(:)';
 end
-
 
 %Make upper and lower error bars if only one was specified
 if length(errBar)==length(errBar(:))
@@ -91,7 +91,8 @@ if nargin<4, lineProps=defaultProps; end
 if isempty(lineProps), lineProps=defaultProps; end
 if ~iscell(lineProps), lineProps={lineProps}; end
 
-if nargin<5, transparent=0; end
+if nargin<5, transparent=0; fullLines = 0; end
+if nargin<6, fullLines = 0; end
 
 
 
@@ -123,9 +124,13 @@ end
 
     
 %Calculate the error bars
-uE=y+errBar(1,:);
-lE=y-errBar(2,:);
-
+if fullLines
+    uE = errBar(1,:);
+    lE = errBar(2,:);
+else
+    uE=y+errBar(1,:);
+    lE=y-errBar(2,:);
+end
 
 %Add the patch error bar
 holdStatus=ishold;

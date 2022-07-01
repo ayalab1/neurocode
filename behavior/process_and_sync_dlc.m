@@ -45,9 +45,9 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             % locate columns with [x,y,likelihood]
             field_names = df.Properties.VariableNames;
 
-            x_col = find(contains(field_names,'x'));
-            y_col = find(contains(field_names,'y'));
-            likelihood_col = find(contains(field_names,'likelihood'));
+            x_col = find(contains(field_names,'_x'));
+            y_col = find(contains(field_names,'_y'));
+            likelihood_col = find(contains(field_names,'_likelihood'));
             % filter out bad tracker points by likelihood thres
             for i = 1:length(x_col)
                 idx = df{:,likelihood_col(i)} < likelihood;

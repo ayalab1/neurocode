@@ -174,8 +174,8 @@ if any(dlc_flag)
     y = tracking.position.y(:,primary_coords);
     
     % multiple tracking points will likely exist, extract here
-    x_col = field_names(contains(field_names,'x'));
-    y_col = field_names(contains(field_names,'y'));
+    x_col = field_names(contains(field_names,'_x'));
+    y_col = field_names(contains(field_names,'_y'));
     extra_points = struct();
     for i = 1:length(x_col)
         extra_points.([x_col{i},'_point']) = tracking.position.x(:,i);

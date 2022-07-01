@@ -36,6 +36,7 @@ addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it 
 addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output into a subfolder
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
 addParameter(p,'config','',@ischar)                 % Specify a configuration file to use from the ConfigurationFiles folder. e.g. 'Omid'
+addParameter(p,'NT',[],@isnumeric)                  % Specify desired batch size (default = 32*1024; reduce if out of memory)
 
 parse(p,varargin{:})
 
@@ -47,6 +48,7 @@ CreateSubdirectory = p.Results.CreateSubdirectory;
 performAutoCluster = p.Results.performAutoCluster;
 config = p.Results.config;
 rejectChannels = p.Results.rejectchannels;
+NT = p.Results.NT;
 
 cd(basepath)
 
@@ -61,7 +63,7 @@ end
 
 %% Creates a channel map file
 disp('Creating ChannelMapFile')
-createChannelMapFile_KSW(basepath,basename,'staggered');
+createChannelMapFile_KSW(basepath,basename,'staggered',rejectChannels);
 
 %% Loading configurations
 %K%XMLFilePath = fullfile(basepath, [basename '.xml']);
@@ -74,6 +76,10 @@ else
     config_string = str2func(['KiloSortConfiguration_' config_version]);
     ops = config_string(XMLFilePath);
     clear config_string;
+end
+
+if ~isempty(NT),
+    ops.NT = NT + ops.ntbuff;
 end
 
 %% % Checks SSD location for sufficient space

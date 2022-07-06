@@ -6,6 +6,7 @@ SSD_file = 'D:\test.dat';
 basename = basenameFromBasepath(basepath);
 datFile = [basepath,filesep, basename, '.dat'];
 copyfile(datFile,SSD_file); 
+disp([datestr(clock) ': dat file copied for ' basepath '. Finding noisy periods...']);
 m = memmapfile(SSD_file, 'Format','int16','Writable',true);
 data = reshape(m.data,nChannels,[]);
 nSamples = size(data,2);
@@ -19,8 +20,8 @@ datestr((datenum(clock)))
 noiseIntervalIndices = badIntervals;
 noiseIntervalIndices(noiseIntervalIndices<2) = 2; noiseIntervalIndices(noiseIntervalIndices>nSamples-1) = nSamples-1;
 
+disp([datestr(clock) ': Noise periods found. Removing noise in .dat file local copy for ' basepath '...']);
 for i = 1:nChannels
-    try disp([datestr(clock) ':' num2str(i) '...']); end
     if any(rejectChannels==i),
         badIndices = sub2ind([nChannels,nSamples],i*ones(nSamples,1),(1:nSamples)');
         interpolated = 0;
@@ -35,6 +36,7 @@ for i = 1:nChannels
     m.Data(badIndices) = int16(interpolated);
 end
 
+disp([datestr(clock) ': Noise removed. Copying back local dat file to ' basepath '...']);
 copyfile(SSD_file,datFile); 
 clear m
 

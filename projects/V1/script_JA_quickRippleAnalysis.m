@@ -15,7 +15,10 @@ sessionID = [projectName '-' basename];
 %     clear file
 % end
 
-ripples = DetectSWR(1+[54 35],'saveMat',true,'check',true,'useSPW',false,'useEEG',true);
+try ripples = getStruct(basepath,'ripples');
+catch
+    ripples = DetectSWR(1+[54 35],'saveMat',true,'check',true,'useSPW',false,'useEEG',true);
+end
 % ripples = FindRipples0(1+[54 35],'saveMat',true,'check',true,'useSPW',false,'useEEG',true);
 
 % lfp = GetAyaEEG(54);
@@ -24,7 +27,7 @@ ripples = DetectSWR(1+[54 35],'saveMat',true,'check',true,'useSPW',false,'useEEG
 % ripples = FindRipples(basepath,1+54,'noise',1+7,'saveMat',true,'restrict',goodIntervals);
 % figure; plot(tl,(zscore(double(lfp(:,2))))); Browse('all');
 
-[spikes,regionID,regionNames] = GetAyaSpikes(basepath);
+[spikes,regionID,regionNames] = GetAyaSpikes(basepath,false);
 % Get a single string to include in figure labels
 regionListString = regionNames; regionListString(2,:) = repmat({'->'},1,size(regionListString,2)); regionListString{end} = '';
 regionListString = strcat(regionListString{:});
@@ -42,7 +45,7 @@ r = ripples.timestamps;
 pre = InIntervals(r(:,1),sleep(1,:));
 post = InIntervals(r(:,1),sleep(2,:));
 
-write = false; % don't save the figures
+write = true; % don't save the figures
 %%
 
 nBins = 101;
@@ -55,7 +58,9 @@ for i=1:nNeurons
     mPost(i,:) = mean(h(post,:));
 end
 
-for kind=1:2,
+sorting = regionID;
+
+for kind=1:2
     if kind==1 % zscore together; this also captures changes in the global firing rate
         z = [mPre mPost];
         zPre = (mPre - mean(z,2))./std(z,[],2);
@@ -66,9 +71,11 @@ for kind=1:2,
     end
     zDiff = zPost - zPre;
 
+    sorting = regionID*1000 - mean(zPre(:,InIntervals(ht,[0 0.1])),2);
+
     clf
     subplot(2,3,1);
-    PlotColorMap(zPre,'x',ht);
+    PlotColorMap(sortby(zPre,sorting),'x',ht);
     set(gca,'TickDir','out');
     ylabel(['Neuron ID: ' regionListString]); xlabel('time from ripple start (s)');
     PlotHVLines(0,'v','k--','linewidth',2);
@@ -77,7 +84,7 @@ for kind=1:2,
     title('Pre sleep ripples')
 
     subplot(2,3,2);
-    PlotColorMap(zPost,'x',ht);
+    PlotColorMap(sortby(zPost,sorting),'x',ht);
     set(gca,'TickDir','out');
     ylabel(['Neuron ID: ' regionListString]); xlabel('time from ripple start (s)');
     PlotHVLines(cumsum(Accumulate(regionID))+0.5,'h','w--','linewidth',2);
@@ -87,7 +94,7 @@ for kind=1:2,
     clims
 
     subplot(2,3,3);
-    PlotColorMap(zDiff,'x',ht);
+    PlotColorMap(sortby(zDiff,sorting),'x',ht);
     set(gca,'TickDir','out');
     ylabel(['Neuron ID: ' regionListString]); xlabel('time from ripple start (s)');
     PlotHVLines(cumsum(Accumulate(regionID))+0.5,'h','w--','linewidth',2);
@@ -162,7 +169,7 @@ xlabel('time (s)')
 ylabel('ripple rate (per second)')
 % SaveFig(['G:\My Drive\Doctorado\Estancia Cornell\Lab\Proyecto Mental Imagery\Labmeeting\figures\rippleRate_' sessionID ])
 
-SaveFig(['M:\home\raly\results\V1\rippleRate_' sessionID])
+% SaveFig(['M:\home\raly\results\V1\rippleRate_' sessionID])
 %%
 for i=1:6
     subplot(2,3,i);

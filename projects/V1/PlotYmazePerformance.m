@@ -1,4 +1,4 @@
-function [correct,animalWentRight,skipStart] = PlotYmazePerformance(basepath)
+function [correct,animalWentRight,skipStart,trialType] = PlotYmazePerformance(basepath)
 
 if ~exist('basepath','var')
     basepath = pwd;

@@ -26,7 +26,7 @@ if size(y,2)~=length(x),
 end
 
 if isvector(y),
-    handle = plot(x,Smooth(y,smooth),'color',color);
+    handles = plot(x,Smooth(y,smooth),'color',color);
     return
 end
 
@@ -56,6 +56,6 @@ hold on;
 plot(x,y,'color',color,'linewidth',2);
 
 if nargout>0,
-    varargout{1} = handle;
-    varargout{2} = a;
+    varargout{1} = handles;
+%     varargout{2} = a;
 end

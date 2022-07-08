@@ -128,7 +128,7 @@ if mod(ntbuff,sampleRatio)~=0
 end
 
 nBytes = fInfo.bytes;
-nbChunks = floor(nBytes/(nbChan*sizeInBytes*chunksize));
+nbChunks = floor(nBytes/(nbChan*sizeInBytes*chunksize))-1;
 
 %% GET LFP FROM DAT
 

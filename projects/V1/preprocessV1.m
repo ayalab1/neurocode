@@ -178,6 +178,10 @@ if stateScore
     end
 end
 
+disp([datestr(clock) ': starting script_remove_JB_noise.m for session ' basepath '...']);
+script_remove_JB_noise
+disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' basepath '...']);
+
 %% Kilosort concatenated sessions
 if spikeSort
     kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);

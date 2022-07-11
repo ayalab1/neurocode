@@ -1,10 +1,10 @@
-function [data,arduinoOutput] = YmazeImagine(varargin)
+function [data,arduinoOutput] = YmazeGreen(varargin)
 
 %Ymaze - Run the Ymaze in AyAlab!
 %
 % Select the parameters you want and start the recording.
 %
-%  USAGE 
+%  USAGE
 %
 %    [data,arduinoOutput] = Ymaze(<options>)
 %
@@ -55,7 +55,7 @@ function [data,arduinoOutput] = YmazeImagine(varargin)
 folder = pwd;
 write = true;
 interruptable = 123; % F12 key
-screenid = 2;
+screenid = 1;
 blockSize = 6;
 nLeftPerBlock = 3;
 flashDuration = 1;
@@ -63,15 +63,7 @@ minimumHold = 0;
 maximumHold = 0;
 waitBetweenBeamAndReward = 0;
 show = true;
-sounds = true; 
-cueType = repelem([1;2;3],[10;10;100]); % 1 = normal trials (cue), 2 = sound trials (sounds), 3 = free imagery trials (no cues). 
-% substitute half the free imagery trials with normal trials (cue visible):
-rng(rem(floor(datenum(clock)),10));
-indices = find(cueType==3);
-[~,order] = sort(rand(length(indices),1));
-cueType(indices(order(1:2:end))) = 1;
-
-% note: the cue will still be presented in trials 2 and 3, but will be physically blocked by the experimenter.
+sounds = false; % Not yet implemented! TODO
 
 % Parameters that are not set by the user:
 % Trial order is pre-computed at the start of the script. How many blocks do we need to pre-compute to be sure we have enough for the whole task? I think 1000 blocks of 10 trials should be more than enough.
@@ -178,7 +170,7 @@ fopen(aHandle); % open arduino port
 
 % Trial order stuff:
 % precompute the blocks (the order of presentation of vertical vs horizontal stimuli
-rng(floor(datenum(clock))); % added on May 12 (so this will not affect V1Jean and AO52)​​
+rng(floor(datenum(clock))); % added on May 12 (so this will not affect V1Jean and AO52)​​; added the "floor" on July 5th
 [~, blockMatrix] = sort(rand(maxAllowedNumberOfBlocks, blockSize), 2); % assign random order (the order of random numbers)
 key = 2*ones(1:blockSize); key(1:nLeftPerBlock) = 1; % a "key" vector that translates that number order (from 1 to 10) into "left" and "right" (1=left, 2=right).
 blockMatrix = key(blockMatrix); % translate the block matrix using the "key" arduinoOutputs into these [1, 2] format
@@ -208,12 +200,9 @@ end
 % Sound stuff
 if sounds % create sound ramps to play later:
     sound = SoundRamp(20000, 5000, 0.8, 200000, 1); soundUpward = sound;
-    handle_upwardRamp = audioplayer(sound(:, 2), 1/median(diff(sound(:, 1))));
+    handle_upwardRamp = audioplayer(sound(:, 2), 1/mode(diff(sound(:, 1))));
     sound = SoundRamp(5000, 20000, 0.8, 200000, 1); soundDownward = sound;
-    handle_downwardRamp = audioplayer(sound(:, 2), 1/median(diff(sound(:, 1))));
-    % FIX: We don't know why, but the upward ramp sounds downwards and vice
-    % versa, so this is a quick fix:
-    sound = soundDownward; soundDownward = soundUpward; soundUpward = sound;
+    handle_downwardRamp = audioplayer(sound(:, 2), 1/mode(diff(sound(:, 1))));
 end
 
 % Psychtoolbox: graphics stuff
@@ -261,19 +250,16 @@ currentLine = 2;
 % (control, same luminance as shown stimuli but zero amplitude), -2 indicates a the appearance of a blank screen (completely black), while
 % -3 indicates that the screen continues to be blank (no change from before) as the line marks a non-screen event. -100 indicates that the experiment
 % has been aborted through pressing the interruption key (usually F12).  Values of -10, -20, and -30 indicates beam crossings to the mouse port, the 
-% left port, and the right port, respectively. Finally, values of 10 and 20 reflect the sound ramps associated with left and right trials,
-% respectively.
+% left port, and the right port, respectively.
 % The third column indicates flash status. Values of 0 and 1 indicate the actual flash status of a visual cue, with 0 being the initial version of the
 % grating and 1 indicating that it has flashed or flipped phase by 180 degrees (black becomes white and white becomes black). A value of 3 indicates
 % that a sound was played (the sound corresponding to the cue indicated in the second column). A value of -1 indicates the apparition of a blank
 % screen. A value of -50 indicates an error (crossing the wrong left/right beam), while a value of 50 indicates a correct choice (crossing the correct
-% left/right beam). In the case of sounds (second column = 10 or 20), this column indicates if the sound went through ok (1) or not (0).
+% left/right beam).
 % The fourth column indicates the current trial number.
 % The fifth column indicates the current mode of the task, with a value of 1 indicating that the mouse should direct itself towards the mouse port to
 % initiate a trial, 2 indicating that the mouse should go to the left arm for a reward, and 2 indicating that the mouse should go to the right arm for
 % a reward. 0 indicates the end of the experiment.
-% The sixth column (only available in the YmazeImagine version of the task)
-
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Start the loop for the task
@@ -285,7 +271,6 @@ arduinoOutputs = []; arduinoOutputs(1,:) = [data(1) zeros(1,6) 0];
 flushinput(aHandle); flushoutput(aHandle);
 timeLeft = minimumHold; repeatedTrial = false;
 mousePortCrossed = false; leftPortCrossed = false; rightPortCrossed = false;
-cue = cueType(1);
 while ~abortScript
     display(['In mode ' num2str(mode)]);
     switch mode % check the mode and execute the corresponding code
@@ -300,14 +285,12 @@ while ~abortScript
             data(currentLine, 3) = -1; % flash status "-1" is another code for blank screen
             data(currentLine, 4) = trialNumber; % current trial number
             data(currentLine, 5) = mode; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout)
-            data(currentLine, 6) = cue; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout, 6=cue type (visual, sound, or free)
             currentLine = currentLine+1;
             if write, dlmwrite(filename, data, 'precision', '%.8f'); dlmwrite(filename2, arduinoOutputs, 'precision', '%.8f'); end
 
             % Prepare the stimulus for when the mouse port beam gets crossed
             try
-                direction = presentationOrder(trialNumber+1);
-                cue = cueType(trialNumber+1);
+            direction = presentationOrder(trialNumber+1);
             catch
                 abortScript = true;
                 disp('Finished!')
@@ -319,9 +302,9 @@ while ~abortScript
             % Attention! Do not flip the screen before the video command
             % (imparative for the Left stimulus)
             if strcmp(stimulus,'left')
-                helper_YmazeGabor_prepare_left
+                helper_YmazeGreen_prepare_left
             else
-                helper_YmazeGabor_prepare_right
+                helper_YmazeGreen_prepare_right
             end
 
             % Wait for the mouse to approach the mouse port and block the beam:
@@ -342,7 +325,6 @@ while ~abortScript
             data(currentLine, 3) = 0; % flash status "0" is the initial orientation (not flipped like during a flash)
             data(currentLine, 4) = trialNumber; % current trial number
             data(currentLine, 5) = mode; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout)
-            data(currentLine, 6) = cue; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout, 6=cue type (visual, sound, or free)
             if write, dlmwrite(filename, data, 'precision', '%.8f'); dlmwrite(filename2, arduinoOutputs, 'precision', '%.8f'); end
             currentLine = currentLine + 1;
             timestamp0 = timestamp; flashTimestamp = timestamp;
@@ -351,14 +333,10 @@ while ~abortScript
                 checkInterruptionKey; % this script is found in the "private" folder
                 if abortScript, break; end
                 pause(arduinoCheckWaitTime); % check the beam or if experimenter aborted the experiment every 10 ms
-                if cue==2
-                    helper_YmazeImagine_sounds
+                if strcmp(stimulus,'left')
+                    helper_YmazeGreen_video_left
                 else
-                    if strcmp(stimulus,'left')
-                        helper_YmazeGabor_video_left
-                    else
-                        helper_YmazeGabor_video_right
-                    end
+                    helper_YmazeGreen_video_right
                 end
             end
             timeLeft = 0; % don't need this functionality in this training version where the cue stays on during the whole trial
@@ -383,15 +361,13 @@ while ~abortScript
             while ~leftPortCrossed && ~rightPortCrossed
                 % In this loop, we will check with the arduino if the mouse has crossed any beam
                 % and also check if the experimenter pressed F12 to abort the experiment
+                % In this loop, we will check with the arduino if the mouse has crossed the mouse port beam
+                % and also check if the experimenter pressed F12 to abort the experiment
                 checkArduino; % this script is found in the "private" folder
                 checkInterruptionKey; % this script is found in the "private" folder
                 if abortScript, break; end
                 pause(arduinoCheckWaitTime); % check the beam or if experimenter aborted the experiment every X ms
-                if cue==2
-                    helper_YmazeImagine_sounds
-                else
-                    helper_YmazeGabor_video_left
-                end
+                helper_YmazeGreen_video_left
             end
 
             % If we exited the while loop without aborting the script, this
@@ -413,13 +389,6 @@ while ~abortScript
                 display('Error!')
                 data(currentLine-1, 3) = -50; % flash status "-50" is indicates an error
             end
-            try
-                if cueType(trialNumber+1)==3,
-                    disp(['Next trial should have the cue HIDDEN']);
-                else
-                    disp(['Next trial should have the cue VISIBLE']);
-                end
-            end
             % Make the screen blank again
 %             Screen(win, 'FillRect', [0 0 0], [0 0 800 800]);
             timestamp = Screen('Flip', win);
@@ -428,7 +397,6 @@ while ~abortScript
             data(currentLine, 3) = -1; % flash status "-1" is another code for blank screen
             data(currentLine, 4) = trialNumber; % current trial number
             data(currentLine, 5) = mode; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout)
-            data(currentLine, 6) = cue; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout, 6=cue type (visual, sound, or free)
             currentLine = currentLine+1;
             if write, dlmwrite(filename, data, 'precision', '%.8f'); end % here we are adding the "correct/error" status to the previously saved arduino signal indicating the beam cross
         case 3 % Right
@@ -443,11 +411,7 @@ while ~abortScript
                 checkInterruptionKey; % this script is found in the "private" folder
                 if abortScript, break; end
                 pause(arduinoCheckWaitTime); % check the beam or if experimenter aborted the experiment every X ms
-                if cue==2
-                    helper_YmazeImagine_sounds
-                else
-                    helper_YmazeGabor_video_right
-                end
+                helper_YmazeGreen_video_right
             end
             % If we exited the while loop without aborting the script, this
             % means that one of the reward beams was crossed
@@ -468,13 +432,6 @@ while ~abortScript
                 display('Error!')
                 data(currentLine-1, 3) = -50; % flash status "-50" is indicates an error
             end
-            try
-                if cueType(trialNumber+1)==3,
-                    disp(['Next trial should have the cue HIDDEN']);
-                else
-                    disp(['Next trial should have the cue VISIBLE']);
-                end
-            end
             % Make the screen blank again
             Screen(win, 'FillRect', [0 0 0], [0 0 800 800]);
             timestamp = Screen('Flip', win);
@@ -483,7 +440,6 @@ while ~abortScript
             data(currentLine, 3) = -1; % flash status "-1" is another code for blank screen
             data(currentLine, 4) = trialNumber; % current trial number
             data(currentLine, 5) = mode; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout)
-            data(currentLine, 6) = cue; % current mode (1=mouse port, 2=left port, 3=right port, 5=timeout, 6=cue type (visual, sound, or free)
             currentLine = currentLine+1;
             if write, dlmwrite(filename, data, 'precision', '%.8f'); dlmwrite(filename2, arduinoOutputs, 'precision', '%.8f'); end
 

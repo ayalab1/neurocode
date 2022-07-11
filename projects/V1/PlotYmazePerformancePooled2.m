@@ -1,4 +1,4 @@
-animals = {'Unimplanted\m07','Unimplanted\m08','Unimplanted\m09','Unimplanted\m10'}; % Create a cell with all the animals.
+animals = {'Unimplanted\m11','Unimplanted\m14'}; % Create a cell with all the animals.
 fontsize = 15;% Just initiating some parameters.
 % 
 % listOfDays = [1 2 3 4 5 6 7 8 9 10 11 12]; % Specify the days of interest

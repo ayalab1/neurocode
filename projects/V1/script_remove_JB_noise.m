@@ -14,7 +14,7 @@ okChannels = ~ismember((1:size(data,1))',rejectChannels); okChannels = okChannel
 signal = mean(data(okChannels,:))';
 bad = [false; abs(diff(signal))>200];
 badIntervals = FindInterval(bad); badIntervals = [badIntervals(:,1)-1 badIntervals(:,2)+1];
-badIntervals = ConsolidateIntervalsFast(badIntervals,'epsilon',15);
+badIntervals = ConsolidateIntervals(badIntervals,'epsilon',15);
 save(fullfile(basepath,'noiseIntervalsDat.events.mat'),'badIntervals');
 datestr((datenum(clock)))
 noiseIntervalIndices = badIntervals;

@@ -154,5 +154,5 @@ set(handles{6},'position',posAxes{6});
 
 
 
-
+SaveFig(fullfile(pwd,['PlotYmazePerformancePooled 3']));
 

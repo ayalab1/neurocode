@@ -45,6 +45,8 @@ end
 %%
 figure(1) % write 'figure(2)' if we want to compare plots for the first half of the session versus the second half.
 clf
+
+figure('units','normalized','outerposition',[0 0 1 1])
 p = (n_correct./n_trials); 
 p = p*100; %proportion of correct trials over the total number
 pPlot = p; pPlot(isnan(n_trials)) = 50;

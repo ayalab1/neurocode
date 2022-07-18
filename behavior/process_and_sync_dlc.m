@@ -92,14 +92,40 @@ else
 end
 
 % Concatenating tracking fields...
-x = []; y = []; folder = []; samplingRate = []; description = [];
+folder = []; samplingRate = []; description = [];
+
+% check shape of data in all subsessions
 for ii = 1:size(tempTracking,2)
-    x = [x; tempTracking{ii}.position.x];
-    y = [y; tempTracking{ii}.position.y];
+    n_cols(ii) = size(tempTracking{ii}.position.x,2);
+    n_rows(ii) = size(tempTracking{ii}.position.x,1);
+end
+
+% set up nan matrix as different sessions may have more columns
+x = NaN(sum(n_rows),max(n_cols));
+y = NaN(sum(n_rows),max(n_cols));
+
+for ii = 1:size(tempTracking,2)
+    % first iteration offset is 0 as no concat has happened yet
+    if ii == 1
+        row_offset = 0;
+    end
+    % determine shape of data to insert
+    n_col = size(tempTracking{ii}.position.x,2);
+    n_row = size(tempTracking{ii}.position.x,1);
+    
+    % insert data using above shape and offset
+    x(row_offset+1:n_row+row_offset,1:n_col) = tempTracking{ii}.position.x;
+    y(row_offset+1:n_row+row_offset,1:n_col) = tempTracking{ii}.position.y;
+    
+    % change offset to reflect last inserted data
+    row_offset = n_row;
+    
+    % metadata
     folder{ii} = tempTracking{ii}.folder;
     samplingRate = [samplingRate; tempTracking{ii}.samplingRate];
     description{ii} = tempTracking{ii}.description;
 end
+
 % pull out notes
 for i = 1:length(tempTracking)
     notes{i} = [tempTracking{i}.folder,': ',tempTracking{i}.notes];

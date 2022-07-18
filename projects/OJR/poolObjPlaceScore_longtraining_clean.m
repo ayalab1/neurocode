@@ -52,14 +52,14 @@ box4hPFC(1:numel(DIcond{3}),3) = DIcond{3};
 
 c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
 c2=[.28 .68 .83]; %color2
-c3=[.93 .31 .31]; %color3
+c3=[.63 .93 .63];
 colors=[c3; c2; c1]; %reverse
 
 
 figure; 
-boxplot(box4hPFC,'Notch','on','Labels',{'4h delay 3x training','4h delay 3x training + PFC inh','4h delay 3x training + PFC delay'});hold on;
+boxplot(box4hPFC,'Notch','on','Labels',{'control','PFC inh','PFC delay'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-ylabel('discrimination index');title('PFC: 3x Training + 4h delayed recall');
+ylabel('Discrimination Index');title('PFC: 3x Training + 4h delayed recall');
 set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
 h = findobj(gca,'Tag','Box');

@@ -57,9 +57,10 @@ boxCon = nan(20,2);
 boxCon(1:numel(DIcond{6}),1) = DIcond{6};
 boxCon(1:numel(DIcond{1}),2) = DIcond{1};
 
-
 c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
 c2=[.28 .68 .83]; %color2
+c3=[.63 .93 .63];
+
 colors=[c2; c1]; %reverse
 
 
@@ -67,7 +68,7 @@ figure;
 boxplot(boxCon,'Notch','on','Labels',{'1h delay','4h delay'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
 set(lines, 'Color', 'k','LineWidth',2);
-ylabel('discrimination index');title('control animals');
+ylabel('Discrimination Index');title('control animals');
 
 plot(xlim,[0 0],'--k');hold on;
 h = findobj(gca,'Tag','Box');
@@ -105,15 +106,12 @@ box4h(1:numel(DIcond{2}),2) = DIcond{2};
 box4h(1:numel(DIcond{3}),3) = DIcond{3};
 
 
-c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
-c2=[.28 .68 .83]; %color2
-c3=[.93 .31 .31]; %color3
 colors=[c3; c2; c1]; %reverse
 
 figure; 
-boxplot(box4h,'Notch','on','Labels',{'control','closed loop','open loop'});hold on;
+boxplot(box4h,'Notch','on','Labels',{'Control','Closed Loop','Delayed'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-ylabel('discrimination index');title('4h delayed recall');
+ylabel('Discrimination Index');title('4h delayed recall');
 set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
 h2 = findobj(gca,'Tag','Box');
@@ -161,15 +159,13 @@ box4hPFC(1:numel(DIcond{5}),3) = DIcond{5};
 
 
 
-c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
-c2=[.28 .68 .83]; %color2
-c3=[.93 .31 .31]; %color3
+
 colors=[c3; c2; c1]; %reverse
 
 figure; 
-boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
+boxplot(box4hPFC,'Notch','on','Labels',{'Control','Closed Loop + PFC Inh','Closed Loop + Delayed'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-ylabel('discrimination index');title('PFC: 4h delayed recall');
+ylabel('Discrimination Index');title('PFC: 4h delayed recall');
 set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
 h3 = findobj(gca,'Tag','Box');
@@ -219,16 +215,14 @@ box4hPFC(1:numel(DIcond{7}),2) = DIcond{7};
 box4hPFC(1:numel(DIcond{8}),3) = DIcond{8};
 
 
-c1=[.23 .24 .23]; %color for plots as RGB - can change for both scatter and boxplot here
-c2=[.28 .68 .83]; %color2
-c3=[.93 .31 .31]; %color3
+
 colors=[c3; c2; c1]; %reverse
 
 
 figure; 
-boxplot(box4hPFC,'Notch','on','Labels',{'control','stim + inh','stim + delayed'});hold on;
+boxplot(box4hPFC,'Notch','on','Labels',{'Control','Closed Loop + PFC Inh','Closed Loop + PFC Delayed'});hold on;
 lines = findobj(gcf, 'type', 'line', 'Tag', 'Median');
-ylabel('discrimination index');title('PFC: 1h delayed recall');
+ylabel('Discrimination Index');title('PFC: 1h delayed recall');
 set(lines, 'Color', 'k','LineWidth',2);
 plot(xlim,[0 0],'--k');hold on;
 h4 = findobj(gca,'Tag','Box');

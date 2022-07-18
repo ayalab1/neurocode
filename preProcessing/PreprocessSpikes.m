@@ -10,7 +10,7 @@
 %% 1- extract spike times and waveforms for sorted clusters
 %if you intend to concatenate multiple kilosort runs into one spikes structure
 ifMultiKiloSort = 0; 
-session = sessionTemplate(pwd,'showGUI',false);
+session = sessionTemplate(pwd,'showGUI',true);
 f = dir('Kilosort*');
 % Make sure there is only one KiloSort folder before running, unless you
 % needed to spike sort probes separately (ifMultiKiloSort=1).
@@ -130,7 +130,7 @@ end
 df = table();
 df.basepath = basepath';
 df.basename = basename';
-writetable(df,['sessions_',date,'.csv'])
+writetable(df,['sessions_',date,'.csv']);
 
 % load all cell metrics
 cell_metrics = loadCellMetricsBatch('basepaths',basepath,'basenames',basename);

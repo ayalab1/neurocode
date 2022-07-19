@@ -18,6 +18,7 @@ basename = basenameFromBasepath(pwd);
 load(fullfile(pwd,[basename,'.spikes.cellinfo.mat']))
 
 %% 1-Calculate firing maps
+spikes = importSpikes('CellType',"Pyramidal Cell");
 [firingMaps] = firingMapAvg(posTrials,spikes);
 % save([basename '.firingMapsAvg.cellinfo.mat'],'firingMaps');
 
@@ -56,9 +57,9 @@ save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 lfp = getLFP(refCh);
 theta = bz_Filter(lfp,'passband',[5 15]);
 
-% boundaries of each PF
+%% boundaries of each PF
 for i=1:numel(spikes.UID) %
-    for j=1:2
+    for j=1%:2
         for k=1:length(placeFieldStats.mapStats{i}{j}.peak)
             if placeFieldStats.mapStats{i}{j}.peak(k) ~= 0
                 boundaries{i}{j}(k,1)= firingMaps.params.x(placeFieldStats.mapStats{i}{j}.fieldX(k,1));
@@ -75,7 +76,7 @@ count = 0;
 phases = [theta.timestamps, theta.phase];
 % calculate phase precession
 for i=1:numel(spikes.UID)
-    for j=1:2
+    for j=1%:2
         for k=1:length(placeFieldStats.mapStats{i}{j}.x) % number of place fields
             if ~isnan(placeFieldStats.mapStats{i}{j}.x(k))%(boundaries{i}{j}(k,1)) % for each PF not removed
                 count=count+1;
@@ -86,13 +87,14 @@ for i=1:numel(spikes.UID)
 end
 
 PP = struct; PP.dataPP = dataPP; PP.statsPP = statsPP;
-save([basename '.phasePrecession.mat'],'PP');
+%save([basename '.phasePrecession.mat'],'PP');
 
 for i=1:numel(dataPP)
     if ~isempty(dataPP{i})
+        figure
      PlotPhasePrecession(dataPP{i},statsPP{i});
-     pause;
-     close all;
+     %pause;
+     %close all;
     end
 end
 

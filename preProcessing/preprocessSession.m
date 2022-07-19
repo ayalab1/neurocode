@@ -17,8 +17,7 @@ function  preprocessSession(varargin)
 %   stateScore     - Run automatic brain state detection with SleepScoreMaster. Default true.
 %   spikeSort      - Run automatic spike sorting using Kilosort. Default true.
 %   cleanRez       - Run automatic noise detection of the Kilosort results (these will be pre-labelled as noise in phy). Default true.
-%   getPos         - get tracking positions. Default true.
-%   getPos         - get tracking positions. Default true.
+%   getPos         - get tracking positions. Default false.
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
 %

@@ -46,8 +46,8 @@ savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
 norm_zero_to_one = p.Results.norm_zero_to_one;
 maze_sizes = p.Results.maze_sizes;
-split_linearize = p.Results.split_linearize;
-remove_extra_fields = p.Results.remove_extra_fields;
+%split_linearize = p.Results.split_linearize;
+%remove_extra_fields = p.Results.remove_extra_fields;
 just_save_animal_behavior = p.Results.just_save_animal_behavior;
 
 basename = basenameFromBasepath(basepath);
@@ -81,7 +81,7 @@ for ep = session.epochs
 end
 task_epochs = [startTime,stopTime];
 
-%% Conver to cm 
+%% Convert to cm 
     if ~isempty(maze_sizes)
         pos_range = max(behavior.position.linearized) - min(behavior.position.linearized);
         convert_pix_to_cm_ratio = (pos_range / maze_sizes(1)); % using first maze size
@@ -129,8 +129,9 @@ for a = 1:numel(unique(behavior.position.index))
     behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
     behavior.trials(1:length(inbound_start),3) = 1;
     behavior.trials(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+    %behavior.trials(length(inbound_start)+length(outbound_start),3) = 2;
     behavior.trials = sortrows(behavior.trials);
-    behavior.trialID(1:length(behavior.trials),1) = a;
+    behavior.trialID(1:length(behavior.trials)-1,1) = a; %VERIFY IF THIS IS CORRECT!!
     behavior.trialID(:,2) = behavior.trials(:,3);
     behavior.trials = behavior.trials(:,1:2);
     behavior.trialIDname = {'centerToChamber';'chamberToCenter'}; % verify that this is correct 

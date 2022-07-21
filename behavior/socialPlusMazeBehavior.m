@@ -33,7 +33,7 @@ addParameter(p,'speedTh',2,@isnumeric); % speed cm/sec threshold for stop/run ti
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
-addParameter(p,'maze_sizes',70,@isnumeric); % width of mazes in cm
+addParameter(p,'maze_sizes',70,@isnumeric); % width of mazes in cm. 70 = calculated based on pythogorus theorem a2 = b2 + c2
 addParameter(p,'just_save_animal_behavior',false,@islogical); % true will only save animal behav file
 
 parse(p,varargin{:});
@@ -51,7 +51,6 @@ maze_sizes = p.Results.maze_sizes;
 just_save_animal_behavior = p.Results.just_save_animal_behavior;
 
 basename = basenameFromBasepath(basepath);
-
 %% Initialize/load behavior structure
 % the basic animal.behavior.mat structure should have been generated first
 % with general_behavior_file.m
@@ -120,6 +119,9 @@ end
 % behavior.posIndex(:,2) = NaN;
 
 states = unique(behavior.position.index(~isnan(behavior.position.index)));
+behavior.states = states; %save tracks indices and IDs
+behavior.stateNames = {'trackA';'trackB'; 'trackC'; 'trackD'};
+
 for a = states'
     
     laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
@@ -146,7 +148,6 @@ for a = states'
     behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
     behavior.trials(1:length(inbound_start),3) = 1;
     behavior.trials(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    %behavior.trials(length(inbound_start)+length(outbound_start),3) = 2;
     behavior.trials = sortrows(behavior.trials,1);
 %     behavior.trialID(1:length(behavior.trials)-1,1) = a; %VERIFY IF THIS IS CORRECT!!
     behavior.trialID = behavior.trials(:,3);
@@ -233,4 +234,3 @@ if savemat
 end
 
 end
-

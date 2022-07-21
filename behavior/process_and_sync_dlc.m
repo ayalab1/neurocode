@@ -118,7 +118,7 @@ for ii = 1:size(tempTracking,2)
     y(row_offset+1:n_row+row_offset,1:n_col) = tempTracking{ii}.position.y;
     
     % change offset to reflect last inserted data
-    row_offset = n_row;
+    row_offset = n_row + row_offset;
     
     % metadata
     folder{ii} = tempTracking{ii}.folder;

@@ -114,15 +114,14 @@ if norm_zero_to_one
 end
 
 %% Get laps
-% needs to be done for each of the 4 arms independently
-% behavior.posIndex = behavior.position.index;
-% behavior.posIndex(:,2) = NaN;
-
 states = unique(behavior.position.index(~isnan(behavior.position.index)));
-behavior.states = states; %save tracks indices and IDs
-behavior.stateNames = {'trackA';'trackB'; 'trackC'; 'trackD'};
 
-for a = states'
+%save states and tracks IDs/names in behavior file
+behavior.states = {0,'trackA';1,'trackB'; 2,'trackC'; 3,'trackD'};
+behavior.trialsIDname = {1,'chamberToCenter';2, 'centerToChamber'};
+
+
+for a = states(1)' % trials for trackA
     
     laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
         behavior.position.linearized(behavior.position.index==a),lapStart);
@@ -138,22 +137,97 @@ for a = states'
         end
     end
     
-%     dir1=find(ismember(behavior.timestamps',Restrict(behavior.timestamps(behavior.position.index==a),[inbound_start inbound_stop])));
-%     dir2=find(ismember(behavior.timestamps',Restrict(behavior.timestamps(behavior.position.index==a),[outbound_start outbound_stop])));
-%     behavior.posIndex(dir1,2)=1;
-%     behavior.posIndex(dir2,2)=2;
-    
-    % save lap information - NEEDS TO BE DONE DIFFERENTLY FOR THE 4 ARMS
-    behavior.trials = [];
-    behavior.trials =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
-    behavior.trials(1:length(inbound_start),3) = 1;
-    behavior.trials(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    behavior.trials = sortrows(behavior.trials,1);
-%     behavior.trialID(1:length(behavior.trials)-1,1) = a; %VERIFY IF THIS IS CORRECT!!
-    behavior.trialID = behavior.trials(:,3);
-    behavior.trials = behavior.trials(:,1:2);
+    behavior.trials_trackA = [];
+    behavior.trials_trackA =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
+    behavior.trials_trackA(1:length(inbound_start),3) = 1;
+    behavior.trials_trackA(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+    behavior.trials_trackA = sortrows(behavior.trials_trackA,1);
+
+    % save trials information in behavior file
+    behavior.trials_trackA(:,3) = behavior.trials_trackA(:,3);
+    behavior.trials_trackA(:,1:2) = behavior.trials_trackA(:,1:2);
 end
-behavior.trialIDname = {'centerToChamber';'chamberToCenter'}; % verify that this is correct
+
+for a = states(2)' % trials for trackB
+    
+    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
+        behavior.position.linearized(behavior.position.index==a),lapStart);
+
+    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
+    for i = 1:length([laps.start_ts])-1
+        if laps(i).direction == 1
+            outbound_start=cat(1,outbound_start,laps(i).start_ts);
+            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
+        elseif laps(i).direction == -1
+            inbound_start=cat(1,inbound_start,laps(i).start_ts);
+            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
+        end
+    end
+    
+    behavior.trials_trackB = [];
+    behavior.trials_trackB =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
+    behavior.trials_trackB(1:length(inbound_start),3) = 1;
+    behavior.trials_trackB(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+    behavior.trials_trackB = sortrows(behavior.trials_trackB,1);
+
+    % save trials information in behavior file
+    behavior.trials_trackB(:,3) = behavior.trials_trackB(:,3);
+    behavior.trials_trackB(:,1:2) = behavior.trials_trackB(:,1:2);
+end
+
+for a = states(3)' % trials for trackC
+    
+    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
+        behavior.position.linearized(behavior.position.index==a),lapStart);
+
+    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
+    for i = 1:length([laps.start_ts])-1
+        if laps(i).direction == 1
+            outbound_start=cat(1,outbound_start,laps(i).start_ts);
+            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
+        elseif laps(i).direction == -1
+            inbound_start=cat(1,inbound_start,laps(i).start_ts);
+            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
+        end
+    end
+    
+    behavior.trials_trackC = [];
+    behavior.trials_trackC =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
+    behavior.trials_trackC(1:length(inbound_start),3) = 1;
+    behavior.trials_trackC(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+    behavior.trials_trackC = sortrows(behavior.trials_trackC,1);
+
+    % save trials information in behavior file
+    behavior.trials_trackC(:,3) = behavior.trials_trackC(:,3);
+    behavior.trials_trackC(:,1:2) = behavior.trials_trackC(:,1:2);
+end
+
+for a = states(4)' % trials for trackD
+    
+    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
+        behavior.position.linearized(behavior.position.index==a),lapStart);
+
+    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
+    for i = 1:length([laps.start_ts])-1
+        if laps(i).direction == 1
+            outbound_start=cat(1,outbound_start,laps(i).start_ts);
+            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
+        elseif laps(i).direction == -1
+            inbound_start=cat(1,inbound_start,laps(i).start_ts);
+            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
+        end
+    end
+    
+    behavior.trials_trackD = [];
+    behavior.trials_trackD =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
+    behavior.trials_trackD(1:length(inbound_start),3) = 1;
+    behavior.trials_trackD(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
+    behavior.trials_trackD = sortrows(behavior.trials_trackD,1);
+
+    % save trials information in behavior file
+    behavior.trials_trackD(:,3) = behavior.trials_trackD(:,3);
+    behavior.trials_trackD(:,1:2) = behavior.trials_trackD(:,1:2);
+end
 
 % save speed threshold which might be different for each session
 behavior.speedTh = speedTh;
@@ -188,27 +262,11 @@ behavior.speed = interpolated(:,2)';
 % run(runDur<0.8 | runDur>15,:) = []; % remove run epochs that's too short or too long
 % behavior.run = run;
 
-%% Separate positions for each direction of running
-% this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
-
-% probably we don't need this
-% trials{1}.timestamps = [inbound_start inbound_stop];
-% trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-% trials{2}.timestamps = [outbound_start outbound_stop];
-% trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
-% 
-% for i = 1:2
-%     positionTrials{i} = Restrict([behavior.timestamps' behavior.position.linearized'],trials{i}.timestamps);
-%     % probably we don't need this
-%     positionTrialsRun{i} = Restrict(positionTrials{i},run);
-%     trials{i}.timestampsRun = SubtractIntervals(trials{i}.timestamps, SubtractIntervals([0 Inf],run));
-% end
-
 %% Manipulations
 
 
 %% Plots to check results
-% needs improvement
+%NEED TO IMPLEMENT
 if show_fig
     figure;
     plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'.k','LineWidth',2);hold on;

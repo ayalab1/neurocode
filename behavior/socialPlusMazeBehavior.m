@@ -267,15 +267,15 @@ behavior.speed = interpolated(:,2)';
 
 %% Plots to check results
 %NEED TO IMPLEMENT
-if show_fig
-    figure;
-    plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'.k','LineWidth',2);hold on;
-    plot(behavior.timestamps,behavior.speed,'r','LineWidth',2);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID == 1,:),'color','b','alpha',.5);hold on;
-    PlotIntervals(behavior.trials(behavior.trialID == 2,:),'color','g','alpha',.5);hold on;
-    ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
-    saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
-end
+% % if show_fig
+% %     figure;
+% %     plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'.k','LineWidth',2);hold on;
+% %     plot(behavior.timestamps,behavior.speed,'r','LineWidth',2);hold on;
+% %     PlotIntervals(behavior.trials(behavior.trialID == 1,:),'color','b','alpha',.5);hold on;
+% %     PlotIntervals(behavior.trials(behavior.trialID == 2,:),'color','g','alpha',.5);hold on;
+% %     ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
+% %     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
+% % end
 
 % if remove_extra_fields
 %     behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});

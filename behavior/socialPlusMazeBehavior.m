@@ -118,8 +118,7 @@ states = unique(behavior.position.index(~isnan(behavior.position.index)));
 
 %save states and tracks IDs/names in behavior file
 behavior.states = {0,'trackA';1,'trackB'; 2,'trackC'; 3,'trackD'};
-behavior.trialsIDname = {1,'chamberToCenter';2, 'centerToChamber'};
-
+behavior.trials = {1,'chamberToCenter';2, 'centerToChamber'};
 
 for a = states(1)' % trials for trackA
     

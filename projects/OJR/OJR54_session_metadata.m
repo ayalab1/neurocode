@@ -27,7 +27,7 @@ for i = 1:length(basepaths)
     session.brainRegions.CA1.electrodeGroups= [1,2,3,4,5];
     %PFC (PL)
     session.brainRegions.PL.channels=[65,78,83,96,79,82,66,80,81,77,84,68,76,85,69,75,86,70,74,87,95,73,88,94,72,89,93,71,90,92,91,67,97,110,115,128,111,114,98,112,113,99,109,116,100,108,117,101,107,118,102,106,119,127,105,120,126,104,121,125,103,122,124,123,129,142,147,160,143,146,130,144,145,131,141,148,132,140,149,133,139,150,134,138,151,159,137,152,158,136,153,157,135,154,156,155,161,174,179,192,175,178,162,176,177,163,173,180,164,172,181,165,171,182,166,170,183,191,169,184,190,168,185,189,167,186,188,187];
-    session.electrodeGroups=[6,7,8,9];
+    session.brainRegions.PL.electrodeGroups=[6,7,8,9];
     %animal data    
     session.animal.name='OJR54';
     session.animal.sex='Male';
@@ -95,6 +95,13 @@ for i = 1:length(basepaths)
         elseif contains(session.epochs{1, ii}.name, ["train" , "test"])
             session.epochs{1, ii}.behavioralParadigm = 'Spatial Object Recognition';
             session.epochs{1, ii}.environment = 'Open Field + Objects';
+        elseif contains(session.epochs{1, ii}.name, "train")
+            session.epochs{1, ii}.manipulation = 'SOR Training';
+        elseif contains(session.epochs{1, ii}.name, "test")
+            session.epochs{1, ii}.manipulation = 'SOR Test';
+        else
+            session.epochs{1, ii}.behavioralParadigm = '';
+            session.epochs{1, ii}.environment = '';
         end
    end
     %spikeSorting

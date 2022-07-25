@@ -1,5 +1,14 @@
 basepaths = {'N:\OJRproject\OJR54\day6',...
     'N:\OJRproject\OJR54\day8',...
+    'N:\OJRproject\OJR54\day10',...
+    'N:\OJRproject\OJR54\day11',...
+    'N:\OJRproject\OJR54\day12',...
+    'N:\OJRproject\OJR54\day13',...
+    'N:\OJRproject\OJR54\day14',...
+    'N:\OJRproject\OJR54\day15',...
+    'N:\OJRproject\OJR54\day16',...   
+    'N:\OJRproject\OJR54\day17',...
+    'N:\OJRproject\OJR54\day18',...
     };
  
  
@@ -74,7 +83,20 @@ for i = 1:length(basepaths)
     %Tags (minimally used)
     session.analysisTags.probeslayout='poly2';
     session.analysisTags.probesVerticalSpacing=20;
-    %epochs -TODO add if exists for names
+   
+   %epochs find certain epochs and add paradigms and envs
+   for ii=1:length(session.epochs)
+        if contains(session.epochs{1, ii}.name, "sleep")
+            session.epochs{1, ii}.behavioralParadigm = 'Sleep';
+            session.epochs{1, ii}.environment = 'Homecage';
+        elseif contains(session.epochs{1, ii}.name, ["of", "openfield"])
+            session.epochs{1, ii}.behavioralParadigm = 'Open Field';
+            session.epochs{1, ii}.environment = 'Open Field';
+        elseif contains(session.epochs{1, ii}.name, ["train" , "test"])
+            session.epochs{1, ii}.behavioralParadigm = 'Spatial Object Recognition';
+            session.epochs{1, ii}.environment = 'Open Field + Objects';
+        end
+   end
     %spikeSorting
     session.spikeSorting{1, 1}.format='Phy';
     session.spikeSorting{1, 1}.method='KiloSort';

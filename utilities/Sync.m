@@ -118,8 +118,13 @@ for i = 1:nSync,
 				% Enlarge matrices if necessary
 				synchronized = [synchronized;nan(blockLength,size(samples,2))];
 				indices = [indices;nan(blockLength,1)];
-			end
-			synchronized(k:k+nj-1,:) = [samples(j,1)-sync(i) samples(j,2:end)];
+            end
+            %add edge case of only one time to align
+            if nj > 1
+                synchronized(k:k+nj-1,:) = [samples(j,1)-sync(i) samples(j,2:end)];
+            else
+                synchronized(k,:) = samples(j,1)-sync(i);
+            end
 			indices(k:k+nj-1,1) = i*ones(size(j));
 		end
 		k = k + nj;

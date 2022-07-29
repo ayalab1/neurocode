@@ -155,7 +155,7 @@ for ibatch = 1:nbChunks
         try
             dat = reshape(dat,[nbChan (chunksize+2*ntbuff)]);
         catch
-            warning('tell Raly!');
+            warning('This should be fixed.. tell Raly!');
             keyboard;
         end
     else
@@ -163,7 +163,7 @@ for ibatch = 1:nbChunks
         try
             dat = reshape(dat,[nbChan (chunksize+ntbuff)]);
         catch
-            warning('tell Raly!');
+            warning('This should be fixed.. tell Raly!');
             keyboard;
         end
     end
@@ -209,7 +209,7 @@ if ~isempty(remainder)
     try
         dat = reshape(dat,[nbChan (remainder+ntbuff)]);
     catch
-        warning('tell Raly!');
+        warning('Check the number of channels in the xml match what you recorded. If not the problem, tell Raly!');
         keyboard;
     end
  

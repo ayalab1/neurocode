@@ -1,4 +1,4 @@
-function RasterPlot(spikes, height, varargin)
+function H = RasterPlot(spikes, height, varargin)
 
 % "spikes" is a list of [timestamps id]
 % provide desired height of spikes
@@ -14,4 +14,5 @@ rows = spikes(:,2);
 times = [times times nan(size(times))]';
 rows =  [rows-0.45*height rows+0.45*height nan(size(rows))]';
 
+H = figure();
 plot(times(:),rows(:),varargin{:});

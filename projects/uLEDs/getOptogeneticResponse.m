@@ -7,7 +7,7 @@ function [optogeneticResponses] = getOptogeneticResponse(varargin)
 % <OPTIONALS>
 % analogCh      List of analog channels with light pulses. If not provided,
 %                   gets psth for all analog channels.
-% digitalCh     List of digital channels with light pulses. By defaut,
+% digitalCh     List of digital channels with light pulses. By default,
 %                   none.
 % spikes        buzcode spikes structure, if not provided tries loadSpikes.
 % basepath      By default pwd.
@@ -16,7 +16,10 @@ function [optogeneticResponses] = getOptogeneticResponse(varargin)
 % winSize       In seconds, default, 0.5.
 % rasterPlot    Default true.
 % ratePlot      Default true.
-% winSizePlot Default [-0.1 .5];
+% winSizePlot   Default [-0.1 .5];
+% plotStim      Default [0]. Can input stimulation onset and offset points
+%               in seconds (ie [0 0.2]) to show stim times. If inputting an
+%               empty array, nothing will plot.
 %
 % OUTPUTS
 % optogeneticResponse
@@ -35,6 +38,7 @@ addParameter(p,'winSize',1,@isnumeric);
 addParameter(p,'rasterPlot',true,@islogical);
 addParameter(p,'ratePlot',true,@islogical);
 addParameter(p,'winSizePlot',[-.1 .5],@isnumeric);
+addParameter(p,'plotStim',[0],@isnumeric);
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',false,@islogical);
 
@@ -50,6 +54,7 @@ rasterPlot = p.Results.rasterPlot;
 ratePlot = p.Results.ratePlot;
 saveMat = p.Results.saveMat;
 winSizePlot = p.Results.winSizePlot;
+plotStim = p.Results.plotStim;
 force = p.Results.force;
 
 % Deal with inputs
@@ -225,7 +230,17 @@ if rasterPlot
             subplot(7,ceil(size(spikes.UID,2)/7),jj); % autocorrelogram
             plot(rast_x, rast_y,'.','MarkerSize',1)
             hold on
-            plot(t(t>winSizePlot(1) & t<winSizePlot(2)), resp(t>winSizePlot(1) & t<winSizePlot(2)) * kk/max(resp)/2,'k','LineWidth',2);
+            plot(t(t>winSizePlot(1) & t<winSizePlot(2)), resp(t>winSizePlot(1) & t<winSizePlot(2)) * kk/max(resp)/2,'k','LineWidth',2); hold on
+            if ~isempty(plotStim)
+                if length(plotStim)==1
+                    xline(plotStim,'r--');
+                elseif length(plotStim)>2
+                    error('length of plotStim exceeds length of 2. Please only define relative stimulation onset and offset times');
+                else
+                    xline(plotStim(1),'r--'); hold on
+                    xline(plotStim(2),'r--');
+                end
+            end                    
             xlim([winSizePlot(1) winSizePlot(2)]); ylim([0 kk]);
             title(num2str(jj),'FontWeight','normal','FontSize',10);
 
@@ -247,13 +262,26 @@ if ratePlot
         figure
         subplot(1,2,1)
         imagesc([t(1) t(end)],[1 size(optogeneticResponses.responsecurve,1)],...
-            squeeze(optogeneticResponses.responsecurveSmooth(:,optogeneticResponses.channel==channels(ii),:))); caxis([0 10]); colormap(jet);
+            squeeze(optogeneticResponses.responsecurveSmooth(:,optogeneticResponses.channel==channels(ii),:))); hold on 
+        caxis([0 10]); colormap(jet);
+        xline(0,'w--');
         set(gca,'TickDir','out'); xlabel('Time'); ylabel('Cells'); xlim([winSizePlot(1) winSizePlot(2)]);
         title('Rate [0 to 10 Hz]','FontWeight','normal','FontSize',10);
         
         subplot(1,2,2)
         imagesc([t(1) t(end)],[1 size(optogeneticResponses.responsecurve,1)],...
-            squeeze(optogeneticResponses.responsecurveZSmooth(:,optogeneticResponses.channel==channels(ii),:))); caxis([-3 3]); colormap(jet);
+            squeeze(optogeneticResponses.responsecurveZSmooth(:,optogeneticResponses.channel==channels(ii),:))); hold on
+        caxis([-3 3]); colormap(jet);
+        if ~isempty(plotStim)
+            if length(plotStim)==1
+                xline(plotStim,'k--');
+            elseif length(plotStim)>2
+                error('length of plotStim exceeds length of 2. Please only define relative stimulation onset and offset times');
+            else
+                xline(plotStim(1),'k--'); hold on
+                xline(plotStim(2),'k--');
+            end
+        end
         set(gca,'TickDir','out'); xlabel('Time'); ylabel('Cells'); xlim([winSizePlot(1) winSizePlot(2)]);
         title('Z Rate [-3 to 3 SD]','FontWeight','normal','FontSize',10);
         saveas(gcf,['SummaryFigures\AnalogPulsesPsth_',num2str(channels(ii)) ,'ch.png']); 

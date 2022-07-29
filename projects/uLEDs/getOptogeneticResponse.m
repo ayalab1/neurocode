@@ -7,7 +7,7 @@ function [optogeneticResponses] = getOptogeneticResponse(varargin)
 % <OPTIONALS>
 % analogCh      List of analog channels with light pulses. If not provided,
 %                   gets psth for all analog channels.
-% digitalCh     List of digital channels with light pulses. By defaut,
+% digitalCh     List of digital channels with light pulses. By default,
 %                   none.
 % spikes        buzcode spikes structure, if not provided tries loadSpikes.
 % basepath      By default pwd.

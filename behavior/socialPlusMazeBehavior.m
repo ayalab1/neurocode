@@ -113,172 +113,74 @@ if norm_zero_to_one
     behavior.position.linearized = ZeroToOne(behavior.position.linearized);
 end
 
-%% Get laps
-states = unique(behavior.position.index(~isnan(behavior.position.index)));
-
-%save states and tracks IDs/names in behavior file
-behavior.states = {0,'trackA';1,'trackB'; 2,'trackC'; 3,'trackD'};
-behavior.trials = {1,'chamberToCenter';2, 'centerToChamber'};
-
-for a = states(1)' % trials for trackA
-    
-    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
-        behavior.position.linearized(behavior.position.index==a),lapStart);
-
-    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
-    for i = 1:length([laps.start_ts])-1
-        if laps(i).direction == 1
-            outbound_start=cat(1,outbound_start,laps(i).start_ts);
-            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
-        elseif laps(i).direction == -1
-            inbound_start=cat(1,inbound_start,laps(i).start_ts);
-            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
-        end
-    end
-    
-    behavior.trials_trackA = [];
-    behavior.trials_trackA =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
-    behavior.trials_trackA(1:length(inbound_start),3) = 1;
-    behavior.trials_trackA(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    behavior.trials_trackA = sortrows(behavior.trials_trackA,1);
-
-    % save trials information in behavior file
-    behavior.trials_trackA(:,3) = behavior.trials_trackA(:,3);
-    behavior.trials_trackA(:,1:2) = behavior.trials_trackA(:,1:2);
-end
-
-for a = states(2)' % trials for trackB
-    
-    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
-        behavior.position.linearized(behavior.position.index==a),lapStart);
-
-    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
-    for i = 1:length([laps.start_ts])-1
-        if laps(i).direction == 1
-            outbound_start=cat(1,outbound_start,laps(i).start_ts);
-            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
-        elseif laps(i).direction == -1
-            inbound_start=cat(1,inbound_start,laps(i).start_ts);
-            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
-        end
-    end
-    
-    behavior.trials_trackB = [];
-    behavior.trials_trackB =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
-    behavior.trials_trackB(1:length(inbound_start),3) = 1;
-    behavior.trials_trackB(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    behavior.trials_trackB = sortrows(behavior.trials_trackB,1);
-
-    % save trials information in behavior file
-    behavior.trials_trackB(:,3) = behavior.trials_trackB(:,3);
-    behavior.trials_trackB(:,1:2) = behavior.trials_trackB(:,1:2);
-end
-
-for a = states(3)' % trials for trackC
-    
-    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
-        behavior.position.linearized(behavior.position.index==a),lapStart);
-
-    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
-    for i = 1:length([laps.start_ts])-1
-        if laps(i).direction == 1
-            outbound_start=cat(1,outbound_start,laps(i).start_ts);
-            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
-        elseif laps(i).direction == -1
-            inbound_start=cat(1,inbound_start,laps(i).start_ts);
-            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
-        end
-    end
-    
-    behavior.trials_trackC = [];
-    behavior.trials_trackC =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
-    behavior.trials_trackC(1:length(inbound_start),3) = 1;
-    behavior.trials_trackC(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    behavior.trials_trackC = sortrows(behavior.trials_trackC,1);
-
-    % save trials information in behavior file
-    behavior.trials_trackC(:,3) = behavior.trials_trackC(:,3);
-    behavior.trials_trackC(:,1:2) = behavior.trials_trackC(:,1:2);
-end
-
-for a = states(4)' % trials for trackD
-    
-    laps = FindLapsNSMAadapted(behavior.timestamps(behavior.position.index==a),...
-        behavior.position.linearized(behavior.position.index==a),lapStart);
-
-    outbound_start=[]; outbound_stop=[]; inbound_start=[]; inbound_stop=[];
-    for i = 1:length([laps.start_ts])-1
-        if laps(i).direction == 1
-            outbound_start=cat(1,outbound_start,laps(i).start_ts);
-            outbound_stop=cat(1,outbound_stop,laps(i+1).start_ts);
-        elseif laps(i).direction == -1
-            inbound_start=cat(1,inbound_start,laps(i).start_ts);
-            inbound_stop=cat(1,inbound_stop,laps(i+1).start_ts);
-        end
-    end
-    
-    behavior.trials_trackD = [];
-    behavior.trials_trackD =[[inbound_start;outbound_start],[inbound_stop;outbound_stop]];
-    behavior.trials_trackD(1:length(inbound_start),3) = 1;
-    behavior.trials_trackD(length(inbound_start)+1:length(inbound_start)+length(outbound_start),3) = 2;
-    behavior.trials_trackD = sortrows(behavior.trials_trackD,1);
-
-    % save trials information in behavior file
-    behavior.trials_trackD(:,3) = behavior.trials_trackD(:,3);
-    behavior.trials_trackD(:,1:2) = behavior.trials_trackD(:,1:2);
-end
-
 % save speed threshold which might be different for each session
 behavior.speedTh = speedTh;
 
-%% Get periods of running
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:));
-t = behavior.timestamps(ok);
-speed = LinearVelocity([behavior.timestamps(ok)', behavior.position.x(ok)', behavior.position.y(ok)'],5);
-interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
-behavior.speed = interpolated(:,2)';
+%% Find directions (centre to chamber = 1) and (chamber to center = -1) 
+% find the difference between each position sucha that +ve value represents
+% one direction and negative vale represents the other. 
 
-% if isempty(maze_sizes)
-%     warning('data is not in cm, it is highly recommended to convert to cm')
-%     if isempty(speedTh)
-%         speedTh = 100;%prctile(behavior.speed(~isoutlier(behavior.speed)),10);
-%     end
-% end
+linearized = behavior.position.linearized' ;% can apply median filter on linearized
+%linearized = medfilt1(linearized)
 
-% run = t(FindInterval(interpolated(ok)>speedTh));
-% run = ConsolidateIntervals(run,'epsilon',0.01);
-% [in,w] = InIntervals(behavior.timestamps(:),run);
-% peak = Accumulate(w(in),behavior.speed(in)','mode','max');
-% % remove outliers (data in between sessions gives outlier speeds)
-% [~,isOutlier] = RemoveOutliers(peak);
-% % remove run epochs that don't reach the speed threshold
-% run(peak<0.1 | isOutlier,:) = [];
-% 
-% % remove trial boundaries. The purpose of this is that the "turning" motion ending one trial would get separated from the
-% % running epoch on following trial and it can then be removed with the duration threshold
-% run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.001));
-% runDur = run(:,2)-run(:,1);
-% run(runDur<0.8 | runDur>15,:) = []; % remove run epochs that's too short or too long
-% behavior.run = run;
+linearizedDiff = diff(linearized);
+linearizedAscend = linearizedDiff >= 0; 
+linearizedAscendi = find(linearizedAscend) + 1; %add 1 to make a vector of same length
+linearizedDescend = linearizedDiff < 0;
+linearizedDescendi = find(linearizedDescend) + 1; %add 1 to make a vector of same length
 
-%% Manipulations
+dummy = nan(length(linearized),1); %create a dummy vector and add 1 or -1 for ascending and descendng tracker points.
+dummy(linearizedAscendi) = 1;
+dummy(linearizedDescendi) = -1;
 
+%outbounds = behavior.position.linearized(dummy==1)
+outboundi = dummy==1;
+%inbounds= behavior.position.linearized(dummy==0)
+inboundi = dummy==-1;
 
-%% Plots to check results
-%NEED TO IMPLEMENT
-% % if show_fig
-% %     figure;
-% %     plot(behavior.timestamps,behavior.position.linearized-min(behavior.position.linearized),'.k','LineWidth',2);hold on;
-% %     plot(behavior.timestamps,behavior.speed,'r','LineWidth',2);hold on;
-% %     PlotIntervals(behavior.trials(behavior.trialID == 1,:),'color','b','alpha',.5);hold on;
-% %     PlotIntervals(behavior.trials(behavior.trialID == 2,:),'color','g','alpha',.5);hold on;
-% %     ylim([-1,max(behavior.position.linearized)-min(behavior.position.linearized)])
-% %     saveas(gcf,[basepath,filesep,[basename,'.linearTrackBehavior.fig']]);
-% % end
+%verify if the ascending and descending tracking makes sense
+plot(behavior.timestamps(outboundi),behavior.position.linearized(outboundi),'.k');
+hold on;
+plot(behavior.timestamps(inboundi),behavior.position.linearized(inboundi),'.r');
+hold off; 
 
-% if remove_extra_fields
-%     behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});
-% end
+%% find timestamps intervals for outbounds(centre to chamber) and inbounds(chamber to center) 
+
+% without speed threshold
+intervalsOutbound = behavior.timestamps(FindInterval(outboundi));
+%sum(diff(intervalsOutbound,[],2))
+
+%indexInterval = FindInterval(inboundi)
+intervalsInbound = behavior.timestamps(FindInterval(inboundi));
+%PlotIntervals(intervalsInbound,'color','b','alpha',.5);hold on;
+
+% can apply speed threshold to get the running and non-runing trails
+figure; plot(behavior.timestamps,behavior.speed, '.k');
+PlotHVLines(behavior.speedTh,'h') % can increase or decrease speedTh depending on how well animal runs 
+FindInterval(behavior.speed>behavior.speedTh);
+
+running = behavior.timestamps(FindInterval(behavior.speed>behavior.speedTh));
+%these two variables will be used in downstream place cells analysis
+intervalsOutboundRUN = behavior.timestamps(FindInterval(outboundi)),running;
+intervalsInboundRUN = behavior.timestamps(FindInterval(inboundi)),running;
+%sum(diff(running,[],2))
+
+nonrunning = SubtractIntervals([0 Inf],running);
+intervalsOutboundNoRun= SubtractIntervals(behavior.timestamps(FindInterval(outboundi)),nonrunning);
+intervalsInboundNoRun = SubtractIntervals(behavior.timestamps(FindInterval(inboundi)),nonrunning);
+%sum(diff(intervalsOutbound,[],2))
+
+%Create the variables to save in the general behavior file (saving running
+%vars ONLY)
+behavior.RUNdirection = vertcat(intervalsOutboundRUN,intervalsInboundRUN);
+behavior.RUNdirectionLabel= [repmat(1,length(intervalsOutboundRUN),1); repmat(-1,length(intervalsInboundRUN),1)];
+
+%% Find timestamp intervals for four states (i.e., time stamps for armA, armsB, armC and armD 
+% and save in general behavior file
+
+statesi = find(behavior.position.index) + 1;
+behavior.states = behavior.timestamps(FindInterval(statesi)); % VERFIY THIS!!
+behavior.stateNames = {'trackA';'trackB';'trackC';'trackD'};
 
 %% Generate output variables
 if savemat
@@ -286,7 +188,6 @@ if savemat
         save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
     else
         save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
-%         save([basepath,filesep,[basename,'.trials.mat']],'trials');
     end
 end
 

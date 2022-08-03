@@ -29,7 +29,7 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'behavior',[],@isnumeric);
 addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
 addParameter(p,'lapStart',15,@isnumeric); % percent of linear track to sep laps
-addParameter(p,'speedTh',2,@isnumeric); % speed cm/sec threshold for stop/run times
+addParameter(p,'speedTh',5,@isnumeric); % speed cm/sec threshold for stop/run times
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
 addParameter(p,'norm_zero_to_one',false,@islogical); % normalize linear coords 0-1
@@ -80,6 +80,26 @@ for ep = session.epochs
 end
 task_epochs = [startTime,stopTime];
 
+%% clean jumping points (outliers) in tracking 
+% start = [];
+% stop = [];
+% for ep = 1:length(session.epochs)
+%     if ~contains(session.epochs{ep}.environment,'sleep')
+%         start = [start,session.epochs{ep}.startTime];
+%         stop = [stop,session.epochs{ep}.stopTime];
+%     end
+% end
+%     
+good_idx = manual_trackerjumps(behavior.timestamps,...
+    behavior.position.x,...
+    behavior.position.y,...
+    startTime,...
+    stopTime,...
+    basepath,'darkmode',false);
+
+behavior.position.x(~good_idx) = NaN;
+behavior.position.y(~good_idx) = NaN;
+
 %% Convert to cm
 if ~isempty(maze_sizes)
     pos_range = max(behavior.position.x) - min(behavior.position.x);
@@ -107,14 +127,11 @@ if ~isempty(maze_sizes)
             convert_pix_to_cm_ratio;
     end
 end
-
-% normalize?
-if norm_zero_to_one
-    behavior.position.linearized = ZeroToOne(behavior.position.linearized);
-end
-
-% save speed threshold which might be different for each session
-behavior.speedTh = speedTh;
+% 
+% % normalize?
+% if norm_zero_to_one
+%     behavior.position.linearized = ZeroToOne(behavior.position.linearized);
+% end
 
 %% Find directions (centre to chamber = 1) and (chamber to center = -1) 
 % find the difference between each position sucha that +ve value represents
@@ -146,41 +163,24 @@ hold off;
 
 %% find timestamps intervals for outbounds(centre to chamber) and inbounds(chamber to center) 
 
-% without speed threshold
 intervalsOutbound = behavior.timestamps(FindInterval(outboundi));
+%PlotIntervals(intervalsOutbound,'color','b','alpha',.5);hold on;
 %sum(diff(intervalsOutbound,[],2))
 
 %indexInterval = FindInterval(inboundi)
 intervalsInbound = behavior.timestamps(FindInterval(inboundi));
-%PlotIntervals(intervalsInbound,'color','b','alpha',.5);hold on;
+%PlotIntervals(intervalsInbound,'color','b','alpha',.5);hold off;
 
-% can apply speed threshold to get the running and non-runing trails
+%Create the variables to save in the general behavior file
+behavior.direction = vertcat(intervalsOutbound,intervalsInbound);
+behavior.directionLabel= [repmat(1,length(intervalsOutbound),1); repmat(-1,length(intervalsInbound),1)];
+
+%%
+% save speed threshold which might be different for each session
 figure; plot(behavior.timestamps,behavior.speed, '.k');
 PlotHVLines(behavior.speedTh,'h') % can increase or decrease speedTh depending on how well animal runs 
-FindInterval(behavior.speed>behavior.speedTh);
 
-running = behavior.timestamps(FindInterval(behavior.speed>behavior.speedTh));
-%these two variables will be used in downstream place cells analysis
-intervalsOutboundRUN = behavior.timestamps(FindInterval(outboundi)),running;
-intervalsInboundRUN = behavior.timestamps(FindInterval(inboundi)),running;
-%sum(diff(running,[],2))
-
-nonrunning = SubtractIntervals([0 Inf],running);
-intervalsOutboundNoRun= SubtractIntervals(behavior.timestamps(FindInterval(outboundi)),nonrunning);
-intervalsInboundNoRun = SubtractIntervals(behavior.timestamps(FindInterval(inboundi)),nonrunning);
-%sum(diff(intervalsOutbound,[],2))
-
-%Create the variables to save in the general behavior file (saving running
-%vars ONLY)
-behavior.RUNdirection = vertcat(intervalsOutboundRUN,intervalsInboundRUN);
-behavior.RUNdirectionLabel= [repmat(1,length(intervalsOutboundRUN),1); repmat(-1,length(intervalsInboundRUN),1)];
-
-%% Find timestamp intervals for four states (i.e., time stamps for armA, armsB, armC and armD 
-% and save in general behavior file
-
-statesi = find(behavior.position.index) + 1;
-behavior.states = behavior.timestamps(FindInterval(statesi)); % VERFIY THIS!!
-behavior.stateNames = {'trackA';'trackB';'trackC';'trackD'};
+behavior.speedTh = speedTh;
 
 %% Generate output variables
 if savemat

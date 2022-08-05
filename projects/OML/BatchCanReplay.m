@@ -1,4 +1,4 @@
-function [errorsOn,errorsOff,outputsOn,outputsOff,outputsBoth,pre,post,durations,basepath] = BatchCanReplay(basepath)
+function [errorsOn,errorsOff,outputsOn,outputsOff,outputsBoth,pre,post,durations,sleep,basepath] = BatchCanReplay(basepath)
 
 %% basepath = 'M:\Data\Can\OLM21\day10';
 if ~exist('basepath','var') || isempty(basepath), basepath = pwd; end
@@ -6,6 +6,9 @@ basename = basenameFromBasepath(basepath);
 [parentFolder,dayName] = fileparts(basepath);
 [~,projectName] = fileparts(parentFolder);
 sessionID = [projectName '_' dayName];
+
+load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
+sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:),'epsilon',1);
 
 name = [sessionID '_BatchCanReplay_outputs.mat'];
 try
@@ -22,7 +25,7 @@ stim = behavior.stimON;
 run = behavior.run;
 
 load(fullfile(basepath,[basename '.MergePoints.events.mat']),'MergePoints');
-sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:));
+sleep = ConsolidateIntervals(MergePoints.timestamps(cellfun(@(x) any(strfind(lower(x),'sleep')),MergePoints.foldernames),:),'epsilon',1);
 try
     load(fullfile(basepath,[basename '.SleepState.states.mat']));
 catch
@@ -33,6 +36,8 @@ end
 sws = SleepState.ints.NREMstate;
 preSleep = SubtractIntervals(sleep(1,:), SubtractIntervals([0 Inf],sws));
 postSleep = SubtractIntervals(sleep(2:end,:), SubtractIntervals([0 Inf],sws));
+
+%%
 
 % Make sure our each run epoch is confined within the same trial: no run epoch should begin in one trial and continue over the next trial
 run = SubtractIntervals(run,bsxfun(@plus,sort(behavior.trials(:)),[-1 1]*0.00001));
@@ -56,8 +61,8 @@ trials = behavior.trials;
 trialKind = 2-behavior.trialID(:,2);
 onTrials = SubtractIntervals(trials(trialKind==1,:),nonrun);
 offTrials = SubtractIntervals(trials(trialKind==2,:),nonrun);
-pos1 = behavior.positionTrials{1};
-pos2 = behavior.positionTrials{2};
+pos1 = behavior.positionTrials{1}; pos1 = pos1(~any(isnan(pos1),2),:);
+pos2 = behavior.positionTrials{2}; pos2 = pos2(~any(isnan(pos2),2),:);
 
 tt = pos1(:,1); backward = tt(FindInterval(diff(pos1(:,2))<0)); 
 stimIntervals = SubtractIntervals(onTrials,ConsolidateIntervals([backward; nonstim; nonrun])); % only stim run periods

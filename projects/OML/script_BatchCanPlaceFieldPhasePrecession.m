@@ -1,4 +1,4 @@
-batch = StartBatch(@BatchCanPlaceFieldPhasePrecession,'OMLproject.batch');
+batch = StartBatch(@BatchCanPlaceFieldPhasePrecession,'OMLlinear.batch');
 X0 = get(batch,'UserData');
 
 %%
@@ -11,14 +11,14 @@ for i=1:size(X,1), for j=1:size(X{i,1},1), X{i,1}{j,2}(:,end+1) = i; end; end
 % sessionID = 'OML19';
 % sessionID = 'OLM21';
 % sessionID = 'OML22';
-sessionID = 'O';
+sessionID = 'All';
 X = X0;
 % X = X0(14:16,:);
-X = X0; X(14:16,:) = [];
+% X = X0; X(14:16,:) = [];
 % 
 ok = cellfun(@(x) ~isempty(strfind(x,sessionID)),X(:,end));
 
-X(~ok,:) = []; 
+% X(~ok,:) = []; 
 
 clf
 points = cat(1,X{:,1});
@@ -46,7 +46,7 @@ for j=1:2,
                 title([names{j} ': pooled data'],['slope = ' num2str(beta(1)) ', intercept' num2str(beta(2)) ', r = ' num2str(c) ', p = ' num2str(p)]);
                 ylim([0 4*pi]);
             case 2
-                DensityMap(doubled(:,1),doubled(:,2),'smooth',smooth,'nBins',nBins,'type','clc');
+                DensityMap(doubled(:,1),doubled(:,2),'smooth',smooth.*[0.33 1],'nBins',nBins,'type','clc');
                 clabel('Number of points per bin');
                 title({[names{j} ': pooled phase precession density plot']});
             case 3
@@ -102,4 +102,4 @@ ylabel('Percent place fields with significant phase precession');
 for j=1:2, theseNames{j} = [names{j} ': ' num2str(counts(j,1)) '/' num2str(counts(j,2))]; end
 set(gca,'xtick',1:2,'xticklabel',theseNames);
 
-% SaveFig(fullfile('M:\home\raly\results\OML\',['Phase-precession-summary-results']))
+SaveFig(fullfile('M:\home\raly\results\OML\',['Phase-precession-summary-results']))

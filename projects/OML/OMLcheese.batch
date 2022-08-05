@@ -16,7 +16,7 @@ M:\Data\OMLproject\OML3\day14	1	1
 M:\Data\OMLproject\OML3\day16	3	1
 M:\Data\OMLproject\OML3\day17	3	1
 % M:\Data\OMLproject\OML7\day6	1	1 % looks like there is no pre-sleep (trials start before)
-M:\Data\OMLproject\OML7\day7	0	1
+% M:\Data\OMLproject\OML7\day7	0	1 % no positions during the task in the behavior file (idk why they're not importing)
 M:\Data\OMLproject\OML7\day9	1	1
 M:\Data\OMLproject\OML8\day4	0	1
 M:\Data\OMLproject\OML8\day5	2	1

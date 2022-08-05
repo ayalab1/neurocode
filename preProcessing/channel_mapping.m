@@ -251,14 +251,17 @@ for i = 1:length(anatomical_map_vec)
     label{i} = [anatomical_map_vec{i},' ',num2str(channel_map_vec(i))];
 end
 
+% attempt to pull channel coords from session
 if isfield(session.extracellular,'chanCoords')
     chanCoords.x = session.extracellular.chanCoords.x;
     chanCoords.y = session.extracellular.chanCoords.y;
-else
+end
+% if channel coords are empty, try to create them here
+if isempty(chanCoords.x)
     try
        chanMap = generateChannelMap(session,'reorder',false);
     catch
-       chanMap = createChannelMap(session,'reorder',false);
+       chanMap = createChannelMap(session,'reorder',true);
     end
     chanCoords.x = chanMap.xcoords(:);
     chanCoords.y = chanMap.ycoords(:);

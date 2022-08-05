@@ -39,6 +39,7 @@ addParameter(p,'force_run',true); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
 addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
+addParameter(p,'force_format',false); % force loading type (options: 'optitrack','dlc')
 
 parse(p,varargin{:});
 basepaths = p.Results.basepath;
@@ -48,6 +49,7 @@ force_run = p.Results.force_run;
 save_mat = p.Results.save_mat;
 primary_coords_dlc = p.Results.primary_coords_dlc;
 likelihood_dlc = p.Results.likelihood_dlc;
+force_format = p.Results.force_format;
 
 if ~iscell(basepaths)
     basepaths = {basepaths};
@@ -63,11 +65,12 @@ for i = 1:length(basepaths)
     end
     disp(basepath)
     behavior = main(basepath,basename,fs,save_mat,force_overwrite,...
-        primary_coords_dlc,likelihood_dlc);
+        primary_coords_dlc,likelihood_dlc,force_format);
 end
 end
 
-function behavior = main(basepath,basename,fs,save_mat,force_overwrite,primary_coords,likelihood)
+function behavior = main(basepath,basename,fs,save_mat,force_overwrite,...
+    primary_coords,likelihood,force_format)
 
 if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
@@ -78,7 +81,7 @@ end
 
 % call extract_tracking which contains many extraction methods
 [t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
-    extract_tracking(basepath,basename,fs,primary_coords,likelihood);
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format);
 
 load([basepath,filesep,[basename,'.session.mat']]);
 
@@ -115,7 +118,8 @@ end
 end
 
 function [t,x,y, z,v,trials,units,source,linearized,fs,notes,extra_points,...
-    stateNames,states] = extract_tracking(basepath,basename,fs,primary_coords,likelihood)
+    stateNames,states] = extract_tracking(basepath,basename,fs,...
+    primary_coords,likelihood,force_format)
 
 t = [];
 x = [];
@@ -161,7 +165,7 @@ else
     opti_flag = false;
 end
 
-if any(dlc_flag)
+if any(dlc_flag) || contains(force_format,'dlc')
     disp('detected deeplabcut')
     [tracking,field_names] = process_and_sync_dlc('basepath',basepath,...
         'primary_coords',primary_coords,...
@@ -205,7 +209,7 @@ if any(dlc_flag)
         ', likelihood: ',num2str(likelihood)];
     notes = {notes,tracking.notes};
     
-elseif any(opti_flag)
+elseif any(opti_flag) || contains(force_format,'optitrack')
     disp('detected optitrack .tak file...')
     disp('using optitrack .csv file')
     
@@ -215,7 +219,12 @@ elseif any(opti_flag)
     try
         load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
     catch
-        load(fullfile(basepath,'digitalIn.events.mat'))
+        try
+            load(fullfile(basepath,'digitalIn.events.mat'))
+        catch
+           load(fullfile(basepath,[basename,'.session.mat']))
+           digitalIn = getDigitalIn('all','fs',session.extracellular.sr,'folder',basepath);
+        end
     end
     % get ttl timestamps from digitalin using the channel with the most signals
     Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
@@ -776,7 +785,8 @@ else
     disp('No digitalIn file indicated...');
 end
 
-try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+try 
+    [amplifier_channels, notes, aux_input_channels, spike_triggers,...
         board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...
         read_Intan_RHD2000_file_bz('basepath',folder);
     fs = frequency_parameters.board_dig_in_sample_rate;

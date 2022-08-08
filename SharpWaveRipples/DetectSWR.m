@@ -255,6 +255,7 @@ if isempty(pathname)
     pathname = pwd;
 end
 
+if check, useSPW = false; end
 % check whether user provided a file extension
 if isempty(extname)
     filechk = dir([Filebase '.xml']);
@@ -892,6 +893,7 @@ for ep_i = 1:Nepochs
         plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1); legend('non-ripples','ripples');
         disp(['Please review the figure and change the idx1 (ripples) ' newline 'and idx2 (calm non-ripple periods) groups.' newline ...
             'Note that noisy periods need not participate in either group.']);
+        disp(['If you want to manually correct ripples, execute the code in the following "if false" statement before hitting Continue']);
         keyboard
 
         idx2(swDiffAll>mean(swDiffAll(idx1))) = 0;
@@ -903,20 +905,22 @@ for ep_i = 1:Nepochs
             t = featureTs/1250; % timestamps for candidate ripple events
             bad = false(size(t));
             try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,1))],'thresholds',[6 Inf],'manual',true);
+                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,1))],'thresholds',[8 5],'manual',true);
                 bad = bad | InIntervals(t,badIntervals);
             end
-            try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
-                % if you need to use this, make sure your threshold if appropriate for your session. Plot the smoothed signal to see what seems
-                % reasonable to you!
-                smoothed = Smooth(abs(swDiff),1250*10);
-                noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>500)),'epsilon',1);
-                bad = bad | InIntervals(t,noisyPeriods);
-            end
-            try % optionally, remove ripples in which the sharp wave channel was positive
-                % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
-                sw = interp1(tl,lfpLow(:,2),t);
-%                 bad = bad | sw>0;
+            if false % optional steps (not recommended for the general case)
+                try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
+                    % if you need to use this, make sure your threshold if appropriate for your session. Plot the smoothed signal to see what seems
+                    % reasonable to you!
+                    smoothed = Smooth(abs(swDiff),1250*10);
+                    noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>500)),'epsilon',1);
+                    bad = bad | InIntervals(t,noisyPeriods);
+                end
+                try % optionally, remove ripples in which the sharp wave channel was positive
+                    % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
+                    sw = interp1(tl,lfpLow(:,2),t);
+                    %                 bad = bad | sw>0;
+                end
             end
             idx1 = idx1 & ~bad; idx2 = idx2 & ~bad; % remove bad points from "idx1" and "idx2"
 
@@ -948,6 +952,7 @@ for ep_i = 1:Nepochs
                 subplot(3,1,3);
                 plot(tl(in) - t(i),double(ripPower0(in)));
                 hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
+                drawnow
 
                 %     x = input( prompt )
                 commandwindow % select the command window
@@ -978,14 +983,16 @@ for ep_i = 1:Nepochs
                     display('saving...');
                     save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','bad','scores');
                 end
+                disp(['Click Ctrl+C when finished scoring ripples.']);
             end
 
-
-            % Otherwise, you can just draw a polyglon:
-            selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
-            idx1 = selected & ~bad; % final ripples
-            idx2 = ~selected & ~bad;
-
+            disp(['Hit "Continue" in the editor (or write "dbcont") to exit manual scoring and finish ripple detection']);
+            if false % optional steps (not recommended for the general case)
+                % Otherwise, you can just draw a polyglon:
+                selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
+                idx1 = selected & ~bad; % final ripples
+                idx2 = ~selected & ~bad;
+            end
             % Save your progress!
             display('saving...');
             save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
@@ -1357,7 +1364,7 @@ for ep_i = 1:Nepochs
     % Compute timestap of the trough nearest to the envelope maximum
     % That timestamp will be the middle timestamp of the ripple output
     TsTrough = SWR_valid.Ts(:,1)*0;
-    parfor irip = 1:size(SWR_valid.Ts,1)
+    for irip = 1:size(SWR_valid.Ts,1)
         idxs = SWR_valid.Ts(irip,2):SWR_valid.Ts(irip,3);
         [~, imax] = max(envelope(idxs));
         imax = imax + idxs(1)-1;

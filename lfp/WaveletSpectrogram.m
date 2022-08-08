@@ -117,6 +117,9 @@ if interpolate
     % Get equally spaced frequencies (rather than logscale)
     f = (min(f0):min(diff(f0)):max(f0))';
     spectrogram = interp1(f0,power,f);
+else
+    spectrogram = power;
+    f = f0;
 end
 
 % ------------------------------- Helper function -------------------------------

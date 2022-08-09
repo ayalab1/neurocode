@@ -49,9 +49,11 @@ ok = true(length(peaktopeak),1);
 badsize = diff(peaktopeak,[],2) > 0.2 | diff(peaktopeak,[],2) < 0.1;
 ok(badsize) = false;
 % if at any point in the cycle, amplitude falls below 1 sds below the mean
-nottheta = amplitude(zscore(amplitude(:,2))<-1,1); 
-[l, nottheta] = InIntervals(nottheta, peaktopeak); % this is not a theta cycle
-ok(unique(nottheta(l)),:) = false;
+[~,bad,~] = CleanLFP(lfp,'thresholds',[5 Inf],'manual',false);
+amplitude(bad,2) = nan;
+nottheta = amplitude(~(nanzscore(amplitude(:,2))>-1),1); 
+ok = CountInIntervals(nottheta, peaktopeak)==0; % this is not a theta cycle
+
 
 troughs = troughs(ok);
 peaktopeak = peaktopeak(ok,:);

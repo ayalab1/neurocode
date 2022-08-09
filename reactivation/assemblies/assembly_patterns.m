@@ -1,5 +1,5 @@
 % function AssemblyTemplates = assembly_patterns(SpikeCount,opts)
-function [AssemblyTemplates,AssemblyIDs,time_projection] = assembly_patterns(SpikeCount, varargin)
+function [AssemblyTemplates,AssemblyIDs,time_projection,ASSEMBLYPROJECTOR] = assembly_patterns(SpikeCount, varargin)
 
 % Patterns = assembly_patterns(Activitymatrix,opts): extracts assembly patterns from the spike matrix.
 % 

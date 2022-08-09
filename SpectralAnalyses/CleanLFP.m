@@ -83,7 +83,7 @@ d = [diff(z);0];
 bad = false(size(values));
 
 if manual
-    figure; plot(t,z); hold all; plot(xlim,ones(1,2)*threshold1,'r--'); plot(xlim,-ones(1,2)*threshold1,'r--');  ylabel('lfp signal (z-units'); legend('signal','threshold1');
+    figure; clf; plot(t,z); hold all; plot(xlim,ones(1,2)*threshold1,'r--'); plot(xlim,-ones(1,2)*threshold1,'r--');  ylabel('lfp signal (z-units'); legend('signal','threshold1');
     disp('Feel free to change "threshold1" and type "dbcont" to continue.')
     keyboard;
     if false % Optionally, take a look at the threshold for the derivative

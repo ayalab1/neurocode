@@ -37,6 +37,7 @@ p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder); % by default, current folder
 addParameter(p,'fillMissingDatFiles',false,@islogical);
 addParameter(p,'fillTypes',[],@iscellstr);
+addParameter(p,'badChannels',[],@isnumeric); 
 addParameter(p,'analogInputs',false,@islogical);
 addParameter(p,'analogChannels',[],@isnumeric);
 addParameter(p,'digitalInputs',false,@islogical);
@@ -57,6 +58,7 @@ parse(p,varargin{:});
 basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
 fillTypes = p.Results.fillTypes;
+badChannels = p.Results.badChannels;
 analogInputs = p.Results.analogInputs;
 analogChannels = p.Results.analogChannels;
 digitalInputs = p.Results.digitalInputs;
@@ -102,6 +104,9 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath,'showGUI',false);
+if ~isempty(badChannels)
+   session.channelTags.Bad = badChannels; 
+end
 save(fullfile(basepath,[basename, '.session.mat']),'session');
 
 

@@ -2,9 +2,9 @@
 %TO DO add export to csv of pooled results/stats for things importing to py
 %TO DO if using matlab to graph change colors for finalization
 clearvars;
-dirData = 'N:\OJRproject\offline_analysis\';
+dirData = 'Y:\OJRproject\offline_analysis\';
 %dirData = 'Z:\ObjRipple\recordings\';
-dirSave = 'N:\OJRproject\analysis_repo\behavior';
+dirSave = 'Y:\OJRproject\analysis_repo\behavior';
 
 animals = {'OJR6','OJR4', 'OJR7', 'OJR5', 'OJR9','OJR10','NG1','NG2','NG3',...
            'NG4','NG5','NG6','OJR11','OJR12','OJR13','OJR18','OJR20','OJR21',...
@@ -95,9 +95,9 @@ plot(xt([1 2]), [1 1]*max(yt)*1.15, '-k',  mean(xt([1 2])), max(yt)*1.2);hold on
 text(mean([xt(1),xt(2)]),max(yt)*1.22,['p=' num2str(p3,2)],'FontSize',12);hold on;
 text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.fig');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.png');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_control.pdf');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_control.fig');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_control.png');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_control.pdf');
 
 %% Figure 2: 4h experiment 
 box4h = nan(20,3);
@@ -145,9 +145,9 @@ text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
 text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.fig');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.png');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h.pdf');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h.fig');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h.png');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h.pdf');
 
 
 
@@ -202,9 +202,9 @@ text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
 text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.fig');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.png');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.pdf');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.fig');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.png');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_4h_PFC.pdf');
 
 
 
@@ -257,7 +257,7 @@ text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
 text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.fig');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.png');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.pdf');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.fig');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.png');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior\behavior_1h_PFC.pdf');
 

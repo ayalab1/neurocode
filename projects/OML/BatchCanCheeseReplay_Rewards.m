@@ -1,6 +1,8 @@
 function [  scores,averages,outputsCurrent,outputsPrev,pre,post,durations,distanceThreshold,  conditionType,taskType,basepath] = BatchCanCheeseReplay_Rewards(basepath,conditionType,taskType)
 
 %%
+if conditionType>1 || taskType>1, return; end
+
 options = [5 10 20 25 30 40 50 Inf];
 optionIndex = 2; % use only this index
 
@@ -338,7 +340,7 @@ probeTrials = [behavior.preProbeTrials;behavior.postProbeTrials];
 
 %% Replay
 
-for probesOrTask = 2 % we can train the bayesian decoder on probe trials or on the task (including stim)
+for probesOrTask = 1 % we can train the bayesian decoder on probe trials or on the task (including stim)
     for kkk=optionIndex %1:length(options)
         distanceThreshold = options(kkk);
         for j=1:2
@@ -362,6 +364,7 @@ for probesOrTask = 2 % we can train the bayesian decoder on probe trials or on t
                 disp([datestr(clock) ': ' name ' loaded!']);
             catch
                 disp([datestr(clock) ': Computing ' name '...']);
+                return
                 if ~exist('bursts','var')
                     bursts = FindBursts(Restrict(spikes,sws,'shift','on'),'thresholds',[0 3],'smooth',0.01);
                     bursts(:) = Unshift(bursts(:),sws);

@@ -39,6 +39,10 @@ addParameter(p,'force_run',true); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
 addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
+addParameter(p,'force_format',false); % force loading type (options: 'optitrack','dlc')
+addParameter(p,'clean_tracker_jumps',false); % option to manually clean tracker jumps
+addParameter(p,'convert_xy_to_cm',false); % option to convert xy to cm (best if used with clean_tracker_jumps)
+addParameter(p,'maze_sizes',[]); % list of maze sizes (x-dim) per non-sleep epoch (if same maze & cam pos over epochs use single number)
 
 parse(p,varargin{:});
 basepaths = p.Results.basepath;
@@ -48,6 +52,10 @@ force_run = p.Results.force_run;
 save_mat = p.Results.save_mat;
 primary_coords_dlc = p.Results.primary_coords_dlc;
 likelihood_dlc = p.Results.likelihood_dlc;
+force_format = p.Results.force_format;
+clean_tracker_jumps = p.Results.clean_tracker_jumps;
+convert_xy_to_cm = p.Results.convert_xy_to_cm;
+maze_sizes = p.Results.maze_sizes;
 
 if ~iscell(basepaths)
     basepaths = {basepaths};
@@ -62,12 +70,31 @@ for i = 1:length(basepaths)
         continue
     end
     disp(basepath)
-    behavior = main(basepath,basename,fs,save_mat,force_overwrite,...
-        primary_coords_dlc,likelihood_dlc);
+    behavior = main(basepath,...
+        basename,...
+        fs,...
+        save_mat,...
+        force_overwrite,...
+        primary_coords_dlc,...
+        likelihood_dlc,...
+        force_format,...
+        clean_tracker_jumps,...
+        convert_xy_to_cm,...
+        maze_sizes);
 end
 end
 
-function behavior = main(basepath,basename,fs,save_mat,force_overwrite,primary_coords,likelihood)
+function behavior = main(basepath,...
+    basename,...
+    fs,...
+    save_mat,...
+    force_overwrite,...
+    primary_coords,...
+    likelihood,...
+    force_format,...
+    clean_tracker_jumps,...
+    convert_xy_to_cm,...
+    maze_sizes)
 
 if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
@@ -78,7 +105,7 @@ end
 
 % call extract_tracking which contains many extraction methods
 [t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
-    extract_tracking(basepath,basename,fs,primary_coords,likelihood);
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format);
 
 load([basepath,filesep,[basename,'.session.mat']]);
 
@@ -109,13 +136,69 @@ if ~isempty(extra_points)
     end
 end
 
+% pulls up gui to circle maze and remove outlier points
+if clean_tracker_jumps
+    if ~isfield(session.epochs{1},'environment')
+        disp('you need to specify your environments in session')
+        session = gui_session(session);
+    end
+    start = [];
+    stop = [];
+    for ep = 1:length(session.epochs)
+        if ~contains(session.epochs{ep}.environment,'sleep')
+            start = [start,session.epochs{ep}.startTime];
+            stop = [stop,session.epochs{ep}.stopTime];
+        end
+    end
+    
+    good_idx = manual_trackerjumps(behavior.timestamps,...
+        behavior.position.x,...
+        behavior.position.y,...
+        start,...
+        stop,...
+        basepath,...
+        'darkmode',true);
+    
+    behavior.position.x(~good_idx) = NaN;
+    behavior.position.y(~good_idx) = NaN;
+end
+
+% option to convert to cm from pixels
+if convert_xy_to_cm
+    if isempty(maze_sizes)
+       error('you must provide maze sizes') 
+    end
+    % if more than 1 maze size, convert epoch by epoch
+    if length(maze_sizes) > 1
+        for ep = 1:length(session.epochs)
+            if ~contains(session.epochs{ep}.environment,'sleep')
+                
+                [idx,~,~] = InIntervals(behavior.timestamps,...
+                    [session.epochs{ep}.startTime,session.epochs{ep}.stopTime]);
+                
+                pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
+                convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+                behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
+                behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+            end
+        end
+    else
+        pos_range = max(behavior.position.x) - min(behavior.position.x);
+        convert_pix_to_cm_ratio = (pos_range / maze_sizes);
+        behavior.position.x = behavior.position.x / convert_pix_to_cm_ratio;
+        behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;
+    end
+    behavior.position.units = 'cm';
+end
+
 if save_mat
     save([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
 end
 end
 
 function [t,x,y, z,v,trials,units,source,linearized,fs,notes,extra_points,...
-    stateNames,states] = extract_tracking(basepath,basename,fs,primary_coords,likelihood)
+    stateNames,states] = extract_tracking(basepath,basename,fs,...
+    primary_coords,likelihood,force_format)
 
 t = [];
 x = [];
@@ -161,7 +244,7 @@ else
     opti_flag = false;
 end
 
-if any(dlc_flag)
+if any(dlc_flag) || contains(force_format,'dlc')
     disp('detected deeplabcut')
     [tracking,field_names] = process_and_sync_dlc('basepath',basepath,...
         'primary_coords',primary_coords,...
@@ -205,7 +288,7 @@ if any(dlc_flag)
         ', likelihood: ',num2str(likelihood)];
     notes = {notes,tracking.notes};
     
-elseif any(opti_flag)
+elseif any(opti_flag) || contains(force_format,'optitrack')
     disp('detected optitrack .tak file...')
     disp('using optitrack .csv file')
     
@@ -215,7 +298,12 @@ elseif any(opti_flag)
     try
         load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
     catch
-        load(fullfile(basepath,'digitalIn.events.mat'))
+        try
+            load(fullfile(basepath,'digitalIn.events.mat'))
+        catch
+            load(fullfile(basepath,[basename,'.session.mat']))
+            digitalIn = getDigitalIn('all','fs',session.extracellular.sr,'folder',basepath);
+        end
     end
     % get ttl timestamps from digitalin using the channel with the most signals
     Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
@@ -776,7 +864,8 @@ else
     disp('No digitalIn file indicated...');
 end
 
-try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+try
+    [amplifier_channels, notes, aux_input_channels, spike_triggers,...
         board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...
         read_Intan_RHD2000_file_bz('basepath',folder);
     fs = frequency_parameters.board_dig_in_sample_rate;

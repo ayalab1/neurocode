@@ -27,8 +27,8 @@ function [behavior] = socialPlusMazeBehavior(behavior,varargin)
 p=inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'behavior',[],@isnumeric);
-addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
-addParameter(p,'lapStart',15,@isnumeric); % percent of linear track to sep laps
+%addParameter(p,'manipulation',[],@isstring); % add manipulation times to output
+%addParameter(p,'lapStart',15,@isnumeric); % percent of linear track to sep laps
 addParameter(p,'speedTh',5,@isnumeric); % speed cm/sec threshold for stop/run times
 addParameter(p,'savemat',true,@islogical); % save into animal.behavior.mat & linearTrackTrials.mat
 addParameter(p,'show_fig',true,@islogical); % do you want a figure?
@@ -39,8 +39,8 @@ addParameter(p,'just_save_animal_behavior',false,@islogical); % true will only s
 parse(p,varargin{:});
 basepath = p.Results.basepath;
 behavior = p.Results.behavior;
-manipulation = p.Results.manipulation;
-lapStart = p.Results.lapStart;
+%manipulation = p.Results.manipulation;
+%lapStart = p.Results.lapStart;
 speedTh = p.Results.speedTh;
 savemat = p.Results.savemat;
 show_fig = p.Results.show_fig;
@@ -80,16 +80,7 @@ for ep = session.epochs
 end
 task_epochs = [startTime,stopTime];
 
-%% clean jumping points (outliers) in tracking 
-% start = [];
-% stop = [];
-% for ep = 1:length(session.epochs)
-%     if ~contains(session.epochs{ep}.environment,'sleep')
-%         start = [start,session.epochs{ep}.startTime];
-%         stop = [stop,session.epochs{ep}.stopTime];
-%     end
-% end
-%     
+%% clean jumping tracker points/outliers (if any) from DeepLabCut
 good_idx = manual_trackerjumps(behavior.timestamps,...
     behavior.position.x,...
     behavior.position.y,...
@@ -101,9 +92,9 @@ behavior.position.x(~good_idx) = NaN;
 behavior.position.y(~good_idx) = NaN;
 
 %% Convert to cm
-if ~isempty(maze_sizes)
+if ~isempty(behavior.maze_sizes)
     pos_range = max(behavior.position.x) - min(behavior.position.x);
-    convert_pix_to_cm_ratio = (pos_range / maze_sizes(1)); % using first maze size
+    convert_pix_to_cm_ratio = (pos_range / behavior.maze_sizes(1)); % using first maze size
     
     behavior.position.linearized = (behavior.position.linearized / convert_pix_to_cm_ratio)';
     
@@ -149,6 +140,13 @@ linearizedDescendi = find(linearizedDescend) + 1; %add 1 to make a vector of sam
 dummy = nan(length(linearized),1); %create a dummy vector and add 1 or -1 for ascending and descendng tracker points.
 dummy(linearizedAscendi) = 1;
 dummy(linearizedDescendi) = -1;
+
+% save direction and verify if makes sense
+behavior.position.linearized_direction = dummy;
+plot(behavior.timestamps(behavior.position.linearized_direction ==1),behavior.position.linearized(behavior.position.linearized_direction ==1),'.k');
+hold on;
+plot(behavior.timestamps(behavior.position.linearized_direction ==-1),behavior.position.linearized(behavior.position.linearized_direction ==-1),'.r');
+hold off; 
 
 %outbounds = behavior.position.linearized(dummy==1)
 outboundi = dummy==1;

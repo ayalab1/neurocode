@@ -1,4 +1,4 @@
-batch = StartBatch(@BatchCanPhasePrecession,'OMLproject.batch');
+batch = StartBatch(@BatchCanPhasePrecession,'OMLlinear.batch');
 X = get(batch,'UserData');
 
 %%
@@ -67,5 +67,5 @@ ylabel(['kstest: stim vs nonstim, p=' num2str(stats(1))]);
 
 
 
-
+SaveFig('M:\home\raly\results\OML\PhasePrecession');
 

@@ -115,7 +115,7 @@ else
         disp('Trying intan metadata from recording folder...');
         filetarget = split(filetarget,'_'); filetarget = filetarget{1};
         localPaths = dir([filetarget, '*']);
-        cd(localPaths(1).name);
+        cd(localPaths(1).folder);
         [amplifier_channels, notes, aux_input_channels, spike_triggers,...         
         board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
         read_Intan_RHD2000_file_bz;

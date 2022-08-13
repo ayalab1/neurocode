@@ -88,7 +88,7 @@ addParameter(p,'show','off',@isstr)
 addParameter(p,'noise',[],@ismatrix)
 addParameter(p,'passband',[80 250],@isnumeric)
 addParameter(p,'EMGThresh',.9,@isnumeric);
-addParameter(p,'saveMat',false,@islogical);
+addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'EVENTFILE',true,@islogical);
 addParameter(p,'minDuration',25,@isnumeric)
 addParameter(p,'plotType',2,@isnumeric)

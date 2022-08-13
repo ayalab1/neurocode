@@ -8,7 +8,7 @@ function LFPfromDat(basepath,varargin)
 %
 %INPUTS
 %   basePath    path where the recording files are located
-%               where basePath is a folder of the form: 
+%               where basePath is a folder of the form:
 %                   whateverPath/baseName/
 %
 %               Assumes presence of the following files:
@@ -27,7 +27,7 @@ function LFPfromDat(basepath,varargin)
 %       'outFs'         (default: 1250) downsampled frequency of the .lfp
 %                       output file. if no user input and not specified in
 %                       the xml, use default
-%       'lopass'        (default: 450) low pass filter frequency 
+%       'lopass'        (default: 450) low pass filter frequency
 %       'useGPU'        (default: false) whether or not to use GPU to speed
 %                       processing (might not want to if limited GPU)
 %
@@ -35,8 +35,8 @@ function LFPfromDat(basepath,varargin)
 %OUTPUT
 %   Creates file:   basePath/baseName.lfp
 %
-%   If no sessionInfo.mat file previously exists, creates one with 
-%   the information from the .xml file, with the .lfp sampling frequency 
+%   If no sessionInfo.mat file previously exists, creates one with
+%   the information from the .xml file, with the .lfp sampling frequency
 %   and the lowpass filter used.
 %
 %
@@ -108,7 +108,7 @@ end
 if lopass> outFs/2
     warning('low pass cutoff beyond Nyquist')
 end
- 
+
 ratio = lopass/(inFs/2) ;
 sampleRatio = (inFs/outFs);
 
@@ -132,16 +132,17 @@ nbChunks = floor(nBytes/(nbChan*sizeInBytes*chunksize))-1;
 
 %% GET LFP FROM DAT
 
-if exist([basepath '\' basename '.lfp']) || exist([basepath '\' basename '.eeg'])
+if exist([basepath '\' basename '.lfp'],'file') || exist([basepath '\' basename '.eeg'],'file')
     fprintf('LFP file already exists \n')
     return
-else
+end
+
 fidI = fopen(fdat, 'r');
 fprintf('Extraction of LFP begun \n')
 fidout = fopen(flfp, 'a');
 
 for ibatch = 1:nbChunks
-
+    
     if mod(ibatch,10)==0
         if ibatch~=10
             fprintf(repmat('\b',[1 length([num2str(round(100*(ibatch-10)/nbChunks)), ' percent complete'])]))
@@ -178,7 +179,7 @@ for ibatch = 1:nbChunks
             tmp = gpuArray(zeros(size(d)));
         end
         
-        tmp=  iosr.dsp.sincFilter(d,ratio);
+        tmp = iosr.dsp.sincFilter(d,ratio);
         if useGPU
             if ibatch==1
                 DATA(ii,:) = gather_try(int16(real( tmp(sampleRatio:sampleRatio:end-ntbuff))));
@@ -197,7 +198,7 @@ for ibatch = 1:nbChunks
         
     end
     
-    fwrite(fidout,DATA(:),'int16'); 
+    fwrite(fidout,DATA(:),'int16');
 end
 
 
@@ -212,7 +213,7 @@ if ~isempty(remainder)
         warning('Check the number of channels in the xml match what you recorded. If not the problem, tell Raly!');
         keyboard;
     end
- 
+    
     DATA = nan(size(dat,1),floor(remainder/sampleRatio));
     for ii = 1:size(dat,1)
         d = double(dat(ii,:));
@@ -220,7 +221,7 @@ if ~isempty(remainder)
             d = gpuArray(d);
         end
         
-        tmp=  iosr.dsp.sincFilter(d,ratio);
+        tmp = iosr.dsp.sincFilter(d,ratio);
         
         if useGPU
             
@@ -236,7 +237,5 @@ end
 fclose(fidI);
 fclose(fidout);
 
-end
 disp('lfp file created')
 end
-

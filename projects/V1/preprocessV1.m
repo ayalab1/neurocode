@@ -179,7 +179,7 @@ if stateScore
 end
 
 disp([datestr(clock) ': starting script_remove_JB_noise.m for session ' basepath '...']);
-script_remove_JB_noise
+script_remove_JC_noise
 disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' basepath '...']);
 
 %% Kilosort concatenated sessions

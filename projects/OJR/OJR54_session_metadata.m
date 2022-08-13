@@ -115,4 +115,40 @@ for i = 1:length(basepaths)
 end
 %%
 %Unique notes for individual animal
+basepaths_ojr = {'Y:\OJRproject\OJR54\day6',...
+    'Y:\OJRproject\OJR54\day8',...
+    'Y:\OJRproject\OJR54\day10',...
+    'Y:\OJRproject\OJR54\day11',...
+    'Y:\OJRproject\OJR54\day12',...
+    'Y:\OJRproject\OJR54\day13',...
+    'Y:\OJRproject\OJR54\day14',...
+    'Y:\OJRproject\OJR54\day16',...   
+    'Y:\OJRproject\OJR54\day18',...
+    };
+ 
+man1="CL HPC SWR Extension";
+man2="Random Delay HPC SWR Extension";
+man3="No Stimulation";
+stim1="";
+stim2="CaMKII ChR2 LED";
+
+manipulation=[man1,man3,man1,man1,man2,man1,man1,man1,man1];
+stimulation=[stim2,stim1,stim2,stim2,stim2,stim2,stim2,stim2,stim2];
+ 
+for hh=1:length(basepaths_ojr)
+    basepath_ojr = basepaths_ojr{hh};
+    basename_ojr = basenameFromBasepath(basepath_ojr);
+    load(fullfile(basepath_ojr,[basename_ojr,'.session.mat']));
+    for tt=1:length(session.epochs)
+        if contains(session.epochs{1, tt}.name, "postsleep")
+            session.epochs{1, tt}.manipulaton = manipulation(hh);
+            session.epochs{1, tt}.stimuli = stimulation(hh);
+        else
+            session.epochs{1, tt}.behavioralParadigm = '';
+            session.epochs{1, tt}.environment = '';
+        end 
+   end
+end
+
+
 

@@ -102,8 +102,6 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath,'showGUI',false);
-save(fullfile(basepath,[basename, '.session.mat']),'session');
-
 
 %% Fill missing dat files of zeros
 if fillMissingDatFiles
@@ -197,7 +195,7 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
+    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',session.channelTags.Bad.channels);
     %     PhyAutoClustering(kilosortFolder);
     if cleanRez
         load(fullfile(kilosortFolder,'rez.mat'),'rez');

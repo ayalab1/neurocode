@@ -74,3 +74,16 @@ xlabel(['(' names{2} ') time from ' names{3} ' (s)']); ylabel(['(' names{1} ') t
 set(gca,'FontSize',12,'box','off');
 title('observed - expected');
 PlotHVLines(0,'v','w--','linewidth',2); PlotHVLines(0,'h','w--','linewidth',2);
+
+ah2 = axes('Position',[0.8 0.3 0 0]);
+corrected = CircularShift(hs{i},ceil(size(hs{i},2)/2)-(1:size(hs{i},2)))';
+semplot(ht,corrected);
+set(av,'box','off');% axis off
+ahAxisPosition = thisPosition;
+ahAxisPosition(2) = axisPosition(2)+axisPosition(4)+0.05; % start above the colormap
+ahAxisPosition(4) = ahAxisPosition(4)/4; % a quarter of the colormap's height
+set(ah2,'Position',ahAxisPosition);
+PlotHVLines(0,'v','k--','linewidth',2);
+title(['corrected ' names{1} ' response to ' names{2}]);
+set(gca,'ytick',[]);
+set(gca,'FontSize',12,'box','off');

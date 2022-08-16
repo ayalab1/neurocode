@@ -24,9 +24,12 @@ function bursts = FindBursts(spikes,varargin)
 %                   the stdev (default = [2 5])
 %     'binSize'     bin size (in ms, default = 1)
 %     'smooth'      smoothing kernel width (in ms, default = 16.667)
+%     'intervals'   [start stop] intervals of interests (e.g. slow wave sleep).
+%                   Bursts will be confined to these windows and the function
+%                   would ignore all activity outside those windows. (default = [0 Inf])
 %    =========================================================================
 %
-% Copyright (C) 2016 by Ralitsa Todorova, Michaël Zugaro
+% Copyright (C) 2016-2022 by Ralitsa Todorova, Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -38,6 +41,7 @@ function bursts = FindBursts(spikes,varargin)
 binSize = 0.001; % in s ; 50 ms in Wierzynski
 thresholds = [2 5]; % [2 2] in Wierzynski
 smooth = (0.05/3); % 3σ = 50 ms in Wierzynski
+intervals = [0 Inf];
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -59,13 +63,19 @@ for i = 1:2:length(varargin),
             if ~isdvector(smooth,'#1','>0'),
                 error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
+        case 'intervals',
+            intervals = varargin{i+1};
+            if ~isdmatrix(intervals) || size(intervals,2) ~= 2,
+                error('Incorrect value for property ''intervals'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
+            end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).']);
     end
 end
 
 smooth = smooth/binSize;
-spikes = spikes(:,1);
+% remove spikes outside of the intervals of interest:
+spikes = Restrict(spikes(:,1),intervals,'shift','on');
 [binned,t] = binspikes(spikes(:,1),1/binSize); t = t(:);
 binned = Smooth(binned,smooth);
 
@@ -85,6 +95,8 @@ bursts(:,4) = peak;
 pass = peak>thresholds(2);
 bursts = bursts(pass,:);
 
+% shift timestamps back to original time
+bursts0 = bursts; bursts(:) = Unshift(bursts0(:),sws); bursts(:,4) = bursts0(:,4);
 end
 
 
@@ -159,4 +171,24 @@ else
     x=histc(binSizemp,t);
     dN=x(:);
 end
+end
+
+function timestamps = Unshift(timestamps, intervals),
+
+% The opposite of the option 'shift' in Restrict
+%
+% Copyright (C) 2018 Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
+shiftedIntervals(:,2) = CumSum(diff(intervals,[],2));
+shiftedIntervals(:,1) = [0; shiftedIntervals(1:end-1,2)];
+toAdd = intervals(:,1) - shiftedIntervals(:,1);
+[ok,w] = InIntervals(timestamps,shiftedIntervals);
+timestamps(~ok) = nan;
+timestamps(ok) = timestamps(ok) + toAdd(w(ok));
+
 end

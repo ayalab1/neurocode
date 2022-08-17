@@ -1,4 +1,4 @@
-function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
+function concatenateDats(basepath,sortFiles,legacy)
 % concatenateDats - Concatenate raw .dat files found in a session folder
 % - for intan type recordings 
 % 
@@ -42,13 +42,17 @@ function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
 %
 %    basepath          computer path to session folder.  Defaults to
 %                      current folder if no input given
-%    deleteoriginaldatsbool  - boolean denoting whether to delete (1) or
-%                              not delete (0) original .dats after
-%                              concatenation.  Default = 0. Not recommended.
 %    sortFiles               - boolean denoting whether to sort files according 
 %                              to time of recording (1) or
 %                              not (0) and thus sort them alphabetically 
 %                              Default = 1.
+%    legacy                  - there should only be 2 inputs, so this third
+%                              input is here temporarily for legacy reasons.
+%                               If for some reason you are using an old script
+%                              which expects the "sortFiles" input to be 3rd,
+%                              this will temporarily override your second input.
+%                              
+%                              
 %
 %  OUTPUT
 %     Operates on files in specified folder.  No output variable
@@ -57,7 +61,12 @@ function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
 %      Can be called directly or via bz_PreprocessExtracellEphysSession.m
 %
 % Copyright (C) 2017 by Brendon Watson
-% Modified by Antonio FR, 2018
+% Modified by Antonio FR, 2018 and Ralitsa Todorova, 2022
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 
 %% Handling inputs
@@ -65,15 +74,16 @@ function concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
 if ~exist('basepath','var')
     basepath = cd;
 end
-basename = basenameFromBasepath(basepath);
 
-if ~exist('deleteoriginaldatsbool','var')
-    deleteoriginaldatsbool = 0;
+if exist('legacy','var')
+    sortFiles = legacy;
+    warning(['Please provide only 2 inputs to concatenateDats. You have provided a third input=' num2str(sortFiles) ', which is now assumed to be ''sortFiles'' (should be second input). Tolerating a third input will be removed in the future.']);
 end
+
+basename = basenameFromBasepath(basepath);
 if ~exist('sortFiles','var')
     sortFiles = 1;
 end
-
 
 %% If the dats are already merged quit
 if exist(fullfile(basepath,[basename,'.dat']),'file')
@@ -281,7 +291,6 @@ for odidx = 1:length(otherdattypes)
     t = dir(newpaths.(otherdattypes{odidx}));
     if t.bytes ~= sum(datsizes.(otherdattypes{odidx}))
         error(['New ' otherdattypes{odidx} '.dat size not right.  Exiting after .dats converted.  Not deleting'])
-        deleteoriginaldatsbool = 0;
         sizecheck.(otherdattypes{odidx}) = false;
     else
         sizecheck.(otherdattypes{odidx}) = true;
@@ -339,31 +348,5 @@ MergePoints.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
 
 %Saving SleepStates
 save(eventsfilename,'MergePoints');
-
-
-%% Delete original dats, if that option is chosen
-if deleteoriginaldatsbool
-    %Put in user confirmation here.... are they sure they want to delete
-    %the dats?
-    %for other .dats
-    for odidx = 1:length(otherdattypes)
-        eval(['tdatpaths = ' otherdattypes{odidx} 'datpaths;']);
-        for didx = 1:length(tdatpaths)
-            if isunix 
-                eval(['! rm ' tdatpaths{didx}])
-            elseif ispc%As of 4/9/2017 - never tested
-                eval(['! del ' tdatpaths{didx}])
-            end
-        end
-    end
-    %for main .dat
-    for didx = 1:length(datpaths.amplifier)
-        if isunix 
-            eval(['! rm ' datpaths.amplifier{didx}])
-        elseif ispc%As of 4/9/2017 - never tested
-            eval(['! del ' datpaths.amplifier{didx}])
-        end
-    end
-end
 
 

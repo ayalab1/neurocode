@@ -184,8 +184,8 @@ disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' b
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path);
-    load(fullfile(kilosortFolder,'rez.mat'),'rez');
+    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path); % 'NT',20*1024 for long sessions when RAM is overloaded
+    load(fullfile(kilosortFolder,'rez.mat'),'rez'); 
     CleanRez(rez,'savepath',kilosortFolder);
     %     PhyAutoClustering(kilosortFolder);
 end

@@ -1,6 +1,6 @@
 function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 
-% Returns the lfp cleaned from two kinds of artefacts: big artefacts in the 
+% Returns the lfp cleaned from two kinds of artefacts: big artefacts in the
 % lfp signal (surpassing a threshold in z-units) and very fast fluctuations,
 % in which the signal derivative suprasses a threshold in z-units).
 %
@@ -25,10 +25,12 @@ function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 %  OUTPUT
 %
 %    clean          the lfp in which the rows inside artefacts have been deleted
-%    bad            a logical vector indicating which rows of the original lfp file 
+%    bad            a logical vector indicating which rows of the original lfp file
 %                   were flagged as within the artefact and should be removed
 %    badIntervals   the [start stop] intervals in which the signal or derivative
 %                   surpassed its respective threshold
+%
+% Dependencies: ConsolidateIntervals, FindInterval
 %
 % Copyright (C) 2017-2022 by Ralitsa Todorova
 %
@@ -93,19 +95,33 @@ if manual
 end
 % Detect large global artefacts (1)
 artefactInterval = t(FindInterval(abs(z)>threshold1));
-if numel(artefactInterval)==2,artefactInterval=artefactInterval(:)';end
-if ~isempty(artefactInterval),artefactInterval = ConsolidateIntervals([artefactInterval(:,1)-aroundArtefact1 artefactInterval(:,2)+aroundArtefact1]); bad = InIntervals(t,artefactInterval);else artefactInterval = zeros(0,2); end
+if numel(artefactInterval)==2
+    artefactInterval=artefactInterval(:)';
+end
+if ~isempty(artefactInterval)
+    artefactInterval = ConsolidateIntervals([artefactInterval(:,1)-aroundArtefact1, artefactInterval(:,2)+aroundArtefact1]);
+    bad = InIntervals(t,artefactInterval);
+else
+    artefactInterval = zeros(0,2);
+end
 
 %Find noise using the derivative of the zscored signal (2)
 noisyInterval = t(FindInterval(abs(d)>threshold2));
-if numel(noisyInterval)==2,noisyInterval=noisyInterval(:)';end
-if ~isempty(noisyInterval),noisyInterval = ConsolidateIntervals([noisyInterval(:,1)-aroundArtefact2 noisyInterval(:,2)+aroundArtefact2]); bad = bad | InIntervals(t,noisyInterval);else noisyInterval = zeros(0,2); end
+if numel(noisyInterval)==2
+    noisyInterval=noisyInterval(:)';
+end
+if ~isempty(noisyInterval)
+    noisyInterval = ConsolidateIntervals([noisyInterval(:,1)-aroundArtefact2, noisyInterval(:,2)+aroundArtefact2]);
+    bad = bad | InIntervals(t,noisyInterval);
+else
+    noisyInterval = zeros(0,2);
+end
 
 % Substitute noisy signal with interpolated signal as if artefact did not exist
 values(bad) = interp1(t(~bad),values(~bad),t(bad,1));
 
 badIntervals = ConsolidateIntervals(sortrows([artefactInterval; noisyInterval]));
 ok = ~isnan(values);
-clean = [t(ok) values(ok)];
+clean = [t(ok), values(ok)];
 
 end

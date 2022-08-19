@@ -18,6 +18,8 @@ function [v,s] = CircularVariance(angles,dim)
 %
 %    See also CircularMean, CircularConfidenceIntervals, Concentration,
 %    ConcentrationTest.
+%
+%   Dependencies: isradians
 
 % Copyright (C) 2004-2011 by Michaël Zugaro
 %
@@ -26,7 +28,7 @@ function [v,s] = CircularVariance(angles,dim)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if nargin < 2,
+if nargin < 2
 	dim = 1;
 end
 
@@ -36,3 +38,4 @@ angles = exp(i*angles);
 r_bar = abs(mean(angles,dim));
 v = 1 - r_bar;
 s = sqrt(-2*log(r_bar));
+end

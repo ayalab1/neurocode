@@ -39,7 +39,7 @@ addParameter(p,'force_run',true); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
 addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
-addParameter(p,'force_format',false); % force loading type (options: 'optitrack','dlc')
+addParameter(p,'force_format','none'); % force loading type (options: 'optitrack','dlc')
 addParameter(p,'clean_tracker_jumps',false); % option to manually clean tracker jumps
 addParameter(p,'convert_xy_to_cm',false); % option to convert xy to cm (best if used with clean_tracker_jumps)
 addParameter(p,'maze_sizes',[]); % list of maze sizes (x-dim) per non-sleep epoch (if same maze & cam pos over epochs use single number)
@@ -104,7 +104,7 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
 end
 
 % call extract_tracking which contains many extraction methods
-[t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
+[t,x,y,z,v,trials,trialsID,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format);
 
 load([basepath,filesep,[basename,'.session.mat']]);
@@ -120,6 +120,7 @@ behavior.position.units = units;
 behavior.speed = v';
 behavior.acceleration = [0,diff(behavior.speed)];
 behavior.trials = trials;
+behavior.trials = trialsID;
 behavior.states = states;
 behavior.stateNames = stateNames;
 behavior.notes = notes;
@@ -166,7 +167,7 @@ end
 % option to convert to cm from pixels
 if convert_xy_to_cm
     if isempty(maze_sizes)
-       error('you must provide maze sizes') 
+        error('you must provide maze sizes')
     end
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
@@ -196,9 +197,8 @@ if save_mat
 end
 end
 
-function [t,x,y, z,v,trials,units,source,linearized,fs,notes,extra_points,...
-    stateNames,states] = extract_tracking(basepath,basename,fs,...
-    primary_coords,likelihood,force_format)
+function [t,x,y,z,v,trials,trialsID,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format)
 
 t = [];
 x = [];
@@ -206,6 +206,7 @@ y = [];
 z = [];
 v = [];
 trials = [];
+trialsID = [];
 units = [];
 source = [];
 linearized = [];

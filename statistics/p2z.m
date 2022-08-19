@@ -1,5 +1,5 @@
 function z = p2z(p)
 
-% transform a z-value (z-units) to a p-value
+%p2z - Transform a p-value into z-units
 
 z = sqrt(2) * erfcinv(p);

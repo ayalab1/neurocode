@@ -23,7 +23,7 @@ Bn = bsxfun(@times,Bn,1./sqrt(nansum(Bn.^2,1)));
 c = nansum(An.*Bn,1)';
 c(nonconclusive) = nan;
 
-if nargout<2,
+if nargout<2
     return
 end
 slope = c.*(nanstd(A)./nanstd(B))';
@@ -34,3 +34,4 @@ SSres = (1-rSquared).*(sum(~bad)' - 1).*var(A)';
 
 Afit = bsxfun(@plus,bsxfun(@times,bsxfun(@minus,B,nanmean(B,1)),slope'),nanmean(A,1));
 startstop = Afit([1 end],:)';
+end

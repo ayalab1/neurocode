@@ -18,6 +18,8 @@ function [m,boundaries] = CircularConfidenceIntervals(angles,alpha,nBootstrap)
 %  SEE
 %
 %    See also CircularMean, CircularVariance, Concentration, ConcentrationTest.
+%
+%  Dependencies: CircularMean
 
 % Copyright (C) 2004-2014 by Michaël Zugaro
 %
@@ -26,11 +28,11 @@ function [m,boundaries] = CircularConfidenceIntervals(angles,alpha,nBootstrap)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if nargin < 1,
+if nargin < 1
 	error('Incorrect number of parameters (type ''help <a href="matlab:help CircularConfidenceIntervals">CircularConfidenceIntervals</a>'' for details).');
 end
 isradians(angles);
-if isdscalar(angles),
+if isdscalar(angles)
 	m = angles;
 	boundaries = [m m];
 	return

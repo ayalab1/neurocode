@@ -1,7 +1,7 @@
 function [spikeT] = importSpikes(varargin)
 % [spikes] = importSpikes(varargin)
 % Import into the workspace spiketimes for selected units taking as input a
-% pre-computed buzcode spikes.cellinfo structure 
+% pre-computed buzcode spikes.cellinfo structure
 
 % INPUTS
 %    basepath        -path to recording where spikes.cellinfo is. Default: pwd
@@ -12,31 +12,31 @@ function [spikeT] = importSpikes(varargin)
 %    brainRegion     -string region ID to load neurons from specific region
 %    cellType        -cell type to load
 %    sleepState      -string sleep state to keep spikes falling within the
-%                       specified sleep state. 
-% *** If inputting multiple regions, types, or states, ensure the input 
+%                       specified sleep state.
+% *** If inputting multiple regions, types, or states, ensure the input
 %     follows the format: ["State1","State2"] ***
 
 % OUTPUT
 %    spikeT - cellinfo struct with the following fields
 %          .UID            -unique identifier for each neuron in a recording
 %          .times          -cell array of timestamps (seconds) for each neuron
-%          .sessionName             
+%          .sessionName
 
 % TODO:
 % Do we want more output fields?
 
 % AntonioFR, 8/20; Lindsay K, 11/21
 
-%% Parse inputs 
+%% Parse inputs
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'brainRegion','',@isstring); 
-addParameter(p,'cellType','',@isstring); 
+addParameter(p,'brainRegion','',@isstring);
+addParameter(p,'cellType','',@isstring);
 addParameter(p,'sleepState','',@isstring);
 addParameter(p,'UID',[],@isvector);
-addParameter(p,'spikes',[],@isstruct);  
-addParameter(p,'session',[],@isstruct);  
+addParameter(p,'spikes',[],@isstruct);
+addParameter(p,'session',[],@isstruct);
 addParameter(p,'channel',[],@isnumeric);
 
 parse(p,varargin{:})
@@ -49,42 +49,42 @@ spikes = p.Results.spikes;
 session = p.Results.session;
 channel = p.Results.channel;
 
-%% Load spikes 
+%% Load spikes
 basename = basenameFromBasepath(basepath);
 
-if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file') 
+if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
     load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
 end
 
 spikeT.UID = [];
 spikeT.times = {};
-            
-%% Remove bad channels before we start
+
+%% Remove bad cells before we start
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
 if isfield(cell_metrics, 'tags')
     if isfield(cell_metrics.tags, 'Bad')
-    ct = 1;
-    for i = 1:length(spikes.UID)
-        if isempty(find(cell_metrics.tags.Bad==spikes.UID(i),1))
-            spikeT.UID(ct) = spikes.UID(i);
-            spikeT.times{ct} = spikes.times{i};
-            ct = ct+1;
+        ct = 1;
+        for i = 1:length(spikes.UID)
+            if isempty(find(cell_metrics.tags.Bad==spikes.UID(i),1))
+                spikeT.UID(ct) = spikes.UID(i);
+                spikeT.times{ct} = spikes.times{i};
+                ct = ct+1;
+            end
         end
-    end
-    clear ct
+        clear ct
     else
-    spikeT.UID = spikes.UID;
-    spikeT.times = spikes.times;        
+        spikeT.UID = spikes.UID;
+        spikeT.times = spikes.times;
     end
 else
-spikeT.UID = spikes.UID;
-spikeT.times = spikes.times;
+    spikeT.UID = spikes.UID;
+    spikeT.times = spikes.times;
 end
 
 %% Output structure
 if ~isempty(UID)
-   spikeT.UID = spikes.UID(UID);
-   spikeT.times = spikes.times(UID);
+    spikeT.UID = spikes.UID(UID);
+    spikeT.times = spikes.times(UID);
 elseif ~isempty(channel)
     setUn = [];
     for i = 1:length(channel)
@@ -107,7 +107,7 @@ if ~isempty(region)
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)
             keepTimes{keepUID(j)} = tempTimes{useIndTemp(j)};
-        end             
+        end
     end
     spikeT.UID = sort(keepUID);
     spikeT.times = keepTimes;
@@ -125,7 +125,7 @@ if ~isempty(type)
         keepUID = [keepUID spikeT.UID(useInd)];
         for j = 1:length(useInd)
             keepTimes{spikeT.UID(useInd(j))} = tempTimes{useIndTemp(j)};
-        end            
+        end
     end
     spikeT.UID = sort(keepUID);
     spikeT.times = keepTimes;
@@ -156,7 +156,7 @@ if ~isempty(state)
             spikeT.times{keepCt} = sort(spikeT.times{keepCt});
             keepCt = keepCt+1;
         end
-    end        
+    end
 end
 
 % Might need to condense spikeT

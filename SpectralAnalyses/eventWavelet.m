@@ -1,4 +1,3 @@
-
 function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 
 % [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
@@ -31,7 +30,7 @@ function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 %                       *Note this may decrease number of freqs
 %       'nfreqs'    number of frequencies               (default: 100
 %       'ncyc'      number of cycles in your wavelet    (default: 5)
-%       'fvector'   predefined vector of frequencies 
+%       'fvector'   predefined vector of frequencies
 %       'space'     'log' or 'lin'  spacing of f's      (default: 'log')
 %       'samplingRate' (only if input is not a buzcode structure)
 
@@ -45,15 +44,17 @@ function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 %    lfpAvg [        a buzcode structure with fields lpf.data,
 %                                                   lfp.timestamps
 %                                                   lfp.samplingRate
-%                                                   lfp.channels 
+%                                                   lfp.channels
 %                                                   lfp.params
-
+%
+% Dependencies: whitenLFP, gausskernel, WaveSpec
+%
 % Antonio FR, 5/20
 
 % TODO:
 %    - z-scoring of power based on session baseline
 %    - allow reading from binary lfp file instead of from a lfp.mat
-%    - improve plot 
+%    - improve plot
 
 %% Parse inputs
 
@@ -98,7 +99,7 @@ elseif iscell(lfp) %for multiple trials
     data = vertcat(lfp{:});
 elseif isnumeric(lfp)
     data = lfp;
-    timestamps = [1:length(lfp)]'./samplingRate;
+    timestamps = (1:length(lfp))'./samplingRate;
 end
 
 if (size(events,2)~=1)
@@ -122,10 +123,10 @@ lfp_avg = nanmean(lfp_temp,3);
 %% Whiten LFP
 
 if whitening
-%     temp = WhitenSignal( lfp.data', [], 0 )'; %  NEED TO MAKE BUZCODE FUNCTION
-%     lfp.data = int16(temp'); clear temp;
+    %     temp = WhitenSignal( lfp.data', [], 0 )'; %  NEED TO MAKE BUZCODE FUNCTION
+    %     lfp.data = int16(temp'); clear temp;
     lfpwhiten = whitenLFP(lfp);
-    lfp.data = lfpwhiten.data; clear temp;    
+    lfp.data = lfpwhiten.data; clear temp;
 end
 
 %% temporal smoothing
@@ -133,7 +134,7 @@ end
 if tsmth > 0
     winF = gausskernel(0, ceil(tsmth *samplingRate),1, 6* ceil(tsmth *samplingRate) + 1 );
     winF = winF / sum( winF(:) );
-
+    
     if length( winF ) > 1
         C = length(winF);
         D = ceil(C/2) - 1;
@@ -154,8 +155,9 @@ for i = 1:length(events)
     end
 end
 
-wavespec = WaveSpec(lfp,'intervals',eventWin,'frange',frange,'nfreqs',nfreqs,'roundfreqs',roundfreqs,...
-            'nfreqs',nfreqs,'ncyc',ncyc,'fvector',fvector,'space',space);
+wavespec = WaveSpec(lfp,'intervals',eventWin,'frange',frange,...
+    'roundfreqs',roundfreqs,'nfreqs',nfreqs,'ncyc',ncyc,...
+    'fvector',fvector,'space',space);
 
 % Pull out individual wavelet spectrograms
 win = twin(1)+twin(2)+1;
@@ -165,12 +167,12 @@ for kp = 1:size(eventWin,1)
     wavespec_ints(1:sum(tt),:,kp) = wavespec.data( tt , :);
 end
 
-% Power spectrum 
+% Power spectrum
 wavespec_ints_amp = abs(wavespec_ints);
 if waveDb
-   avgSpect =  20*log10(squeeze(nanmean(wavespec_ints_amp,3)));
+    avgSpect =  20*log10(squeeze(nanmean(wavespec_ints_amp,3)));
 else
-   avgSpect =  squeeze(nanmean(wavespec_ints_amp,3));
+    avgSpect =  squeeze(nanmean(wavespec_ints_amp,3));
 end
 
 % Peak freq
@@ -195,25 +197,24 @@ wavAvg.params.tsmth = tsmth;
 lfpAvg.data = lfp_avg;
 lfpAvg.timestamps = -twin(1):twin(2);
 lfpAvg.samplingRate = samplingRate;
-lfpAvg.channels = channels; 
+lfpAvg.channels = channels;
 
 %% Plot
 if plotWave
-   figure;
-   contourf(wavAvg.timestamps*1000,wavAvg.freqs,wavAvg.data',30,'LineColor','none');hold on;
-   set(gca,'YScale','log');
-   ylim([wavespec.freqs(1) wavespec.freqs(end)]);
-   colormap parula;
-   xlabel('time (ms)'); ylabel('frequency (Hz)');
-    
+    figure;
+    contourf(wavAvg.timestamps*1000,wavAvg.freqs,wavAvg.data',30,'LineColor','none');
+    hold on;
+    set(gca,'YScale','log');
+    ylim([wavespec.freqs(1) wavespec.freqs(end)]);
+    colormap parula;
+    xlabel('time (ms)'); ylabel('frequency (Hz)');
 end
-  
+
 if plotLFP
-   fmin =  wavespec.freqs(round(length(wavespec.freqs)/4)); 
-   fmax =  fmin*2;
-   lfpSc =(lfp_avg-min(lfp_avg))*(fmax-fmin)/(max(lfp_avg)-min(lfp_avg))+fmin;
-   plot(wavAvg.timestamps*1000,lfpSc,'w','LineWidth',2);hold on;
-    
+    fmin =  wavespec.freqs(round(length(wavespec.freqs)/4));
+    fmax =  fmin*2;
+    lfpSc =(lfp_avg-min(lfp_avg))*(fmax-fmin)/(max(lfp_avg)-min(lfp_avg))+fmin;
+    plot(wavAvg.timestamps*1000,lfpSc,'w','LineWidth',2);hold on;
 end
 
 end

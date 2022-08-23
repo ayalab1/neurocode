@@ -104,7 +104,7 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
 end
 
 % call extract_tracking which contains many extraction methods
-[t,x,y,z,v,trials,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
+[t,x,y,z,v,trials,trialsID,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format);
 
 load([basepath,filesep,[basename,'.session.mat']]);
@@ -120,6 +120,7 @@ behavior.position.units = units;
 behavior.speed = v';
 behavior.acceleration = [0,diff(behavior.speed)];
 behavior.trials = trials;
+behavior.trials = trialsID;
 behavior.states = states;
 behavior.stateNames = stateNames;
 behavior.notes = notes;
@@ -166,7 +167,7 @@ end
 % option to convert to cm from pixels
 if convert_xy_to_cm
     if isempty(maze_sizes)
-       error('you must provide maze sizes') 
+        error('you must provide maze sizes')
     end
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
@@ -196,9 +197,8 @@ if save_mat
 end
 end
 
-function [t,x,y, z,v,trials,units,source,linearized,fs,notes,extra_points,...
-    stateNames,states] = extract_tracking(basepath,basename,fs,...
-    primary_coords,likelihood,force_format)
+function [t,x,y,z,v,trials,trialsID,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
+    extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format)
 
 t = [];
 x = [];
@@ -206,6 +206,7 @@ y = [];
 z = [];
 v = [];
 trials = [];
+trialsID = [];
 units = [];
 source = [];
 linearized = [];

@@ -20,16 +20,16 @@ function [angle,r] = CircularFun(fun,angles,weights)
 %  EXAMPLE
 %
 % Compute mean phase:
-% [m,r] = CircularFun(@mean,phases); 
+% [m,r] = CircularFun(@mean,phases);
 % This is the same as calling CircularMean
-% [s,sr] = CircularFun(@std,phases); 
+% [s,sr] = CircularFun(@std,phases);
 % would compute the standard deviation of the provided phases
 %
-% To apply operation along a particular dimention, 
+% To apply operation along a particular dimention,
 % e.g. to compute the standard deviation along rows of the matrix "phases",
 % make a custom inline function:
 % fun = @(x) std(x,[],2);
-% [s,sr] = CircularFun(fun,phases); 
+% [s,sr] = CircularFun(fun,phases);
 %
 % Copyright (C) 2022 Ralitsa Todorova
 %
@@ -47,7 +47,7 @@ if nargin<4
 end
 
 
-if ~exist('weights','var') || isempty(weights) || length(weights)==1,
+if ~exist('weights','var') || isempty(weights) || length(weights)==1
     weights = ones(size(angles));
 end
 
@@ -56,8 +56,5 @@ angles = exp(1i*angles).*weights;
 complex = 1i*fun(imag(angles)) + fun(real(angles)); % angles in complex form
 angle = atan2(imag(complex),real(complex));
 r = sqrt(imag(complex).^2+real(complex).^2);
-
 end
-
-
 

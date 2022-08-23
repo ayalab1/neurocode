@@ -47,13 +47,13 @@ if nargin<3
 end
 
 
-if ~exist('weights','var') || isempty(weights) || length(weights)==1,
+if ~exist('weights','var') || isempty(weights) || length(weights)==1
     weights = ones(size(angles));
 end
 
 angles = exp(1i*angles).*weights;
 
-if length(d)==1, % d = dimension
+if length(d)==1 % d = dimension
     mid = nanmean(angles,d);
     n = size(angles,d);
 else
@@ -65,10 +65,7 @@ end
 m = atan2(imag(mid),real(mid));
 r = sqrt(imag(mid).^2+real(mid).^2);
 p = exp(sqrt(1+4.*n+4*(n.^2-(n.*r).^2))-(1+2.*n)); % Zar, Biostatistical Analysis, p. 617
-
-% if nargout==2,
-% r = r.*(n-1)./n;
-% end
+end
 
 
 

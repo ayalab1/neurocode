@@ -40,7 +40,7 @@ function [comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,varargin)
 %     test for CFC values.
 %     alpha         default 0.05. Alpha for the surrogate test
 %     num_inter     default 200.  Number of permutations
-%     units         default MI. alternative: zscore. Whether the units are 
+%     units         default MI. alternative: zscore. Whether the units are
 %     in MI or zscore after the permutation test
 %
 %
@@ -55,9 +55,7 @@ function [comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,varargin)
 %   comodulogram.params.filter      filter type
 %   comodulogram.params.filterOrder filter order
 %
-%Dependencies
-%   bz_Filter
-%   bz_WaveSpec
+% Dependencies:  bz_Filter, bz_WaveSpec
 %
 %   Eliezyer de Oliveira 2018
 %   AntonioFR, 2/2019
@@ -83,7 +81,7 @@ addParameter(p,'method','wavelet',@ischar);
 addParameter(p,'perm_test',false,@islogical);
 addParameter(p,'alpha',[.05],@isscalar);
 addParameter(p,'num_iter',[200],@isscalar);
-addParameter(p,'units','MI',@isstr)
+addParameter(p,'units','MI',@ischar)
 
 parse(p,varargin{:});
 phaseCh = p.Results.phaseCh;
@@ -202,12 +200,11 @@ comodulogram.params.permutationTest_alpha = alpha;
 
 %% Plot
 if makePlot
-    
     figure
     for ch = 1:length(ampChans)
         subplot(1,length(ampChans),ch);
         contourf(comodulogram.phase_bincenters,comodulogram.amp_bincenters,abs(comodulogram.comod(:,:,ch)),20,'LineColor','none');
-        y = colorbar ('SouthOutside'); colormap jet;
+        y = colorbar('SouthOutside');
         xlabel(y,'CFC strength')
         ylabel('Amplitude Frequency (Hz)')
         xlabel('Phase Frequency (Hz)')
@@ -215,7 +212,6 @@ if makePlot
         if ch > 1
             set(gca,'YTick',[]);
         end
-    end
-    
+    end   
 end
 

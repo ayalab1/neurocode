@@ -1,7 +1,7 @@
 function [h,p, chi2stat,df] = prop_test(X , N, correct)
 
 % [h,p, chi2stat,df] = prop_test(X , N, correct)
-% 
+%
 % A simple Chi-square test to compare two proportions
 % It is a 2 sided test with alpha=0.05
 %
@@ -26,7 +26,7 @@ if (length(X)~= 2)||(length(X)~=length(N))
     disp('Error: bad vector length')
 elseif (X(1)>N(1))|| (X(2)>N(2))
     disp('Error: bad counts (X>N)')
-else  
+else
     df=1; % 2 samples
     
     % Observed data
@@ -49,7 +49,7 @@ else
         chi2stat = sum((observed-expected).^2 ./ expected);
         p = 1 - chi2cdf(chi2stat,1);
     else
-        % Yates continuity correction        
+        % Yates continuity correction
         chi2stat = sum((abs(observed - expected) - 0.5).^2 ./ expected);
         p = 1 - chi2cdf(chi2stat,1);
     end

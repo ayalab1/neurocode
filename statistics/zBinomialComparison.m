@@ -20,7 +20,7 @@ function [z,pValue] = zBinomialComparison(s1,n1,s0,n0)
 %    n0             total number of observations for the control phenomenon
 %
 %    % To test the difference between one observed probability and a theoretical probability:
-%    z = zBinomialComparison(s1,n1,p2)
+%    z = zBinomialComparison(s1,n1,p0)
 %
 %    s1             number of positive observations for the test phenomenon
 %    n1             total number of observations for the test phenomenon

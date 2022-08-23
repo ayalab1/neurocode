@@ -111,9 +111,11 @@ function [ripples] = DetectSWR(Channels, varargin)
 %               ripple event associated with a sharp-wave.
 %
 % check:        boolean, a flag that triggers whether or not you wish to
-%               view a figure with the sharpwave/ripple score and the k-means
-%               separation and refine it manually if needed (the function
-%               would enter debugging mode) e.g. to ignore outliers
+%               view a figure with the sharpwave/ripple score and the default
+%               k-means separation and refine it manually if needed (offers the 
+%               option to enter a manually curated cleaning/scoring step or 
+%               to enter debug mode) e.g. to ignore outliers. Note: this 
+%               option will require the user interaction.
 %
 % EVENTFILE:    boolean, a flag that triggers whether or not to write out
 %               an event file corresponding to the detections (for
@@ -167,8 +169,6 @@ function [ripples] = DetectSWR(Channels, varargin)
 %               dependency, R2013a, which I believe requires different
 %               commands in later versions. I can update this if this
 %               routine becomes widely used.
-%
-% TODO: 'check' option needs documentation and to be refactored
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%% SET DEFAULT FREE PARAMETERS %%%
@@ -891,114 +891,16 @@ for ep_i = 1:Nepochs
         clf
         plot(swDiffAll(idx2),ripPowerAll(idx2),'k.','markersize',1); hold on
         plot(swDiffAll(idx1),ripPowerAll(idx1),'r.','markersize',1); legend('non-ripples','ripples');
-        disp(['Please review the figure and change the idx1 (ripples) ' newline 'and idx2 (calm non-ripple periods) groups.' newline ...
-            'Note that noisy periods need not participate in either group.']);
-        disp(['If you want to manually correct ripples, execute the code in the following "if false" statement before hitting Continue']);
-        keyboard
-
+%         disp(['Please review the figure and change the idx1 (ripples) ' newline 'and idx2 (calm non-ripple periods) groups.' newline ...
+%             'Note that noisy periods need not participate in either group.']);
+        choice = str2double(input('Would you like to perform the manual cleaning step? (1=yes; 0=no, keep groups as they are; -1=enter debug mode): ','s'));
+        if choice==1
+            DetectSWR_check_helper % this is a script in the "private" folder
+        elseif choice == -1
+            keyboard
+        end
         idx2(swDiffAll>mean(swDiffAll(idx1))) = 0;
         idx2(ripPowerAll>mean(ripPowerAll(idx1))) = 0; 
-        if false % optional code to help you find which points are ripples
-
-            % First, remove points that occur in noisy lfp periods
-            tl = (1:length(lfp))'/1250; % timestamps for lfp
-            t = featureTs/1250; % timestamps for candidate ripple events
-            bad = false(size(t));
-            try % optionally, remove periods of noisy LFP (large deflections)
-                [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,1))],'thresholds',[8 5],'manual',true);
-                bad = bad | InIntervals(t,badIntervals);
-            end
-            if false % optional steps (not recommended for the general case)
-                try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
-                    % if you need to use this, make sure your threshold if appropriate for your session. Plot the smoothed signal to see what seems
-                    % reasonable to you!
-                    smoothed = Smooth(abs(swDiff),1250*10);
-                    noisyPeriods = ConsolidateIntervals(tl(FindInterval(smoothed>500)),'epsilon',1);
-                    bad = bad | InIntervals(t,noisyPeriods);
-                end
-                try % optionally, remove ripples in which the sharp wave channel was positive
-                    % Only do this if you have a sharp-wave channel what's sufficiently deep for the sharp wave to be negative
-                    sw = interp1(tl,lfpLow(:,2),t);
-                    %                 bad = bad | sw>0;
-                end
-            end
-            idx1 = idx1 & ~bad; idx2 = idx2 & ~bad; % remove bad points from "idx1" and "idx2"
-
-            figure(1); % plot a clean figure without these points and check indivudual ripples
-            clf
-            plot(swDiffAll(idx1 | idx2),ripPowerAll(idx1 | idx2),'k.','markersize',1); hold on
-            matrix = [swDiffAll ripPowerAll];
-            z = bsxfun(@rdivide,bsxfun(@minus,matrix,mean(matrix(~bad,:))),std(matrix(~bad,:)));
-
-
-            scores = nan(size(ripPowerAll,1),1);
-            while true % click "Ctrl+C" to exit when you feel you're done
-                figure(1);
-                colors = Bright(1000);
-                [x,y,button] = ginput(1);
-                [~,i] = min(abs(x-swDiffAll.*(1-bad))+abs(y-ripPowerAll.*(1-bad)));
-
-                t = featureTs/1250;
-                tl = (1:length(lfp))'/1250;
-                figure(2);
-                clf; interval = t(i) + [-1 1]*0.5; in = tl>interval(1) & tl<interval(end);
-                subplot(3,1,1);
-                plot(tl(in) - t(i),lfp(in,:)); title(num2str(t(i)));
-                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
-                legend('ripple channel','SW channel','noise channel');
-                subplot(3,1,2);
-                plot(tl(in) - t(i),double(swDiff(in)));
-                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
-                subplot(3,1,3);
-                plot(tl(in) - t(i),double(ripPower0(in)));
-                hold on; plot(bsxfun(@times,ones(1,2),(Restrict(t,interval) - t(i))),ylim,'k--');
-                drawnow
-
-                %     x = input( prompt )
-                commandwindow % select the command window
-                score = str2double(input('good(1)/bad(0)?','s'));
-                scores(i) = score; % save scores to optionally save
-
-                figure(1);
-                xlims = xlim; ylims = ylim; clf
-                % extrapolate the score of each ripple based on the score of the nearest scored ripple
-                scored = find(~isnan(scores));
-                distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
-                [~,nearestNeighbour] = min(distances,[],2);
-                estimated = scores(scored(nearestNeighbour));
-                selected = estimated>0.1;
-                idx1 = selected & ~bad; % final ripples
-                idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
-
-                scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); set(gca,'CLim',[0 1])
-                xlim(xlims); ylim(ylims);
-                hold on;
-                scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));
-                set(get(colorbar,'YLabel'),'String','Estimated ripple score');
-                xlabel('Sharp wave depth'); ylabel('Ripple power');
-
-                title({['Manual scoring for ' basepath],['called with channels: ' num2str(Channels) ' (ripple, sharp wave, and (optionally) noise)']});
-
-                if rem(i,10)==0
-                    display('saving...');
-                    save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','bad','scores');
-                end
-                disp(['Click Ctrl+C when finished scoring ripples.']);
-            end
-
-            disp(['Hit "Continue" in the editor (or write "dbcont") to exit manual scoring and finish ripple detection']);
-            if false % optional steps (not recommended for the general case)
-                % Otherwise, you can just draw a polyglon:
-                selected = UIInPolygon(swDiffAll,ripPowerAll); % draw polygon to encircle the points you believe are ripples
-                idx1 = selected & ~bad; % final ripples
-                idx2 = ~selected & ~bad;
-            end
-            % Save your progress!
-            display('saving...');
-            save(fullfile(basepath,'DetectSWR_manual_scoring.mat'),'t','swDiffAll','ripPowerAll','idx1','idx2','bad','selected','scores');
-            saveas(figure(1),fullfile(basepath,'DetectSWR_manual_scoring.fig'));
-
-        end
     end
 
     % For the unsupervised case, I'll set thresholds for ripple power

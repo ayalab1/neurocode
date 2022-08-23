@@ -9,11 +9,14 @@ function [m,boundaries] = CircularConfidenceIntervals(angles,alpha,nBootstrap)
 %  USAGE
 %
 %    [mean,boundaries] = CircularConfidenceIntervals(angles,alpha,nBootstrap)
-%
+% Input
 %    angles         angles in radians
 %    alpha          optional confidence level (default = 0.05)
 %    nBootstrap     optional number of bootstraps (for < 25 angle values)
 %                   (default = 2000)
+% Output
+%   m               circular mean
+%   boundaries      circular confidence intervals
 %
 %  SEE
 %

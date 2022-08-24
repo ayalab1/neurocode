@@ -1,7 +1,16 @@
 function [wavelet, t] = MorletWavelet( f, numcyc, si )
-%MorletWavelet(f,numcyc,si) creates a Mortlet Wavelet of numcyc cycles with
-%frequency f (Hz).  si: sampling interval
+%MorletWavelet creates a Mortlet Wavelet of numcyc cycles with frequency f (Hz).  
+%
 %   Adapted from Cohen Ch13
+%
+% Input:
+%   f:       frequency hz
+%   numcyc:  number of cycles
+%   si:      sampling interval
+% Output:
+%   wavelet: Mortlet Wavelet
+%   t:       time
+%
 %
 %TO DO:
 %   -Add ability to define width in bandwidth instead of cycles (varargin)

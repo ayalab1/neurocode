@@ -42,7 +42,7 @@ function [spectrogram,t,f] = MTSpectrogram(lfp,varargin)
 %    t              time bins
 %    f              frequency bins
 %
-%  DEPENDENCIES
+%  DEPENDENCIES: mtspecgramc, PlotColorMap
 %
 %    This function requires the <a href="http://www.chronux.org">chronux</a> toolbox.
 %

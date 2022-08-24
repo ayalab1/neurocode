@@ -10,13 +10,13 @@ function [ comod ] = powerComodulogram(lfp,specparms,figparms)
 %               for corr computation. If two, pairwise correlation is
 %               performed. If one refCh and n data channels are provided
 %               the correlation of the refCh against all data channels is
-%               performed. 
+%               performed.
 
 %   specparms   structure of parameters for the spectrogram
 %       .frange     [min max] frequency
-%       .nfreqs     number of frequencies 
+%       .nfreqs     number of frequencies
 %       .space      spacing between freqs, 'lin' or 'log'
-%       .fvector    predefined vector of frequencies 
+%       .fvector    predefined vector of frequencies
 %       .specnorm   normalization for spectral power,
 %                   options: 'mean','logmean','log' (default: log)
 %       .numvarbins number of bins for your external variable
@@ -32,11 +32,15 @@ function [ comod ] = powerComodulogram(lfp,specparms,figparms)
 %       .plotname   nametag for the saved figure
 %       .figfolder  folder to save the figure in
 %       .baseName   baseName of the recording for the figure
+% Output:
+%   comod: struct with Comodulogram results
+%
+% Dependencies: NiceSave, WaveSpec, makeColorMap, ColorbarWithAxis, LogScale
 %
 % DLevenstein 2017
 % Modified by Antonio FR, 7/18/18
 
-%TO DO 
+%TO DO
 
 %% Parse the inputs
 
@@ -76,7 +80,7 @@ if isstruct(lfp)
     timestamps = lfp.timestamps;
     samplingRate = lfp.samplingRate;
     if isfield(lfp,'refCh')
-       refCh = lfp.refCh;
+        refCh = lfp.refCh;
     else
         refCh = [];
     end
@@ -105,12 +109,12 @@ switch specparms.type
                 'frange',specparms.frange,'nfreqs',specparms.nfreqs,'ncyc',specparms.ncyc,...
                 'samplingRate',lfp.samplingRate,'space',specparms.space,'fvector',specparms.fvector);
             spec = wavespec.data';
-        elseif size(lfp.data,2) > 1 
+        elseif size(lfp.data,2) > 1
             for i = 1:size(lfp.data,2)
                 [wavespec] = WaveSpec(single(data(:,i)),...
                     'frange',specparms.frange,'nfreqs',specparms.nfreqs,'ncyc',specparms.ncyc,...
                     'samplingRate',lfp.samplingRate,'space',specparms.space,'fvector',specparms.fvector);
-                spec{i} = wavespec.data';                
+                spec{i} = wavespec.data';
             end
         end
         if ~isempty(refCh)
@@ -121,10 +125,10 @@ switch specparms.type
         else
             specRef = [];
         end
-            spectimestamps = timestamps; %Wavelet timestamp are same as LFP        
-            comod.freqs = wavespec.freqs;
-            
-	case 'FFT'
+        spectimestamps = timestamps; %Wavelet timestamp are same as LFP
+        comod.freqs = wavespec.freqs;
+        
+    case 'FFT'
         %Calculate the frequences to use
         if ~isempty(specparms.fvector)
             comod.freqs = fvector;
@@ -135,7 +139,7 @@ switch specparms.type
                         log10(specparms.frange(2)),specparms.nfreqs);
                 case 'lin'
                     comod.freqs = linspace(specparms.frange(1),...
-                        specparms.frange(2),specparms.nfreqs);  
+                        specparms.frange(2),specparms.nfreqs);
             end
         end
         %Calculate the FFT spectrogram parameters - covert from s to sf
@@ -154,36 +158,36 @@ switch specparms.type
         end
         if ~isempty(refCh)
             [specRef,~,spectimestamps] = spectrogram(single(refCh),...
-                winsize,noverlap,comod.freqs,samplingRate);            
+                winsize,noverlap,comod.freqs,samplingRate);
         else
             specRef = [];
         end
-            spectimestamps = spectimestamps'+timestamps(1); %account for any time offset
+        spectimestamps = spectimestamps'+timestamps(1); %account for any time offset
 end
 
 
 %% Calculate the power-power correlations
 if isempty(refCh)
     if size(lfp.data,2) == 1
-       spec = log10(abs(spec)); %Log-transform power
-       comod.corrs = corr(spec','type','spearman');
+        spec = log10(abs(spec)); %Log-transform power
+        comod.corrs = corr(spec','type','spearman');
     elseif size(lfp.data,2) == 2
-       for i = 1:2
-           spec{i} = log10(abs(spec{i})); %Log-transform power
-       end
-       comod.corrs = corr(spec{1}',spec{2}','type','spearman');   
+        for i = 1:2
+            spec{i} = log10(abs(spec{i})); %Log-transform power
+        end
+        comod.corrs = corr(spec{1}',spec{2}','type','spearman');
     end
 elseif exist('refCh')
     specRef = log10(abs(specRef)); %Log-transform power
     if size(lfp.data,2) == 1
-       spec = log10(abs(spec)); %Log-transform power
-       comod.corrs = corr(specRef',spec','type','spearman');
+        spec = log10(abs(spec)); %Log-transform power
+        comod.corrs = corr(specRef',spec','type','spearman');
     elseif size(lfp.data,2) > 1
-       for i = 1:size(lfp.data,2)
-           spec{i} = log10(abs(spec{i})); %Log-transform power
-           comod.corrs{i} = corr(specRef',spec{i}','type','spearman');     
-       end
-    end    
+        for i = 1:size(lfp.data,2)
+            spec{i} = log10(abs(spec{i})); %Log-transform power
+            comod.corrs{i} = corr(specRef',spec{i}','type','spearman');
+        end
+    end
 end
 
 
@@ -191,17 +195,16 @@ end
 % needs fix for multiple channels
 
 if exist('figparms','var') && isempty(refCh)  %This whole figure thing can be better.
-corrcolor= [makeColorMap([1 1 1],[0 0 0.8],[0 0 0]);...
-    makeColorMap([0 0 0],[0.8 0 0],[1 1 1])];
-figure
-colormap(corrcolor)
+    corrcolor= [makeColorMap([1 1 1],[0 0 0.8],[0 0 0]);...
+        makeColorMap([0 0 0],[0.8 0 0],[1 1 1])];
+    figure
+    colormap(corrcolor)
     imagesc(log2(comod.freqs),log2(comod.freqs),comod.corrs)
     colorbar
     ColorbarWithAxis([-0.4 0.4],'Power-Power Correlation (rho)')
     LogScale('xy',2)
     xlabel('f (Hz)');ylabel('f (Hz)')
     
-NiceSave(['Comodulogram',figparms.plotname],figparms.figfolder,figparms.baseName)
-
+    NiceSave(['Comodulogram',figparms.plotname],figparms.figfolder,figparms.baseName)
 end
-
+end

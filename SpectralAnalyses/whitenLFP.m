@@ -1,4 +1,4 @@
-function [lfpwhiten] = bz_whitenLFP(lfp,varargin)
+function [lfpwhiten] = whitenLFP(lfp,varargin)
 
 % [y, ARmodel] = bz_whitenLFP(lfp,varargin)
 % Whiten an lfp signal using an autoregresive model.
@@ -15,15 +15,15 @@ function [lfpwhiten] = bz_whitenLFP(lfp,varargin)
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%       window     if window specified will recompute the AR model in each 
+%       window     if window specified will recompute the AR model in each
 %                   window of that size. Default [1 length recording].
-%       ARorder    model order. Default 2. 
+%       ARorder    model order. Default 2.
 %       commonAR   if true then will use model from first channel for all,
 %                  if false, will calculate one model per channel. Default true.
 %       ARmodel    if ARmodel is provided - use it, not compute fromthe data
-%                   output optionaly the ARmodel for use on the other data 
+%                   output optionaly the ARmodel for use on the other data
 %                  to be on the same scale
-%           
+%
 %    =========================================================================
 %
 % OUTPUT
@@ -31,7 +31,8 @@ function [lfpwhiten] = bz_whitenLFP(lfp,varargin)
 %                                                   lfpwhiten.timestamps
 %                                                   lfpwhiten.samplingRate
 %                                                   lfpwhiten.params
-
+% Dependencies: arfit
+%
 % AntonioFR, 5/20
 
 %% Parse the inputs
@@ -73,17 +74,17 @@ else
     seg = repmat([1 window],nwin,1)+repmat([0:nwin-1]'*window,1,2);
     if nwin*window > size(Lin,1)
         seg(end,2) = size(Lin,1);
-    end   
+    end
 end
 
 for w=1:size(seg,1)
-    if ~isempty(ARmodel) 
+    if ~isempty(ARmodel)
         A = ARmodel;
         for i=1:nCh
             Lout(seg(w,1):seg(w,2),i) = filt0(A, Lin(seg(w,1):seg(w,2),i));
         end
     else
-        if commonAR  
+        if commonAR
             for i=1:size(Lin,2)
                 if  w==1 && i==1
                     [k,Atmp] = arfit(Lin(seg(w,1):seg(w,2),i),ARorder,ARorder);
@@ -107,8 +108,7 @@ for w=1:size(seg,1)
     end
 end
 
-%% output 
-
+%% output
 lfpwhiten.data = Lout;
 lfpwhiten.timestamps = lfp.timestamps;
 lfpwhiten.samplingRate = lfp.samplingRate;
@@ -116,11 +116,8 @@ lfpwhiten.params.whitening = true;
 lfpwhiten.params.ARorder = ARorder;
 lfpwhiten.params.commomAR = commonAR;
 lfpwhiten.params.ARmodel = A;
-
 end
 
-
-%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function Y = filt0(x,W)
 
@@ -135,5 +132,4 @@ end
 D = ceil(C/2) - 1;
 Y = filter(W,1,[flipud(x(1:C,:)); x; flipud(x(end-C+1:end,:))]);
 Y = Y(1+C+D:end-C+D,:);
-
 end

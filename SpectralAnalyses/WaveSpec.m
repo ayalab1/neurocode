@@ -1,6 +1,6 @@
-function [wavespec] = bz_WaveSpec(lfp,varargin)
-%[wavespec] = bz_WaveSpec(lfp) calculates the 
-%wavelet transform of a signal with nfreqs frequencies in the range frange 
+function [wavespec] = WaveSpec(lfp,varargin)
+%[wavespec] = bz_WaveSpec(lfp) calculates the
+%wavelet transform of a signal with nfreqs frequencies in the range frange
 %[fmin fmax]. Spacing between frequencies can be 'lin' or 'log'.
 %Time-frequency resolution is defined by ncyc, the number of cycles in each
 %wavelet. Uses Morlet (Gabor) wavelet.
@@ -23,7 +23,7 @@ function [wavespec] = bz_WaveSpec(lfp,varargin)
 %                       *Note this may decrease number of freqs
 %       'nfreqs'    number of frequencies               (default: 100
 %       'ncyc'      number of cycles in your wavelet    (default: 5)
-%       'fvector'   predefined vector of frequencies 
+%       'fvector'   predefined vector of frequencies
 %       'space'     'log' or 'lin'  spacing of f's      (default: 'log')
 %       'samplingRate' (only if input is not a buzcode structure)
 %       'intervals'  restrict your spectrogram to timestamps in specific
@@ -54,10 +54,7 @@ function [wavespec] = bz_WaveSpec(lfp,varargin)
 %   -update t output for if LFP is a cell array
 %
 %
-%Dependencies
-%   WaveFilt
-%   MorletWavelet
-%   FConv
+%Dependencies: WaveFilt, MorletWavelet, FConv, bz_Counter, InIntervals
 %
 %
 %Last Updated: 10/9/15
@@ -122,11 +119,11 @@ si = 1./samplingRate;
 
 %Restrict to intervals, with overhang to remove edge effects at transitions
 %(then remove later)
- overhang = (ncyc)./frange(1);
- overint = bsxfun(@(X,Y) X+Y,intervals,overhang.*[-1 1]);
- keepIDX = InIntervals(lfp.timestamps,overint); 
- lfp.data = lfp.data(keepIDX,:);
- lfp.timestamps = lfp.timestamps(keepIDX);
+overhang = (ncyc)./frange(1);
+overint = bsxfun(@(X,Y) X+Y,intervals,overhang.*[-1 1]);
+keepIDX = InIntervals(lfp.timestamps,overint);
+lfp.data = lfp.data(keepIDX,:);
+lfp.timestamps = lfp.timestamps(keepIDX);
 
 %%
 if ~isa(lfp.data,'single') || ~isa(lfp.data,'double')
@@ -146,7 +143,7 @@ else
         freqs = linspace(fmin,fmax,nfreqs);
     else
         display('Frequency spacing must be "lin" or "log".')
-    end    
+    end
 end
 
 if roundfreqs
@@ -165,8 +162,8 @@ for cidx = 1:nchan
             bz_Counter(f_i,nfreqs,'Wavelet Frequency')
         end
         wavelet = MorletWavelet(freqs(f_i),ncyc,si);
-         wavespec.data(:,f_i,cidx) = ...
-             downsample(FConv(wavelet',lfp.data(:,cidx)),downsampleout);
+        wavespec.data(:,f_i,cidx) = ...
+            downsample(FConv(wavelet',lfp.data(:,cidx)),downsampleout);
     end
 end
 
@@ -190,9 +187,9 @@ wavespec.filterparms.space = space;
 clear lfp
 
 if saveMatPath
-    baseName = bz_BasenameFromBasepath(saveMatPath);
+    baseName = basenameFromBasepath(saveMatPath);
     if ~isempty(MatNameExtraText)
-        lfpfilename = fullfile(saveMatPath,[baseName,'.wavespec' MatNameExtraText '.lfp.mat']);    
+        lfpfilename = fullfile(saveMatPath,[baseName,'.wavespec' MatNameExtraText '.lfp.mat']);
     else
         lfpfilename = fullfile(saveMatPath,[baseName,'.wavespec.lfp.mat']);
     end
@@ -207,4 +204,3 @@ if saveMatPath
 end
 
 end
-

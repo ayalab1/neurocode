@@ -36,8 +36,7 @@ function [coherence,phase,f,sc,sp] = MTCoherence(lfp1,lfp2,varargin)
 %    sc             error on magnitude
 %    sp             error on phase
 %
-%  DEPENDENCIES
-%
+%  DEPENDENCIES: MTCoherogram, CircularConfidenceIntervals, PlotMean
 %    This function requires the <a href="http://www.chronux.org">chronux</a> toolbox.
 %
 %  SEE

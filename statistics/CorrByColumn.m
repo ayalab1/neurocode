@@ -1,8 +1,21 @@
 function [c,slope,rSquared,SSres,startstop] = CorrByColumn(A,B)
 
 % [c,slope,rSquared] = CorrByColumn(A,B)
+%
 % correlate matrices A and B column by column
 % i.e. c(i) = corr(A(:,i),B(:,i))
+%
+% Input: 
+%   A   i,j matrix
+%   B   i,j matrix
+% Output:
+%   c           correlation (r)
+%   slope       slope of regression
+%   rSquared    coefficient of variation (R2)
+%   SSres       sum of squares residual
+%   startstop   ???
+%
+% TODO: determine what startstop is
 %
 % Copyright (C) 2016 by Ralitsa Todorova
 %

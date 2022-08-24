@@ -1,4 +1,4 @@
-function [h,p, chi2stat,df] = prop_test(X , N, correct)
+function [h,p,chi2stat,df] = prop_test(X , N, correct)
 
 % [h,p, chi2stat,df] = prop_test(X , N, correct)
 %
@@ -6,15 +6,15 @@ function [h,p, chi2stat,df] = prop_test(X , N, correct)
 % It is a 2 sided test with alpha=0.05
 %
 % Input:
-% X = vector with number of success for each sample (e.g. [20 22])
-% N = vector of total counts for each sample (e.g. [48 29])
-% correct = true/false : Yates continuity correction for small samples?
+%   X = vector with number of success for each sample (e.g. [20 22])
+%   N = vector of total counts for each sample (e.g. [48 29])
+%   correct = true/false : Yates continuity correction for small samples?
 %
 % Output:
-% h = hypothesis (H1/H0)
-% p = p value
-% chi2stat= Chi-square value
-% df = degrees of freedom (always equal to 1: 2 samples)
+%   h = hypothesis (H1/H0)
+%   p = p value
+%   chi2stat= Chi-square value
+%   df = degrees of freedom (always equal to 1: 2 samples)
 %
 % Needs chi2cdf from the Statistics toolbox
 % Inspired by prop.test() in "R" but much more basic

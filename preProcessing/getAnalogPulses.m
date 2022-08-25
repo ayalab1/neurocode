@@ -18,6 +18,8 @@ function [pulses] = getAnalogPulses(varargin)
 % groupPulses   Group manually train of pulses (default, false)
 % basepath      Path with analog data files to get pulses from.
 % minDur        pulses with shorter duration than this are removed
+% showFig       Whether or not to show final pulse figure, best to set to
+%               false when manually scoring long sessions. Default, true.
 %
 % OUTPUTS
 %               pulses - events struct with the following fields
@@ -46,6 +48,7 @@ addParameter(p,'groupPulses',false,@islogical);
 addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'useGPU',true,@islogical);
 addParameter(p,'minDur',[],@isnumeric);
+addParameter(p,'showFig',true,@islogical);
 
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
@@ -59,6 +62,7 @@ groupPulses = p.Results.groupPulses;
 basepath = p.Results.basepath;
 useGPU = p.Results.useGPU;
 minDur = p.Results.minDur;
+showFig = p.Results.showFig;
 
 prevPath = pwd;
 cd(basepath);
@@ -132,7 +136,9 @@ else
     IntanBuzEd = 0;
 end
 
-h=figure;
+if manualThr && showFig
+    h=figure;
+end
 % set(gcf,'Position',[100 -100 2500 1200]);
 for jj = 1 : length(analogCh)
     fprintf(' ** Channel %3.i of %3.i... \n',jj, length(analogCh));
@@ -254,22 +260,24 @@ for jj = 1 : length(analogCh)
     eventChannel{jj} = ones(size(dur{jj})) * analogCh(jj);
     
     % d = gpuArray(d); locsA = gpuArray(locsA);
-    figure(h);
-    subplot(length(analogCh),1,jj);
-    hold on
-    plot(xt(1:1000:end), d(1:1000:end));
-    plot(xt([1 end]), [thr thr],'r','LineWidth',2);
-    xlim([0 xt(end)]);
-    ax = axis;
-    if ~isempty(locsA)
-        plot(locsA, ax(4),'o','MarkerFaceColor',[1 0 0],'MarkerEdgeColor','none','MarkerSize',3);
-    end
-    if ~isempty(eventGroup)
-        for kk = 1:size(eventGroup,1)
-            plot([eventGroup(kk,1) eventGroup(kk,2)],[thr+100 thr+100],'LineWidth',10);
+    if manualThr && showFig
+        figure(h);
+        subplot(length(analogCh),1,jj);
+        hold on
+        plot(xt(1:1000:end), d(1:1000:end));
+        plot(xt([1 end]), [thr thr],'r','LineWidth',2);
+        xlim([0 xt(end)]);
+        ax = axis;
+        if ~isempty(locsA)
+            plot(locsA, ax(4),'o','MarkerFaceColor',[1 0 0],'MarkerEdgeColor','none','MarkerSize',3);
         end
+        if ~isempty(eventGroup)
+            for kk = 1:size(eventGroup,1)
+                plot([eventGroup(kk,1) eventGroup(kk,2)],[thr+100 thr+100],'LineWidth',10);
+            end
+        end
+        xlabel('s'); ylabel(['Ch', num2str(analogCh(jj)),' (au)']); 
     end
-    xlabel('s'); ylabel(['Ch', num2str(analogCh(jj)),' (au)']); 
 end
 mkdir('Pulses');
 saveas(gca,['pulses\analogPulsesDetection.png']);

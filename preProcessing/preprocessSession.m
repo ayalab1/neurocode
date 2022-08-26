@@ -102,6 +102,7 @@ end
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath,'showGUI',false);
+save(fullfile(basepath,[basename, '.session.mat']),'session');
 
 %% Fill missing dat files of zeros
 if fillMissingDatFiles
@@ -114,7 +115,7 @@ if fillMissingDatFiles
 end
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats(basepath,0,1);
+concatenateDats(basepath,1);
 
 %% run again to add epochs from basename.MergePoints.m
 session = sessionTemplate(basepath,'showGUI',false);

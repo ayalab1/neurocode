@@ -29,7 +29,7 @@ function [nonEvents] = intervalsBetween(start,stop,sr,events)
 %
 %    ...
 
-% Copyright (C) 2022 by Lindsay Karaba
+% Lindsay Karaba, 2022
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -39,6 +39,9 @@ function [nonEvents] = intervalsBetween(start,stop,sr,events)
 nonEvents = [];
 nEct = 1;
 t_int = 1/sr;
+if isstring(stop)
+   stop = str2double(stop); 
+end
 
 startEvt = find(events(:,1) >= start,1,'first');
 stopEvt = find(events(:,2) <= stop,1,'last');

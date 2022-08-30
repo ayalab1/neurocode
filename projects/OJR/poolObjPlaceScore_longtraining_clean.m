@@ -4,18 +4,18 @@
 %TO DO if using matlab to graph change colors for finalization
 
 clearvars;
-dirData = 'N:\OJRproject\';
+dirData = 'Y:\OJRproject\';
 %dirData = 'Z:\ObjRipple\recordings\';
-dirSave = 'N:\OJRproject\analysis_repo\behavior_longtraining';
+dirSave = 'Y:\OJRproject\analysis_repo\behavior_longtraining';
 
-animals = {'OJR42','OJR43', 'OJR44', 'OJR45','OJR46','OJR47', 'OJR48','OJR51','OJR52'}; 
+animals = {'OJR42','OJR43', 'OJR44', 'OJR45','OJR46','OJR47', 'OJR48','OJR51','OJR52', 'OJR55'}; 
 
 
 days = {{'day11','day12'};{'day7','day10'};{'day11','day16'};{'day8','day9','day12'};...
-        {'day8','day15','day16'};{'day10','day11','day15'};{'day10','day11','day13'};{'day5','day8'};{'day13'}};
+        {'day8','day15','day16'};{'day10','day11','day15'};{'day10','day11','day13'};{'day5','day8'};{'day13'};{'day10'}};
 
 
-condition = {[1 1]; [1 1]; [2 3]; [2 3 1]; [2 3 1]; [1 3 2]; [1 3 2]; [2 3]; [3]};
+condition = {[1 1]; [1 1]; [2 3]; [2 3 1]; [2 3 1]; [1 3 2]; [1 3 2]; [2 3]; [3]; [3]};
 
 
 % 1=4h delay 3x training; 2=4h delay 3x training + PFC inh; 3=4h delay 3x training + PFC delay;
@@ -95,9 +95,9 @@ text(xt(1),max(yt)*1.05,['p=' num2str(p1,2)],'FontSize',12);hold on;
 text(xt(2),max(yt)*1.05,['p=' num2str(p2,2)],'FontSize',12);hold on;
 text(xt(3),max(yt)*1.05,['p=' num2str(p3,2)],'FontSize',12);hold on;
 
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining\longtraining.fig');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining\longtraining.png');
-saveas(gcf,'N:\OJRproject\analysis_repo\behavior_longtraining\longtraining.pdf');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior_longtraining\longtraining.fig');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior_longtraining\longtraining.png');
+saveas(gcf,'Y:\OJRproject\analysis_repo\behavior_longtraining\longtraining.pdf');
 
 
 

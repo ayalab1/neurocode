@@ -87,19 +87,19 @@ end
 %% Collect pulses
 timestamps = []; code = []; shank = []; LED = []; pulsesNumber = [];
 for ii = 1:length(ledLayout.channel)
-    if ledLayout.isAnalog(ii)
-        timestamps = [timestamps; analogPulses.timestamps(analogPulses.analogChannel==ledLayout.channel(ii),:)];
-        code =       [code      ; ledLayout.code(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
-        shank =      [shank     ; ledLayout.shank(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
-        LED =        [LED       ; ledLayout.LED(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
-        pulsesNumber(ii) = length(find(analogPulses.analogChannel==ledLayout.channel(ii)));
-    elseif ledLayout.isDigital(ii)
-        timestamps = [timestamps; digitalPulses.ints{ledLayout.channel(ii)}'];
-        code =       [code      ; ledLayout.code(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
-        shank =      [shank     ; ledLayout.shank(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
-        LED =        [LED       ; ledLayout.LED(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
-        pulsesNumber(ii) = size(digitalPulses.ints{ledLayout.channel(ii)},2);
-    end
+        if ledLayout.isAnalog(ii)
+            timestamps = [timestamps; analogPulses.timestamps(analogPulses.analogChannel==ledLayout.channel(ii),:)];
+            code =       [code      ; ledLayout.code(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
+            shank =      [shank     ; ledLayout.shank(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
+            LED =        [LED       ; ledLayout.LED(ii) * ones(length(find(analogPulses.analogChannel==ledLayout.channel(ii))),1)];
+            pulsesNumber(ii) = length(find(analogPulses.analogChannel==ledLayout.channel(ii)));
+        elseif ledLayout.isDigital(ii)
+            timestamps = [timestamps; digitalPulses.ints{ledLayout.channel(ii)}'];
+            code =       [code      ; ledLayout.code(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
+            shank =      [shank     ; ledLayout.shank(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
+            LED =        [LED       ; ledLayout.LED(ii) * ones(size(digitalPulses.ints{ledLayout.channel(ii)},2),1)];
+            pulsesNumber(ii) = size(digitalPulses.ints{ledLayout.channel(ii)},2);
+        end
 end
 
 [~, idx] = sort(timestamps(:,1));
@@ -119,7 +119,7 @@ uLEDPulses.pulsesNumber = pulsesNumber;
 if saveMat
     disp('Saving results...');
     filename = split(pwd,filesep); filename = filename{end};
-    save([filename '.uLEDPulses.event.mat'],'uLEDPulses');
+    save([filename '.uLEDPulses.events.mat'],'uLEDPulses');
 end
 
 cd(prevPath);

@@ -39,7 +39,7 @@ function [nonEvents] = intervalsBetween(start,stop,sr,events)
 nonEvents = [];
 nEct = 1;
 t_int = 1/sr;
-if isstring(stop)
+if ischar(stop)
    stop = str2double(stop); 
 end
 

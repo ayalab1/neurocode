@@ -5,16 +5,22 @@ function good_idx = manual_trackerjumps(ts,x,y,StartofRec,EndofRec,basepath,vara
 % will be messed up. 
 %
 % Input:
-%       ts
-%       x
-%       y
-%       StartofRec: ts indicating the start points of your event
-%       EndofRec: ts indicating the end points of your event
+%       ts: timestamps 
+%       x: x coord
+%       y: y coords
+%       StartofRec: timestamps indicating the start points of your event
+%       EndofRec: timestamps indicating the end points of your event
+%       darkmode: makes figure dark mode (true)
+%       restic_dir: restrict to within shape (1) or to outside shape (0)
+%       axis_equal: option to make x and y axis on the same scale
+%       alpha: transparancy option of points (.2)
+%       add_scatter: option to include scattered points (true)
 %
+% dependencies: darkBackground, basenameFromBasepath
 %
 % Ryan E Harvey (2018)
 
-% 1 for elminating the points outside drawn shape & 0 for inside
+
 p = inputParser;
 addParameter(p,'darkmode',true,@islogical);
 addParameter(p,'restic_dir',1,@isnumeric);

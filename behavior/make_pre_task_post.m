@@ -1,14 +1,17 @@
 function [intstimestamps_samples,intstimestamps] = make_pre_task_post(basePath,session_sequence)
-% generate pre/task/post structure
+% make_pre_task_post - generate pre/task/post structure
 
-% session_sequence: type of sub-sessions in order of recording. 1=
-% preSleep, 2= task, 3=postSleep
+% INPUT
+
+%   session_sequence: type of sub-sessions in order of recording. 1=
+%   preSleep, 2= task, 3=postSleep
+
+% EXAMPLE
+
+%   basePath ='F:\OML\OML18\day1';
+%   session_sequence=[1 2 2 3];
 
 % Farnaz
-
-% Example :
-% basePath ='F:\OML\OML18\day1';
-% session_sequence=[1 2 2 3];
 
 warning('this function does not work well with discontinuos task epochs')
 

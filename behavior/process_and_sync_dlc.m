@@ -1,5 +1,6 @@
 function [tracking,field_names] = process_and_sync_dlc(varargin)
-% Unpacks DLC CSV within subfolders
+% 
+% process_and_sync_dlc - Unpacks DLC CSV within subfolders
 %
 % Run this after you have exported deeplabcut csv results
 %

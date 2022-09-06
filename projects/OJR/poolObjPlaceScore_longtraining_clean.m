@@ -12,10 +12,10 @@ animals = {'OJR42','OJR43', 'OJR44', 'OJR45','OJR46','OJR47', 'OJR48','OJR51','O
 
 
 days = {{'day11','day12'};{'day7','day10'};{'day11','day16'};{'day8','day9','day12'};...
-        {'day8','day15','day16'};{'day10','day11','day15'};{'day10','day11','day13'};{'day5','day8'};{'day13'};{'day10'}};
+        {'day8','day15','day16'};{'day10','day11','day15'};{'day10','day11','day13'};{'day5','day8'};{'day13'};{'day10', 'day12'}};
 
 
-condition = {[1 1]; [1 1]; [2 3]; [2 3 1]; [2 3 1]; [1 3 2]; [1 3 2]; [2 3]; [3]; [3]};
+condition = {[1 1]; [1 1]; [2 3]; [2 3 1]; [2 3 1]; [1 3 2]; [1 3 2]; [2 3]; [3]; [3 2]};
 
 
 % 1=4h delay 3x training; 2=4h delay 3x training + PFC inh; 3=4h delay 3x training + PFC delay;

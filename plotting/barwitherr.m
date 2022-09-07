@@ -1,17 +1,40 @@
-%**************************************************************************
+function varargout = barwitherr(errors,varargin)
+%barwitherr - a simple extension of the bar plot to include error bars.
 %
-%   This is a simple extension of the bar plot to include error bars.  It
-%   is called in exactly the same way as bar but with an extra input
-%   parameter "errors" passed first.
+%  This is a simple extension of the bar plot to include error bars.  It
+%  is called in exactly the same way as bar but with an extra input
+%  parameter "errors" passed first.
 %
-%   Parameters:
-%   errors - the errors to be plotted (extra dimension used if assymetric)
-%   varargin - parameters as passed to conventional bar plot
-%   See bar and errorbar documentation for more details.
+%  USAGE
 %
-%   Output:
-%   [hBar hErrorbar] = barwitherr(..) returns a vector of handles to the 
+%    % [hBar hErrorbar] = barwitherr(..) returns a vector of handles to the 
 %                      barseries (hBar) and error bar (hErrorbar) objects
+%   
+%  INPUTS
+%    errors         the errors to be plotted (extra dimension used if 
+%                   asymmetric)
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     See bar and errorbar documentation for more details on optional inputs.
+%    =========================================================================
+% 
+%  OUTPUTS
+%    hBar           Figure handles for barseries
+%    hErrorbar      Handles for error bar objects
+%
+%  NOTE
+%
+%    Ideally used for group plots with non-overlapping bars because it
+%    will always plot in bar centre (so can look odd for over-lapping bars) 
+%    and for stacked plots the errorbars will be at the original y value is 
+%    not the stacked value so again odd appearance as is.
+%    The data may not be in ascending order.  Only an issue if x-values are 
+%    passed to the fn in which case their order must be determined to 
+%    correctly position the errorbars.
+%
+%  EXAMPLES
 %
 %   Symmetric Example:
 %   y = randn(3,4);         % random y values (3 groups of 4 parameters) 
@@ -31,44 +54,16 @@
 %   errY(:,:,2) = 0.2.*y;   % 20% upper error
 %   barwitherr(errY, y);    % Plot with errorbars
 %
-%   set(gca,'XTickLabel',{'Group A','Group B','Group C'})
-%   legend('Parameter 1','Parameter 2','Parameter 3','Parameter 4')
-%   ylabel('Y Value')
+%  SEE
 %
+%    See also 'errorbar', 'bar'
 %
-%   Notes:
-%   Ideally used for group plots with non-overlapping bars because it
-%   will always plot in bar centre (so can look odd for over-lapping bars) 
-%   and for stacked plots the errorbars will be at the original y value is 
-%   not the stacked value so again odd appearance as is.
+% Martina F. Callaghan 2011-2013
 %
-%   The data may not be in ascending order.  Only an issue if x-values are 
-%   passed to the fn in which case their order must be determined to 
-%   correctly position the errorbars.
-%
-%
-%   24/02/2011  Martina F. Callaghan    Created
-%   12/08/2011  Martina F. Callaghan    Updated for random x-values   
-%   24/10/2011  Martina F. Callaghan    Updated for asymmetric errors
-%   15/11/2011  Martina F. Callaghan    Fixed bug for assymetric errors &
-%                                       vector plots
-%   14/06/2013  Martina F. Callaghan    Returning handle as recommended by
-%                                       Eric (see submission comments)
-%   08/07/2013  Martina F. Callaghan    Only return handle if requested.
-%   18/07/2013  Martina F. Callaghan    Bug fix for single group data that 
-%                                       allows assymetric errors.
-%                                       Also removed dot from display as
-%                                       per Charles Colin comment. The 
-%                                       handle can be returned to control
-%                                       appearance.
-%   27/08/2013  Martina F. Callaghan    Ensuring errors are always stored
-%                                       as lowerErrors and upperErrors even
-%                                       if symmetric.
-%
-%**************************************************************************
-
-function varargout = barwitherr(errors,varargin)
-
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 if isempty(varargin),
     varargin{1} = nanmean(errors);

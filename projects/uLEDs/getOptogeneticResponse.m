@@ -176,8 +176,8 @@ for ii = 1:length(spikes.UID)
              optogeneticResponses.threeWaysTest(ii,jj,1) = test;
              optogeneticResponses.channel(ii,jj,1) = channels(jj);
         else
-            optogeneticResponses.responsecurve(ii,jj,:) = nan(duration/binSize + 1,1);
-            optogeneticResponses.responsecurveZ(ii,jj,:) = nan(duration/binSize + 1,1);
+            optogeneticResponses.responsecurve(ii,jj,:) = nan(winSize/binSize + 1,1);
+            optogeneticResponses.responsecurveZ(ii,jj,:) = nan(winSize/binSize + 1,1);
             optogeneticResponses.modulationSignificanceLevel(ii,jj,1) = NaN;
             optogeneticResponses.rateDuringPulse(ii,jj,1) = NaN;
             optogeneticResponses.rateBeforePulse(ii,jj,1) = NaN;

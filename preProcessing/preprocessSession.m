@@ -20,6 +20,7 @@ function  preprocessSession(varargin)
 %   getPos         - get tracking positions. Default false.
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
+%   path_to_dlc_bat_file - path to your dlc bat file to analyze your videos (see neurocode\behavior\dlc for example files)
 %
 %  HISTORY:
 %   AntonioFR, 5/20
@@ -50,6 +51,7 @@ addParameter(p,'getPos',false,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
+addParameter(p,'path_to_dlc_bat_file','',@isfile) 
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -70,6 +72,7 @@ getPos = p.Results.getPos;
 removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
+path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 
 if ~exist(basepath,'dir')
     error('path provided does not exist')
@@ -204,11 +207,16 @@ if spikeSort
     end
 end
 
+%% run dlc
+if exist(path_to_dlc_bat_file,'file')
+    system(path_to_dlc_bat_file,'-echo')
+end
+
 %% Get tracking positions - TO FIX
 if getPos
     % check for pre existing deeplab cut 
 %     if ~check_for_dlc(basepath,basename) % to be implemented
-    getSessionTracking('basepath',basepath,'optitrack',false);
+%     getSessionTracking('basepath',basepath,'optitrack',false);
 %     end
     % put tracking into standard format
     general_behavior_file('basepath',basepath)

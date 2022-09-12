@@ -21,6 +21,11 @@ function  preprocessSession(varargin)
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
 %   path_to_dlc_bat_file - path to your dlc bat file to analyze your videos (see neurocode\behavior\dlc for example files)
+%   multiKilosort  - Nx1 cell of channels to exclude in each of N separate
+%                    KiloSort runs. Within each cell, there should be a 
+%                    numeric array of channels to exclude. Default {}. 
+%                    Useful in the event of long recordings with multiple 
+%                    electrodes or many recording sites. 
 %
 %  HISTORY:
 %   AntonioFR, 5/20
@@ -52,6 +57,7 @@ addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile) 
+addParameter(p,'multiKilosort',{},@iscell);
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -73,6 +79,7 @@ removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
+multiKilosort = p.Results.multiKilosort;
 
 if ~exist(basepath,'dir')
     error('path provided does not exist')
@@ -199,11 +206,24 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',session.channelTags.Bad.channels);
-    %     PhyAutoClustering(kilosortFolder);
-    if cleanRez
-        load(fullfile(kilosortFolder,'rez.mat'),'rez');
-        CleanRez(rez,'savepath',kilosortFolder);
+    if length(multiKilosort)==0
+        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',session.channelTags.Bad.channels);
+        %     PhyAutoClustering(kilosortFolder);
+        if cleanRez
+            load(fullfile(kilosortFolder,'rez.mat'),'rez');
+            CleanRez(rez,'savepath',kilosortFolder);
+        end
+    else
+        for i = 1:length(multiKilosort)
+            excludeKilo = [];
+            excludeKilo = session.channelTags.Bad.channels;
+            excludeKilo = [excludeKilo multiKilosort{i}];
+            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeKilo);
+            if cleanRez
+                load(fullfile(kilosortFolder,'rez.mat'),'rez');
+                CleanRez(rez,'savepath',kilosortFolder);
+            end
+        end
     end
 end
 

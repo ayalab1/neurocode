@@ -1,10 +1,19 @@
-N:\OJRproject\OJR33\day7 % too superficial PFC
-N:\OJRproject\OJR33\day9 % too superficial PFC
-N:\OJRproject\OJR34\day2 % Check out ripple detection, they seem to be starting earlier than the timestamps
-N:\OJRproject\OJR34\day7
+Y:\OJRproject\OJR33\day7 % too superficial PFC
+Y:\OJRproject\OJR33\day9 % too superficial PFC
+Y:\OJRproject\OJR34\day2 % Check out ripple detection, they seem to be starting earlier than the timestamps
+Y:\OJRproject\OJR34\day7
 
 % No PFC inhibition:
-N:\OJRproject\OJR49\day7 % re-detect SWS (it's too short)
-N:\OJRproject\OJR49\day8
+Y:\OJRproject\OJR49\day7 % re-detect SWS (it's too short)
+Y:\OJRproject\OJR49\day8
+
+Y:\OJRproject\OJR49\day10 
+
 % new
-N:\OJRproject\OJR49\day10 
+% Y:\OJRproject\OJR54\day6
+% Y:\OJRproject\OJR54\day10 % Stimulation is practically random (threshold too low, so stimulation happened ~every 0.5 s
+Y:\OJRproject\OJR54\day11
+Y:\OJRproject\OJR54\day13
+Y:\OJRproject\OJR54\day14
+Y:\OJRproject\OJR54\day16
+Y:\OJRproject\OJR54\day18

@@ -190,6 +190,10 @@ if convert_xy_to_cm
         behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;
     end
     behavior.position.units = 'cm';
+    
+    v = LinearVelocity([behavior.position.timestamps',behavior.position.x',behavior.position.y']);
+    behavior.speed = v(:,2)';
+    behavior.acceleration = [0,diff(behavior.speed)];
 end
 
 if save_mat

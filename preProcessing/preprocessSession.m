@@ -159,7 +159,15 @@ end
 
 %% Make LFP
 try
-    LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+    try
+        LFPfromDat(basepath,'outFs',1250,'useGPU',true);
+    catch
+        if (exist([basepath '\' basename '.lfp'])~=0)
+            fclose([basepath '\' basename '.lfp']); %if the above run failed after starting the file
+            delete([basepath '\' basename '.lfp']); 
+        end
+        LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+    end
 catch
     try
         warning('LFPfromDat failed, trying ResampleBinary')

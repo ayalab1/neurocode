@@ -20,6 +20,8 @@ function  preprocessSession(varargin)
 %   getPos         - get tracking positions. Default false.
 %   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
 %   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
+%   path_to_dlc_bat_file - path to your dlc bat file to analyze your videos (see neurocode\behavior\dlc for example files)
+%   nKilosortRuns  - number of desired Kilosort runs (default = 1). The function will break down the shanks into "nKilosortRuns" groups for each run
 %
 %  HISTORY:
 %   AntonioFR, 5/20
@@ -50,6 +52,8 @@ addParameter(p,'getPos',false,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
+addParameter(p,'path_to_dlc_bat_file','',@isfile) 
+addParameter(p,'nKilosortRuns',1,@isnumeric);
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -70,6 +74,8 @@ getPos = p.Results.getPos;
 removeNoise = p.Results.removeNoise;
 runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
+path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
+nKilosortRuns = p.Results.nKilosortRuns;
 
 if ~exist(basepath,'dir')
     error('path provided does not exist')
@@ -196,11 +202,25 @@ end
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',session.channelTags.Bad.channels);
-    %     PhyAutoClustering(kilosortFolder);
-    if cleanRez
+    if nKilosortRuns>1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
+        shanks = session.extracellular.spikeGroups.channels;
+        kilosortGroup = ceil(((1:length(shanks))/nKilosortRuns));
+        for i=1:nKilosortRuns
+            channels = cat(2,shanks{kilosortGroup==i});
+            excludeChannels = find(~ismember((1:session.extracellular.nChannels),channels));
+            excludeChannels = cat(2,excludeChannels,session.channelTags.Bad.channels);
+            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels);
+            if cleanRez
+                load(fullfile(kilosortFolder,'rez.mat'),'rez');
+                CleanRez(rez,'savepath',kilosortFolder);
+            end
+        end
+    else
+        %% single sort
+        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path); % 'NT',20*1024 for long sessions when RAM is overloaded
         load(fullfile(kilosortFolder,'rez.mat'),'rez');
         CleanRez(rez,'savepath',kilosortFolder);
+        %     PhyAutoClustering(kilosortFolder);
     end
 end
 

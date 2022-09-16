@@ -184,10 +184,28 @@ disp([datestr(clock) ': finished de-noising! Initiating Kilosort for session ' b
 
 %% Kilosort concatenated sessions
 if spikeSort
-    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path); % 'NT',20*1024 for long sessions when RAM is overloaded
-    load(fullfile(kilosortFolder,'rez.mat'),'rez'); 
-    CleanRez(rez,'savepath',kilosortFolder);
-    %     PhyAutoClustering(kilosortFolder);
+    % Sort shanks separately
+    nKilosorts = 2;
+    if nKilosorts>1
+        shanks = session.extracellular.spikeGroups.channels;
+        kilosortGroup = ceil(((1:length(shanks))/nKilosorts));
+        for i=1:nKilosorts
+            channels = cat(2,shanks{kilosortGroup==i});
+            excludeChannels = find(~ismember((1:session.extracellular.nChannels),channels));
+            excludeChannels = cat(2,excludeChannels,session.channelTags.Bad.channels);
+            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels);
+            if cleanRez
+                load(fullfile(kilosortFolder,'rez.mat'),'rez');
+                CleanRez(rez,'savepath',kilosortFolder);
+            end
+        end
+    else
+        %% single sort
+        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path); % 'NT',20*1024 for long sessions when RAM is overloaded
+        load(fullfile(kilosortFolder,'rez.mat'),'rez');
+        CleanRez(rez,'savepath',kilosortFolder);
+        %     PhyAutoClustering(kilosortFolder);
+    end
 end
 % move datfile to kilosort folder
 % movefile(fullfile(basepath,[basename '.dat']),fullfile(kilosortFolder,[basename '.dat']));
@@ -198,8 +216,9 @@ cd(basepath);
 session = sessionTemplate(pwd,'showGUI',true,'remove_folder_date',true);
 f = dir('Kilosort*');
 
-spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
-cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial'});
+preprocessSpikes(basepath,'multiKilosort',nKilosorts>1);
+% spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
+% cell_metrics = ProcessCellMetrics('session',session,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial'});
 channel_mapping
 close all
 % copyfile(fullfile(kilosortFolder,[basename '.session.mat']),fullfile(basepath,[basename '.session.mat']));

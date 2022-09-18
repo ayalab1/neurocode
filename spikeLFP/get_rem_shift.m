@@ -2,11 +2,67 @@ function rem_shift_data = get_rem_shift(varargin)
 % get_rem_shift: compares phase locking in awake vs. rem to locate
 % rem shifting pyr units in deep ca1.
 %
+
+% get_rem_shift - Compares phase locking in awake vs rem to locate rem
+% shifting pyr neurons deep ca1
+%
 % Based on Mizuseki, et al 2011.
 % Neurons with <120° or >300° preferred theta phases during REM were
 % designated as REM-shifting cells, whereas those between 120° to 300°
 % were designated as nonshifting cells.
 %
+%  USAGE
+%
+%    rem_shift_data = get_rem_shift(varargin)
+%
+%
+%    <options>      optional list of property-value pairs (see table below)
+%
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     'passband'    frequency of theta band (default = [6,12])
+%     'lfp'         structure from getLFP with single theta channel
+%     'spikes'      spikes structure (i.e. spikes.cellinfo)
+%     'savemat'     save output to basepath (default true)
+%     'numBins'     number of bins in phase histogram (default - 18)
+%    =========================================================================
+%
+%  OUTPUT
+%
+%    dist           circular distribution (one column per group)
+%    binned         centers of the angular bins
+%    stats.m        mean angle (one per group)
+%    stats.mode     distribution mode (one per group)
+%    stats.r        mean resultant length (one per group)
+%    stats.k        concentration (one per group)
+%    stats.p        p-value for Rayleigh test (one per group)
+% 
+%    rem_shift_data:
+%    .UID                   updates spikes.UID
+%    .circ_dist             phase statistics from wake and rem epochs
+%    .rem_shift             spikes that are significantly rem shifted
+%    .non_rem_shift         spikes that are non-rem shifted 
+%    .PhaseLockingData_rem  phase locking of rem shifted cells
+%    .PhaseLockingData_wake phase locking of cells during wake 
+%    .detectorParams.p.Results
+%                   .channels     channels used (lfp.channels)
+%                   .samplingRate sampling rate of lfp (lfp.samplingRate)
+%  NOTE
+%  
+%  
+%
+%  SEE
+%
+%   Dependencies: basenameFromBasepath, getLFP, phaseModulation
+%
+% 
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 % Ryan H 2021
 
 p = inputParser;

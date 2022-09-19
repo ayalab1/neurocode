@@ -6,6 +6,8 @@ function [pulses] = getAnalogPulses(varargin)
 % in intan analog-in file.
 %
 % <OPTIONALS>
+% forceDetect   true or false to force detection (avoid load previous
+%               detection, default false)
 % analogCh      List of analog channels with pulses to be detected (it support Intan Buzsaki Edition).
 % data          R x C matrix with analog data. C is data, R should be
 %               greater than 1.
@@ -49,6 +51,7 @@ addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'useGPU',true,@islogical);
 addParameter(p,'minDur',[],@isnumeric);
 addParameter(p,'showFig',true,@islogical);
+addParameter(p,'forceDetect',false,@islogical);
 
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
@@ -63,13 +66,14 @@ basepath = p.Results.basepath;
 useGPU = p.Results.useGPU;
 minDur = p.Results.minDur;
 showFig = p.Results.showFig;
+forceDetect = p.Results.forceDetect;
 
 prevPath = pwd;
 cd(basepath);
 
 %%
 filetarget = split(pwd,filesep); filetarget = filetarget{end};
-if exist([filetarget '.pulses.events.mat'],'file') 
+if exist([filetarget '.pulses.events.mat'],'file') && ~forceDetect
     disp('Pulses already detected! Loading file.');
     load([filetarget '.pulses.events.mat']);
     if ~isempty(analogCh) && isnumeric(analogCh)

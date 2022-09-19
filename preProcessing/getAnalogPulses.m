@@ -154,6 +154,18 @@ for jj = 1 : length(analogCh)
     end    
     xt = linspace(1,length(d)/samplingRate,length(d));
     
+    try % correct for different baselines in different subsessions (different rooms)
+        MergePoints = getStruct(basepath,'MergePoints');
+        for subsession = 1:size(MergePoints.timestamps,1)
+            start = MergePoints.timestamps(subsession,1); stop = MergePoints.timestamps(subsession,2);
+            in = xt>start & xt<stop;
+            m = median(d(in)); % remove the median (baseline) signal
+            d(in) = d(in) - m;
+        end
+    catch
+        warning('error in attempting to remove subsession baseline: tell Raly');
+    end
+
     if any(d<0) % if signal go negative, rectify
         d = d - min(d);
     end

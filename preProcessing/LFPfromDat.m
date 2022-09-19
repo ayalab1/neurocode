@@ -69,6 +69,7 @@ outFs = p.Results.outFs;
 lopass = p.Results.lopass;
 useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
+g = gpuDevice(1);
 
 session = getSession('basepath',basepath);
 basename = session.general.name;
@@ -236,6 +237,11 @@ end
 
 fclose(fidI);
 fclose(fidout);
+
+if useGPU
+    reset(g);
+    gpuDevice([]);
+end
 
 disp('lfp file created')
 end

@@ -28,7 +28,9 @@ function [r,p] = CofiringCoefficient(spikes,intervals1,intervals2)
 %                   intervals1 and in  intervals2 (cofiring coefficient).
 %    p              p-value for Pearson's test
 %
-
+%  SEE
+%
+%   Dependencies: CorrInIntervals, InIntervals, Accumulate
 % Copyright (C) 2014-2018 by Ralitsa Todorova and Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify

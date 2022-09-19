@@ -10,32 +10,33 @@ function savepath = KiloSortWrapper(varargin)
 %   Check varargin description below when input parameters are parsed
 %
 %  INPUT
-%    =========================================================================
-%     Properties            Values
-%    -------------------------------------------------------------------------
-%     'basepath'            basepath for wrapper (if not listed, cd)
-%     'p'                   parser
-%     '.basepath'           path to the folder containing the data
-%     '.basename'           file basenames (of the dat and xml files)
-%     '.GPU_id'             specify the GPU_id (default is 1)
-%     '.rejectchannels'     specify list of channels to ignore while spike... 
-%                           ...sorting (base 1, add 1 to neuroscope numbering)
-%     '.SSD_path'           path to SSD disk. Make it empty to disable SSD
-%     '.CreateSubdirectory' puts the Kilosort output into a subfolder...
-%                           ...(defualt is 1)
-%     '.performAutoCluster' performs PhyAutoCluster once Kilosort is... 
-%                           ...complete when exporting to Phy 
-%     '.config'             specify a configuration file to use from the...
-%                           ....ConfigurationFiles folder. e.g. 'Omid'
-%     '.NT'                 specify desired batch size...
-%                           ...(default = 32*1024; reduce if out of memory)
-%     =========================================================================
+%
+%    <options>   optional list of property-value pairs (see table below)
+%
+%   ['basepath']           [basepath for wrapper (if not listed, cd)]
+%   ['basename']           [file basenames (of the dat and xml files)]
+%   ['GPU_id']             [specify the GPU_id (default is 1)]
+%   ['rejectchannels']     [specify list of channels to ignore while spike 
+%                           sorting (base 1, add 1 to neuroscope numbering)]
+%   ['SSD_path']           [path to SSD disk. Make it empty to disable SSD]
+%   ['CreateSubdirectory'] [puts the Kilosort output into a subfolder
+%                          (defualt is 1)]
+%   ['performAutoCluster'] [performs PhyAutoCluster once Kilosort is 
+%                          complete when exporting to Phy] 
+%   ['config']             [specify a configuration file to use from the
+%                          ConfigurationFiles folder. e.g. 'Omid']
+%   ['NT']                 [specify desired batch size
+%                          (default = 32*1024; reduce if out of memory)]
 %
 %  OUTPUT
 %
-%    'rez'                  rez structure for input into KiloSort
+%    [rez]                 [rez structure for input into KiloSort]
 %  
 %  NOTE
+%  
+%  EXAMPLES 
+%  
+%    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels)
 %
 %  SEE
 %

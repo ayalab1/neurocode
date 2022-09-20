@@ -6,6 +6,8 @@ function [pulses] = getAnalogPulses(varargin)
 % in intan analog-in file.
 %
 % <OPTIONALS>
+% forceDetect   true or false to force detection (avoid load previous
+%               detection, default false)
 % analogCh      List of analog channels with pulses to be detected (it support Intan Buzsaki Edition).
 % data          R x C matrix with analog data. C is data, R should be
 %               greater than 1.
@@ -49,6 +51,7 @@ addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'useGPU',true,@islogical);
 addParameter(p,'minDur',[],@isnumeric);
 addParameter(p,'showFig',true,@islogical);
+addParameter(p,'forceDetect',false,@islogical);
 
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
@@ -63,13 +66,14 @@ basepath = p.Results.basepath;
 useGPU = p.Results.useGPU;
 minDur = p.Results.minDur;
 showFig = p.Results.showFig;
+forceDetect = p.Results.forceDetect;
 
 prevPath = pwd;
 cd(basepath);
 
 %%
 filetarget = split(pwd,filesep); filetarget = filetarget{end};
-if exist([filetarget '.pulses.events.mat'],'file') 
+if exist([filetarget '.pulses.events.mat'],'file') && ~forceDetect
     disp('Pulses already detected! Loading file.');
     load([filetarget '.pulses.events.mat']);
     if ~isempty(analogCh) && isnumeric(analogCh)
@@ -149,6 +153,41 @@ for jj = 1 : length(analogCh)
         d = dataAnalogIn(analogCh(jj)-(min(analogCh)-1),:);
     end    
     xt = linspace(1,length(d)/samplingRate,length(d));
+    
+    try % correct for different baselines in different subsessions (different rooms)
+        MergePoints = getStruct(basepath,'MergePoints');
+        for subsession = 1:size(MergePoints.timestamps,1)
+            start = MergePoints.timestamps(subsession,1); stop = MergePoints.timestamps(subsession,2);
+            in = xt>start & xt<stop;
+            m = median(d(in)); % remove the median (baseline) signal
+            d(in) = d(in) - m;
+        end
+    catch
+        warning('error in attempting to remove subsession baseline: tell Raly');
+    end
+
+    % estimate if there are ANY pulses in the signal:
+    % if there are pulses, we expect good separation between high signal (during pulse) and low signal (outside of pulse)
+    % if there are no pulses, we expect more uniform / gaussian noise signal with poor separation (not bimodal)
+    emThreshold = 0.3; % effectiveness metric goes from 0 (poor separation) to 1 (best separation); the number is an arbitrary threshold that Raly made up (having seen largest noise em-s of ~0.2, and lowest em-s of real pulses around >0.5)
+    try % define "effectiveness metric" for the off-vs-on signal separation (pulse) for each subsession:
+        MergePoints = getStruct(basepath,'MergePoints');
+        for subsession = 1:size(MergePoints.timestamps,1)
+            start = MergePoints.timestamps(subsession,1); stop = MergePoints.timestamps(subsession,2);
+            in = xt>start & xt<stop;
+            dd = double(d(in)); midpoint = mean([min(dd) max(dd)]);
+            em(subsession,1) = 1-(mean(dd>=midpoint)*var(dd(dd>=midpoint),1)+ mean(dd<midpoint)*var(dd(dd<midpoint),1)) / var(dd);
+        end
+    catch % no subsessions detected, use whole session:
+        dd = double(d); midpoint = mean([min(dd) max(dd)]);
+        em = 1-(mean(dd>=midpoint)*var(dd(dd>=midpoint),1)+ mean(dd<midpoint)*var(dd(dd<midpoint),1)) / var(dd);
+        warning('error in attempting to remove subsession baseline: tell Raly');
+    end
+    if max(em)<emThreshold, % if ANY subsession has good pulses, that's enough for this condition to pass
+        warning('Signal didn''t pass Raly''s threshold for detecting pulses. Aborting... Talk to Raly if you think this is a mistake and pulses are actually in the signal.'); 
+        d(:) = 0; % set signal to zero to avoid tedious steps to find pulses
+    end
+
     
     if any(d<0) % if signal go negative, rectify
         d = d - min(d);

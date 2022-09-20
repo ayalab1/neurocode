@@ -13,7 +13,7 @@ function rem_shift_data = get_rem_shift(varargin)
 %
 %  USAGE
 %
-%    rem_shift_data = get_rem_shift(varargin)
+%    [rem_shift_data] = get_rem_shift(varargin)
 %
 %  INPUT
 % =========================================================================

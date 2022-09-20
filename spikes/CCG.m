@@ -37,7 +37,8 @@
 %
 %  SEE
 %
-%    See also ShortTimeCCG.
+%  Dependencies: CCGHeart 
+%  See also ShortTimeCCG.
 
 % Copyright (C) 2012 by Michaël Zugaro
 %

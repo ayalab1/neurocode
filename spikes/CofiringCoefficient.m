@@ -1,15 +1,16 @@
 function [r,p] = CofiringCoefficient(spikes,intervals1,intervals2)
 
-%CofiringCoefficient - Compute the cofiring coefficient between two sets of intervals.
+% [CofiringCoefficient] - [Compute the cofiring coefficient between two
+% sets of intervals]
 %
-% Compute the cofiring coefficient of unit pairs between two sets of intervals
+% [Compute the cofiring coefficient of unit pairs between two sets of intervals
 % (such as theta cycles and ripples). First, count the spikes emitted by each
 % unit in each interval of the first set. Compute Pearson's correlation between
 % the spike counts for each cell pair, and store the results in a vector. Then
 % repeat this for the second set of intervals. The cofiring coefficient is
 % defined as Pearson's correlation between the two resulting vectors. Thus,
 % a high value indicates that cell pair correlations are similar between the two
-% sets of intervals.
+% sets of intervals.]
 %
 %  USAGE
 %
@@ -17,21 +18,25 @@ function [r,p] = CofiringCoefficient(spikes,intervals1,intervals2)
 %
 %  INPUT
 %
-%    spikes         two-column matrix of timestamps and unit IDs,
-%                   provided by <a href="matlab:help GetSpikeTimes">GetSpikeTimes</a> using 'output' = 'numbered'
-%    intervals1     two-column matrix of start and end times
-%    intervals2     two-column matrix of start and end times
+%    [spikes]         [two-column matrix of timestamps and unit IDs,
+%                      prvided by <a href="matlab:help
+%                      GetSpikeTimes">GetSpikeTimes</a> using 'output' = 'numbered']
+%    [intervals1]     [two-column matrix of start and end times]
+%    [intervals2]     [two-column matrix of start and end times]
 %
 %  OUTPUT
 %
-%    r              Pearson's r between the neuronal pair correlations in
-%                   intervals1 and in  intervals2 (cofiring coefficient).
-%    p              p-value for Pearson's test
+%    [r]              [Pearson's r between the neuronal pair correlations in
+%                      intervals1 and in  intervals2 (cofiring coefficient)]
+%    [p]              [p-value for Pearson's test]
+%
+%  EXAMPLES
 %
 %  SEE
 %
 %   Dependencies: CorrInIntervals, InIntervals, Accumulate
-% Copyright (C) 2014-2018 by Ralitsa Todorova and Michaël Zugaro
+%
+% [Ralitsa Todorova and Michaël Zugaro] [2014-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

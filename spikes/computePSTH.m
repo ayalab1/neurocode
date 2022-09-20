@@ -1,18 +1,68 @@
 function [PSTH,index_abs] = computePSTH(event,spikes,varargin)
-% This is a generalized way for creating a PSTH for units for various events
+%
+% [computePSTH] - [This is a generalized way for creating a PSTH for units
+% for various events]
+%
+% [Computes PSTH from spikes given events, in alignment with CellExplorer
+% style. PSTH with multiple differing paramaters to change (see
+% documentation)]
+%
+%
+%  USAGE
+%
+%   [PSTH,index_abs] = computePSTH(event,spikes,varargin)
+%
+%
+%  INPUT
+%
+%    [event]         [event times formatted according to the CellExplorer's 
+%                     convention]
+%    [spikes]        [spikes formatted according to the CellExplorer's
+%                     convention]
+%
+%    <options>      [optional list of property-value pairs (see table below)]
+%
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%    ['binCount']         [how many bins (for half the window, defualt 100)]
+%    ['alignment']        [alignment of time['onset','center','peaks','offset']
+%                          (default 'onset')]
+%    ['binDistribution']  [How the bins should be distributed around the
+%                          events, pre, during, post. Must sum to 1]
+%    ['duration']         [Duration of PSTH (for half the window - 
+%                          used in CCG [in seconds]. Default is 0.15]
+%    ['smoothing']       [Any gaussian smoothing to apply? units of bins.                        
+%                          Default is 5.]
+%    ['percentile']      [If events does not have the same length, the
+%                          event duration can be determined from percentile
+%                          of the distribution of events. Default is 99]
+%    ['plots']           [Show plots. Default is 'true']
+%    ['eventName']       [Title used for plots]
+%    ['maxWindow']       [Maximum window size in seconds. Default is 10]
+%    ['zscorePlot']      [Plot z-scored response. Default is 'true']
+%
+%  OUTPUT
+%
+%    [psth]         [Pearson's r between the neuronal pair correlations in
+%                   intervals1 and in  intervals2 (cofiring coefficient)]
+%    [index]        [p-value for Pearson's test]
+%
+%  EXAMPLE
+%
+%  SEE
+%
+%   Dependencies: CCG
+%
+% [AntonioFR. Based on Peter Petersen's calc_PSTH] [2021-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 % 
-% INPUTS
-% event  : event times formatted according to the CellExplorer's convention
-% spikes : spikes formatted according to the CellExplorer's convention
-% 
-% OUTPUT
-% psth
-% index3
-% 
-% 
-% Dependencies: CCG
 
-% AntonioFR, 10/21. Based on Peter Petersen's calc_PSTH
+
 
 p = inputParser;
 

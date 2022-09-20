@@ -1,28 +1,20 @@
 function good_idx = manual_trackerjumps(ts,x,y,StartofRec,EndofRec,basepath,varargin)
-% manual_trackerjumps - manually cut out xy coordinates that are outside the bounds of your maze
-% 
-% Allows you to manually cut out xy coordinates that
+% manual_trackerjumps: Allows you to manually cut out xy coordinates that
 % are outside the bounds of your maze. These can be caused by unplugs or
 % if the rat jumps out. If you do not remove these points, your ratemap
 % will be messed up. 
 %
-% INPUT
-%       ts: timestamps 
-%       x: x coord
-%       y: y coords
-%       StartofRec: timestamps indicating the start points of your event
-%       EndofRec: timestamps indicating the end points of your event
-%       darkmode: makes figure dark mode (true)
-%       restic_dir: restrict to within shape (1) or to outside shape (0)
-%       axis_equal: option to make x and y axis on the same scale
-%       alpha: transparancy option of points (.2)
-%       add_scatter: option to include scattered points (true)
+% Input:
+%       ts
+%       x
+%       y
+%       StartofRec: ts indicating the start points of your event
+%       EndofRec: ts indicating the end points of your event
 %
-% DEPENDENCIES: darkBackground, basenameFromBasepath
 %
 % Ryan E Harvey (2018)
 
-
+% 1 for elminating the points outside drawn shape & 0 for inside
 p = inputParser;
 addParameter(p,'darkmode',true,@islogical);
 addParameter(p,'restic_dir',1,@isnumeric);

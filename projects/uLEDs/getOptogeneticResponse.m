@@ -127,7 +127,6 @@ for ii = 1:length(spikes.UID)
         optogeneticResponses.bootsTrapCI(ii,:) = [NaN NaN];
     end
     for jj = 1:length(channels)
-        pul = [];
         pul = pulses.timestamps(pulses.channel == channels(jj),:);
         if length(pul) > 100
             [stccg, t] = CCG({spikes.times{ii}, pul(:,1)},[],'binSize',binSize,'duration',winSize,'norm','rate');
@@ -176,8 +175,8 @@ for ii = 1:length(spikes.UID)
              optogeneticResponses.threeWaysTest(ii,jj,1) = test;
              optogeneticResponses.channel(ii,jj,1) = channels(jj);
         else
-            optogeneticResponses.responsecurve(ii,jj,:) = nan(winSize/binSize + 1,1);
-            optogeneticResponses.responsecurveZ(ii,jj,:) = nan(winSize/binSize + 1,1);
+            optogeneticResponses.responsecurve(ii,jj,:) = nan(duration/binSize + 1,1);
+            optogeneticResponses.responsecurveZ(ii,jj,:) = nan(duration/binSize + 1,1);
             optogeneticResponses.modulationSignificanceLevel(ii,jj,1) = NaN;
             optogeneticResponses.rateDuringPulse(ii,jj,1) = NaN;
             optogeneticResponses.rateBeforePulse(ii,jj,1) = NaN;
@@ -207,7 +206,6 @@ end
 if rasterPlot
     t = optogeneticResponses.timestamps;
     for ii = 1:length(channels)
-        st = [];
         st = pulses.timestamps(pulses.channel==channels(ii),1);
         if length(st) > 5000 % if more than 5000
             st = randsample(st, 5000);
@@ -215,48 +213,46 @@ if rasterPlot
         end
         disp('   Plotting spikes raster and psth...');
         % [stccg, t] = CCG([spikes.times st],[],'binSize',0.005,'duration',1);
-        if ~isempty(st)
-            figure;
-            set(gcf,'Position',[200 -500 2500 1200]);
-            for jj = 1:size(spikes.UID,2)
-                fprintf(' **Pulses from unit %3.i/ %3.i \n',jj, size(spikes.UID,2)); %\n
-                rast_x = []; rast_y = [];
-                for kk = 1:length(st)
-                    temp_rast = spikes.times{jj} - st(kk);
-                    temp_rast = temp_rast(temp_rast>winSizePlot(1) & temp_rast<winSizePlot(2));
-                    rast_x = [rast_x temp_rast'];
-                    rast_y = [rast_y kk*ones(size(temp_rast))'];
-                end
-
-                % spikeResponse = [spikeResponse; zscore(squeeze(stccg(:,end,jj)))'];
-                resp = squeeze(optogeneticResponses.responsecurveSmooth(jj,ii,:));
-                subplot(7,ceil(size(spikes.UID,2)/7),jj); % autocorrelogram
-                plot(rast_x, rast_y,'.','MarkerSize',1)
-                hold on
-                plot(t(t>winSizePlot(1) & t<winSizePlot(2)), resp(t>winSizePlot(1) & t<winSizePlot(2)) * kk/max(resp)/2,'k','LineWidth',2); hold on
-                if ~isempty(plotStim)
-                    if length(plotStim)==1
-                        xline(plotStim,'r--');
-                    elseif length(plotStim)>2
-                        error('length of plotStim exceeds length of 2. Please only define relative stimulation onset and offset times');
-                    else
-                        xline(plotStim(1),'r--'); hold on
-                        xline(plotStim(2),'r--');
-                    end
-                end                    
-                xlim([winSizePlot(1) winSizePlot(2)]); ylim([0 kk]);
-                title(num2str(jj),'FontWeight','normal','FontSize',10);
-
-                if jj == 1
-                    ylabel('Trial');
-                elseif jj == size(spikes.UID,2)
-                    xlabel('Time (s)');
-                else
-                    set(gca,'YTick',[],'XTick',[]);
-                end
+        figure;
+        set(gcf,'Position',[200 -500 2500 1200]);
+        for jj = 1:size(spikes.UID,2)
+            fprintf(' **Pulses from unit %3.i/ %3.i \n',jj, size(spikes.UID,2)); %\n
+            rast_x = []; rast_y = [];
+            for kk = 1:length(st)
+                temp_rast = spikes.times{jj} - st(kk);
+                temp_rast = temp_rast(temp_rast>winSizePlot(1) & temp_rast<winSizePlot(2));
+                rast_x = [rast_x temp_rast'];
+                rast_y = [rast_y kk*ones(size(temp_rast))'];
             end
-            saveas(gcf,['SummaryFigures\OptogenticRespRaster_ch',num2str(channels(ii)) ,'ch.png']); 
+
+            % spikeResponse = [spikeResponse; zscore(squeeze(stccg(:,end,jj)))'];
+            resp = squeeze(optogeneticResponses.responsecurveSmooth(jj,ii,:));
+            subplot(7,ceil(size(spikes.UID,2)/7),jj); % autocorrelogram
+            plot(rast_x, rast_y,'.','MarkerSize',1)
+            hold on
+            plot(t(t>winSizePlot(1) & t<winSizePlot(2)), resp(t>winSizePlot(1) & t<winSizePlot(2)) * kk/max(resp)/2,'k','LineWidth',2); hold on
+            if ~isempty(plotStim)
+                if length(plotStim)==1
+                    xline(plotStim,'r--');
+                elseif length(plotStim)>2
+                    error('length of plotStim exceeds length of 2. Please only define relative stimulation onset and offset times');
+                else
+                    xline(plotStim(1),'r--'); hold on
+                    xline(plotStim(2),'r--');
+                end
+            end                    
+            xlim([winSizePlot(1) winSizePlot(2)]); ylim([0 kk]);
+            title(num2str(jj),'FontWeight','normal','FontSize',10);
+
+            if jj == 1
+                ylabel('Trial');
+            elseif jj == size(spikes.UID,2)
+                xlabel('Time (s)');
+            else
+                set(gca,'YTick',[],'XTick',[]);
+            end
         end
+        saveas(gcf,['SummaryFigures\OptogenticRespRaster_ch',num2str(channels(ii)) ,'ch.png']); 
     end
 end
 % 2. Rate plot

@@ -1,7 +1,5 @@
 function varargout = anovaplot(data,groups,varargin)
 
-%anovaPlot - Plots box-and-whisker plot for each anova group.
-%
 %   Plots box-and-whisker plot for each group, indicating significant
 %   differences between the groups. Each group is also tested against 0.
 %   For non-parametric data, median +/- standard error of the median are 

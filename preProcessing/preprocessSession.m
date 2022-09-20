@@ -159,7 +159,15 @@ end
 
 %% Make LFP
 try
-    LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+    try
+        LFPfromDat(basepath,'outFs',1250,'useGPU',true);
+    catch
+        if (exist([basepath '\' basename '.lfp'])~=0)
+            fclose([basepath '\' basename '.lfp']); %if the above run failed after starting the file
+            delete([basepath '\' basename '.lfp']); 
+        end
+        LFPfromDat(basepath,'outFs',1250,'useGPU',false);
+    end
 catch
     try
         warning('LFPfromDat failed, trying ResampleBinary')
@@ -189,10 +197,10 @@ end
 if stateScore
     try
         if exist('pulses','var')
-            SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad.channels,'ignoretime',pulses.intsPeriods); % try to sleep score
+            SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods); % try to sleep score
             thetaEpochs(basepath);
         else
-            SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad.channels); % takes lfp in base 0
+            SleepScoreMaster(basepath,'noPrompts',true); % takes lfp in base 0
             thetaEpochs(basepath);
         end
     catch
@@ -224,13 +232,12 @@ if spikeSort
     end
 end
 
-%% run dlc
-if exist(path_to_dlc_bat_file,'file')
-    system(path_to_dlc_bat_file,'-echo')
-end
-
 %% Get tracking positions - TO FIX
 if getPos
+    % check for pre existing deeplab cut 
+%     if ~check_for_dlc(basepath,basename) % to be implemented
+    getSessionTracking('basepath',basepath,'optitrack',false);
+%     end
     % put tracking into standard format
     general_behavior_file('basepath',basepath)
 end
@@ -242,4 +249,19 @@ if runSummary
         sessionSummary;
     end
 end
+end
+
+% to be implemented
+function found_one = check_for_dlc(basepath,basename)
+
+load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+
+for k = 1:length(MergePoints.foldernames)
+    dlc_flag(k) = isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*DLC*.csv')));
+end
+files = dir(basepath);
+files = files(~contains({files.name},'Kilosort'),:);
+dlc_flag(k+1) = isempty(dir(fullfile(files(1).folder,'*DLC*.csv')));
+
+found_one = ~all(dlc_flag);
 end

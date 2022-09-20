@@ -1,27 +1,20 @@
 function df = load_dlc_csv(file_path)
-
-%load_dlc_csv - general function to load dlc csv files
+% load_dlc_csv: general function to load dlc csv files
 %
-%  works by iterating over headers until x,y,likelihood are found, then
-%  makes sure all columns are type double. 
+% works by iterating over headers until x,y,likelihood are found, then
+% makes sure all columns are type double. 
 % 
-%  Iterating over headers are needed as multi-animal tracking has more
-%  headers than the standard single animal tracking
+% Iterating over headers are needed as multi-animal tracking has more
+% headers than the standard single animal tracking
 %
-%  USAGE
-%      df = load_dlc_csv(file_path)
-% 
-%  INPUT 
-%      file_path: fullpath+name of csv file
-% 
-%  OUTPUT
-%      df: table containing tracking results [x,y,likelihood] for each
-%           tracking point. 
-%  SEE
-%      process_and_sync_dlc.m
+% Input: 
+%       file_path: fullpath+name of csv file
+% Output:
+%       df: table containing tracking results [x,y,likelihood] for each
+%       tracking point. 
 %
-%  Ryan H 2022
-
+%
+% Ryan H 2022
 
 unique_fields = {};
 header_i = 1;

@@ -1,11 +1,8 @@
 function laps=FindLapsNSMAadapted(Vts,Vdata,newLapThreshold)
 %
-% FindLapsNSMAadapted - Find Laps in "Horseshoe-Geometry" of a circular track
-% 
-% USAGE
-% 
 % [laps, Vhs] = FindLaps_HorseShoe(V,newLapThreshold);
-% 
+%
+% Find Laps in "Horseshoe-Geometry" of a circular track
 %
 % INPUT:
 % V    ...  tsd of angular position in [0,360] degree range, with horsehoe

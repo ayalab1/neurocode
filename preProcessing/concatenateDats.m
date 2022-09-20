@@ -106,9 +106,10 @@ datpaths = {};
 datsizes.amplifier = [];
 recordingnames = {};
 rcount = 0; %Count of good subfolders
+fun_existsdate = @(x) any(strfind(ismember(x,'1234567890'),[ones(1,6) 0 ones(1,6)])); % Intan's built in date format is 6 numbers followed by 6 numbers: YYMMDD_HHMMss
 for a = 1:length(d)
     %look in each subfolder
-    if any(~ismember(d(a).name,'.')) && d(a).isdir
+    if d(a).isdir && any(~ismember(d(a).name,'.')) && fun_existsdate(d(a).name) % d(a).name needs to be a directory without dots and contain a date to count as a session subfolder
         %Check for amplifier.dat or subfolderbaseName.dat
         if exist(fullfile(basepath,d(a).name,[d(a).name,'.dat']),'file')
             ampfile = fullfile(basepath,d(a).name,[d(a).name,'.dat']);

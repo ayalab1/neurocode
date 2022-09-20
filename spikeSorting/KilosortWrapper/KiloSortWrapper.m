@@ -1,25 +1,60 @@
 function savepath = KiloSortWrapper(varargin)
 %
-% Creates channel map from Neuroscope xml files, runs KiloSort and
-% writes output data to Neurosuite format or Phy.
-% 
-% USAGE
+%  USAGE
 %
-% KiloSortWrapper
-% Run from data folder. File basenames must be the
-% same as the name as current folder
+%   KiloSortWrapper
+%   Run from data folder. File basenames must be the
+%   same as the name as current folder
 %
-% KiloSortWrapper(varargin)
-% Check varargin description below when input parameters are parsed
+%   KiloSortWrapper(varargin)
+%   Check varargin description below when input parameters are parsed
 %
-% Dependencies:  KiloSort (https://github.com/cortex-lab/KiloSort)
-% 
-% Copyright (C) 2016-2022 Brendon Watson and the Buzsakilab
+%  INPUT
+%
+%    <options>   optional list of property-value pairs (see table below)
+%
+%   ['basepath']           [basepath for wrapper (if not listed, cd)]
+%   ['basename']           [file basenames (of the dat and xml files)]
+%   ['GPU_id']             [specify the GPU_id (default is 1)]
+%   ['rejectchannels']     [specify list of channels to ignore while spike 
+%                           sorting (base 1, add 1 to neuroscope numbering)]
+%   ['SSD_path']           [path to SSD disk. Make it empty to disable SSD]
+%   ['CreateSubdirectory'] [puts the Kilosort output into a subfolder
+%                          (defualt is 1)]
+%   ['performAutoCluster'] [performs PhyAutoCluster once Kilosort is 
+%                          complete when exporting to Phy] 
+%   ['config']             [specify a configuration file to use from the
+%                          ConfigurationFiles folder. e.g. 'Omid']
+%   ['NT']                 [specify desired batch size
+%                          (default = 32*1024; reduce if out of memory)]
+%
+%  OUTPUT
+%
+%    [rez]                 [rez structure for input into KiloSort]
+%  
+%  NOTE
+%  
+%  EXAMPLES 
+%  
+%    kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels)
+%
+%  SEE
+%
+%
+%   Dependencies:  KiloSort (https://github.com/cortex-lab/KiloSort)
+%                  createChannelMapFile_KSW, KilosortConfiguration,
+%                  convertOpenEphysToRawBInary, gpuDevice, preprocessData
+%                  fitTemplates, fullMPMU, rezToPhy_KSW, Kilosort2Neurosuite
+%                  writeNPY, phy_export_units
+%
+% % Copyright (C) 2016-2022 Brendon Watson and the Buzsakilab
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 2 of the License, or
-% (at your option) any later version.
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.Creates channel map from Neuroscope xml files, runs KiloSort and
+% writes output data to Neurosuite format or Phy.
+% 
 
 disp('Running Kilosort spike sorting with the Buzsaki lab wrapper')
 
@@ -78,7 +113,7 @@ else
     clear config_string;
 end
 
-if ~isempty(NT),
+if ~isempty(NT)
     ops.NT = NT + ops.ntbuff;
 end
 

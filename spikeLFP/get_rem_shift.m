@@ -1,13 +1,65 @@
 function rem_shift_data = get_rem_shift(varargin)
-% get_rem_shift: compares phase locking in awake vs. rem to locate
-% rem shifting pyr units in deep ca1.
 %
-% Based on Mizuseki, et al 2011.
+% 
+% [get_rem_shift] - [locate rem shifting pyr units]
+%
+%
+%
+% [get_rem_shift - Compares phase locking in awake vs rem to locate rem
+% shifting pyr neurons deep CA1. Based on Mizuseki, et al 2011.
 % Neurons with <120° or >300° preferred theta phases during REM were
 % designated as REM-shifting cells, whereas those between 120° to 300°
-% were designated as nonshifting cells.
+% were designated as nonshifting cells]
 %
-% Ryan H 2021
+%  USAGE
+%
+%    rem_shift_data = get_rem_shift(varargin)
+%
+%  INPUT
+% =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+
+%    <options>      optional list of property-value pairs (see table below)
+%
+%     ['passband']  frequency of theta band (default = [6,12])
+%     ['lfp']       structure from getLFP with single theta channel
+%     ['spikes']    spikes structure (i.e. spikes.cellinfo)
+%     ['savemat']   save output to basepath (default true)
+%     ['numBins']   number of bins in phase histogram (default - 18)
+% =========================================================================
+%
+%
+%  OUTPUT
+% 
+%    [rem_shift_data]
+%    [UID]                     [updates spikes.UID]
+%    [circ_dist]               [phase statistics from wake and rem epochs]
+%    [rem_shift]               [spikes that are significantly rem shifted]
+%    [non_rem_shift]           [spikes that are non-rem shifted] 
+%    [PhaseLockingData_rem]    [phase locking of rem shifted cells]
+%    [PhaseLockingData_wake]   [phase locking of cells during wake] 
+%    [detectorParams.p.Result]
+%                 [.channels]     [channels used (lfp.channels)]
+%                 [.samplingRate] [sampling rate of lfp (lfp.samplingRate)]
+%
+%
+%  NOTE
+%  
+%  EXAMPLES
+%
+%  SEE
+%
+%   Dependencies: basenameFromBasepath, getLFP, phaseModulation
+%
+% [Ryan Harvey] [2021 - 2022] 
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
+
 
 p = inputParser;
 addParameter(p,'basepath',pwd) % path to folder

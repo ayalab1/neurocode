@@ -1,10 +1,10 @@
 function behavior = general_behavior_file(varargin)
-% 
-% general_behavior_file - converts multiple tracking data types to the standard described in cellexplorer
-% 
+% converts multiple tracking data types to the standard described in cellexplorer
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
+%
 % This was writed to standardize xy coordinates and trials in several older data sets
-% Check extract_tracking below to preview methods. Can be further
+%
+% check extract_tracking below to preview methods. Can be further
 % customized.
 %
 % Currently compatible with the following sources:

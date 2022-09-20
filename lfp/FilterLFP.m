@@ -93,7 +93,7 @@ t0 = lfp(:,1);
 ok = diff([-Inf;t0])>0;
 
 % interpolated
-t = (lfp(1,1):(1/1250):lfp(end,1))';
+t = (lfp(1,1):(1/1250):lfp(end,1))'; % this may create the issue where the interpolated signal stops before the very last timestamp (if not divisible by 1250Hz)
 interpolated = interp1(lfp(ok,1),lfp(ok,2),t);
 
 if passband(1)>0
@@ -109,7 +109,8 @@ end
 
 % interpolate back
 filtered = [t0 interp1(filtered(:,1),filtered(:,2),t0)];
-filtered(any(isnan(filtered),2),:) = [];
+if isnan(filtered(end,2)), filtered(end,2) = filtered(end-1,2); end % losing the last bin due to interpolating above
+filtered(any(isnan(filtered),2),:) = []; % remove any errors due to unforeseen nans
 
 %% Before insertion it was just this line:
 % filtered = Filter([t interpolated],'passband',passband,'order',order,varargin{:});

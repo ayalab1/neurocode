@@ -17,6 +17,11 @@ function PreprocessSpikes(basepath, varargin)
 %     showGUI        logical value for showing the session template
 %     showCellMet    logical value for whether or not to pull up cell
 %                    metrics GUI after running initial cell metrics
+%     prePhy         logical value denoting whether or not this is a
+%                    temporary preprocessing run. Default false.
+%     spikeLabels    cell structure of spike sorting labels to read in.
+%                    Default is good. It is recommended to set to {'good',
+%                    'unsorted'} when prePhy=true.
 %    =========================================================================
 % 
 %  OUTPUTS
@@ -33,12 +38,15 @@ p = inputParser;
 addParameter(p,'multiKilosort',false,@islogical);
 addParameter(p,'showGUI',false,@islogical);
 addParameter(p,'showCellMet',true,@islogical);
-
+addParameter(p,'prePhy',false,@islogical);
+addParameter(p,'spikeLabels',{'good'},@iscell);
 parse(p,varargin{:});
 
 multiKilosort = p.Results.multiKilosort;
 showGUI = p.Results.showGUI;
 showCellMet = p.Results.showCellMet;
+prePhy = p.Results.prePhy;
+spikeLabels = p.Results.spikeLabels;
 
 %% 1- extract spike times and waveforms for sorted clusters
 cd(basepath);
@@ -68,7 +76,7 @@ if (size(f,1) > 1) && multiKilosort
         else
             tempSpikes{i} = loadSpikes('session',session,...
                 'clusteringpath',[f(i).folder filesep f(i).name],...
-                'savemat', false);
+                'savemat', false,'labelsToRead',spikeLabels);
         end
         if i == 1
             spikes = tempSpikes{i};
@@ -117,16 +125,26 @@ if (size(f,1) > 1) && multiKilosort
         end
     end
     basename = basenameFromBasepath(pwd);
-    save(strcat(basename,'.spikes.cellinfo.mat'),'spikes');
+    if prePhy
+        save(strcat(basename,'.unsorted.spikes.cellinfo.mat'),'spikes');
+    else
+        save(strcat(basename,'.spikes.cellinfo.mat'),'spikes');
+    end
     clear tempSpikes i j tempSpindices2 prevUID base comp
 elseif (size(f,1)==1)&&(multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
-    spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name]);
+    spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
 end
 %% 2 - compute basic cell metrics
-cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false);
-
+if exist([basepath '\anatomical_map.csv'])
+    channel_mapping;
+end
+if prePhy
+    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'saveAs',[basename '.unsorted.cell_metrics.cellinfo.mat']);
+else
+    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false);
+end
 % GUI to manually curate cell classification
 if showCellMet
     cell_metrics = CellExplorer('metrics',cell_metrics);

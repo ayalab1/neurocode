@@ -62,13 +62,13 @@ end
 end
 
 function run(basepath,passband)
-
+disp(basepath)
 basename = basenameFromBasepath(basepath);
 
-% % pass if file already exists
-% if exist(fullfile(basepath,[basename,'.thetacycles.events.mat']),'file')
-%     return
-% end
+% pass if file already exists
+if exist(fullfile(basepath,[basename,'.thetacycles.events.mat']),'file')
+    return
+end
 
 % find deep ca1 lfp channel 
 lfp = get_deep_ca1_lfp(basepath,passband);
@@ -132,7 +132,10 @@ ca1_channels = unique(ca1_channels);
 deep_channels = deep_channels(ismember(deep_channels,ca1_channels))';
 
 % kick out bad channels
-deep_channels = deep_channels(~ismember(deep_channels,session.channelTags.Bad.channels));
+try
+    deep_channels = deep_channels(~ismember(deep_channels,session.channelTags.Bad.channels));
+catch
+end
 
 if isempty(deep_channels)
     lfp = [];

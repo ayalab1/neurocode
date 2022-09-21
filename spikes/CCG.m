@@ -4,15 +4,14 @@
 %
 %    [ccg,t] = CCG(times,groups,<options>)
 %
-%    times          times of all events
-%                   NOTE: spiketimes in SECONDS.
-%    groups         group IDs for each event in time list (should be
-%                   integers 1:nGroups)
+%    [times]        [times of all events
+%                   NOTE: spiketimes in SECONDS]
+%    [groups]       [group IDs for each event in time list (should be
+%                   integers 1:nGroups)]
 %
-%   alternate buzcode usage: 
-%   times           {Ncells} array of [Nspikes]  spiketimes for each cell.
-%   groups          []
-%
+%   [alternate buzcode usage]: 
+%   [times]           {Ncells} array of [Nspikes]  spiketimes for each cell.
+%   [groups]        []
 %                   spikes = bz_GetSpikes
 %                   [ccg,t] = CCG(spikes.times,[])  
 %
@@ -21,26 +20,31 @@
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'binSize'     bin size in s (default = 0.01)
-%     'duration'    duration in s of each xcorrelogram (default = 2)
-%     'norm'        normalization of the CCG, 'counts' or 'rate' (DL added 8/1/17)
+%     ['binSize']   [bin size in s (default = 0.01)
+%     ['duration']  [duration in s of each xcorrelogram (default = 2)
+%     ['norm']      [normalization of the CCG, 'counts' or 'rate' (DL added 8/1/17)
 %                   'counts' gives raw event/spike count,
-%                   'rate' returns CCG in units of spks/second (default: counts)
+%                   'rate' returns CCG in units of spks/second (default:
+%                   counts)]
 %    =========================================================================
 %
-%
 %  OUTPUT
-%   ccg     [t x ngroups x ngroups] matrix where ccg(t,i,j) is the
+%   [ccg]   [[t x ngroups x ngroups] matrix where ccg(t,i,j) is the
 %           number (or rate) of events of group j at time lag t with  
-%           respect to reference events from group i
-%   t       time lag vector (units: seonds)
+%           respect to reference events from group i]
+%   [t]     [time lag vector (units: seonds)]
 %
-%  SEE
+%  EXAMPLES
 %
-%  Dependencies: CCGHeart 
-%  See also ShortTimeCCG.
-
-% Copyright (C) 2012 by Michaël Zugaro
+%  TODO [replace CCGHeart so not dependent on .c and .mex function HLR
+%       09/22]
+%
+%  SEE ALSO
+%
+%  [Dependencies] - [CCGHeart] 
+%  [See also ShortTimeCCG]
+%
+% [Michaël Zugaro] [2012-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

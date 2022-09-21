@@ -52,7 +52,7 @@ function [PSTH,index_abs] = computePSTH(event,spikes,varargin)
 %
 %  SEE
 %
-%   Dependencies: CCG
+%   [Dependencies] - [CCG]
 %
 % [AntonioFR. Based on Peter Petersen's calc_PSTH] [2021-2022]
 %

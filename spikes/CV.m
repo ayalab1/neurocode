@@ -1,8 +1,8 @@
 function [coeff,local] = CV(timestamps,varargin)
 
-%CV - Compute coefficient of variation for a point process.
+% [CV - Compute coefficient of variation for a point process]
 %
-% Three alternative measures can be computed: regular CV, CV in operational time
+% [Three alternative measures can be computed: regular CV, CV in operational time
 % (Gestri and Petracchi, 1970; Nawrot et al., 2008) or CV2 (Holt et al., 2006).
 %
 % While the CV is typically computed for consecutive events, it can also be
@@ -12,32 +12,40 @@ function [coeff,local] = CV(timestamps,varargin)
 % Although operational time is a useful concept, in practice the estimate of CV
 % strongly depends on the estimated instantaneous frequency of the point process
 % (here, instantaneous frequency is estimated using an adaptive kernel filtering
-% method, see <a href="matlab:help Frequency">Frequency</a>). Use this measure with care.
+% method, see <a href="matlab:help Frequency">Frequency</a>). Use this
+% measure with care.]
 %
 %  USAGE
 %
 %    [coeff,local] = CV(timestamps,<options>)
 %
-%    timestamps     point process
+%    [timestamps]   [point process]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'measure'     either 'cv' (default), 'cvo' (operational time) or 'cv2'
-%     'order'       interval order (default = 1)
-%     'method'      to estimate instantaneous frequency (default = 'fixed')
-%     'binSize'     to estimate instantaneous frequency (default = 0.001 s)
-%     'smooth'      to estimate instantaneous frequency (default = 25)
+%     ['measure']   [either 'cv' (default), 'cvo' (operational time) or
+%                    'cv2']
+%     ['order']     [interval order (default = 1)]
+%     ['method']    [to estimate instantaneous frequency (default =
+%                    'fixed')]
+%     ['binSize']   [to estimate instantaneous frequency (default = 0.001s)]
+%     ['smooth']    [to estimate instantaneous frequency (default = 25)]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    coeff          (mean) coefficient of variation
-%    local          time-dependent coefficient of variation (CV2 only)
+%    [coeff]          [(mean) coefficient of variation]
+%    [local]          [time-dependent coefficient of variation (CV2 only)]
 %
-
-% Copyright (C) 2010-2011 by Michaël Zugaro
+%  EXAMPLES
+%  
+%  SEE ALSO
+%
+%     [Dependencies] - [Frequency, Interpolate]
+%
+% [Michaël Zugaro] [2010-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

@@ -50,7 +50,7 @@ function rem_shift_data = get_rem_shift(varargin)
 %
 %  SEE
 %
-%   Dependencies: basenameFromBasepath, getLFP, phaseModulation
+%   [Dependencies] - [basenameFromBasepath, getLFP, phaseModulation]
 %
 % [Ryan Harvey] [2021 - 2022] 
 %

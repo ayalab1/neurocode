@@ -1,52 +1,61 @@
 function [PhaseLockingData] = phaseModulation(spikes,lfp,passband,varargin)
 % USAGE
-%[PhaseLockingData] = phaseModulation(varargin)
+% [PhaseLockingData] = phaseModulation(varargin)
+%
+% [Calculates distribution of spikes over various phases from a specified
+% cycle of an lfp vector. Phase 0 means peak of lfp wave]
 %
 % INPUTS
-% spikes        -spike time cellinfo struct
 %
-% lfp           -lfp struct with a single channel from getLFP()
-%
-% passband      -frequency range for phase modulation [lowHz highHz] form
-%
-% intervals     -(optional) may specify timespans over which to calculate
-%               phase modulation.  Formats accepted: tstoolbox intervalSet
-%               or a 2column matrix of [starts stops] in seconds
-%
-% samplingRate  -specifies lfp sampling frequency default=1250
-%
-% method        -method selection for how to generate phase,
-%               possibilties are: 'hilbert' (default) or 'wavelet'
-%
-% powerThresh   -integer power threshold to use as cut off,
-%               measured in standard deviations (default = 2)
-%
-% plotting      -logical if you want to plot, false if not, default=true
-%
-% saveMat       -logical to save cellinfo .mat file with results, default=false
-%
+% [spikes]       [spike time cellinfo struct]
+% [lfp]          [lfp struct with a single channel from getLFP()]
+% [passband]     [frequency range for phase modulation [lowHz highHz] form
+% <options>       optional list of property-value pairs (see table below)
+%=========================================================================
+% Properties    Values
+%-------------------------------------------------------------------------
+
+% [intervals]     [specifioes timespans over which to calculate
+%                  phase modulation.  Formats accepted: tstoolbox intervalSet
+%                  or a 2column matrix of [starts stops] in seconds]
+% [samplingRate]  [specifies lfp sampling frequency. Default=1250]
+% [method]        [method selection for how to generate phase,
+%                  possibilties are: 'hilbert' (default) or 'wavelet']
+% [powerThresh]   [integer power threshold to use as cut off,
+%                  measured in standard deviations. Default = 2]
+% [plotting]      [logical if you want to plot, false if not. Default=true]
+% [saveMat]       [logical to save cellinfo .mat file with results.
+%                  Default=false]
 %
 % OUTPUTS
 %
-% phasedistros  - Spike distribution perecentages for each cell in each bin
-%               specified by phasebins
+% [phasedistros]  [Spike distribution perecentages for each cell in each bin
+%                  specified by phasebins]
+% [phasebins]     [180 bins spanning from 0 to 2pi]
+% [phasestats]    [ncellsx1 structure array with following (via
+%                 CircularDistribution.m from FMAToolbox)]
+%                    [phasestats.m]        [mean angle]
+%                    [phasestats.mode]     [distribution mode]
+%                    [phasestats.k]        [concentration]
+%                    [phasestats.p]        [p-value for Rayleigh test]
+%                    [phasestats.r]        [mean resultant length]
+%  
+%  EXAMPLES
 %
-% phasebins     - 180 bins spanning from 0 to 2pi
+%  TODO [change out FiltFiltM, look at quited code Tingley added HLR 09/22]
 %
-% phasestats    - ncellsx1 structure array with following (via
-%                 CircularDistribution.m from FMAToolbox)
-%                    phasestats.m        mean angle
-%                    phasestats.mode     distribution mode
-%                    phasestats.k        concentration
-%                    phasestats.p        p-value for Rayleigh test
-%                    phasestats.r        mean resultant length
+%  SEE ALSO
+%     
+%   [dependencies] - [FiltFiltM, SubtractIntervals, ggetWavelet, wphases,
+%                      InIntervals, v2struct, CircularDistribution]
 %
+% [Brendon Watson] [2015-2021]
+% [edited by david tingley, 2017]
 %
-% Calculates distribution of spikes over various phases from a specified
-% cycle of an lfp vector.   Phase 0 means peak of lfp wave.
-%
-% Brendon Watson 2015
-% edited by david tingley, 2017
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% defaults
 p = inputParser;

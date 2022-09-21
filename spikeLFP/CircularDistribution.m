@@ -1,35 +1,40 @@
 function [dist,binned,stats] = CircularDistribution(angles,varargin)
 
-%CircularDistribution - Compute circular distribution and statistics.
+% [CircularDistribution - Compute circular distribution and statistics]
+%
+% [Takes angles from things such as spikes and calculates circular
+% distribution and statistics]
+%
 %
 %  USAGE
 %
 %    [dist,binned,stats] = CircularDistribution(angles,<options>)
 %
-%    angles         angles in radians
+%    [angles]       [angles in radians]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'nBins'       number of bins (default = 100)
-%     'smooth'      standard deviation of Gaussian kernel (default = 0)
-%     'groups'      groups for multiple circular distributions (see below)
+%     ['nBins']     [number of bins (default = 100)]
+%     ['smooth']    [standard deviation of Gaussian kernel (default = 0)]
+%     ['groups']     [groups for multiple circular distributions (see
+%                   below)]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    dist           circular distribution (one column per group)
-%    binned         centers of the angular bins
-%    stats.m        mean angle (one per group)
-%    stats.mode     distribution mode (one per group)
-%    stats.r        mean resultant length (one per group)
-%    stats.k        concentration (one per group)
-%    stats.p        p-value for Rayleigh test (one per group)
+%    [dist]         [circular distribution (one column per group)]
+%    [binned]       [centers of the angular bins]
+%    [stats.m]      [mean angle (one per group)]
+%    [stats.mode]   [distribution mode (one per group)]
+%    [stats.r]      [mean resultant length (one per group)]
+%    [stats.k]      [concentration (one per group)]
+%    [stats.p]      [p-value for Rayleigh test (one per group)]
 %
 %  NOTE
 %
-%    For multiple circular distributions, groups can be indicated in two different
+%    [For multiple circular distributions, groups can be indicated in two different
 %    manners:
 %
 %     - a vector of group IDs (one per angle)
@@ -37,15 +42,19 @@ function [dist,binned,stats] = CircularDistribution(angles,varargin)
 %       the element (i,j) is 1 iff angle i belongs to group j
 %
 %    The vector form is convenient when each angle can only belong to one group.
-%    The matrix form is useful when a single angle can belong to multiple groups.
+%    The matrix form is useful when a single angle can belong to multiple
+%    groups.]
+%
+%
+%  EXAMPLES
 %
 %  SEE
 %
-%    See also PlotCircularDistribution.
+%    [See also PlotCircularDistribution]
 %
-%   Dependencies: Concentration, CircularMean
+%   [Dependencies] - [Concentration, CircularMean]
 %
-% Copyright (C) 2011-2012 by Michaël Zugaro
+% [Michaël Zugaro] [2011-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

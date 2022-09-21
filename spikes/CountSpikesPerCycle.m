@@ -1,27 +1,33 @@
 function [count,cycles] = CountSpikesPerCycle(spikes,phases)
 
-%CountSpikesPerCycle - Count number of spikes per LFP cycle.
+% [CountSpikesPerCycle] - [Count number of spikes per LFP cycle]
 %
-% Count the number of spikes per cycle in the ongoing oscillatory LFP
-% (e.g. during theta).
+% [Count the number of spikes per cycle in the ongoing oscillatory LFP
+% (e.g. during theta)]
 %
 %  USAGE
 %
 %    [count,cycles] = CountSpikesPerCycle(spikes,phases)
 %
-%    spikes         list of spike timestamps
-%    phases         phase <a href="matlab:help samples">samples</a> in radians (see <a href="matlab:help Phase">Phase</a>)
+%    [spikes]       [list of spike timestamps]
+%    [phases]       [phase <a href="matlab:help samples">samples</a> in
+%                    radians (see <a href="matlab:help Phase">Phase</a>)]
 %
-%  OUTPUT
+%  OUTPUTS
 %
-%    count          spike count in each cycle
-%    cycles         list of [start,stop] times for each cycle
+%    [count]          [spike count in each cycle]
+%    [cycles]         [list of [start,stop] times for each cycle]
+%
+%
+%  EXAMPLES
 %
 %  SEE
 %
-%    See also Phase.
-
-% Copyright (C) 2004-2011 by Michaël Zugaro
+%     [See also Phase]
+%
+%     [Dependencies] - [ZeroCrossings, InIntervals, Accumulate]
+%
+% [Michaël Zugaro] [2004-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

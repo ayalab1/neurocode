@@ -36,7 +36,7 @@ function concatenateDats(basepath,sortFiles,legacy)
 %
 %  USAGE
 %
-%    concatenateDats(basepath,deleteoriginaldatsbool,sortFiles)
+%    concatenateDats(basepath,sortFiles)
 %
 %  INPUTS
 %
@@ -48,7 +48,7 @@ function concatenateDats(basepath,sortFiles,legacy)
 %                              Default = 1.
 %    legacy                  - there should only be 2 inputs, so this third
 %                              input is here temporarily for legacy reasons.
-%                               If for some reason you are using an old script
+%                              If for some reason you are using an old script
 %                              which expects the "sortFiles" input to be 3rd,
 %                              this will temporarily override your second input.
 %                              

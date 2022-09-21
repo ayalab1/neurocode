@@ -87,10 +87,10 @@ addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
 
 parse(p,varargin{:})
-basename = p.Results.basename;
 channels = p.Results.channels;
 downsamplefactor = p.Results.downsample;
 basepath = p.Results.basepath;
+basename = p.Results.basename; if isempty(basename), basename = basenameFromBasepath(basepath); end
 noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
 

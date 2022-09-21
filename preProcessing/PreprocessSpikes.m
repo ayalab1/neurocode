@@ -50,6 +50,7 @@ spikeLabels = p.Results.spikeLabels;
 
 %% 1- extract spike times and waveforms for sorted clusters
 cd(basepath);
+basename = basenameFromBasepath(pwd);
 %if you intend to concatenate multiple kilosort runs into one spikes structure
 session = sessionTemplate(basepath,'showGUI',showGUI);
 f = dir('Kilosort*');
@@ -124,7 +125,6 @@ if (size(f,1) > 1) && multiKilosort
             end
         end
     end
-    basename = basenameFromBasepath(pwd);
     if prePhy
         save(strcat(basename,'.unsorted.spikes.cellinfo.mat'),'spikes');
     else

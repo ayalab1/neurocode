@@ -13,7 +13,9 @@ function [peaktopeak troughs] = FindThetaCycles(lfp)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-thetaFiltered = FilterLFP(lfp, 'passband', 'theta');
+fs = 1/mode(diff(lfp(:,1)));
+
+thetaFiltered = FilterLFP(lfp, 'passband', 'theta', 'nyquist', floor(fs/2));
 [~, amplitude, ~] = Phase(thetaFiltered);
 
 troughs = SineWavePeaks(thetaFiltered,'mode','troughs');
@@ -22,7 +24,7 @@ troughtotrough = [troughs(1:end-1) troughs(2:end)];
 %% Shift peaks to avoid the bias of trying to fit a sine onto an asymmetric wave
 
 % we work with broad bandpass filtered (1-80Hz like in Belluscio et al (2012) signal
-filtered = FilterLFP(lfp, 'passband', [1 80]);
+filtered = FilterLFP(lfp, 'passband', [1 80], 'nyquist', floor(fs/2));
 t = filtered(:,1);
 
 % the real peak is the lowest point between two troughs

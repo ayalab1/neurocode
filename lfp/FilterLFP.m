@@ -17,7 +17,6 @@ function filtered = FilterLFP(lfp,varargin)
 %     'passband'    frequency range (default = [4 10], 'theta')
 %     'order'       filter order (default = 5, but see NOTE below)
 %     'ripple'      filter ripple (default = 20)
-%     'nyquist'     nyquist frequency (default = 625)
 %     'filter'      choose filter type between 'cheby2' (default) and 'fir1'
 %    =========================================================================
 %

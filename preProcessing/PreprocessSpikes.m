@@ -3,7 +3,7 @@ function PreprocessSpikes(basepath, varargin)
 %
 %  Secondary preprocessing function for after KiloSort and manual
 %  clustering has been completed. This processes the spike waveform and
-%  runs initial cell metrics. 
+%  runs initial cell metrics.
 %
 %  INPUTS
 %    basepath       Character input with the file path for your files
@@ -13,7 +13,7 @@ function PreprocessSpikes(basepath, varargin)
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %     multiKilosort  logical value denoting whether or not there are
-%                    multiple KiloSort files to be concatenated together.  
+%                    multiple KiloSort files to be concatenated together.
 %     showGUI        logical value for showing the session template
 %     showCellMet    logical value for whether or not to pull up cell
 %                    metrics GUI after running initial cell metrics
@@ -23,7 +23,7 @@ function PreprocessSpikes(basepath, varargin)
 %                    Default is good. It is recommended to set to {'good',
 %                    'unsorted'} when prePhy=true.
 %    =========================================================================
-% 
+%
 %  OUTPUTS
 %    N/A
 %
@@ -62,7 +62,7 @@ end
 % Make sure there is only one KiloSort folder before running, unless you
 % needed to spike sort probes separately (multiKilosort=1).
 
-% The hippocampal KiloSort folder should be listed first in the session 
+% The hippocampal KiloSort folder should be listed first in the session
 % folder for organization, but this is not necessary for running
 
 % check if spikes.cellinfo has already been created
@@ -134,14 +134,18 @@ if (size(f,1) > 1) && multiKilosort
 elseif (size(f,1)==1)&&(multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
-    spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
+    if prePhy
+        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted']);
+    else
+        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
+    end
 end
 %% 2 - compute basic cell metrics
 if exist([basepath '\anatomical_map.csv'])
     channel_mapping;
 end
 if prePhy
-    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'saveAs',[basename '.unsorted.cell_metrics.cellinfo.mat']);
+    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial'},'saveAs','unsorted.cell_metrics');
 else
     cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false);
 end

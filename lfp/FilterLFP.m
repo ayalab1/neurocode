@@ -93,7 +93,7 @@ t0 = lfp(:,1);
 ok = diff([-Inf;t0])>0;
 
 % interpolated
-t = (lfp(1,1):(1/1250):lfp(end,1))'; % this may create the issue where the interpolated signal stops before the very last timestamp (if not divisible by 1250Hz)
+t = (lfp(1,1):mode(diff(t0)):lfp(end,1))'; % this may create the issue where the interpolated signal stops before the very last timestamp (if not divisible by 1250Hz)
 interpolated = interp1(lfp(ok,1),lfp(ok,2),t);
 
 if passband(1)>0

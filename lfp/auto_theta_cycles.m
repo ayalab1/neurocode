@@ -5,7 +5,7 @@ function auto_theta_cycles(varargin)
 % maximizes theta power (pow 6-12 / pow 1-nyquist). Then it finds theta
 % cycles using FindThetaCycles.m. It will save basename.thetacycles.events.mat
 %
-% 
+%
 %  USAGE
 %
 %    auto_theta_cycles(varargin)
@@ -15,16 +15,17 @@ function auto_theta_cycles(varargin)
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %    <options>      optional list of property-value pairs (see table below)
-%     ['basepath']  basepath to session (can be cell array of many) (default = pwd)
-%     ['passband']  frequency of theta band (default = [6,12])
-%     ['run_parallel']  to run multiple in parallel (default = false)
+%     'basepath'  basepath to session (can be cell array of many) (default = pwd)
+%     'passband'  frequency of theta band (default = [6,12])
+%     'maximize_theta_power' whether to find the channel that maximizes theta power (default=true)
+%     'run_parallel'  to run multiple in parallel (default = false)
 % =========================================================================
 %
 %  OUTPUT
 %       basename.thetacycles.events.mat
 %
 %   Dependencies - basenameFromBasepath,getLFP,FindThetaCycles
-%   - assumes 
+%   - assumes
 %       *accurate deep/sup classification '.deepSuperficialfromRipple.channelinfo.mat'
 %       *channel brain region labels '.session.mat'
 %
@@ -38,11 +39,13 @@ function auto_theta_cycles(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd)
 addParameter(p,'passband',[6,12])
+addParameter(p,'maximize_theta_power',true)
 addParameter(p,'run_parallel',false)
 
 parse(p,varargin{:})
 basepath = p.Results.basepath;
 passband = p.Results.passband;
+maximize_theta_power = p.Results.maximize_theta_power;
 run_parallel = p.Results.run_parallel;
 
 if ~iscell(basepath)
@@ -52,16 +55,16 @@ end
 % iterate over basepaths
 if run_parallel && length(basepath)>1
     parfor i = 1:length(basepath)
-        run(basepath{i},passband)
+        run(basepath{i},passband,maximize_theta_power)
     end
 else
     for i = 1:length(basepath)
-        run(basepath{i},passband)
+        run(basepath{i},passband,maximize_theta_power)
     end
 end
 end
 
-function run(basepath,passband)
+function run(basepath,passband,maximize_theta_power)
 disp(basepath)
 basename = basenameFromBasepath(basepath);
 
@@ -70,8 +73,8 @@ if exist(fullfile(basepath,[basename,'.thetacycles.events.mat']),'file')
     return
 end
 
-% find deep ca1 lfp channel 
-lfp = get_deep_ca1_lfp(basepath,passband);
+% find deep ca1 lfp channel
+lfp = get_deep_ca1_lfp(basepath,passband,maximize_theta_power);
 if isempty(lfp)
     disp('no ca1 lfp')
     return
@@ -96,7 +99,7 @@ thetacycles.detectorinfo.theta_channel = lfp.channels;
 save(fullfile(basepath,[basename,'.thetacycles.events.mat']),'thetacycles')
 end
 
-function lfp = get_deep_ca1_lfp(basepath,passband)
+function lfp = get_deep_ca1_lfp(basepath,passband,maximize_theta_power)
 % get_deep_ca1_lfp: locates a deep ca1 channel that maximizes theta power
 
 basename = basenameFromBasepath(basepath);
@@ -148,39 +151,45 @@ if r>c
     deep_channels = deep_channels';
 end
 
-% try to load downsampled to same time
-try
-    lfp = getLFP(deep_channels,'basepath',basepath,...
-        'basename',basename,'downsample',10);
+if maximize_theta_power
+    % try to load downsampled to same time
+    try
+        lfp = getLFP(deep_channels,'basepath',basepath,...
+            'basename',basename,'downsample',10);
+        
+        % if sample rate cannot be factored by 10, load entire file
+    catch
+        lfp = getLFP(deep_channels,'basepath',basepath,...
+            'basename',basename);
+    end
     
-% if sample rate cannot be factored by 10, load entire file
-catch 
-     lfp = getLFP(deep_channels,'basepath',basepath,...
-        'basename',basename);   
-end
-
-% get theta power to choose channel
-try
-    pBand = bandpower(double(lfp.data),...
-        lfp.samplingRate,passband);
-    
-    pTot = bandpower(double(lfp.data),...
-        lfp.samplingRate,...
-        [1,(lfp.samplingRate/2)-1]);
-catch
-    for c = 1:size(lfp.data,2)
-        pBand(c) = bandpower(double(lfp.data(:,c)),...
+    % get theta power to choose channel
+    try
+        pBand = bandpower(double(lfp.data),...
             lfp.samplingRate,passband);
         
-        pTot(c) = bandpower(double(lfp.data(:,c)),...
+        pTot = bandpower(double(lfp.data),...
             lfp.samplingRate,...
             [1,(lfp.samplingRate/2)-1]);
+    catch
+        for c = 1:size(lfp.data,2)
+            pBand(c) = bandpower(double(lfp.data(:,c)),...
+                lfp.samplingRate,passband);
+            
+            pTot(c) = bandpower(double(lfp.data(:,c)),...
+                lfp.samplingRate,...
+                [1,(lfp.samplingRate/2)-1]);
+        end
     end
+    % find max theta power, normalized by wide band
+    [~,c_idx] = max(pBand./pTot);
+    
+    % only leave theta channel
+    lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
+        'basename',basename);
+    
+else
+    lfp = getLFP(randsample(deep_channels,1),'basepath',basepath,...
+        'basename',basename);
 end
-% find max theta power, normalized by wide band
-[~,c_idx] = max(pBand./pTot);
-
-% only leave theta channel
-lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
-    'basename',basename);
 end

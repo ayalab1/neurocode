@@ -66,6 +66,7 @@ parse(p,varargin{:})
 maxDuration = p.Results.maxDuration;
 minDuration = p.Results.minDuration;
 artefactThreshold = p.Results.artefactThreshold;
+amplitudeStdThreshold = p.Results.amplitudeStdThreshold;
 baseline = p.Results.baseline;
 
 %% Compute reference theta cycles

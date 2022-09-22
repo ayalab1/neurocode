@@ -147,8 +147,17 @@ end
 if r>c
     deep_channels = deep_channels';
 end
-lfp = getLFP(deep_channels,'basepath',basepath,...
-    'basename',basename,'downsample',10);
+
+% try to load downsampled to same time
+try
+    lfp = getLFP(deep_channels,'basepath',basepath,...
+        'basename',basename,'downsample',10);
+    
+% if sample rate cannot be factored by 10, load entire file
+catch 
+     lfp = getLFP(deep_channels,'basepath',basepath,...
+        'basename',basename);   
+end
 
 % get theta power to choose channel
 try
@@ -173,5 +182,5 @@ end
 
 % only leave theta channel
 lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
-    'basename',basename,'downsample',2);
+    'basename',basename);
 end

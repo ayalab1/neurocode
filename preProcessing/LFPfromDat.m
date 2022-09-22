@@ -69,7 +69,6 @@ outFs = p.Results.outFs;
 lopass = p.Results.lopass;
 useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
-g = gpuDevice(1);
 
 session = getSession('basepath',basepath);
 basename = session.general.name;
@@ -84,6 +83,10 @@ end
 if useGPU && gpuDeviceCount<1
     warning('No GPU device found, continuing without..')
     useGPU = false;
+end
+
+if useGPU
+    g = gpuDevice(1);
 end
 
 sizeInBytes = 2; %

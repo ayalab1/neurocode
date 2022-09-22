@@ -96,17 +96,14 @@ end
 
 %Separate datasetfolder and recordingname
 [datasetfolder,recordingname,extension] = fileparts(basepath);
-recordingname = [recordingname,extension]; % fileparts parses '.' into extension
+recordingname = basenameFromBasepath(basepath); % fileparts parses '.' into extension
 
 
 %% If there is no .lfp in basePath, choose (multiple?) folders within basePath.
 %Select from dataset folder - need to check if .xml/lfp exist
-if ~exist(fullfile(datasetfolder,recordingname,[recordingname,'.lfp']),'file') && ...
-    ~exist(fullfile(datasetfolder,recordingname,[recordingname,'.eeg']),'file')
-    display(['no .lfp file in basePath, pick a selection of session folders',...
-             'containing .lfp files'])
-         %Find all basePaths within the topPath
-        [basePaths,recordingname] = bz_FindBasePaths(basepath,'select',true);    
+if ~exist(fullfile(basepath,[recordingname,'.lfp']),'file') && ...
+    ~exist(fullfile(basepath,[recordingname,'.eeg']),'file')
+    error(['no ' fullfile(basepath,[recordingname,'.lfp']) 'file found.']);
 end
 
 %If multiple recordings, loop calling SleepScoreMaster with each

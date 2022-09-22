@@ -32,8 +32,9 @@ SHOWFIG = p.Results.SHOWFIG;
 downsamplefactor = p.Results.downsamplefactor;
 
 
-[datasetfolder,recordingname,extension] = fileparts(basePath);
-recordingname = [recordingname extension];
+datasetfolder = basePath;
+% [datasetfolder,recordingname,extension] = fileparts(basePath);
+recordingname = basenameFromBasepath(basePath);
 
 matfilename = fullfile(basePath,[recordingname,'.SleepScoreLFP.LFP.mat']);
 
@@ -115,7 +116,7 @@ end
 
 %% Pick channels to use
 
-session = getSession('basepath',fullfile(datasetfolder,recordingname));
+session = getSession('basepath',basePath);
 
 %Remove spike groups requirement DL9/3/19 - returned 12/11/19...
 %Should make this optional - move to SSM main f'n

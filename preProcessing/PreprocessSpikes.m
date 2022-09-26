@@ -52,7 +52,13 @@ spikeLabels = p.Results.spikeLabels;
 cd(basepath);
 basename = basenameFromBasepath(pwd);
 %if you intend to concatenate multiple kilosort runs into one spikes structure
-session = sessionTemplate(basepath,'showGUI',showGUI);
+try 
+    load(fullfile(basepath,[basename '.session.mat']),'session');
+    session.extracellular.chanCoords; % if this already exists, no need to re-load rez file
+catch
+    session = sessionTemplate(basepath,'showGUI',showGUI);
+    save(fullfile(basepath,[basename '.session.mat']),'session');
+end
 f = dir('Kilosort*');
 if (size(f,1) ~= 1)&&(~multiKilosort)
     error('Too many kiloSort folders - should multiKilosort=1?');
@@ -135,7 +141,7 @@ elseif (size(f,1)==1)&&(multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
     if prePhy
-        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted']);
+        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
     else
         spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
     end
@@ -145,7 +151,8 @@ if exist([basepath '\anatomical_map.csv'])
     channel_mapping;
 end
 if prePhy
-    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial'},'saveAs','unsorted.cell_metrics');
+    spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false,'forceReload',true);
+    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial','monoSynaptic_connections'},'saveAs','unsorted.cell_metrics','getWaveformsFromDat',false);
 else
     cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false);
 end

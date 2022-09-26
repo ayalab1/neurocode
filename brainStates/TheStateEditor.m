@@ -291,11 +291,11 @@ if FileExistsIn([baseName,'.eegstates.mat'])
 else
     StateInfo = [];
     info1 = bz_getSessionInfo(FO.basePath,'noPrompts',true);
-    eegFS = info1.lfpSampleRate;
+    eegFS = info1.extracellular.srLfp;
     
     if ~exist('nCh', 'var')
         %             info1 = LoadXmlIn([baseName, '.xml']);
-        nCh = info1.nChannels;
+        nCh = info1.extracellular.nChannels;
     end
     if supressLoadGUI == 0
         

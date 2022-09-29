@@ -1,4 +1,4 @@
-function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,doSort)
+function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,doSort,unsorted)
 
 % Loads the spikes of the session in "basepath" in a matrix [timestamp id] format
 % This is a simple function loading data saved in CellExplorer format into
@@ -36,9 +36,13 @@ function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,
 % (at your option) any later version.
 
 if nargin<2, doSort = false; end
+if nargin<3, unsorted = false; end
 basename = basenameFromBasepath(basepath);
-if exist(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'file')
-    load(fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']),'cell_metrics');
+filename = fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']);
+if unsorted, filename = fullfile(basepath,[basename '.unsorted.cell_metrics.cellinfo.mat']); end
+
+if exist(filename,'file')
+    load(filename,'cell_metrics');
     regions = cell_metrics.brainRegion;
     regionNames = unique(regions);
     regionCell = zeros(length(regions),1);

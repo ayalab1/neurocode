@@ -70,7 +70,7 @@ amplitudeStdThreshold = p.Results.amplitudeStdThreshold;
 baseline = p.Results.baseline;
 
 %% Compute reference theta cycles
-thetaFiltered = FilterLFP(lfp, 'passband', 'theta');
+thetaFiltered = FilterLFP(lfp, 'passband', [4 12]);
 [~, amplitude, ~] = Phase(thetaFiltered);
 isBaseline = InIntervals(amplitude,baseline);
 amplitudeThreshold = nanmean(amplitude(isBaseline,2)) + amplitudeStdThreshold*nanstd(amplitude(isBaseline,2));

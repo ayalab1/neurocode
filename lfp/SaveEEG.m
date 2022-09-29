@@ -50,9 +50,10 @@ if ~exist(eegFile,'file')
     lfpFile = fullfile(basepath,[basename '.lfp']);
     copyfile(lfpFile,eegFile);
     file = memmapfile(eegFile,'Format','int16','Writable',true);
-    data = reshape(file.Data,64,[]);
+    data = reshape(file.Data,nChannels,[]);
     m = int16(mean(data(okChannels,:)));
-    newData = bsxfun(@minus,data,m);
+    newData = data;
+    newData(okChannels,:) = bsxfun(@minus,data(okChannels,:),m);
     file.data = newData(:);
     clear file
 else

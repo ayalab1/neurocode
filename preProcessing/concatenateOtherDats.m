@@ -49,7 +49,7 @@ bad_otherdattypes = [];
 if SSD
     for odidx = 1:length(otherdattypes)
         %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
-        newpaths.(otherdattypes{odidx}) = fullfile(SSD,[basenameFromBasepath(basepath) '_' otherdattypes{odidx}, '.dat']);
+        newpaths.(otherdattypes{odidx}) = fullfile(SSD_path,[basenameFromBasepath(basepath) '_' otherdattypes{odidx}, '.dat']);
         newpathsFinal.(otherdattypes{odidx}) = fullfile(basepath,[otherdattypes{odidx}, '.dat']);
     end
 else

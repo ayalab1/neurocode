@@ -131,6 +131,22 @@ if save_cell_metrics &&...
     end
     save(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']),'cell_metrics')
 end
+if save_cell_metrics &&...
+        exist(fullfile(basepath,[basename,'.unsorted.cell_metrics.cellinfo.mat']),'file')
+    disp('updating units in the unsorted cell metrics')
+    load(fullfile(basepath,[basename,'.unsorted.cell_metrics.cellinfo.mat']))
+    chListBrainRegions = findBrainRegion(session);
+    for j = 1:cell_metrics.general.cellCount
+        if isfield(session,'brainRegions') && ~isempty(session.brainRegions)
+            try
+                cell_metrics.brainRegion{j} = chListBrainRegions{cell_metrics.maxWaveformCh1(j)};
+            catch
+                cell_metrics.brainRegion{j} = 'Unknown';
+            end
+        end
+    end
+    save(fullfile(basepath,[basename,'.unsorted.cell_metrics.cellinfo.mat']),'cell_metrics')
+end
 
 if fig
     generateChannelMap1(session,anatomical_map,channel_map)

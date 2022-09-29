@@ -26,8 +26,7 @@ function concatenateOtherDats(basepath,sortFiles,otherdattypes)
 %
 %  EXAMPLES
 %
-%     % To concatenate digitalin.dat and analogin.dat files from individual 
-%     % subfolders (e.g. after running "fillMissingDats")
+%     % To concatenate digitalin.dat and analogin.dat files from individual subfolders: (e.g. after running "fillMissingDats")
 %     concatenateOtherDats(basepath,false,{'digitalin','analogin'}); 
 %
 %     % To (re)concatenate the recording .dat (e.g. if it has been corrupted/modified/deleted)
@@ -120,7 +119,7 @@ for odidx = 1:length(otherdattypes)
     if isunix
         cs = strjoin(datpaths.(otherdattypes{odidx}));
         catstring = ['! cat ', cs, ' > ',newpaths.(otherdattypes{odidx})];
-    elseif ispc%As of 4/9/2017 - never tested
+    elseif ispc
         if length(datpaths.(otherdattypes{odidx}))>1
             for didx = 1:length(datpaths.(otherdattypes{odidx}))
                 datpathsplus{didx} = [datpaths.(otherdattypes{odidx}){didx} '+'];

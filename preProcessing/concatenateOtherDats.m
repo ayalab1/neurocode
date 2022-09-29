@@ -1,4 +1,4 @@
-function concatenateOtherDats(basepath,sortFiles,otherdattypes)
+function concatenateOtherDats(basepath,sortFiles,otherdattypes,SSD_path)
 % concatenateOtherDats - Function to help you concatenate auxiliary .dat files that were missed during preprocessing
 %
 % Sometimes after preprocessing a session, you may realize that there was 
@@ -41,11 +41,24 @@ function concatenateOtherDats(basepath,sortFiles,otherdattypes)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-bad_otherdattypes = [];
-for odidx = 1:length(otherdattypes)
-    %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
-    newpaths.(otherdattypes{odidx}) = fullfile(basepath,[otherdattypes{odidx}, '.dat']);
+if ~exist('SSD_path','var')
+    SSD = true; else, SSD = false;
 end
+
+bad_otherdattypes = [];
+if SSD
+    for odidx = 1:length(otherdattypes)
+        %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
+        newpaths.(otherdattypes{odidx}) = fullfile(SSD,[basenameFromBasepath(basepath) '_' otherdattypes{odidx}, '.dat']);
+        newpathsFinal.(otherdattypes{odidx}) = fullfile(basepath,[otherdattypes{odidx}, '.dat']);
+    end
+else
+    for odidx = 1:length(otherdattypes)
+        %eval(['new' otherdattypes{odidx} 'path = fullfile(basepath,''' otherdattypes{odidx} '.dat'');'])
+        newpaths.(otherdattypes{odidx}) = fullfile(basepath,[otherdattypes{odidx}, '.dat']);
+    end
+end
+
 
 d = dir(basepath);
 datpaths = {};
@@ -144,3 +157,11 @@ for odidx = 1:length(otherdattypes)
         disp([otherdattypes{odidx} ' concatenated and size checked'])
     end
 end
+
+if SSD
+    for odidx = 1:length(otherdattypes)
+        disp([datestr(clock) '. Copying local dat file to ' basepath '...']);
+        copyfile(newpaths.(otherdattypes{odidx}),newpathsFinal.(otherdattypes{odidx}));
+    end
+end
+

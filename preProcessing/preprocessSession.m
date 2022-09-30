@@ -178,7 +178,8 @@ catch
 end
 
 % 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
-% it is possible to remove the copy of iosr toolbox from CellExplorer
+% it is possible to remove the copy of iosr toolbox from CellExplorer -
+% seems to be fixed? as of 9/22
 
 %% Clean data  - CHECK FOR OUR LAB
 % Remove stimulation artifacts
@@ -197,10 +198,10 @@ end
 if stateScore
     try
         if exist('pulses','var')
-            SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods,'rejectChannels',session.channelTags.Bad); % try to sleep score
+            SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods,'rejectChannels',session.channelTags.Bad.channels); % try to sleep score
             thetaEpochs(basepath);
         else
-            SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad); % takes lfp in base 0
+            SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad.channels); % takes lfp in base 0
             thetaEpochs(basepath);
         end
     catch

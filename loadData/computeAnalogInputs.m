@@ -1,6 +1,27 @@
 function analogInp = computeAnalogInputs(varargin)
-% write documentation and change name
-% TODO: add downsampling
+%[computeAnalogInputs] - extracts the analog pulses for given channels
+
+%    =========================================================================
+%  USAGE
+%
+%INPUT
+%   [analogCh]         [channel number]
+%   (options)
+%   [ 'saveMat' ]      (default: prompt)
+%   ['fs' ]   DAQ (intan) samlping 
+%                       
+
+%    =========================================================================
+
+%OUTPUT
+%  analogInp     
+%   =========================================================================
+% 
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 %%  Process inputs
 p = inputParser;
 

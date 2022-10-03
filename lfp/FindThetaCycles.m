@@ -1,10 +1,10 @@
 function [peaktopeak,troughs] = FindThetaCycles(lfp,varargin)
 
+%FindThetaCycles - Find intervals that qualify as theta cycles from the lfp signal
+
 % lfp should be in the [timestamps signal] format. Using CleanLFP before
 % calling this function is recommended. The [start stop] intervals as well
 % as the troughs take theta asymmetry into account.
-%
-%FindThetaCycles - Find intervals that qualify as theta cycles from the lfp signal
 %
 % It's recommended to provide lfp restricted to a behavior session (excluding
 % sleep sessions). The function will take into account theta asymmetry to find 

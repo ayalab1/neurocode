@@ -2,8 +2,11 @@ function SaveCustomEvents(filename,events,names,varargin)
 
 %SaveCustomEvents - Save events (ripple, deltas etc)
 %
+%    =========================================================================
+
 %  USAGE
 %
+%INPUT
 %    SaveCustomEvents(filename,ripples,eventNames,options)
 %
 %    filename       file to save to

@@ -1,21 +1,26 @@
+
+function [weights,sphere,meanvar,bias,signs,lrates,data,y] = runica(data,varargin) % NB: Now optionally returns activations as variable 'data' -sm 7/05
+
 % runica() - Perform Independent Component Analysis (ICA) decomposition
-%            of input data using the logistic infomax ICA algorithm of 
+
+%          perform ICA  of input data using the logistic infomax ICA algorithm of 
 %            Bell & Sejnowski (1995) with the natural gradient feature 
 %            of Amari, Cichocki & Yang, or optionally the extended-ICA 
 %            algorithm of Lee, Girolami & Sejnowski, with optional PCA 
 %            dimension reduction. Annealing based on weight changes is 
 %            used to automate the separation process. 
-% Usage:
+%    =========================================================================
+%USAGE
 %         >> [weights,sphere] = runica(data); % train using defaults 
 %    else
 %         >> [weights,sphere,compvars,bias,signs,lrates,activations] ...
 %                             = runica(data,'Key1',Value1',...);
-% Input:
+%INPUT
 %    data     = input data (chans,frames*epochs). 
 %               Note that if data consists of multiple discontinuous epochs, 
 %               each epoch should be separately baseline-zero'd using
 %                  >> data = rmbase(data,frames,basevector);
-%
+%  =========================================================================
 % Optional keywords [argument]:
 % 'extended'  = [N] perform tanh() "extended-ICA" with sign estimation 
 %               N training blocks. If N > 0, automatically estimate the 
@@ -70,6 +75,7 @@
 %               strange results. This is because the weight matrix is rectangular 
 %               instead of being square. Do not use except to try to fix the problem. 
 
+%    =========================================================================
 % Reference (please cite):
 %
 % Makeig, S., Bell, A.J., Jung, T-P and Sejnowski, T.J.,
@@ -105,7 +111,7 @@
 % along with this program; if not, write to the Free Software
 % Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%% Edit history %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%    =========================================================================
 %
 %  runica()  - by Scott Makeig with contributions from Tony Bell, Te-Won Lee 
 %              Tzyy-Ping Jung, Sigurd Enghoff, Michael Zibulevsky et al.
@@ -131,7 +137,6 @@
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [weights,sphere,meanvar,bias,signs,lrates,data,y] = runica(data,varargin) % NB: Now optionally returns activations as variable 'data' -sm 7/05
 
 if nargin < 1
   help runica  

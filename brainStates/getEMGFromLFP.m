@@ -1,5 +1,20 @@
 function [EMGFromLFP] = getEMGFromLFP(basepath,varargin)
-% USAGE
+% Based on Erik Schomburg's work and code.  Grabs channels and calculates
+% their correlations in the 300-600Hz band over sliding windows of 0.5sec.
+
+% Channels are automatically selected and are a combination of first and last channels
+% on each shank.  This is based on the xml formatting standard that channel ordering goes 
+% from superficial to deep for each channel/spike group. 
+%
+% Special channels should be 0-indexed, per neuroscope convention
+% Requires .lfp/lfp and .xml.  Assumes each spikegroup in the .xml
+% represents a "shank"
+% 
+% Mean pairwise correlations are calculated for each time point.
+
+%   =========================================================================
+
+%USAGE
 % [EMGCorr] = bz_EMGCorrFromLFP(basePath)
 %
 % INPUTS
@@ -31,20 +46,8 @@ function [EMGFromLFP] = getEMGFromLFP(basepath,varargin)
 %          .detectorName        - string name of function used
 %          .samplingFrequency   - 1 / sampling rate of EMGCorr data
 %
-% DESCRIPTION
-%
-% Based on Erik Schomburg's work and code.  Grabs channels and calculates
-% their correlations in the 300-600Hz band over sliding windows of 0.5sec.
-% Channels are automatically selected and are a combination of first and last channels
-% on each shank.  This is based on the xml formatting standard that channel ordering goes 
-% from superficial to deep for each channel/spike group. 
-%
-% Special channels should be 0-indexed, per neuroscope convention
-% Requires .lfp/lfp and .xml.  Assumes each spikegroup in the .xml
-% represents a "shank"
-% 
-% Mean pairwise correlations are calculated for each time point.
-% 
+%   =========================================================================
+
 % Erik Schomburg, Brendon Watson, Dan Levenstein, David Tingley, 2017
 % Updated: Rachel Swanson 5/2017
 

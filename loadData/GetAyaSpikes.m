@@ -1,9 +1,12 @@
 function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,doSort,unsorted)
 
+%[GetAyaSpikes] - bz_getSessionInfo(basePath) loads the spikes of the session in "basepath" 
+
 % Loads the spikes of the session in "basepath" in a matrix [timestamp id] format
 % This is a simple function loading data saved in CellExplorer format into
 % a structure-free matrix and vector format, which FMAToolbox users might find useful.
 %
+%    =========================================================================
 %  USAGE
 %
 %    [spikes,regionID,regionNames] = GetAyaSpikes(basepath);
@@ -11,6 +14,7 @@ function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,
 %    basepath       The full path to the folder where the session files are
 %                   stored.
 %
+%    =========================================================================
 %  OUTPUT
 %
 %    spikes         list of [t,ID] couples, where the IDs are ordered according
@@ -28,6 +32,7 @@ function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,
 % region labelled as regionNames{regionID(spikes(1,2))}. Here, regionID(4) was 3, so the third
 % brain region (alphabetical order), corresponding to regionNames{3}, which was 'SomatosensoryCx'.
 %
+%    =========================================================================
 % Copyright (C) 2022 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

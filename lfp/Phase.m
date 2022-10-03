@@ -5,6 +5,7 @@ function [phase,amplitude,unwrapped] = Phase(samples,times)
 % Compute instantaneous phase (wrapped and unwrapped) and amplitude
 % in signal, using the Hilbert transform of the signal.
 %
+%    =========================================================================
 %  USAGE
 %
 %    [phase,amplitude,unwrapped] = Phase(samples,times)

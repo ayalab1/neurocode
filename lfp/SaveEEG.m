@@ -1,8 +1,9 @@
 function SaveEEG(varargin)
 
 % This function will make a new lfp file (.eeg) in which the new reference
-% is the mean of all other electrodes. Using the mean of all channels as a
-% reference is a common practice in EEG studies ("average reference"), which
+% is the mean of all other electrodes. 
+
+%Using the mean of all channels as a reference is a common practice in EEG studies ("average reference"), which
 % is why it may be fitting to name that file .eeg and keep the original
 % .lfp file for other analyses (such as estimating the EMG based on 
 % cross-shank correlations, which would not work as well on this new 

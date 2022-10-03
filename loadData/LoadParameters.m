@@ -2,13 +2,20 @@ function [parameters] = LoadParameters(filename)
 
 %LoadParameters - Load parameters from an XML file.
 %
+%    =========================================================================
 %  USAGE
 %
-%    parameters = LoadParameters(filename)
-%
+% INPUT
 %    filename            parameter file name
 %       -or-
 %    basePath            where the parameter file baseName.xml lives
+
+%    =========================================================================
+
+%OUTPUT
+%   parameters
+
+%    =========================================================================
 
 % Copyright (C) 2004-2011 by Michaël Zugaro
 %

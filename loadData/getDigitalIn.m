@@ -1,9 +1,9 @@
 
 function [digitalIn] = getDigitalIn(ch,varargin)
-% [pul, val, dur] = getDigitalIn(d,varargin)
+% [getDigitalIn] = extracts digital pulses from session 
 %
-% Find digital In pulses
-%
+
+%    =========================================================================
 % INPUTS
 % ch            Default all.
 % <OPTIONALS>
@@ -14,7 +14,7 @@ function [digitalIn] = getDigitalIn(ch,varargin)
 % filename      File to get pulses from. Default, digitalin.dat file with folder
 %               name in current directory
 %
-%
+%    =========================================================================
 % OUTPUTS
 %               digitalIn - events struct with the following fields
 % ints          C x 2  matrix with pulse times in seconds. First column of C 
@@ -25,9 +25,14 @@ function [digitalIn] = getDigitalIn(ch,varargin)
 % timestampsOff Beggining of all OFF pulses
 % intsPeriods   Stimulation periods, as defined by perioLag
 % 
+%    =========================================================================
 % MV-BuzsakiLab 2019
 % Based on Process_IntanDigitalChannels by P Petersen
 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 % Parse options
 if exist('ch') ~= 1
     ch = 'all';

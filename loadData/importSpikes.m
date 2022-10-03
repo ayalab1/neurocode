@@ -3,6 +3,9 @@ function [spikeT] = importSpikes(varargin)
 % Import into the workspace spiketimes for selected units taking as input a
 % pre-computed buzcode spikes.cellinfo structure
 
+%    =========================================================================
+%  USAGE
+%
 % INPUTS
 %    basepath        -path to recording where spikes.cellinfo is. Default: pwd
 %    UID             -vector subset of UID's to load. Default: all.
@@ -16,16 +19,23 @@ function [spikeT] = importSpikes(varargin)
 % *** If inputting multiple regions, types, or states, ensure the input
 %     follows the format: ["State1","State2"] ***
 
+%    =========================================================================
 % OUTPUT
 %    spikeT - cellinfo struct with the following fields
 %          .UID            -unique identifier for each neuron in a recording
 %          .times          -cell array of timestamps (seconds) for each neuron
 %          .sessionName
 
+%    =========================================================================
 % TODO:
 % Do we want more output fields?
 
 % AntonioFR, 8/20; Lindsay K, 11/21
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% Parse inputs
 

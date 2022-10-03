@@ -2,11 +2,15 @@ function events = LoadEvents(filename)
 
 %LoadEvents - Read events from file.
 %
+%    =========================================================================
 %  USAGE
 %
-%    events = LoadEvents(filename)
-%
+%INPUT
 %    filename            event file name
+
+%OUTPUT
+%   events         
+%   =========================================================================
 
 % Copyright (C) 2004-2015 by Michaël Zugaro
 %

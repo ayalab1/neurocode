@@ -1,9 +1,10 @@
 function [lfp] = getLFP(varargin)
-% getLFP - Get local field potentials.
+%[ getLFP] - Get local field potentials.
 %
 %  Load local field potentials from disk. No longer dependent on
 %  FMAT/SetCurrentSession.
 %
+%    =========================================================================
 %  USAGE
 %
 %    [lfp] = getLFP(channels,<options>)
@@ -27,6 +28,7 @@ function [lfp] = getLFP(varargin)
 %    'noPrompts'          -logical (default) to supress any user prompts
 %    'fromDat'            -option to load directly from .dat file (default:false)
 %
+%    =========================================================================
 %  OUTPUT
 %
 %    lfp             struct of lfp data. Can be a single struct or an array
@@ -51,6 +53,7 @@ function [lfp] = getLFP(varargin)
 %    % channel # 3 (= ID 2), from 0 to 120 seconds
 %    lfp = getLFP(3,'restrict',[0 120],'select','number');
 
+%    =========================================================================
 % Copyright (C) 2004-2011 by Michaël Zugaro
 % editied by David Tingley, 2017
 % kathryn mcclain 2020

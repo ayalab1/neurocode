@@ -2,8 +2,9 @@
 function [ica] = doICA(varargin)
 %    [ica] = doICA(varargin)
 %
-% Performs Independent Component Analysis (ICA) decomposition of a laminar
-% LFP profile using the logistic infomax ICA algorithm of Bell & Sejnowski (1995) with 
+% Performs Independent Component Analysis (ICA) decomposition
+
+%performs ICA of a laminar LFP profile using the logistic infomax ICA algorithm of Bell & Sejnowski (1995) with 
 % the natural gradient feature of Amari, Cichocki & Yang. 
 % The resulting indenpendent components (ICs)correspond to different
 % synaptic sources of the LFPs (e.g. CA3 and entorhinal inputs for CA1

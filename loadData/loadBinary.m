@@ -7,13 +7,18 @@ function data = loadBinary(filename,varargin)
 %  the position and size of the subset in terms of number of samples per
 %  channel (more accurate).
 %
+%    =========================================================================
 %  USAGE
 %
-%    data = bz_LoadBinary(filename,<options>)
-%
+%INPUT
+
 %    filename       file to read
 %    <options>      optional list of property-value pairs (see table below)
 %
+%    =========================================================================
+
+%OUTPUT
+%   data         
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------

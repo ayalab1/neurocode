@@ -1,25 +1,35 @@
 function [sessionInfo] = bz_getSessionInfo(basePath,varargin)
-%[sessionInfo] = bz_getSessionInfo(basePath) loads the sessionInfo metadata
+%[sessionInfo] - bz_getSessionInfo(basePath) loads the sessionInfo
+%metadata
+
 %for the recording in basePath. basePath should be in the format:
 %       /whateverPath/baseName/
 %           a file  basePath/baseName.sessionInfo.mat
 %           or      basePath/baseName.xml
 %           should exist.
 %If no baseName.sessionInfo.mat exists, loads from the xml.
+%    =========================================================================
+%  USAGE
 %
 %INPUT
-%   basePath            directory: '/whatevetPath/baseName/'
+%   [basePath]         [directory: '/whatevetPath/baseName/']
 %   (options)
-%       'saveMat'       (default: prompt)
-%       'noPrompts'     (default: false) prevents prompts about
+%   [ 'saveMat' ]      (default: prompt)
+%   ['noPrompts' ]    (default: false) prevents prompts about
 %                       saving/adding metadata
-%       'editGUI'       (default: false) opens a GUI to edit select
+%   [ 'editGUI'  ]     (default: false) opens a GUI to edit select
 %                       sessionInfo fields (beta, please add/improve!)
-%
+%    =========================================================================
+
 %OUTPUT
 %   sessionInfo         metadata structure
-%
-%2017 DLevenstein and DTingley
+%   =========================================================================
+% [DLevenstein and DTingley] [2017]
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 %% inputs and defaults
 
 warning('bz_getSessionInfo is depreciated')

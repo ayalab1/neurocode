@@ -1,5 +1,9 @@
-%function StateEditorProBeta(baseName, inputData, supressGUI, makePortable)
-% SIMPLE USAGE (NO INPUT VARIABLES, if run from dir with .xml and .eeg/lfp):
+
+function TheStateEditor(baseName, inputData, supressGUI, makePortable)
+%theStateEditor -  loading GUI will guide you through channel selection and processing
+
+% SIMPLE USAGE 
+%(NO INPUT VARIABLES, if run from dir with .xml and .eeg/lfp):
 % Add StateEditor to your Matlab path. Within Matlab navigate to a folder
 % containing '.xml' and '.eeg' (or '.lfp') files. Type in the name of this
 % .m file and press enter (StateEditor will get the relevant baseName from
@@ -87,6 +91,7 @@
 % Dependency: Does require LoadXml.m from XmlTree
 % http://www.artefact.tk/software/matlab/xml/
 %
+
 %created by Andres Grosmark at Gyuri Buzsaki's lab, 12/2012.
 %Improvements by Brendon Watson, DLevenstein
 %Many subfunctions, mostly from Anton Sirota, but also from Adrien Peyrache
@@ -94,9 +99,6 @@
 %dependency issues.
 %
 
-
-
-function TheStateEditor(baseName, inputData, supressGUI, makePortable)
 
 %% get baseName if doesn't exist, save
 

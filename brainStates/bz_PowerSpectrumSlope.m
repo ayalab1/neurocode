@@ -3,6 +3,10 @@ function [specslope,spec] = bz_PowerSpectrumSlope(lfp,winsize,dt,varargin)
 %slope of the power spectrum, a metric of cortical state and E/I balance
 %see Gao, Peterson, Voytek 2016;  Waston, Ding, Buzsaki 2017
 %
+
+%    =========================================================================
+%  USAGE
+
 %INPUTS
 %   lfp         a buzcode-formatted lfp structure (use bz_GetLFP)
 %               needs fields: lfp.data, lfp.timestamps, lfp.samplingRate
@@ -34,7 +38,7 @@ function [specslope,spec] = bz_PowerSpectrumSlope(lfp,winsize,dt,varargin)
 %                   approximate desired dt (recommended <0.01 for
 %                   resolution up to 100Hz)
 %                   
-%
+%   =========================================================================
 %OUTPUTS
 %   specslope
 %       .data           [Nt x NChannels] vector of the power spectrum slope   
@@ -46,6 +50,11 @@ function [specslope,spec] = bz_PowerSpectrumSlope(lfp,winsize,dt,varargin)
 %
 %DLevenstein 2018
 %with IRASA code modified from R. Hardstone & W. Munoz - 2019
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 %%
 p = inputParser;
 addParameter(p,'showfig',false,@islogical)

@@ -1,10 +1,26 @@
 function [SleepState] = thetaEpochs(basepath)
 % [SleepState] = thetaEpochs(basepath)
 % Find theta and non-theta epochs using the theta ratio determined by the
-% SleepScoreMaster. Appends the the data to the output of SleepScoreMaster
-% (SleepState.mat)
+% SleepScoreMaster. 
 
 % F.Sharif 2020  
+%    =========================================================================
+%  USAGE
+%
+%INPUT
+%   [basePath]         [directory: '/whatevetPath/baseName/']
+
+%    =========================================================================
+
+%OUTPUT
+%   %Appends the the data to the output of SleepScoreMaster
+% (SleepState.mat)
+%   =========================================================================
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 basename = basenameFromBasepath(basepath);
 sleepstatepath = fullfile(basepath,[basename,'.SleepState.states.mat']);

@@ -1,7 +1,27 @@
 function StateIntervals = StateEditorToInts(basepath,basename)
-% Takes output from stateeditor and puts it back into StateIntervals.  Also
-% puts metadata into apppropriate places as well, including saving any
+% Takes output from stateeditor and puts it back into StateIntervals.  
+
+%Also puts metadata into apppropriate places as well, including saving any
 % manual thresholds
+
+%    =========================================================================
+%  USAGE
+%
+%INPUT
+%   [basePath]         [directory: '/whatevetPath/baseName/']
+%   [ basename ]    
+
+%    =========================================================================
+
+%OUTPUT
+%   StateIntervals         
+%   =========================================================================
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 % Brendon Watson July 2016
 
 if ~exist('basepath','var')

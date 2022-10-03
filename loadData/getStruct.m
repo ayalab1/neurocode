@@ -1,23 +1,30 @@
 function struct = getStruct(basepath,extension,fieldName)
 
-% Load custom data extensions associated with a given session.
+%getStruct - Load custom data extensions associated with a given session.
+
 % This is a helper function similar to CellExplorer's loadStruct.
 % If multiple .mat files match your query, the function will return
 % the first one (in alphabetical order).
 %
+%    =========================================================================
 %  USAGE
 %
-%    struct = getStruct(basepath,extension)
-%
+%%INPUT
 %    basepath          full path where the session is located (default = pwd)
 %    extension         extension to look for in the filename of the .mat file
 %                      (default = 'ripples')
 %
+%    =========================================================================
+
+%OUTPUT
+%   struct         
+
 %  EXAMPLES
 %
 %    ripples = getStruct(basepath,'ripples');  % load the ripples structure
 %    MergePoints = getStruct(basepath,'Merge');  % load the MergePoints structure
 %
+%    =========================================================================
 % Copyright (C) 2022 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

@@ -2,11 +2,17 @@ function [SleepStateEpisodes] = StatesToEpisodes(SleepState,basePath)
 % Takes a buzcode structure of sleep state data and imposes max and
 % min durations and interruption criteria to make WAKE, NREM, REM Episodes,
 % Packets, Microarousals and Microarusals in REM, as defined in 
-% Watson et al 2017. Returns the SleepStateEpisodes in buzcode format
+% Watson et al 2017. 
+
+%Returns the SleepStateEpisodes in buzcode format
 % along with any detectionparms from initial state scoring. Can save as
 % states.mat file in basePath
 % structures.
 %
+
+%    =========================================================================
+%  USAGE
+
 % INPUTS
 %   SleepState  buzcode states.mat structure. 
 %               Expected to have fields:

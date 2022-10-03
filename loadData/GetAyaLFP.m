@@ -1,5 +1,7 @@
 function lfp = GetAyaLFP(channels,varargin)
 
+%[GetAyaLFP] -  loads the lfp which is saved in CellExplorer format 
+
 % Loads the lfp saved in CellExplorer format into a structure-free matrix format, 
 % which FMAToolbox users might find useful. The channel should be provided in
 % 0-format (same as neuroscope). 

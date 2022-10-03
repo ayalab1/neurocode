@@ -1,8 +1,6 @@
 function [SleepScoreMetrics,StatePlotMaterials] = ClusterStates_GetMetrics(...
     basePath,SleepScoreLFP,EMG,overwrite,varargin)
-%StateID(LFP,thLFP,EMG,sf_LFP,sf_EMG,figloc,WSEpisodes)
-%   Detailed explanation goes here
-%
+
 %This function calucates the metrics for state scoring (EMG, Slow Wave
 %Power, Theta). It uses SleepScoreLFP which is collected in
 %PickSWTHChannel. And returns:

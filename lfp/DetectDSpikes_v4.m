@@ -1,16 +1,42 @@
 function [DS1, DS2] = DetectDSpikes_v4(ch_hilus,ch_molecular,varargin)
 
+%DetectDSpikes_v4 - detects spikes?
+%
+%    =========================================================================
+%  USAGE
+%
+%INPUT
+% ch_hilus, ch_molecular: 1-based
+%
+
+%[sessionInfo] - bz_getSessionInfo(basePath) loads the sessionInfo
+%metadata
+
+%for the recording in basePath. basePath should be in the format:
+%       /whateverPath/baseName/
+%           a file  basePath/baseName.sessionInfo.mat
+%           or      basePath/baseName.xml
+%           should exist.
+%If no baseName.sessionInfo.mat exists, loads from the xml.
+%    =========================================================================
+
+%OUTPUT
+%   DS1 basename '.DS1.events.mat'
+%  DS2 basename '.DS2.events.mat'
+%   =========================================================================
+
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 %
 % 20150419 Yuta Senzai v3: consider the post-DS1 value in order to get rid of light evoked LFP deflection (for YM33)
 %                          this effect seems to be only in molecular layer. This may be related to
 %                          granule cell inhibition in POMC-Cre::Arch animal
 %
 % 20150602 Yuta Senzai v4: add m_minValue >
-%
-% INPUTS
-% ch_hilus, ch_molecular: 1-based
-%
-% defaults
+
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder)
 addParameter(p,'res_per',[0,inf],@isnumeric) % interval for analysis

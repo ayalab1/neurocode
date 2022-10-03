@@ -1,3 +1,6 @@
+
+function [detrended,model] = Detrend(samples,varargin)
+
 %Detrend - Detrend signal.
 %
 %  USAGE
@@ -28,8 +31,6 @@
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
-
-function [detrended,model] = Detrend(samples,varargin)
 
 % Defaults
 window = [];

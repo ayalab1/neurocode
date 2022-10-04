@@ -191,7 +191,7 @@ if convert_xy_to_cm
     end
     behavior.position.units = 'cm';
     
-    v = LinearVelocity([behavior.position.timestamps',behavior.position.x',behavior.position.y']);
+    v = LinearVelocity([behavior.timestamps',behavior.position.x',behavior.position.y']);
     behavior.speed = v(:,2)';
     behavior.acceleration = [0,diff(behavior.speed)];
 end

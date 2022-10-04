@@ -1,4 +1,4 @@
-function PreprocessSpikes(basepath, varargin)
+function social_PreprocessSpikes(basepath, varargin)
 %PreprocessSpikes - secondary preprocessing for after manual clustering
 %
 %  Secondary preprocessing function for after KiloSort and manual

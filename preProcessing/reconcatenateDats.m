@@ -1,5 +1,5 @@
-function concatenateOtherDats(basepath,sortFiles,otherdattypes,SSD_path)
-% concatenateOtherDats - Function to help you concatenate auxiliary .dat files that were missed during preprocessing
+function reconcatenateDats(basepath,sortFiles,otherdattypes,SSD_path)
+% reconcatenateDats - Function to help you concatenate auxiliary .dat files that were missed during preprocessing
 %
 % Sometimes after preprocessing a session, you may realize that there was 
 % an input that was not concatenated. To avoid running concatenateDats from 

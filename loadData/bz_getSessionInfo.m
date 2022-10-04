@@ -51,7 +51,7 @@ end
 if isempty(baseName)
     baseName = basenameFromBasepath(basePath);
 end
-filename = fullfile(basePath,[baseName,'.sessionInfo.mat']);
+filename = fullfile(basePath,[baseName,'.session.mat']);
 
 %% Load the stuff
 %d = dir('*sessionInfo*'); %all files with sessioninfo in the name
@@ -74,7 +74,7 @@ else
 end
 
 %% Check sessionInfo using bz_isSessionInfo and update if necessary
-bz_isSessionInfo(sessionInfo);
+% bz_isSessionInfo(sessionInfo);
 
 %Here: prompt user to add any missing sessionInfo fields and save
 if editGUI

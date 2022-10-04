@@ -137,7 +137,7 @@ legend(handle([5 3]),'familiar preferring','novel preferring');
 set(gca,'fontsize',12,'box','off');
 title([projectName '_' dayName]);
 
-SaveFig(['uLED_responses_for_fam_vs_novel_preferring_cells-' projectName '_' dayName])
+multiSaveFig(['uLED_responses_for_fam_vs_novel_preferring_cells-' projectName '_' dayName])
 
 %% Same but in ripples
 
@@ -179,7 +179,7 @@ legend(handle([5 3]),'familiar preferring','novel preferring');
 set(gca,'fontsize',12,'box','off');
 title([projectName '_' dayName ' uLED restricted to ripples']);
 
-% SaveFig(['uLED_responses_inRipples_for_fam_vs_novel_preferring_cells-' projectName '_' dayName])
+% multiSaveFig(['uLED_responses_inRipples_for_fam_vs_novel_preferring_cells-' projectName '_' dayName])
 
 %%
 

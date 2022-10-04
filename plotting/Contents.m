@@ -30,7 +30,7 @@
 %   PlotSlope              - PlotSlope - Plot line with given slope.
 %   PlotXY                 - PlotXY - Plot two columns of a matrix against each other.
 %   RasterPlot             - "spikes" is a list of [timestamps id]
-%   SaveFig                - 
+%   multiSaveFig           - 
 %   semplot                - semplot - plot mean (line) +/- s.e.m. (shaded area) of a matrix "y"
 %   shadedErrorBar         - function H=shadedErrorBar(x,y,errBar,lineProps,transparent)
 %   SideAxes               - SideAxes - Add side axes to existing axes.

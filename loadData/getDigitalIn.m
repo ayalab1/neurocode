@@ -23,7 +23,7 @@ function [digitalIn] = getDigitalIn(ch,varargin)
 % dur           Duration of the pulses. Note that default fs is 30000.
 % timestampsOn  Beggining of all ON pulses
 % timestampsOff Beggining of all OFF pulses
-% intsPeriods   Stimulation periods, as defined by perioLag
+% intsPeriods   Stimulation periods, as defined by periodLag
 % 
 %    =========================================================================
 % MV-BuzsakiLab 2019

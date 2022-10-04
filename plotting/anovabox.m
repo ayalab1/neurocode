@@ -1,4 +1,4 @@
-function varargout = anovaplot(data,groups,varargin)
+function varargout = anovabox(data,groups,varargin)
 
 %   Plots box-and-whisker plot for each group, indicating significant
 %   differences between the groups. Each group is also tested against 0.
@@ -7,7 +7,7 @@ function varargout = anovaplot(data,groups,varargin)
 %
 %  USAGE
 %
-%    [handles,h] = anovabar(data,groups,<options>)
+%    [handles,h] = anovabox(data,groups,<options>)
 %
 %    data           data to test, provided either in matrix (each column is
 %                   a different group) or a vector (grouping indicated through
@@ -111,13 +111,13 @@ paired = true;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
-        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
+        error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).']);
     end
     switch(lower(varargin{i})),
         case 'alpha',
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
-                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
+                error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -125,7 +125,7 @@ for i = 1:2:length(varargin),
                 if strcmpi(parametric,'on'); parametric = true; else, parametric = false; end
             end
             if ~islogical(parametric) || length(parametric)>1
-                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
+                error('Incorrect value for property ''parametric'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'paired',
             paired = varargin{i+1};
@@ -133,20 +133,20 @@ for i = 1:2:length(varargin),
                 if strcmpi(paired,'on'); paired = true; else, paired = false; end
             end
             if ~islogical(paired) || length(paired)>1
-                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
+                error('Incorrect value for property ''paired'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'correction'
             correction = varargin{i+1};
             if ~isastring(correction)
-                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
+                error('Incorrect value for property ''correction'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'precedence'
             precedence = varargin{i+1};
             if ~isdvector(precedence,'#1'),
-                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).');
+                error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         otherwise,
-            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovaplot">anovaplot</a>'' for details).']);
+            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).']);
     end
 end
 

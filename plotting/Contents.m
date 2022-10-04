@@ -2,7 +2,7 @@
 %
 % Files
 %   anovabar               - Plots bars of the mean +/- s.e.m. for each group, indicating significant
-%   anovaplot              - Plots box-and-whisker plot for each group, indicating significant
+%   anovabox              - Plots box-and-whisker plot for each group, indicating significant
 %   barwitherr             - **************************************************************************
 %   Browse                 - Same as 'Browse' in FMAToolbox but without the help message
 %   ciplot                 - ciplot - alternative to <a href="matlab:help semplot">semplot</a> for medians and confidence intervals

@@ -103,7 +103,7 @@ elseif isempty(samples)
 end
 idx = unique(idx);    
 % Shift?
-if strcmp(shift,'on'),
+if strcmp(shift,'on') && ~isempty(samples),
 	% Discard interval IDs for samples which belong to none of the intervals
 	interval = interval(status);
 	% Samples in each interval will be shifted next to end of the previous interval

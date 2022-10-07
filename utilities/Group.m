@@ -16,7 +16,7 @@ function grouped = Group(varargin)
 
 grouped = [];
 % Are we dealing with vectors?
-if any(cellfun(@(x) min(size(x)), varargin)==1),
+if all(cellfun(@(x) min(size(x)), varargin)==1),
 	vectors = true; else vectors = false; 
 end
 for i=1:length(varargin),
@@ -31,4 +31,4 @@ for i=1:length(varargin),
 	end
 end
 
-grouped = sortrows(grouped);
+% grouped = sortrows(grouped);

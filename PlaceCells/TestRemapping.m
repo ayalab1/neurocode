@@ -614,7 +614,7 @@ else
 	xc = nan(m,2*n-1);
 	for i = 1:m,
 		% Cross-correlagram i
-		xci = xcorr(x(i,:),y(i,:),'coeff');
+		xci = xcorr(zscore(x(i,:)),zscore(y(i,:)),'coeff');
 		% mode of cross-correlogram i (in [-1..1])
 		mi = round(mean(find(xci==max(xci))));
 		mi = mi/n-1;

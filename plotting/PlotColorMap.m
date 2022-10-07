@@ -170,8 +170,13 @@ if any(dimm(:)~=1),
 	alpha(p,1./(1+threshold./(dimm+eps)));
 end
 
+<<<<<<< Updated upstream
 % Set X and Y axes
 set(a,'ydir',ydir,'tickdir','out','box','off');
+=======
+% % Set X and Y axes
+% set(a,'ydir',ydir,'tickdir','out','box','off');
+>>>>>>> Stashed changes
 % if ~isempty(x) && length(x) ~= 1,
 % 	PiecewiseLinearAxis(x);
 % end

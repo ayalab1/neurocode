@@ -110,7 +110,7 @@ if ~isempty(speedThresh)
 end
 
 %%
-% get firign rate maps
+% get firing rate maps
 for unit = 1:length(spikes.times)
     for c = 1:conditions
         map{unit}{c} = Map(positions{c},spikes.times{unit},'smooth',smooth,'minTime',minTime,...

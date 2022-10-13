@@ -151,44 +151,24 @@ if isempty(datpaths) || isempty(datpaths.amplifier)
     return
 end
 
-%% Get the XML
-try 
-    %Look for xml/sessionInfo in topfolder
-    %sessionInfo = bz_getSessionInfo(basepath,'noPrompts',true);
+%% Get the meta data (sampling rate etc)
+try
     load(fullfile(basepath,[basename '.session.mat'])); % Peter's sessionInfo
 catch
-    %If none exists, look for xml in any of the subpaths
-    disp('No .xml or .sessionInfo in top folder, trying subfolders')
-    for ff = 1:length(recordingnames)
-        try
-            sessionInfo = LoadParameters(fullfile(basepath,recordingnames{ff}));
-            xmlfilename = fullfile(sessionInfo.session.path,[sessionInfo.session.name,'.xml']);
-            [SUCCESS,MESSAGE,MESSAGEID] = copyfile(...
-                xmlfilename,...
-                fullfile(basepath,[basename,'.xml']),'f');
-            display(['Copied xml from ',recordingnames{ff}])
-            break
-        catch
-        end
-    end
+    session = sessionTemplate(basepath,'showGUI',false);
 end
 
 %% Sort files according to time of recording
 
 if sortFiles
-    try
-        names2sort = cellfun(@(X) str2num(X(end-5:end)),recordingnames,'UniformOutput',false);
-        names2sort = cell2mat(names2sort);
-%         if isempty(names2sort{1}) && ~isempty(recordingnames{1})
-%             error('Last 6 digits were not numeric and therefore do not reflect the recording time.');
-%         end
+    names2sort = cellfun(@(X) str2num(X(end-5:end)),recordingnames,'UniformOutput',false);
+    names2sort = cell2mat(names2sort);
+    if ~isempty(names2sort)
         disp('Assuming the last 6 digits reflect recording time.')
-        %disp('Don''t like it? Write in some new options for sorting.')
-    catch
-       % names2sort = 1:length(recordingnames);
+    else
+        names2sort = 1:length(recordingnames);
         disp('Last 6 digits not numeric... sorting alphabetically')
     end
-
     [~,I] = sort(names2sort);
     recordingnames = recordingnames(I);
     datpaths.amplifier = datpaths.amplifier(I);
@@ -197,13 +177,6 @@ if sortFiles
         datpaths.(otherdattypes{odidx}) = datpaths.(otherdattypes{odidx})(I);
         datsizes.(otherdattypes{odidx}) = datsizes.(otherdattypes{odidx})(I);
     end
-
-%     % save txt with order of files to concatenate (moved to events.mat)
-%     fid = fopen(fullfile(basepath,'concatORDER.txt'),'w');
-%     for idx = 1:length(I)
-%         fprintf(fid,[recordingnames{idx} '\n']);
-%     end
-%     fclose(fid);
 end
 
 %% Concatenate

@@ -238,7 +238,9 @@ if ~grouped || size(data,2)==1
                 if p<alpha(1)
                     % Put a little star above it to show it's significantly different from zero
                     nStars0 = nStars0+1;
-                    thisy = sign(yData(i))*mean([max(yData2(i)),max(yData02(i))]);
+                    if sign(yData(i))>0, thisy = mean([max(yData2(i)),max(yData02(i))]);
+                    else, thisy = mean([min(yData1(i)),min(yData01(i))]); 
+                    end
                     handlesStars0(nStars0) = plot(xData(i), thisy, 'k*', 'markersize', 5, 'MarkerEdgeColor', [0 0 0]);
                 end
             end

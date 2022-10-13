@@ -52,7 +52,7 @@ addParameter(p,'getPos',false,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
-addParameter(p,'path_to_dlc_bat_file','',@isfile) 
+addParameter(p,'path_to_dlc_bat_file','',@isfile)
 addParameter(p,'nKilosortRuns',1,@isnumeric);
 
 % addParameter(p,'pullData',[],@isdir); To do...
@@ -164,7 +164,7 @@ try
     catch
         if (exist([basepath '\' basename '.lfp'])~=0)
             fclose([basepath '\' basename '.lfp']); %if the above run failed after starting the file
-            delete([basepath '\' basename '.lfp']); 
+            delete([basepath '\' basename '.lfp']);
         end
         LFPfromDat(basepath,'outFs',1250,'useGPU',false);
     end
@@ -233,9 +233,9 @@ if spikeSort
     end
 end
 
-%% Get tracking positions - TO FIX
+%% Get tracking positions
 if getPos
-    % check for pre existing deeplab cut 
+    % check for pre existing deeplab cut
     if exist(path_to_dlc_bat_file,'file')
         system(path_to_dlc_bat_file,'-echo')
     end

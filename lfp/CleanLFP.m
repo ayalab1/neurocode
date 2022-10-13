@@ -41,7 +41,7 @@ function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
 
 % Default values:
 thresholds = [5 10];
-aroundArtefact = [2 0.1];
+aroundArtefact = [0.5 0.1];
 manual = false;
 
 for i = 1:2:length(varargin),

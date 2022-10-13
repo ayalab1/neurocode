@@ -149,7 +149,8 @@ if save_cell_metrics &&...
 end
 
 if fig
-    generateChannelMap1(session,anatomical_map,channel_map)
+    try chanCoords = getStruct(basepath,'chanCoords'); generateChannelMap1(session,anatomical_map,channel_map,chanCoords); catch
+    generateChannelMap1(session,anatomical_map,channel_map); end
     exportgraphics(gcf,fullfile(basepath,'anatomical_map.png'),'Resolution',150)
 end
 
@@ -256,7 +257,7 @@ for region = regions'
 end
 end
 
-function generateChannelMap1(session,anatomical_map,channel_map)
+function generateChannelMap1(session,anatomical_map,channel_map,chanCoords)
 channel_map_vec = channel_map(:);
 anatomical_map_vec = anatomical_map(:);
 anatomical_map_vec = anatomical_map_vec(~isnan(channel_map_vec));

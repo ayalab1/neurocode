@@ -1,4 +1,7 @@
 function HSE = find_HSE(spikes,varargin)
+
+%find_HSE - Find high-sychrony events among spikes of a set of units
+%
 % Find high-sychrony events among spikes of a set of units (e.g. for
 % decoding).
 % For each session the combined spiking of all recorded

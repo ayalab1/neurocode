@@ -1,6 +1,8 @@
 
 function [events] = eventSpikingTreshold(events,varargin)
-% Descriptive and mean/median difference analysis, with serveral plot
+
+%eventSpikingThreshold - thresholds events based on unit spiking
+% Descriptive and mean/median difference analysis, with several plot
 % options.
 % 
 % INPUTS

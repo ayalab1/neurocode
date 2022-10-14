@@ -1,5 +1,7 @@
-function SimpleWHPlot(W,H,Data, plotAll); 
-% plots seqNMF factors W and H
+function SimpleWHPlot(W,H,Data, plotAll)
+
+%SimpleWHPlot - plots seqNMF factors W and H
+%
 % Also plots Data if provided, and reconstruction if data is not provided
 % plotAll=1 means plot all data
 % plotAll=0 means crop data so it's on the same timescale as W's 

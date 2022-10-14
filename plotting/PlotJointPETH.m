@@ -1,6 +1,8 @@
 function PlotJointPETH(PETH1,PETH2,smooth,names,durations)
 
-%See JointPETH. This function calls JointPETH and plots the results
+%PlotJointPETH - calls JointPETH and plots the results.
+%
+% See JointPETH. This function calls JointPETH and plots the results
 % Plase input the names for the 3 variables in the cell "names".
 % Example:
 % durations = [-1 1];

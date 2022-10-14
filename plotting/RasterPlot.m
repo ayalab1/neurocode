@@ -1,5 +1,7 @@
 function H = RasterPlot(spikes, height, varargin)
 
+%RasterPlot - create raster plot from spike times and IDs
+%
 % "spikes" is a list of [timestamps id]
 % provide desired height of spikes
 % any other inputs will be passed on to "plot"

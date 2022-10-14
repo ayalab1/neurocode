@@ -308,5 +308,7 @@ if ~noPrompts
     end
 end
 
+%% DETECT THETA AND NONTHETA EPOCHS
+[SleepState] = thetaEpochs(basepath);
 end
 

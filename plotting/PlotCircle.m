@@ -1,4 +1,6 @@
 function PlotCircle(x,y,r,varargin)
+%PlotCircle - plots a circle of specified r at (x,y)
+
 %x and y are the coordinates of the center of the circle
 %r is the radius of the circle
 %0.01 is the angle step, bigger values will draw the circle faster but

@@ -1,4 +1,5 @@
 %% Ripple analysis pipeline
+%SWRpipeline - pipeline for detecting, checking, and cleaning ripples
 % This is a wrapper to concatenate all functions to perform basic ripple analysis in a single session
 basepath = pwd;
 basename = basenameFromBasepath(basepath);

@@ -1,5 +1,5 @@
 function [rankStats] = RankOrder(varargin)
-% [rankStats] = RankOrder(varargin)
+%RankOrder - Get rank order of spikes inside events from getRipSpikes output
 %
 %  Get rank order of spikes inside events from previously calculated 
 % bz_getRipSpikes structure. The 'corrEvents' output field structure shows

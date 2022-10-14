@@ -199,10 +199,8 @@ if stateScore
     try
         if exist('pulses','var')
             SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods,'rejectChannels',session.channelTags.Bad.channels); % try to sleep score
-            thetaEpochs(basepath);
         else
             SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad.channels); % takes lfp in base 0
-            thetaEpochs(basepath);
         end
     catch
         warning('Problem with SleepScore scoring... unable to calculate');

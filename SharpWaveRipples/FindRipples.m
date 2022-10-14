@@ -1,5 +1,5 @@
 function [ripples] = FindRipples(varargin)
-%FindRipples - Find hippocampal ripples (100~200Hz oscillations).
+%FindRipples - Find hippocampal ripples when no SW channel is present
 %
 % USAGE
 %    [ripples] = FindRipples(lfp.data,lfp.timestamps,<options>)

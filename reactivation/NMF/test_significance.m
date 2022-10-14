@@ -1,4 +1,6 @@
 function [pvals,is_significant] = test_significance(TestData,W,p,nnull)
+
+%test_significance - tests each factor for significance using test data
 %
 % USAGE: 
 %

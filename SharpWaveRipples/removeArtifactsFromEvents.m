@@ -1,6 +1,6 @@
 
 function [events] = removeArtifactsFromEvents(events,varargin)
-% Remove artifacts from event according to the SD.
+%removeArtifactsFromEvents - Remove artifacts from event according to the SD
 % 
 % INPUTS
 %    'events'           Buzcode format events (i.e. ripples) structure.

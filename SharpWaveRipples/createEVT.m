@@ -1,5 +1,7 @@
 function createEVT(varargin)
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%createEVT - creates and saves .evt file from a generic event structure
+%
 % Used to create a .evt file from a generic ripple structure produced by
 % various other analysis scripts. Note that this has also been adapted to
 % pull timestamps from other non-ripple structures, so long as the naming

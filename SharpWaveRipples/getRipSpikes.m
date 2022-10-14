@@ -1,4 +1,6 @@
 function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
+
+%getRipSpikes - Saves spike times of all units inside given events in different ways
 %
 %    [spkEventTimes] = getRipSpikes(varargin)
 % Saves spike times of all units inside given events in different ways:

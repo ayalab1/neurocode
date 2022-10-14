@@ -1,4 +1,5 @@
 function multiSaveFig(filename)
+%multiSaveFig - saves figure as fig, png, and svg
 
 set(gcf,'renderer','painters'); % otherwise svg can be saved as png if figure too big (uses OpenGL instead of painters)
 [folder,name] = fileparts(filename);

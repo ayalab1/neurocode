@@ -1,4 +1,6 @@
 function varargout=shadedErrorBar(x,y,errBar,lineProps,transparent,fullLines)
+%shadedErrorBar - create a plot with shaded error bars
+%
 % function H=shadedErrorBar(x,y,errBar,lineProps,transparent)
 %
 % Purpose 

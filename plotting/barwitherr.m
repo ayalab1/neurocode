@@ -1,4 +1,7 @@
-%**************************************************************************
+
+function varargout = barwitherr(errors,varargin)
+
+%barwitherr - Extension of bar plot to include error bars
 %
 %   This is a simple extension of the bar plot to include error bars.  It
 %   is called in exactly the same way as bar but with an extra input
@@ -66,9 +69,6 @@
 %                                       if symmetric.
 %
 %**************************************************************************
-
-function varargout = barwitherr(errors,varargin)
-
 
 if isempty(varargin),
     varargin{1} = nanmean(errors);

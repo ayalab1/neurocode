@@ -1,4 +1,7 @@
 function [unitRip] = unitSWRmetrics(ripSpk,spikes,varargin)
+
+%unitSWRmetrics - pull firing characteristics during ripples using output of getRipSpikes
+%
 %        [unitRip] = unitSWRmetrics(ripSpk)
 %
 %   INPUTS

@@ -1,4 +1,6 @@
 function [] = darkBackground(hFigure,backColor,foreColor)
+
+%darkBackground - formats figure colorscheme to be used on dark background
 % - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 % Summary: Quickly updates the color of a figure so that it can be easily
 % displayed on a dark background, by changing background color and 

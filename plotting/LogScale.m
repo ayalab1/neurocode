@@ -1,6 +1,5 @@
 function [] = LogScale( whichaxis,logbase,varargin)
-%LogScale(whichaxis,logbase) renames the tick labels on your axes for a
-%logarithmically scaled variable.
+%LogScale - renames the tick labels on your axes for a logarithmically scaled variable.
 %
 %INPUT
 %   whichaxis   which axis did you log scale (can be 'x' 'y' or 'xy')

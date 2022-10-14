@@ -1,5 +1,6 @@
 function A = fast_ica(x,pcomponents,nit)
 
+%fast_ica - performs ICA on data
 % Originally written by the Finish (Aapo) team;
 % Modified by the PIB team in Aug. 21, 2007
 % PIB - Biological Information Processing Lab - UFMA - Brazil

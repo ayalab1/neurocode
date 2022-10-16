@@ -1,5 +1,5 @@
 function troughs = FindLocalMinima(signal)
-
+%FindLocalMinima - find local min
 if isdmatrix(signal,'@2'),
     iTroughs = FindLocalMinima(signal(:,2));
     troughs = signal(iTroughs,1);

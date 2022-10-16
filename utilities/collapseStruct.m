@@ -1,6 +1,6 @@
 function [ structout ] = collapseStruct( structin,dim,combine,NEST )
-%structout = CollapseStruct( structin,dim,combine,NEST ) Combines elements in a
-%structure array
+%CollapseStruct-Combines elements in a structure array
+%
 %
 %INPUT
 %   structin    struct(N).fields structure array with N elements where each

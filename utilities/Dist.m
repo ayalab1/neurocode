@@ -1,6 +1,6 @@
 function varargout = Dist(resolution, varargin)
 
-% Outputs the normalised distributions of the data provided at a given resolution.
+% Dist - Outputs the normalised distributions of the data provided at a given resolution.
 % [d,x] = Dist(resolution, data),
 % where 'd' is the normalised distribution of the data for points 'x'.
 % Dist(resolution, data) without output arguments plots said distributions.

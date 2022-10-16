@@ -1,6 +1,5 @@
 function [ ints1,ints2,ints1idx,ints2idx ] = FindIntsNextToInts(ints1,ints2,tol)
-%[ints1,ints2,ints1idx,ints2idx] = FindIntsNextToInts(ints1,ints2,tol) 
-%returns only the intervals from the sets ints1 and ints2 such that an 
+%FindIntsNextToInts - returns only the intervals from the sets ints1 and ints2 such that an 
 %interval from ints1 is directly preceeding an interval from ints2, with 
 %the option of allowing for some time delay tolerance.
 %

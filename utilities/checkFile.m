@@ -1,6 +1,6 @@
 function file = checkFile(varargin)
 
-% Checks that file exists and returns proper basepath and filename
+% checkfile - Checks that file exists and returns proper basepath and filename
 % intpus (optional):
 %   filename (optional) - name of file, MUST have this or filetype
 %   basepath (optional) - path to file, default current working directory

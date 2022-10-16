@@ -1,6 +1,6 @@
 function [start, stop, dur, peak, numCat] = CatCon(evtstart,evtstop,evtpeak,evtamp,flagConc)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Concatenation with Condition function
+% CatCon-Concatenation with Condition function
 % This function is to be used in conjunction with the find_HSE_b code. For
 % proper use, it will intake event start, stop, and peak times, as well as
 % the amplitude of each peak and a logical array designating what must be

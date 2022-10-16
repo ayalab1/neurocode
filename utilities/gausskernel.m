@@ -1,4 +1,5 @@
-% GAUSSKERNEL       create a 2D gaussian.
+function K = gausskernel(sigmaX,sigmaY,N,M)
+% gausskernel - create a 2D gaussian.
 %
 %                   K = GAUSSKERNEL(SIGMAX,SIGMAY,N,M)
 %
@@ -7,8 +8,6 @@
 %                   N,M                 kernel dimensions
 
 % 27-feb-03 ES
-
-function K = gausskernel(sigmaX,sigmaY,N,M)
 x = -(N-1)/2:(N-1)/2;
 y = -(M-1)/2:(M-1)/2;
 if sigmaY == 0 & sigmaX == 0

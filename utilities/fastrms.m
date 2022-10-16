@@ -1,5 +1,5 @@
 function rms = fastrms(x,window,dim,amp)
-%FASTRMS Instantaneous root-mean-square (RMS) power via convolution.
+%fastrms - Instantaneous root-mean-square (RMS) power via convolution.
 %
 %FASTRMS(X), when X is a vector, is the time-varying RMS power of X,
 %computed using a 5-point rectangular window centered at each point in the

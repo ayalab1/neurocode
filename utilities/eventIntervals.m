@@ -1,5 +1,5 @@
 function eventInt = eventIntervals(events,intervals,collapse)
-%EVENTINT Separate given  event struct by given time intervals
+%eventIntervals - Separate given  event struct by given time intervals
 %   events -  event structure containing pulses
 %   intervals - set of time intervals
 %   collapse - collpase individual struct for each interval into one

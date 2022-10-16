@@ -1,5 +1,5 @@
 function out = findIntervals(booString)
-
+%findIntervals - find start and end indices from boolstring
 booString = reshape(booString,[1,length(booString)]);
 
 starts = find(diff([false booString])>0);

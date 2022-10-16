@@ -1,5 +1,5 @@
 function [ convolution_result_fft ] = FConv( kernel, signal, varargin )
-%FConv(kernel,signal) convolves a signal with a kernal via the fourier
+%FConv - convolves a signal with a kernal via the fourier
 %transform for speedy delivery.
 %Note: as is, kernel is centered. 
 %   Adapted from Cohen Chapter 13

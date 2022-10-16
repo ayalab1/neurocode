@@ -1,5 +1,5 @@
 function animName = animalFromBasepath(basepath)
-%% Get animal name from basepath information
+%% animalFromBasepath-Get animal name from basepath information
 % Note that basepath should be the day folder of the animal that you're
 % working with. The function will return the animal name as a string. 
 % L Karaba, 10/21

@@ -1,4 +1,5 @@
 function stateName = getCurState(SleepState, event)
+%getCurState - Get current state name.
 % comp = ['WAKEstate', 'NREMstate', 'REMstate', 'THETA', 'nonTHETA', 'THETAtask'];
 fields = fieldnames(SleepState.ints);
 state = cell(2,1);

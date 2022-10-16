@@ -1,5 +1,5 @@
 function basename = basenameFromBasepath(basepath)
-% gets basename from a basepath input to a function.  Uses name of the last
+% basenameFromBasepath-gets basename from a basepath input to a function.  Uses name of the last
 % directory on the path to give basename.  Takes care of the problem of the
 % fact that if a fileseparator is on the end of the basepath, you have to
 % take it off first.

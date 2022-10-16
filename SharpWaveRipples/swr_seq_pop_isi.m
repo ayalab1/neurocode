@@ -1,6 +1,5 @@
 function swr_seq_pop_isi(varargin)
-% swr_seq_pop_isi(varargin)
-% calculate ISIs during events such as SWRs between specfific cell types 
+%swr_seq_pop_isi - calculate ISIs during events such as SWRs between specfific cell types 
 
 % Ryan Harvey, 10/21
 

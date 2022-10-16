@@ -1,5 +1,7 @@
 function varargout = DensityMap(x, y, varargin)
 
+%DensityMap - colormap equivalent of the dotplot produced by PlotXY 
+%
 % This funtion produces a colormap equivalent of the dotplot producesd by
 % PlotXY. Provide two vectors x and y (of equal lengths) to get a map with
 % values of x varying in different columns (abscissa) and values of y

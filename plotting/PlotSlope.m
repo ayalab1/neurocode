@@ -25,4 +25,4 @@ end
 
 X = x+[-len len]/2;
 Y = y+[-len len]/2*slope;
-plot(X,Y,varargin{:});
+p = plot(X,Y,varargin{:});

@@ -1,5 +1,6 @@
 
 function rippleChannels = swrChannels(varargin)
+%swrChannels - optimize ripple, SW, and noise channel selection
 % rippleChannel = swrChannels(varargin)
 
 % Find ripple channel of interest (ripple, SWP and noise channels)

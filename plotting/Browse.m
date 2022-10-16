@@ -1,6 +1,5 @@
 function Browse(parameter1,parameter2)
 
-% Same as 'Browse' in FMAToolbox but without the help message
 %Browse - Interactively browse the data in one or all subplots in a figure.
 %
 %  USAGE

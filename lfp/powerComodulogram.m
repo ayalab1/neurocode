@@ -1,7 +1,5 @@
 function [ comod ] = powerComodulogram(lfp,specparms,figparms)
-%[ comod ] = powerComodulogram(lfp,specparms,figparms) calculates the
-%comodulogram (i.e. power-power correlation) for an lfp file.
-%
+% powerComodulogram: calculates the comodulogram (i.e. power-power correlation) for an lfp file.
 %
 %INPUT
 %   LFP         LFP structure in buzcode format:
@@ -11,7 +9,7 @@ function [ comod ] = powerComodulogram(lfp,specparms,figparms)
 %               performed. If one refCh and n data channels are provided
 %               the correlation of the refCh against all data channels is
 %               performed.
-
+%
 %   specparms   structure of parameters for the spectrogram
 %       .frange     [min max] frequency
 %       .nfreqs     number of frequencies

@@ -170,14 +170,7 @@ if any(dimm(:)~=1),
 	alpha(p,1./(1+threshold./(dimm+eps)));
 end
 
-% Set X and Y axes
 set(a,'ydir',ydir,'tickdir','out','box','off');
-if ~isempty(x) && length(x) ~= 1,
-	PiecewiseLinearAxis(x);
-end
-if ~isempty(y) && length(y) ~= 1,
-	PiecewiseLinearAxis(y,'y');
-end
 
 % Color map and bar
 colormap(Bright(100,'hgamma',hgamma,'type',type));

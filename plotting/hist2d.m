@@ -1,5 +1,5 @@
 function varargout=hist2d(x,y,varargin)
-%HIST2D Bivariable histogram plot
+%hist2d - Bivariable histogram plot
 %	HIST2D(X,Y) creates a bivariate histogram plot of vectors X and Y.
 %
 %	The function uses an automatic binning algorithm that returns bins with

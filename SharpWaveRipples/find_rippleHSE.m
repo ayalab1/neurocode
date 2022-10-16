@@ -1,4 +1,7 @@
 function ripple_HSE = find_rippleHSE(basepath, ripples, varargin)
+
+%ripple_HSE - Find highly synchronous events that correspond to ripple times
+%
 % TODO: save result as a event file 
 % Winnie Yang, Jan 2021, Buzsaki Lab
 

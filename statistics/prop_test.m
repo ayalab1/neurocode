@@ -1,8 +1,7 @@
 function [h,p,chi2stat,df] = prop_test(X , N, correct)
 
-% [h,p, chi2stat,df] = prop_test(X , N, correct)
+% prop_test - A simple Chi-square test to compare two proportions
 %
-% A simple Chi-square test to compare two proportions
 % It is a 2 sided test with alpha=0.05
 %
 % Input:

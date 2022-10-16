@@ -96,7 +96,7 @@ pass = peak>thresholds(2);
 bursts = bursts(pass,:);
 
 % shift timestamps back to original time
-bursts0 = bursts; bursts(:) = Unshift(bursts0(:),sws); bursts(:,4) = bursts0(:,4);
+bursts0 = bursts; bursts(:) = Unshift(bursts0(:),intervals); bursts(:,4) = bursts0(:,4);
 end
 
 

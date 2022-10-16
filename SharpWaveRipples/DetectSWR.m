@@ -1,6 +1,9 @@
 
 function [ripples] = DetectSWR(Channels, varargin)
-% bz_DetectSWR    Detect Sharp Wave Ripple in epochs of continuous data. This
+
+%DetectSWR - Detect Sharp Wave Ripple in epochs of continuous data.
+%
+% DetectSWR     Detect Sharp Wave Ripple in epochs of continuous data. This
 %               code is designed for linear probes, with at least one shank
 %               that simultaneously records across the pyramidal cell layer
 %               i.e. the superficial contacts record the ripple and at
@@ -1318,6 +1321,9 @@ for ep_i = 1:Nepochs
     SWR.stdev = [thresSDrip(2) thresSDswD(2)];
     SWR.SwMax  = SWR_valid.SwMax(idxsIn);
     SWR.RipMax = SWR_valid.RipMax(idxsIn);
+    SWR_valid.Ts = SWR_valid.Ts(idxsIn,:);
+    SWR_valid.SwMax = SWR_valid.SwMax(idxsIn,:);
+    SWR_valid.RipMax = SWR_valid.RipMax(idxsIn,:);
     
     % Make sure all ripple epochs are unique.
     % check start ts

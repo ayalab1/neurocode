@@ -1,5 +1,6 @@
 function [W, H, cost,loadings,power] = seqNMF(X, varargin)
 
+%seqNMF - Factorizes the NxT data matrix X into K factors
 % USAGE: 
 %
 % [W, H, cost, loadings, power] = seqNMF(X, ...    % X is the data matrix

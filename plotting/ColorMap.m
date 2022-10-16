@@ -1,6 +1,8 @@
 function varargout = ColorMap(axis,varargin)
 
-%ColorMap - changes the current axis' color map to a custom color map,
+%ColorMap - changes the current axis' color map to a custom color map
+%
+% ColorMap - changes the current axis' color map to a custom color map,
 % a gradient of the desired colors. The desired colors should be 2 at the minimum 
 % [start stop], and can be any number above that.
 % EXAMPLE:

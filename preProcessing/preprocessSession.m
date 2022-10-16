@@ -52,7 +52,7 @@ addParameter(p,'getPos',false,@islogical);
 addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
-addParameter(p,'path_to_dlc_bat_file','',@isfile) 
+addParameter(p,'path_to_dlc_bat_file','',@isfile)
 addParameter(p,'nKilosortRuns',1,@isnumeric);
 
 % addParameter(p,'pullData',[],@isdir); To do...
@@ -164,7 +164,7 @@ try
     catch
         if (exist([basepath '\' basename '.lfp'])~=0)
             fclose([basepath '\' basename '.lfp']); %if the above run failed after starting the file
-            delete([basepath '\' basename '.lfp']); 
+            delete([basepath '\' basename '.lfp']);
         end
         LFPfromDat(basepath,'outFs',1250,'useGPU',false);
     end
@@ -199,10 +199,8 @@ if stateScore
     try
         if exist('pulses','var')
             SleepScoreMaster(basepath,'noPrompts',true,'ignoretime',pulses.intsPeriods,'rejectChannels',session.channelTags.Bad.channels); % try to sleep score
-            thetaEpochs(basepath);
         else
             SleepScoreMaster(basepath,'noPrompts',true,'rejectChannels',session.channelTags.Bad.channels); % takes lfp in base 0
-            thetaEpochs(basepath);
         end
     catch
         warning('Problem with SleepScore scoring... unable to calculate');
@@ -226,19 +224,22 @@ if spikeSort
         end
     else
         %% single sort
-        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path); % 'NT',20*1024 for long sessions when RAM is overloaded
-        load(fullfile(kilosortFolder,'rez.mat'),'rez');
-        CleanRez(rez,'savepath',kilosortFolder);
+        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,...
+            'rejectchannels',session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
+        if cleanRez
+            load(fullfile(kilosortFolder,'rez.mat'),'rez');
+            CleanRez(rez,'savepath',kilosortFolder);
+        end
         %     PhyAutoClustering(kilosortFolder);
     end
 end
 
-%% Get tracking positions - TO FIX
+%% Get tracking positions
 if getPos
-    % check for pre existing deeplab cut 
-%     if ~check_for_dlc(basepath,basename) % to be implemented
-    getSessionTracking('basepath',basepath,'optitrack',false);
-%     end
+    % check for pre existing deeplab cut
+    if exist(path_to_dlc_bat_file,'file')
+        system(path_to_dlc_bat_file,'-echo')
+    end
     % put tracking into standard format
     general_behavior_file('basepath',basepath)
 end
@@ -250,19 +251,4 @@ if runSummary
         sessionSummary;
     end
 end
-end
-
-% to be implemented
-function found_one = check_for_dlc(basepath,basename)
-
-load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
-
-for k = 1:length(MergePoints.foldernames)
-    dlc_flag(k) = isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*DLC*.csv')));
-end
-files = dir(basepath);
-files = files(~contains({files.name},'Kilosort'),:);
-dlc_flag(k+1) = isempty(dir(fullfile(files(1).folder,'*DLC*.csv')));
-
-found_one = ~all(dlc_flag);
 end

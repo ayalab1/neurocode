@@ -1,7 +1,6 @@
 function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 
-% [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
-% Calculates event-triggered (i.e. SWRs) wavelet spectrogram
+% eventWavelet: Calculates event-triggered (i.e. SWRs) wavelet spectrogram
 
 % INPUT
 %    lfp            a buzcode structure with fields lfp.data (only 1 channel)

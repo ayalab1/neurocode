@@ -1,6 +1,6 @@
 function EquateScales(varargin)
 
-%clims - Equalize the the x and y scales on all the axes of the current figure
+%EquateScales - Equalize the the x and y scales on all the axes of the current figure
 % EquateScales('x') equates the x-axes only, and EquateScales('y') - the y-axes only.
 
 axes = findall(gcf, 'type', 'axes');

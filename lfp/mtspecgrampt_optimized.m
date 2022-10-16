@@ -1,5 +1,5 @@
 function [S,t,f,R,Serr]=mtspecgrampt_optimized(data,movingwin,params,fscorr)
-% Multi-taper time-frequency spectrum - point process times
+% mtspecgrampt_optimized: Multi-taper time-frequency spectrum - point process times
 %
 % Usage:
 %

@@ -1,5 +1,5 @@
 function [comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,varargin)
-% [comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,flagPlot)
+% CFCPhaseAmp: calculates the modulation index of phase-amplitude
 %
 %
 %This function calculates the modulation index of phase-amplitude between

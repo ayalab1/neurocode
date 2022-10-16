@@ -1,5 +1,6 @@
 function [clean, bad, badIntervals] = CleanLFP(lfp,varargin)
-
+% CleanLFP: removes artefacts from lfp
+%
 % Returns the lfp cleaned from two kinds of artefacts: big artefacts in the
 % lfp signal (surpassing a threshold in z-units) and very fast fluctuations,
 % in which the signal derivative suprasses a threshold in z-units).

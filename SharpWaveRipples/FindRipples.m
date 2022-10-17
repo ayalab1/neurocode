@@ -2,7 +2,7 @@ function [ripples] = FindRipples(varargin)
 %FindRipples - Find hippocampal ripples when no SW channel is present
 %
 % USAGE
-%    [ripples] = FindRipples(lfp.data,lfp.timestamps,<options>)
+%    [ripples] = FindRipples(lfp(:,2),lfp(:,1),<options>)
 %    OR
 %    [ripples] = FindRipples(basepath,channel,<options>)
 %
@@ -101,8 +101,8 @@ if isstr(varargin{1})  % if first arg is basepath
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
     lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
-    signal = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
-    timestamps = lfp.timestamps;
+    signal = FilterLFP(lfp,'passband',passband);
+    timestamps = lfp(:,1);
     basepath = p.Results.basepath;
     channel = p.Results.channel;
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP
@@ -249,7 +249,7 @@ bad = [];
 if ~isempty(noise)
     if length(noise) == 1 % you gave a channel number
        noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
-       squaredNoise = bz_Filter(double(noiselfp.data),'filter','butter','passband',passband,'order', 3).^2;
+       squaredNoise = FilterLFP(noiselfp,'passband',passband).^2;
     else
             
 	% Filter, square, and pseudo-normalize (divide by signal stdev) noise
@@ -341,7 +341,7 @@ if strcmp(show,'on')
 		end
     end
   elseif plotType == 2
-      lfpPlot = bz_Filter(double(lfp.data),'filter','butter','passband',[50 300],'order', 3);
+      lfpPlot = FilterLFP(lfp,'passband',[50 300]);
      
 		plot(timestamps,lfpPlot);hold on;
   		yLim = ylim;

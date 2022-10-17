@@ -1,8 +1,7 @@
-function [lfp] = getLFP(varargin)
+function [lfp,info] = getLFP(varargin)
 %[ getLFP] - Get local field potentials.
 %
-%  Load local field potentials from disk. No longer dependent on
-%  FMAT/SetCurrentSession.
+%  Load local field potentials from disk. 
 %
 %    =========================================================================
 %  USAGE
@@ -31,15 +30,14 @@ function [lfp] = getLFP(varargin)
 %    =========================================================================
 %  OUTPUT
 %
-%    lfp             struct of lfp data. Can be a single struct or an array
-%                    of structs for different intervals.  lfp(1), lfp(2),
-%                    etc for intervals(1,:), intervals(2,:), etc
-%    .data           [Nt x Nd] matrix of the LFP data
-%    .timestamps     [Nt x 1] vector of timestamps to match LFP data
-%    .interval       [1 x 2] vector of start/stop times of LFP interval
-%    .channels       [Nd X 1] vector of channel ID's
-%    .samplingRate   LFP sampling rate [default = 1250]
-%    .duration       duration, in seconds, of LFP interval
+%    lfp              [Nt x  1 + Nd] matrix of the LFP data, where the first
+%                     column is the timestamps (in seconds) of the lfp data
+%                     and each subsequent column is the LFP data for each 
+%                     channel. 
+%    info             structure with metadata describing the lfp
+%    .channels        [Nd X 1] vector of channel ID's
+%    .samplingRate    LFP sampling rate [default = 1250]
+%    .intervals       [N x 2] matrix of start/stop times of LFP interval
 %
 %
 %  EXAMPLES
@@ -54,24 +52,16 @@ function [lfp] = getLFP(varargin)
 %    lfp = getLFP(3,'restrict',[0 120],'select','number');
 
 %    =========================================================================
-% Copyright (C) 2004-2011 by Michaël Zugaro
-% editied by David Tingley, 2017
-% kathryn mcclain 2020
-% Ralitsa Todorova 2022
+% Copyright (C) 2004-2011 by Michaël Zugaro, 2017 David Tingley, 
+% 2020 kathryn mcclain, 2022 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 %
-% NOTES
-% -'select' option has been removed, it allowed switching between 0 and 1
-%   indexing.  This should no longer be necessary with .lfp.mat structs
-%
 % TODO
-% add saveMat input 
 % expand channel selection options (i.e. region or spikegroup)
-% add forcereload
 %% Parse the inputs!
 
 channelsValidation = @(x) isnumeric(x) || strcmp(x,'all');
@@ -84,8 +74,6 @@ addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'downsample',1,@isnumeric);
-addParameter(p,'saveMat',false,@islogical);
-addParameter(p,'forceReload',false,@islogical);
 addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
 
@@ -123,8 +111,8 @@ if isempty(basename)
            error('could not find an lfp/eeg file..')
        end
    end
-   lfp.Filename = d.name;
-   basename = strsplit(lfp.Filename,'.');
+   structure.Filename = d.name;
+   basename = strsplit(structure.Filename,'.');
    if length(basename) > 2
        base = [];
        for i=1:length(basename)-1
@@ -151,7 +139,7 @@ else
            error('could not find an lfp/eeg file..')
        end
    end
-   lfp.Filename = d.name;   
+   structure.Filename = d.name;   
 end
 
 %% things we can parse from sessionInfo or xml file
@@ -186,32 +174,48 @@ disp('loading LFP file...')
 nIntervals = size(intervals,1);
 % returns lfp/bz format
 for i = 1:nIntervals
-    lfp(i).duration = (intervals(i,2)-intervals(i,1));
-    lfp(i).interval = [intervals(i,1) intervals(i,2)];
+    structure(i).duration = (intervals(i,2)-intervals(i,1));
+    structure(i).interval = [intervals(i,1) intervals(i,2)];
 
     % Load data and put into struct
     % we assume 0-indexing like neuroscope, but loadBinary uses 1-indexing to
     % load....
-    lfp(i).data = loadBinary([basepath filesep lfp.Filename],...
-        'duration',double(lfp(i).duration),...
+    structure(i).data = loadBinary([basepath filesep structure.Filename],...
+        'duration',double(structure(i).duration),...
                   'frequency',samplingRate,'nchannels',session.extracellular.nChannels,...
-                  'start',double(lfp(i).interval(1)),'channels',channels,...
+                  'start',double(structure(i).interval(1)),'channels',channels,...
                   'downsample',downsamplefactor);
-    lfp(i).timestamps = (1:length(lfp(i).data))'/samplingRateLFP_out;
-    lfp(i).channels = channels;
-    lfp(i).samplingRate = samplingRateLFP_out;
+    structure(i).timestamps = (1:length(structure(i).data))'/samplingRateLFP_out;
     % check if duration is inf, and reset to actual duration...
-    if lfp(i).interval(2) == inf
-        lfp(i).interval(2) = length(lfp(i).timestamps)/lfp(i).samplingRate;
-        lfp(i).duration = (lfp(i).interval(i,2)-lfp(i).interval(i,1));
+    if structure(i).interval(2) == inf
+        structure(i).interval(2) = length(structure(i).timestamps)/structure(i).samplingRate;
     end
-    if lfp(i).interval(1)>0 % shift the timestamps accordingly
+    if structure(i).interval(1)>0 % shift the timestamps accordingly
         add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; % in practice, the interval starts at the nearest lfp timestamp
-        lfp(i).timestamps = lfp(i).timestamps + add; 
-        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
+        structure(i).timestamps = structure(i).timestamps + add; 
+        structure(i).timestamps = structure(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
     end
     if isfield(session,'brainRegions') && isfield(session,'channels')
-        [~,~,regionidx] = intersect(lfp(i).channels,session.channels,'stable');
-        lfp(i).region = session.brainRegions(regionidx); % match region order to channel order..
+        [~,~,regionidx] = intersect(structure(i).channels,session.channels,'stable');
+        info.region = session.brainRegions(regionidx);
     end
 end
+
+% save the data into a single matrix (concatenate individual intervals)
+lfp = [cat(1,structure.timestamps) double(cat(1,structure.data))];
+info.intervals = cat(1,structure.interval);
+info.channels = channels;
+info.samplingRate = samplingRateLFP_out;
+
+
+
+
+
+
+
+
+
+
+
+
+

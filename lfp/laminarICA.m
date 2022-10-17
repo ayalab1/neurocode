@@ -1,4 +1,4 @@
-function [ica] = laminar_lfp_ica(varargin)
+function [ica] = laminarICA(varargin)
 %    [ica] = doICA(varargin)
 %
 % Performs Independent Component Analysis (ICA) decomposition
@@ -8,7 +8,7 @@ function [ica] = laminar_lfp_ica(varargin)
 % The resulting indenpendent components (ICs)correspond to different
 % synaptic sources of the LFPs (e.g. CA3 and entorhinal inputs for CA1
 % LFPs). For more details about the method implementation see Fernandez-Ruiz,JNeurosci, 2012 and
-% Schomburg et al., Neruon, 2014
+% Schomburg et al., Neuron, 2014
 %
 % This function is still work in progress
 %
@@ -53,10 +53,14 @@ function [ica] = laminar_lfp_ica(varargin)
 % .weights      ICA weight matrix (comps,chans)
 % .meanvar      Explained variance.
 %
-% Antonio FR, 2021. (using previous code from Manu V, Ipshita Z)
-%
+% Copyright (C) 2021 by Antonio FR. (using previous code from Manu V, Ipshita Z)
 % This functions is a  wrapper for the EEGLAB function 'runica.mat' from Scott
 % Makeig (CNL/The Salk Institute, La Jolla, 1996-). Copyright (C) 2004-2011
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% Parse inputs
 p = inputParser;
@@ -114,7 +118,7 @@ if isempty(lfp)
         channelOrder(ismember(channelOrder,session.channelTags.Bad.channels(:))) = [];
         disp(['removing bad channels: ',num2str(session.channelTags.Bad.channels(:)')])
         % load lfp using mapping
-        lfp = getLFP(channelOrder);
+        [lfp,infoLFP] = getLFP(channelOrder);
     catch
         error('LFP not found!');
     end
@@ -130,11 +134,11 @@ end
 
 %% It is recommmend to filter LFPs in the band of interest (e.g. gamma)
 disp('Filtering...');
-lfpFilt = bz_Filter(lfp,'passband',passband,'order',4,'filter','butter');
+lfpFilt = bz_Filter(lfp,'passband',passband,'order',4,'filter','butter'); %!!!
 
 %% Run runica
 
-[weights,sphere,meanvar,bias,signs,lrates,data] = runica(double(lfpFilt.data'),'lrate',1.0000e-03,'pca',nICs);
+[weights,sphere,meanvar,bias,signs,lrates,data] = runica(lfp(:,2:end)','lrate',1.0000e-03,'pca',nICs);
 
 % Normalize sphere
 sphere = sphere./norm(sphere);
@@ -146,19 +150,19 @@ if (size(unmixing,1)==size(unmixing,2)) && rank(unmixing)==size(unmixing,1)
 else
     mixing = pinv(unmixing);
 end
-activations = unmixing * lfpFilt.data';
+activations = unmixing * lfp(:,2:end)';
 
 %% Populate output structure
 ica.activations = activations;
 ica.data = data';
-ica.timestamps = lfp.timestamps;
+ica.timestamps = lfp(:,1);
 ica.sphere = sphere;
 ica.weights = weights;
 ica.meanvar = meanvar;
 ica.topo = mixing;
 ica.unmixing = unmixing;
-ica.samplingRate = lfp.samplingRate;
-ica.channels = lfp.channels;
+ica.samplingRate = infoLFP.samplingRate;
+ica.channels = infoLFP.channels;
 
 if saveMat
     disp('Saving results...');
@@ -193,18 +197,17 @@ if plotCFC
         %Pick the middle channel from the shank for LFP
         pyrCh = channelOrder(floor(length(channelOrder)/2));
     end
-    lfpTheta = getLFP(pyrCh);
-    
+    lfpTheta = getLFP(pyrCh,'interval',[500 1500]); % Only take 1000 seconds worth of data to keep the computation quick
+    in = ica.timestamps>= 500 & ica.timestamps<= 1500;
     %% For each ICA, run CFC
     phaserange = 5:0.5:12;
     amprange = 30:5:200;
     % Make lfp structure, with first channel as the Pyr lfp, and remaining
     % channels as the ica components.
-    lfpICA = lfpTheta;
-    % Only take 1000 seconds worth of data to keep the computation quick
-    lfpICA.timestamps = lfpICA.timestamps(500:1500*1250,1);
-    lfpICA.data = double(lfpICA.data(500:1500*1250,1));
-    lfpICA.data(:,2:(size(ica.weights,1)+1)) = ica.activations(:,500:1500*1250)';
+        
+    lfpICA.timestamps = lfpTheta(:,1);
+    lfpICA.data = lfpTheta(:,2:end);
+    lfpICA.data(:,2:(size(ica.weights,1)+1)) = ica.activations(:,in)';
     lfpICA.channels = 1:1:(size(ica.weights,1)+1);
     [comodulogram] = CFCPhaseAmp(lfpICA,phaserange,amprange,'phaseCh',1,'ampCh',2:length(lfpICA.channels));
     

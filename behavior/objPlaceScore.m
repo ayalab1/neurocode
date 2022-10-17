@@ -1,4 +1,7 @@
 function [objScore] = objPlaceScore(sessionsSeq,basepath,fs,timeTh)
+% 
+% Score memory performance in object location task.
+% 
 % [objScore] = objPlaceScore(sessionsSeq,basepath)
 % score memory performance in object location task, anotated online throug
 % digital inputs

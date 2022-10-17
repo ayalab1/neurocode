@@ -1,5 +1,5 @@
 function [intstimestamps_samples,intstimestamps] = make_pre_task_post(basePath,session_sequence)
-% generate pre/task/post structure
+% Generate pre/task/post structure
 
 % session_sequence: type of sub-sessions in order of recording. 1=
 % preSleep, 2= task, 3=postSleep

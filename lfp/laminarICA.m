@@ -1,4 +1,4 @@
-function [ica] = laminar_lfp_ica(varargin)
+function [ica] = laminarICA(varargin)
 %    [ica] = doICA(varargin)
 %
 % Performs Independent Component Analysis (ICA) decomposition

@@ -1,8 +1,7 @@
 function [c,slope,rSquared,SSres,startstop] = CorrByColumn(A,B)
 
-% [c,slope,rSquared] = CorrByColumn(A,B)
+%  CorrByColumn - correlate matrices A and B column by column
 %
-% correlate matrices A and B column by column
 % i.e. c(i) = corr(A(:,i),B(:,i))
 %
 % Input: 

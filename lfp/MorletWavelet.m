@@ -1,5 +1,5 @@
 function [wavelet, t] = MorletWavelet( f, numcyc, si )
-%MorletWavelet creates a Mortlet Wavelet of numcyc cycles with frequency f (Hz).  
+%MorletWavelet: creates a Mortlet Wavelet of numcyc cycles with frequency f(Hz).  
 %
 %   Adapted from Cohen Ch13
 %

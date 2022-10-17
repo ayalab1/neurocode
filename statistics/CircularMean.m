@@ -1,6 +1,6 @@
 function [m,r,p] = CircularMean(angles,weights,d)
 
-% Computes the mean of sets of angles (in radians).
+% CircularMean - Computes the mean of sets of angles (in radians).
 %
 %
 %  USAGE

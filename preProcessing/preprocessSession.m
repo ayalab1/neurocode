@@ -224,9 +224,12 @@ if spikeSort
         end
     else
         %% single sort
-        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
-        load(fullfile(kilosortFolder,'rez.mat'),'rez');
-        CleanRez(rez,'savepath',kilosortFolder);
+        kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,...
+            'rejectchannels',session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
+        if cleanRez
+            load(fullfile(kilosortFolder,'rez.mat'),'rez');
+            CleanRez(rez,'savepath',kilosortFolder);
+        end
         %     PhyAutoClustering(kilosortFolder);
     end
 end

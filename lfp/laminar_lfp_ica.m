@@ -1,26 +1,25 @@
-
-function [ica] = doICA(varargin)
+function [ica] = laminar_lfp_ica(varargin)
 %    [ica] = doICA(varargin)
 %
 % Performs Independent Component Analysis (ICA) decomposition
 
-%performs ICA of a laminar LFP profile using the logistic infomax ICA algorithm of Bell & Sejnowski (1995) with 
-% the natural gradient feature of Amari, Cichocki & Yang. 
+%performs ICA of a laminar LFP profile using the logistic infomax ICA algorithm of Bell & Sejnowski (1995) with
+% the natural gradient feature of Amari, Cichocki & Yang.
 % The resulting indenpendent components (ICs)correspond to different
 % synaptic sources of the LFPs (e.g. CA3 and entorhinal inputs for CA1
 % LFPs). For more details about the method implementation see Fernandez-Ruiz,JNeurosci, 2012 and
-% Schomburg et al., Neruon, 2014 
-% 
+% Schomburg et al., Neruon, 2014
+%
 % This function is still work in progress
 %
 % INPUTS
 % <optional>
-% basepath      Default pwd 
+% basepath      Default pwd
 % lfp           a  structure with fields   lfp.data,
 %                                          lfp.timestamps
 %                                          lfp.samplingRate
 %                                          lfp.channels.
-%               If not provided, runs getLFP('all') on basepath 
+%               If not provided, runs getLFP('all') on basepath
 %               IMPORTANT: lfp provided must be in the correct order of
 %               channels! If not provided, this function will by default
 %               load the channels in the correct order from the first
@@ -30,7 +29,7 @@ function [ica] = doICA(varargin)
 % passband      Prefiltering passband interval, default [30 200]
 % nICs          Number of independent components to extract. Default 8.
 % saveMat       Save results, default true.
-% force         Force analysis (disable loading option if already computed, 
+% force         Force analysis (disable loading option if already computed,
 %                   default false)
 % plotWeights   Default true
 % plotCFC       Will also calculate theta-gamma CFC for each IC. Default true.
@@ -39,25 +38,25 @@ function [ica] = doICA(varargin)
 %               channels on the ica output. Default order is or, pyr, rad,
 %               slm
 % chanRange     Optional. Specify whether you only want a subset of
-%               channels from the shank to be used. 
+%               channels from the shank to be used.
 %
 % TO DO: INCLUDE IMPORTANTS IMPUTS TO runica.m as additional arguments!
-% 
+%
 % OUTPUT
 % ica           a buzcode structure with the following fields:
 % .activations  independent components (this is the data matrix to use for
 %               analysis)
 % .data         independent components organized by explanatory variance.
 % .timestamps
-% .topo         Weight matrix 
+% .topo         Weight matrix
 % .sphere       data sphering matrix (chans,chans)
 % .weights      ICA weight matrix (comps,chans)
 % .meanvar      Explained variance.
 %
-% Antonio FR, 2021. (using previous code from Manu V, Ipshita Z) 
+% Antonio FR, 2021. (using previous code from Manu V, Ipshita Z)
 %
 % This functions is a  wrapper for the EEGLAB function 'runica.mat' from Scott
-% Makeig (CNL/The Salk Institute, La Jolla, 1996-). Copyright (C) 2004-2011 
+% Makeig (CNL/The Salk Institute, La Jolla, 1996-). Copyright (C) 2004-2011
 
 %% Parse inputs
 p = inputParser;
@@ -86,7 +85,7 @@ regionChan = p.Results.regionChan;
 plotWeights = p.Results.plotWeights;
 plotCFC = p.Results.plotCFC;
 chanRange = p.Results.chanRange;
-thetaChannel = p.Results.thetaChannel; 
+thetaChannel = p.Results.thetaChannel;
 
 % Deal with inputs
 prevBasepath = pwd;
@@ -102,16 +101,16 @@ if ~isempty(targetFile) && ~force
 end
 
 if isempty(lfp)
-    try 
+    try
         % load session to get anatomical groups (should be mapped)
         load([basepath,filesep,[basename,'.session.mat']])
         if isempty(chanRange)
             channelOrder =  session.extracellular.electrodeGroups(shankNum).channels{:};
         else
-            channelOrder = session.extracellular.electrodeGroups(shankNum).channels{:}(chanRange); 
+            channelOrder = session.extracellular.electrodeGroups(shankNum).channels{:}(chanRange);
         end
         
-        % remove bad channels 
+        % remove bad channels
         channelOrder(ismember(channelOrder,session.channelTags.Bad.channels(:))) = [];
         disp(['removing bad channels: ',num2str(session.channelTags.Bad.channels(:)')])
         % load lfp using mapping
@@ -179,7 +178,7 @@ if plotWeights
             if ~isempty(idx)
                 line([-300 300],[idx idx],'Color',[0.5 0.5 0.5],'LineStyle','--');
             end
-        end 
+        end
     end
     if ~isfolder('ICA')
         mkdir('ICA')
@@ -190,17 +189,17 @@ end
 if plotCFC
     if exist('hippocampalLayers','var')
         pyrCh = hippocampalLayers.pyramidal;
-    else 
+    else
         %Pick the middle channel from the shank for LFP
         pyrCh = channelOrder(floor(length(channelOrder)/2));
     end
     lfpTheta = getLFP(pyrCh);
-
+    
     %% For each ICA, run CFC
-    phaserange = 5:0.5:12; 
+    phaserange = 5:0.5:12;
     amprange = 30:5:200;
     % Make lfp structure, with first channel as the Pyr lfp, and remaining
-    % channels as the ica components. 
+    % channels as the ica components.
     lfpICA = lfpTheta;
     % Only take 1000 seconds worth of data to keep the computation quick
     lfpICA.timestamps = lfpICA.timestamps(500:1500*1250,1);
@@ -209,7 +208,7 @@ if plotCFC
     lfpICA.channels = 1:1:(size(ica.weights,1)+1);
     [comodulogram] = CFCPhaseAmp(lfpICA,phaserange,amprange,'phaseCh',1,'ampCh',2:length(lfpICA.channels));
     
-    set(gcf,'Position',[100 100 1400 300])  
+    set(gcf,'Position',[100 100 1400 300])
     saveas(gcf,[basepath,filesep,'ICA\CFC.png']);
 end
 

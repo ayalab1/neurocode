@@ -1,41 +1,55 @@
-
 function [pulses] = getAnalogPulses(varargin)
-% [pul, val, dur] = getAnalogPulses(varargin)
 %
-% Find square pulses. If not argument it provide, it tries to find pulses
-% in intan analog-in file.
+% [[pul, val, dur] = getAnalogPulses(varargin)]
 %
-% <OPTIONALS>
-% forceDetect   true or false to force detection (avoid load previous
-%               detection, default false)
-% analogCh      List of analog channels with pulses to be detected (it support Intan Buzsaki Edition).
-% data          R x C matrix with analog data. C is data, R should be
-%               greater than 1.
-% samplingRate            Sampling frequency (in Hz), default 20000.
-% offset        Offset subtracted (in seconds), default 0.
-% periodLag     How long a pulse has to be far from other pulses to be consider a different stimulation period (in seconds, default 20s)    
-% filename      File to get pulses from. Default, data file with folder
-%               name in current directory
-% manualThr     Check manually threslhold amplitude (default, false)
-% groupPulses   Group manually train of pulses (default, false)
-% basepath      Path with analog data files to get pulses from.
-% minDur        pulses with shorter duration than this are removed
-% showFig       Whether or not to show final pulse figure, best to set to
-%               false when manually scoring long sessions. Default, true.
+% [Find square pulses. If not argument it provide, it tries to find pulses
+% in intan analog-in file]
 %
-% OUTPUTS
-%               pulses - events struct with the following fields
-% timestamps    C x 2  matrix with pulse times in seconds. First column of C 
-%               are the beggining of the pulses, second column of C are the end of 
-%               the pulses. 
-% amplitude     values of the pulses with respect baleline (normalized as 0).
-% duration      Duration of the pulses. Note that default samplingRate is 20000.
-% eventID       Numeric ID for classifying various event types (C X 1)
-% eventIDlabels label for classifying various event types defined in eventID (cell array C X 1)  
-% intsPeriods   Stimulation periods, as defined by perioLag
+%  INPUT
 %
-% Manu-BuzsakiLab 2018
-% Antonio FR, 10/21
+%    [parser]      [input parser, see below]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+
+% [forceDetect] [true or false to force detection (avoid load previous
+%               detection, default false)]
+% [analogCh]    [List of analog channels with pulses to be detected (it
+%               support Intan Buzsaki Edition)]
+% [data]        [R x C matrix with analog data. C is data, R should be
+%               greater than 1]
+% [samplingRate][Sampling frequency (in Hz), default 20000]
+% [offset]      [Offset subtracted (in seconds), default 0]
+% [periodLag]   [How long a pulse has to be far from other pulses to be 
+%               consider a different stimulation period (in seconds, default 20s)]    
+% [filename]    [File to get pulses from. Default, data file with folder
+%               name in current directory]
+% [manualThr]   [Check manually threslhold amplitude (default, false)]
+% [groupPulses] [Group manually train of pulses (default, false)]
+% [basepath]    [Path with analog data files to get pulses from]
+% [minDur]      [pulses with shorter duration than this are removed]
+% [showFig]     [Whether or not to show final pulse figure, best to set to
+%               false when manually scoring long sessions. Default, true]
+%
+%  OUTPUT
+%                 [pulses - events struct with the following fields
+% [timestamps]    C x 2  matrix with pulse times in seconds. First column of C 
+%                 are the beggining of the pulses, second column of C are the end of 
+%                 the pulses] 
+% [amplitude]     [values of the pulses with respect baleline (normalized as 0)]
+% [duration]      [Duration of the pulses. Note that default samplingRate is 20000]
+% [eventID]       [Numeric ID for classifying various event types (C X 1)]
+% [eventIDlabels] [label for classifying various event types defined in eventID (cell array C X 1)]  
+% [intsPeriods]   [Stimulation periods, as defined by perioLag]
+%
+% SEE ALSO
+%
+% [Manu-BuzsakiLab] [2018]
+% [Antonio FR] [2021-2022]
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% Parse options
 p = inputParser;

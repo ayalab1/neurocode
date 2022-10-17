@@ -1,32 +1,32 @@
 function multiCellMetrics(basepath, ifSave)
 
-%multiCellMetrics- to visualize multiple sessions in cellExplorer GUI
+% [multiCellMetrics- to visualize multiple sessions in cellExplorer GUI]
 %
-%  Helper function to load and visualize multiple sessions within the
+%  [Helper function to load and visualize multiple sessions within the
 %  cellExplorer GUI. After you have multiple sessions spike sorted and 
-%  processed, you can open them all in cell explorer.
+%  processed, you can open them all in cell explorer]
 
 %
 %  USAGE
 %
-%    % Load all cell_metrics from a project
-%    multiCellMetrics('X:\data\Barrage');
+%    [Load all cell_metrics from a project
+%    multiCellMetrics('X:\data\Barrage');]
 %
-%    % Load all cell_metrics from an animal
-%    multiCellMetrics('X:\data\Barrage\NN2');
+%    [Load all cell_metrics from an animal
+%    multiCellMetrics('X:\data\Barrage\NN2');]
 %
-%    % Load a custom list of sessions (provide basepaths and basenames)
-%    multiCellMetrics(customBasepaths, customBasenames);
+%    [Load a custom list of sessions (provide basepaths and basenames)
+%    multiCellMetrics(customBasepaths, customBasenames);]
 %
 %  INPUTS
-%    basepath       If asking the function to search for all cell_metrics
+%  [basepath]       [If asking the function to search for all cell_metrics
 %                   folders within a given path, provide a character string
 %                   leading to the folder of interest (ie project or animal
 %                   folder). Otherwise, if interested in loading custom
 %                   sessions, provide an Nx1 cell of basepaths of interest
-%                   (characters within each cell).
-%    ifSave         Option to save the created dataframe to the relevant
-%                   folder. Default is false.  
+%                   (characters within each cell)]
+%   [ifSave]       [Option to save the created dataframe to the relevant
+%                   folder. Default is false]  
 % 
 %  OUTPUTS
 %    N/A
@@ -34,9 +34,10 @@ function multiCellMetrics(basepath, ifSave)
 %
 %  SEE ALSO
 %
-%    PreprocessSpikes
-
-% Ryan Harvey 2021-2022
+%    [PreprocessSpikes]
+%
+%
+% [Ryan Harvey] [2021-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

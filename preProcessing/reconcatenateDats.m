@@ -1,37 +1,42 @@
 function reconcatenateDats(basepath,sortFiles,otherdattypes,SSD_path)
-% reconcatenateDats - Function to help you concatenate auxiliary .dat files that were missed during preprocessing
 %
-% Sometimes after preprocessing a session, you may realize that there was 
+%
+% [reconcatenateDats] - [Function to help you concatenate auxiliary .dat
+% files that were missed during preprocessing]
+%
+% [Sometimes after preprocessing a session, you may realize that there was 
 % an input that was not concatenated. To avoid running concatenateDats from 
 % scratch (as it takes a long time), run concatenateOtherDats to fill in
-% the missing input .dat files. 
+% the missing input .dat files] 
 %
 %  USAGE
 %
-%    concatenateDats(basepath,sortFiles)
+%    [concatenateDats(basepath,sortFiles)]
 %
 %  INPUTS
 %
-%    basepath                  path to session folder
-%    sortFiles                 boolean denoting whether to sort files according 
-%                              to time of recording (1) or not (0) and thus sort 
-%                              them alphabetically.
-%    otherdattypes             a cell containing the filename that this function
-%                              should look for in other subfolders. See examples below.
+%    [basepath]                [path to session folder]
+%    [sortFiles]               [boolean denoting whether to sort files according] 
+%                              [to time of recording (1) or not (0) and thus sort 
+%                              them alphabetically]
+%    [otherdattypes]           [a cell containing the filename that this function
+%                              should look for in other subfolders. See
+%                              examples below]
 %                              
 %                              
 %
 %  OUTPUT
-%     Concatenated files will be saved in the basepath folder.
+%     [Concatenated files will be saved in the basepath folder]
 %
 %  EXAMPLES
 %
-%     % To concatenate digitalin.dat and analogin.dat files from individual subfolders: (e.g. after running "fillMissingDats")
-%     concatenateOtherDats(basepath,false,{'digitalin','analogin'}); 
+%     [To concatenate digitalin.dat and analogin.dat files from individual subfolders: (e.g. after running "fillMissingDats")
+%     concatenateOtherDats(basepath,false,{'digitalin','analogin'});] 
 %
-%     % To (re)concatenate the recording .dat (e.g. if it has been corrupted/modified/deleted)
-%     concatenateOtherDats(basepath,false,{'amplifier'}); 
-%     % Don't forget to rename it once it's concatenated as a "amplifier.dat" in the basepath folder
+%     [To (re)concatenate the recording .dat (e.g. if it has been corrupted/modified/deleted)
+%     concatenateOtherDats(basepath,false,{'amplifier'});] 
+%     [Don't forget to rename it once it's concatenated as a
+%     "amplifier.dat" in the basepath folder]
 %
 %
 % Copyright (C) 2022 Ralitsa Todorova (modified from concatenateDats)

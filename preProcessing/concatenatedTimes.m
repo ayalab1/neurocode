@@ -1,25 +1,33 @@
 function  concatenatedTimes(basepath,sortFiles)
-%   concatenatedTimes(basepath)
-%   This function generates the events.mat file that saves all the merge
-%   information. Useful if you dind't do this when you merged the dats.
+%   [concatenatedTimes(basepath)]
+%
+%   [This function generates the events.mat file that saves all the merge
+%   information. Useful if you dind't do this when you merged the dats]
 %
 %  USAGE
 %
-%    concatenateDats(basepath,sortFiles)
+%    [concatenateDats(basepath,sortFiles)]
 %
 %  INPUTS
 %
-%    basepath          computer path to session folder.  Defaults to
-%                      current folder if no input given
-%    sortFiles               - boolean denoting whether to sort files according 
+%    [basepath         [computer path to session folder.  Defaults to
+%                      current folder if no input given]
+%    [sortFiles]               [boolean denoting whether to sort files according 
 %                              to time of recording (1) or
 %                              not (0) and thus sort them alphabetically 
-%                              Default = 1.
+%                              Default = 1]
 %
 %  OUTPUT
-%     Operates on files in specified folder.  No output variable
+%     [Operates on files in specified folder.  No output variable]
 %
-%   Antonio FR 10/2018
+%  SEE ALSO
+%
+%   [Antonio FR] [2018-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 
 %% Handling inputs

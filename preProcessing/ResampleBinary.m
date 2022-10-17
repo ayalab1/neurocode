@@ -1,29 +1,29 @@
 function ResampleBinary(inputName,outputName,nChannels,up,down)
 
-%ResampleBinary - Resample binary data file.
+% [ResampleBinary] - [Resample binary data file]
 %
-% Resample binary data file, e.g. create LFP file from raw data file.
+% [Resample binary data file, e.g. create LFP file from raw data file]
 %
 %  USAGE
 %
 %    ResampleBinary(inputName,outputName,nChannels,up,down)
 %
-%    inputName      binary input file
-%    outputName     binary output file
-%    nChannels      number of channels in the file
-%    up             upsampling integer factor
-%    down           downsampling integer factor
+%    [inputName]    [binary input file]
+%    [outputName]   [binary output file]
+%    [nChannels]    [number of channels in the file]
+%    [up]           [upsampling integer factor]
+%    down           [downsampling integer factor]
 %
 %  NOTE 1
 %
-%    This function is provided for convenience. It simply calls <a href="matlab:help ProcessBinary">ProcessBinary</a>
-%    using the same parameters. See this function for details.
+%    [This function is provided for convenience. It simply calls <a href="matlab:help ProcessBinary">ProcessBinary</a>
+%    using the same parameters. See this function for details]
 %
-%  NOTE 2
+%  EXAMPLES
 %
-%    The actual resampling ratio is up/down.
+%    [The actual resampling ratio is up/down]
 %
-%    Here is a list of typical values for Spike2 recording systems:
+%   [Here is a list of typical values for Spike2 recording systems:]
 %
 %    FROM           TO       UP     DOWN
 %    =====================================
@@ -35,7 +35,7 @@ function ResampleBinary(inputName,outputName,nChannels,up,down)
 %    20284          20000    5000   5071
 %    20284          1025     5000   5071*16
 
-% Copyright (C) 2004-2014 by Michaël Zugaro
+% Copyright (C) 2004-2022 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

@@ -1,10 +1,9 @@
 function [deconvolved,t] = DeconvolvePETH(signal,events,varargin)
 
-%DeconvolvePETH - compute a deconvolved version of PETH which removes the
-% smoothing effects of the events' autocorrelogram
+% [DeconvolvePETH] - [Compute a deconvolved version of PETH which removes the
+% smoothing effects of the events' autocorrelogram]
 %
-% Copyright (C) 2022 by Ralitsa Todorova
-%
+% 
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or

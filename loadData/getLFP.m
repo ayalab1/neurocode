@@ -153,6 +153,7 @@ else
 end
 
 samplingRateLFP_out = samplingRate./downsamplefactor;
+structure(i).samplingRate = samplingRateLFP_out;
 
 if mod(samplingRateLFP_out,1)~=0
     error('samplingRate/downsamplefactor must be an integer')

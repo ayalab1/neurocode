@@ -1,3 +1,5 @@
+function [ccg,t] = CCG(times,groups,varargin)
+%
 %CCG - Compute multiple cross- and auto-correlograms
 %
 %  USAGE
@@ -50,8 +52,9 @@
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%-------------------------------------------------------------------------
 
-function [ccg,t] = CCG(times,groups,varargin)
 
 % Default values
 duration = 2;

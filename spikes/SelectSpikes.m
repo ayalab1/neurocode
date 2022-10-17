@@ -22,7 +22,7 @@ function selected = SelectSpikes(spikes,varargin)
 %
 %  OUTPUT
 %
-%    [selected      [a logical vector indicating for each spike whether it
+%    [selected]      [a logical vector indicating for each spike whether it
 %                   matches the criterion]
 %
 %

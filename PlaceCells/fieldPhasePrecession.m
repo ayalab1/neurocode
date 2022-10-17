@@ -1,6 +1,6 @@
 function [data,stats] = fieldPhasePrecession(positions,spikes,phases,varargin)
 
-%PhasePrecession - Compute spike phase precession.
+% Compute spike phase precession restricted in detected firing field
 %
 % Compute spike phase precession using the methods of O'Keefe and Recce (1993),
 % i.e. spike phase vs position, and Harris et al. (2002), i.e. spike phase vs

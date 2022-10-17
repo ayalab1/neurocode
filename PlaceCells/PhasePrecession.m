@@ -1,6 +1,6 @@
 function [data,stats] = PhasePrecession(positions,spikes,phases,varargin)
 
-%PhasePrecession - Compute spike phase precession.
+% Compute spike phase precession.
 %
 % Compute spike phase precession using the methods of O'Keefe and Recce (1993),
 % i.e. spike phase vs position, and Harris et al. (2002), i.e. spike phase vs

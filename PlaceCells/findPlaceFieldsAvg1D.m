@@ -1,5 +1,7 @@
 function [placeFieldStats] = findPlaceFieldsAvg1D(varargin)
-%   [placeFieldStats] = findPlaceFieldsAvg1D(firingMaps)
+
+% Find place fields from 1D firing maps. Reads the output of bz_firingMapAvg  
+% [placeFieldStats] = findPlaceFieldsAvg1D(firingMaps)
 %   Find place fields from 1D firing maps. Reads the output of bz_firingMapAvg 
 %
 %   INPUTS

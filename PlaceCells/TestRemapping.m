@@ -1,6 +1,6 @@
 function [h,p,cr,ca] = TestRemapping(control,repeat,test,varargin)
 
-%TestRemapping - Test if firing fields remap (or shift) between two conditions.
+% Test if firing fields remap (or shift) between two conditions.
 %
 %  To test for random remapping between a control and a test condition, we
 %  first estimate for each place cell the absolute field shift between the two

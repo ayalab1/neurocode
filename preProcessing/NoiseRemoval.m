@@ -13,11 +13,11 @@ datSamplingRate = session.extracellular.sr;
 
 warning(['This function will change the file ' datFile '.']);
 nChannels = session.extracellular.nChannels;
-lfpStructure = getLFP('all','basepath',basepath);
-lfpSamplingRate = lfpStructure.samplingRate;
+[lfp,infoLFP] = getLFP('all','basepath',basepath);
+lfpSamplingRate = infoLFP.samplingRate;
 
 % Identify Noise intervals
-lfp = mean(lfpStructure.data,2);
+lfp = mean(lfp(:,2:end),2);
 
 [b,a] = cheby2(5,20,300/(lfpSamplingRate/2),'low');
 slow = filtfilt(b,a,lfp);

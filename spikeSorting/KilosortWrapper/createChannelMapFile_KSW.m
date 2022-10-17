@@ -154,7 +154,8 @@ if isfield(par,'SpkGrps')
     connected(order(skip2)+1) = false;
 end
 
-chanMap     = 1:Nchannels;
+
+chanMap   = order + 1;
 chanMap0ind = chanMap - 1;
 [~,I] =  sort(horzcat(tgroups{:}));
 xcoords = xcoords(I)';

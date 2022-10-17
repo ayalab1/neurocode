@@ -1,5 +1,7 @@
 function [tracking] = readOptitrackCSV(filename,varargin)
 
+% Read optitrack CVS into matlab.
+% 
 % INPUTS
 %    fbasename   -basename of the recording (this is only used in generating
 %                 the .mat output file)

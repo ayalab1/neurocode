@@ -46,17 +46,27 @@ filename = filenames{index};
 [parts] = strsplit(filename,'.');
 
 state = warning; state = state(1).state; warning('off'); % supress warnings for the following code
-try
-%     fieldName = parts{end-2}; % parts{end} is mat
-    struct = load(fullfile(basepath,filename),fieldName);
-    struct = struct.(fieldName);
-catch
-    try fieldName = parts{end-1};
+if ~exist(fullfile(basepath,filename),'file')
+    error([fullfile(basepath,filename) ' does not exist.']);
+end
+
+vars = whos('-file',fullfile(basepath,filename)); % list the variables actually contained in the file
+if length(vars) % if there is a single variable, load that variable regardless of what it's called inside the file
+    struct = load(fullfile(basepath,filename),vars.name);
+    struct = struct.(vars.name);
+else % try to find the variable specified in "fieldName"
+    try
+        %     fieldName = parts{end-2}; % parts{end} is mat
         struct = load(fullfile(basepath,filename),fieldName);
         struct = struct.(fieldName);
-    catch fieldName = parts{end-2};
-        struct = load(fullfile(basepath,filename),fieldName);
-        struct = struct.(fieldName);
+    catch
+        try fieldName = parts{end-1};
+            struct = load(fullfile(basepath,filename),fieldName);
+            struct = struct.(fieldName);
+        catch fieldName = parts{end-2};
+            struct = load(fullfile(basepath,filename),fieldName);
+            struct = struct.(fieldName);
+        end
     end
 end
 warning(state); % return to previous warning state

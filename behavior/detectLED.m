@@ -1,3 +1,5 @@
+function positions_out = detectLED(fbasename,thresh,varargin)
+
 % Detect red and blue LEDs position in a video file and creates a 'led' file
 %
 %  USAGE
@@ -30,7 +32,6 @@
 % Modified by aza, 2017, sas-lab
 % Adapted to neurocode by aza, 2021, still have to work on new format...
 
-function positions_out = detectLED(fbasename,thresh,varargin)
 manualROI = 0;
 debug_by_shot=0;
 samplingRate=30; %make it optional

@@ -1,5 +1,8 @@
 function [behavior] = linearTrackBehavior(varargin)
-%        [behavior] = linearTrackBehavior(varargin)
+% 
+% Behavior code for general linear track.
+% 
+% [behavior] = linearTrackBehavior(varargin)
 % Gets raw tracking data and generates behavior structure
 % based on the standards described in cellexplorer
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior

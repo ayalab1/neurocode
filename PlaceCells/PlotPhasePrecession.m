@@ -1,6 +1,6 @@
 function PlotPhasePrecession(data,stats,varargin)
 
-%PlotPhasePrecession - Plot phase precession plots and maps.
+%  Plot phase precession plots and maps.
 %
 %  USAGE
 %

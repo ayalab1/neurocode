@@ -1,5 +1,6 @@
 function df = load_dlc_csv(file_path)
-% load_dlc_csv: general function to load dlc csv files
+% 
+% General function to load dlc csv files
 %
 % works by iterating over headers until x,y,likelihood are found, then
 % makes sure all columns are type double. 

@@ -1,4 +1,7 @@
 function delay = align_tracking(timestamps, positions, events, varargin)
+% 
+% Align behavior tracking trajectory with detected pulses
+% 
 % Heuristic to align behavior tracking trajectory with detected pulses
 % (e.g. from IR barriers, etc.), assuming that events always happen in a
 % fixed location. The function returns the delay of the trajectory relative

@@ -1,4 +1,7 @@
 function [t,x,y,vx,vy,ax,ay] = KalmanVel(posx,posy,post,order,Q,R)
+% 
+% Velocity estimation using the Kalman Filter on recorded position.
+% 
 % root.KalmanVel(x, y, t, order);
 %
 % Code adapted from Sturla Molden (see below) to work within CMBHOME

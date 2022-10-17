@@ -1,6 +1,8 @@
 
 function [tracking] = getSessionTracking(varargin)
 %
+% Get position tracking for subsession, concatenate, and align to LFP and spikes
+% 
 % Gets position trackign for each sub-session and concatenate all of them so they are
 % aligned with LFP and spikes. Default is recording with Basler, and requiere avi videos
 % and at least one tracking LED. There is an alternative in case OptiTrack was used.

@@ -1,8 +1,9 @@
 function [firingMapsLaps] = firingMapLaps(spikes,behavior,varargin)
 
-% USAGE
-% [firingMaps] = firingMapLap(positions,spikes,trials,varargin)
 % Calculates firing map for each lap for each neuron
+% 
+%  USAGE
+% [firingMaps] = firingMapLap(positions,spikes,trials,varargin)
 %
 % INPUTS
 %

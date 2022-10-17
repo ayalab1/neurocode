@@ -1,25 +1,37 @@
 function  H = plotEventRaster(event,varargin)
 %
-%   Plot spike raster for invidual events (such as ripples), sorting cells
+%   [Plot spike raster for invidual events (such as ripples), sorting cells
 %   by firing order and color code them according to diverse features
-%   (region, cell type, etc.)
+%   (region, cell type, etc.)]
 %
-%   Inputs:
-%   event   = [start stop] in seconds for one or multiple events
-%   spikes  = structure of spike time and UID info
-%   lfpChan = channel to plot lfp (base 1)
-%   loadDat = load lfp trace from .dat instead of .lfp. Default = false
-%   tag     = feature to color code raster. Now supporting: pyrInt, 
-%               brainRegion, deepSup, REMshift
-%   tag2    = feature for shape of the raster. Now supporting: cellType,
-%               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
-%   saveFig = default false
-%   pad     = Amount of time surrounding each event, default 0.25s
-
+%   INPUTS
+%
+%   [event]  [[start stop] in seconds for one or multiple events]
+%   [spikes] [structure of spike time and UID info]
+%   [lfpChan][channel to plot lfp (base 1)]
+%   [loadDat][load lfp trace from .dat instead of .lfp. Default = false]
+%   [tag]    [feature to color code raster. Now supporting: pyrInt, 
+%             brainRegion, deepSup, REMshift]
+%   [tag2]   [feature for shape of the raster. Now supporting: cellType,
+%               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**)] 
+%   [saveFig][default false]
+%   [pad]    [Amount of time surrounding each event, default 0.25s]
+%
+%  OUTPUT
+%   
+%   [h]     [event raster]
+%
 %   TO DO: 
 %   add legend to plot 
-
-%   Antonio FR, 10/21. Lindsay Karaba, 11/21
+%
+%  SEE ALSO
+%
+%   [Antonio FR Lindsay Karaba] [2021-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% inputs
 p = inputParser;

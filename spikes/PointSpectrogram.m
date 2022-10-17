@@ -1,67 +1,80 @@
 function [spectrogram,t,f] = PointSpectrogram(times,varargin)
 
-%PointSpectrogram - Compute point process spectrogram by multi-taper estimation.
+% [PointSpectrogram - Compute point process spectrogram by multi-taper
+% estimation]
 %
-% The spectrogram is computed using the <a href = "http://www.chronux.org">chronux</a> toolbox.
+% [The spectrogram is computed using the <a href =
+% "http://www.chronux.org">chronux</a> toolbox]
 %
 % USAGE
 %
-%  [spectrogram,t,f] = MTPointSpectrogram(times,<options>)
+%  [[spectrogram,t,f] = MTPointSpectrogram(times,<options>)]
 %
-%  times     event times, e.g. spike times
+%  INPUT
+%
+%  [times]     [event times, e.g. spike times]
 %  <options>   optional list of property-value pairs (see table below)
 %
 %   == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == = 
 %   Properties  Values
 %  -------------------------------------------------------------------------
-%   'frequency'  sampling rate (in Hz) (default = 20000Hz)
-%   'range'    frequency range (in Hz) (default = all)
-%   'window'   duration (in s) of the time window (default = 5)
-%   'overlap'   overlap between successive windows (default = window/2)
-%   'step'    step between successive windows (default = window/2)
-%   'tapers'   relative resolution and order of the tapers [NW K]
-%          (default = [3 5])
-%   'pad'     FFT padding (see help for <a href = "matlab:help mtspecgrampt">mtspecgrampt</a>) (default = 0)
-%   'show'    plot spectrogram (default = 'off')
-%   'cutoffs'   cutoff values for color plot (default = [0 13])
+%   ['frequency'] [sampling rate (in Hz) (default = 20000Hz)]
+%   ['range']     [frequency range (in Hz) (default = all)]
+%   ['window']    [duration (in s) of the time window (default = 5)]
+%   ['overlap']   [overlap between successive windows (default = window/2)]
+%   ['step']      [step between successive windows (default = window/2)]
+%   ['tapers']    [relative resolution and order of the tapers [NW K]
+%                 (default = [3 5])]
+%   ['pad']       [FFT padding (see help for <a href = "matlab:help
+%                 mtspecgrampt">mtspecgrampt</a>) (default = 0)]
+%   ['show']      [plot spectrogram (default = 'off')]
+%   ['cutoffs']   [cutoff values for color plot (default = [0 13])]
 %   == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == == = 
 %
 % NOTES
 %
-%  The time displacement between successive short time spectra can be supplied
+%  [The time displacement between successive short time spectra can be supplied
 %  either as a 'step' (explicit time difference) or as an 'overlap' (between
-%  successive time windows).
+%  successive time windows)]
 %
 % OUTPUT
 %
-%  spectrogram  time-frequency matrix
-%  t       time bins
-%  f       frequency bins
+%  [spectrogram] [time-frequency matrix]
+%  [t]           [time bins]
+%  [f]           [frequency bins]
 %
 % DEPENDENCIES
 %
-%  This function requires the <a href = "http://www.chronux.org">chronux</a> toolbox.
+%  [This function requires the <a href =
+%  "http://www.chronux.org">chronux</a> toolbox]
 %
 % SEE
 %
 %  See also SpectrogramBands, PlotColorMap.
-% I put all the functions calculating a point spectrogram in this function 
+% 
+% NOTE
+%
+%I put all the functions calculating a point spectrogram in this function 
 % in order to avoid multiple calculations of the fft of tapers, thus dramatically
 % increasing calculation speed. This was just for optimisation purposes, all 
 % programs were developed as referenced (i.e. by Michaël Zugaro and Chronux).
-
-% Copyright (C) 2004,2012 by Michaël Zugaro, chronux, and 2020 Ralitsa Todorova
-% (optimization)
+%
+%
+% Ralitsa Todorova put all the functions calculating a point spectrogram in this function 
+% in order to avoid multiple calculations of the fft of tapers, thus dramatically
+% increasing calculation speed. This was just for optimisation purposes, all 
+% programs were developed as referenced (i.e. by Michaël Zugaro and Chronux).
+%
+%
+% [Michaël Zugaro Ralitsa Todorova, chronuz] [2005-2022]
+%
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-% Ralitsa Todorova put all the functions calculating a point spectrogram in this function 
-% in order to avoid multiple calculations of the fft of tapers, thus dramatically
-% increasing calculation speed. This was just for optimisation purposes, all 
-% programs were developed as referenced (i.e. by Michaël Zugaro and Chronux).
+
 
 % Defaults
 Fs = 20000;

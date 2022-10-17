@@ -1,26 +1,50 @@
 function [score] = PairOrder(targetSequence, sequenceList, varargin)
 
-% Method used by Gupta et al (Redish) 2010.
-% sequenceList can be a matrix with NaNs, for example:
+% [Method used by Gupta et al (Redish) 2010]
+% [sequenceList can be a matrix with NaNs, for example:
 %
 %       1   3   4   2   1   6   NaN
 %       NaN 2   NaN 1   2   3   5
 %       4   1   1   5   2   6   6
 % where each row is a sequence. 'score' will have a score (row) for each of
-% the rows in sequenceList.
+% the rows in sequenceList]
 %
 % EXAMPLE:
-% [~,peakBin] = max(firingMaps,[],2);
-% [~,correctOrder] = sort(peakBin); % the order of place fields (as ordered by the location of their peak)
-% sequenceList = GetSequenceList(spikes, thetaCycles);
-% thetaScores = PairOrder(correctOrder,sequenceList);
+% [[~,peakBin] = max(firingMaps,[],2);]
+% [[~,correctOrder] = sort(peakBin); % the order of place fields (as
+%                       ordered by the location of their peak)]
+% [sequenceList = GetSequenceList(spikes, thetaCycles)]
+% [thetaScores = PairOrder(correctOrder,sequenceList)]
 %
-% Copyright (C) 2016 by Ralitsa Todorova
+%
+%  INPUTS
+%    [targetSequence]     [sequence with intended order]
+%    [sequenceList]       [sequence list actually recorder. See above]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     ['circular']  [if data is circular 'on.' If not 'off' (Default)]
+%     ['normalize'] [normalize score] 
+
+%    =========================================================================
+% 
+%  OUTPUTS
+%    [score]     [Description of input 1]
+%   
+%
+% SEE ALSO
+%
+% [Ralitsa Todorova] [2016-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%
+%------------------------------------------------------------------------
+
 
 if ~isvector(targetSequence),
     error('targetSequence should be a vector');

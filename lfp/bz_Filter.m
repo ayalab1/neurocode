@@ -1,6 +1,6 @@
 function filtered = bz_Filter(samples,varargin)
 
-%Filter - Filter samples.
+%Filter - bandpass filter samples
 %
 %  USAGE
 %

@@ -1,3 +1,4 @@
+function CheckChronux(f)
 %CheckChronux - Make sure chronux is installed and functional.
 %
 %  USAGE
@@ -11,16 +12,14 @@
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-function CheckChronux(f)
-
-if nargin == 0,
+if nargin == 0
 	f = 'chronux';
 	message = 'This function requires the <a href="http://www.chronux.org">chronux</a> toolbox.';
 else
 	message = ['This function requires the <a href="http://www.chronux.org">chronux</a> toolbox (could not find ''' f ''').'];
 end
 
-if isempty(which(f)),
+if isempty(which(f))
 	error(message);
 end
 

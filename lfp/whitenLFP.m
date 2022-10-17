@@ -1,9 +1,7 @@
 function [lfpwhiten] = whitenLFP(lfp,varargin)
 
-% [y, ARmodel] = bz_whitenLFP(lfp,varargin)
-% Whiten an lfp signal using an autoregresive model.
-% Requires the external package 'arfit'
-
+% bz_whitenLFP: Whiten an lfp signal using an autoregresive model.
+%
 % INPUT
 %    lfp            a buzcode structure with fields lfp.data,
 %                                                   lfp.timestamps

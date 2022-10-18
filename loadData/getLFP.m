@@ -71,7 +71,7 @@ p = inputParser;
 addRequired(p,'channels',channelsValidation)
 addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
-addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'downsample',1,@isnumeric);
 addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
@@ -259,8 +259,3 @@ if ~exist(filename,'file')
 end
 anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
 end
-
-
-
-
-

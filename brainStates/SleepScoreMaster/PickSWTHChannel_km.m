@@ -164,7 +164,7 @@ end
 numThetaChannels = length(ThetaChannels);
 
 %% Load LFP files from .lfp
-[allLFP,infoLFP] = getLFP(usechannels,'basepath',basePath,'basename',recordingname,...
+[allLFP,infoLFP] = getLFP(usechannels,'basepath',basePath,...
     'downsample',downsamplefactor,'intervals',scoretime,'noPrompts',noPrompts);
 Fs = infoLFP.samplingRate;
 % prepare old-style LFP structure for bz_PowerSpectrumSlope
@@ -329,7 +329,7 @@ THchanID = ThetaChannels(goodTHidx);   %best SW and theta channels
 
 %% Load the best channels at sampling frequency needed for clustering later
 downsample_save = Fs./250;
-swthLFP = getLFP([SWchanID,THchanID],'basepath',basePath,'basename',recordingname,...
+swthLFP = getLFP([SWchanID,THchanID],'basepath',basePath,...
     'downsample',downsample_save,'intervals',scoretime,'noPrompts',noPrompts);
 
 swLFP = (swthLFP.data(:,1));

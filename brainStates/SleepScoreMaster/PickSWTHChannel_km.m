@@ -183,7 +183,7 @@ peakTH = zeros(numThetaChannels,1);
 %parfor_progress(numSWChannels);
 %tstart = tic;
 %addAttachedFiles(gcp,{'hartigansdiptest_ss.m'})
-parfor idx = 1:numSWChannels;
+parfor idx = 1:numSWChannels
     %Progress Counter
     %     timespent=toc(tstart);
     %     percdone = parfor_progress;
@@ -329,13 +329,13 @@ THchanID = ThetaChannels(goodTHidx);   %best SW and theta channels
 
 %% Load the best channels at sampling frequency needed for clustering later
 downsample_save = Fs./250;
-swthLFP = getLFP([SWchanID,THchanID],'basepath',basePath,...
+[swthLFP,lfp_info] = getLFP([SWchanID,THchanID],'basepath',basePath,...
     'downsample',downsample_save,'intervals',scoretime,'noPrompts',noPrompts);
 
-swLFP = (swthLFP.data(:,1));
-thLFP = (swthLFP.data(:,2));
-t = swthLFP.timestamps;
-sf = swthLFP.samplingRate;
+swLFP = (swthLFP(:,2));
+thLFP = (swthLFP(:,3));
+t = swthLFP(:,1);
+sf = lfp_info.samplingRate;
 
 
 %% SleepScoreLFP output

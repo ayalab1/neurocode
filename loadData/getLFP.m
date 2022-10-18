@@ -164,8 +164,9 @@ end
 %indexing), we could also add options for this to be select region or spike
 %group from the xml...
 if strcmp(channels,'all')
-    chInfo = hackInfo('basepath',basepath);
-    channels = chInfo.one.channels;
+    [~,channel_map] = get_maps(session);
+    channels = channel_map(:)'; % create row wise vector of all mapped channels
+    channels(isnan(channels)) = []; % remove nan
 else
     %Put in something here to collapse into X-Y for consecutive channels...
     display(['Loading Channels ',num2str(channels),' (1-indexing)'])
@@ -198,19 +199,28 @@ for i = 1:nIntervals
         structure(i).timestamps = structure(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
     end
     
-    % Get regions from session or anatomical_map
+    %% Get regions from session or anatomical_map
     if isfield(session,'brainRegions')
         [anatomical_map,channel_map] = get_maps(session);
         anatomical_map = get_map_from_session(session,anatomical_map,channel_map);
-        info.region = anatomical_map';
+        info.region = get_region(channels, anatomical_map,channel_map);
+        
     elseif isfile(fullfile(basepath,'anatomical_map.csv'))
-        [anatomical_map,~] = get_maps(session);
+        [anatomical_map,channel_map] = get_maps(session);
         [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
-        info.region = anatomical_map';
+        info.region = get_region(channels, anatomical_map,channel_map);
+        
     end
+    
     
 end
 
+%%
+[anatomical_map,channel_map] = get_maps(session);
+%%
+anatomical_map = get_map_from_session(session,anatomical_map,channel_map(:,1));
+region = anatomical_map(:)';
+%%
 % save the data into a single matrix (concatenate individual intervals)
 lfp = [cat(1,structure.timestamps) double(cat(1,structure.data))];
 info.intervals = cat(1,structure.interval);
@@ -218,6 +228,15 @@ info.channels = channels;
 info.samplingRate = samplingRateLFP_out;
 end
 
+function region = get_region(channels, anatomical_map,channel_map)
+
+    % reshape so are both row vectors for comparison with channels
+    channel_map = channel_map(:)'; % make into row vector
+    anatomical_map = anatomical_map(:)';
+    % index region for channels
+    region = anatomical_map(find(channels == channel_map(:)'));
+    
+end
 
 function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
 if isfield(session,'brainRegions')
@@ -225,8 +244,8 @@ if isfield(session,'brainRegions')
     for i = 1:length(regions)
         region_idx = ismember(channel_map,...
             session.brainRegions.(regions{i}).channels);
-         anatomical_map(region_idx) = {regions{i}};
-
+        anatomical_map(region_idx) = {regions{i}};
+        
     end
 end
 end

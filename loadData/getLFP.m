@@ -166,7 +166,7 @@ end
 if strcmp(channels,'all')
     [~,channel_map] = get_maps(session);
     channels = channel_map(:)'; % create row wise vector of all mapped channels
-    channels(isnan(channels)) = []; % remove nan
+    channels(isnan(channels)) = [];
 else
     %Put in something here to collapse into X-Y for consecutive channels...
     display(['Loading Channels ',num2str(channels),' (1-indexing)'])
@@ -234,7 +234,7 @@ function region = get_region(channels, anatomical_map,channel_map)
     channel_map = channel_map(:)'; % make into row vector
     anatomical_map = anatomical_map(:)';
     % index region for channels
-    region = anatomical_map(find(channels == channel_map(:)'));
+    region = anatomical_map(ismember(channel_map(:)',channels));
     
 end
 

@@ -257,8 +257,3 @@ if ~exist(filename,'file')
 end
 anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
 end
-
-
-
-
-

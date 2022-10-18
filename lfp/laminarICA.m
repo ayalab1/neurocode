@@ -66,6 +66,8 @@ function [ica] = laminarICA(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'lfp',[],@isstruct);
+addParameter(p,'region_tag','CA1sp',@ischar);
+addParameter(p,'brain_state',[],@ischar);
 addParameter(p,'shankNum',1,@isnumeric)
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',true,@islogical);
@@ -80,6 +82,8 @@ addParameter(p,'thetaChannel',[],@isnumeric)
 parse(p,varargin{:});
 basepath = p.Results.basepath;
 lfp = p.Results.lfp;
+region_tag = p.Results.region_tag;
+brain_state = p.Results.brain_state;
 saveMat = p.Results.saveMat;
 force = p.Results.force;
 passband = p.Results.passband;
@@ -95,8 +99,13 @@ thetaChannel = p.Results.thetaChannel;
 prevBasepath = pwd;
 cd(basepath); % will change this once I figure out which downstream functions require PWD
 
+% get basename from basepath
 basename = basenameFromBasepath(basepath);
 
+% load session 
+session = loadSession(basepath,basename);
+
+% check if file already created 
 targetFile = dir([basepath,filesep,'*.ica.channelInfo.mat']);
 if ~isempty(targetFile) && ~force
     disp('ICA already computed! Loading file.');
@@ -104,31 +113,40 @@ if ~isempty(targetFile) && ~force
     return
 end
 
+
+% load session to get anatomical groups (should be mapped)
+if isempty(chanRange)
+    channelOrder =  session.extracellular.electrodeGroups(shankNum).channels{:};
+else
+    channelOrder = session.extracellular.electrodeGroups(shankNum).channels{:}(chanRange);
+end
+
+% remove bad channels
+channelOrder(ismember(channelOrder,session.channelTags.Bad.channels(:))) = [];
+disp(['removing bad channels: ',num2str(session.channelTags.Bad.channels(:)')])
+
+% Load lfp
 if isempty(lfp)
     try
-        % load session to get anatomical groups (should be mapped)
-        load([basepath,filesep,[basename,'.session.mat']])
-        if isempty(chanRange)
-            channelOrder =  session.extracellular.electrodeGroups(shankNum).channels{:};
-        else
-            channelOrder = session.extracellular.electrodeGroups(shankNum).channels{:}(chanRange);
-        end
-        
-        % remove bad channels
-        channelOrder(ismember(channelOrder,session.channelTags.Bad.channels(:))) = [];
-        disp(['removing bad channels: ',num2str(session.channelTags.Bad.channels(:)')])
         % load lfp using mapping
-        [lfp,infoLFP] = getLFP(channelOrder);
+        [lfp,infoLFP] = getLFP(channelOrder,'basepath',basepath);
     catch
         error('LFP not found!');
     end
 end
 
+% find region info
 if isempty(regionChan)
     regFile = dir([basepath,filesep,'*.hippocampalLayers.channelinfo.mat']);
     if ~isempty(regFile)
         load(regFile.name);
         regionChan = hippocampalLayers.all;
+    elseif isfield(session,'brainRegions')
+        
+        for region = 1:length(fieldnames(session.brainRegions))
+            
+        end
+    else
     end
 end
 
@@ -193,10 +211,24 @@ end
 if plotCFC
     if exist('hippocampalLayers','var')
         pyrCh = hippocampalLayers.pyramidal;
+    % search for region of interest in session. 
+    elseif isfield(session,'brainRegions') && isfield(session.brainRegions,region_tag)
+        pyrCh = session.brainRegions.(region_tag).channels;
+        pyrCh = pyrCh(end-1); % choose middle CA1 pyramidal channel
+    % Else search for tag in anatomical_map
+    elseif isfile(fullfile(basepath,'anatomical_map.csv'))
+        % load anatomical map 
+        map = readtable(fullfile(basepath,'anatomical_map.csv'),'ReadVariableNames', false);
+        % find pyramidal channels. Must be labeled with Allen Institute
+        % notation for pyramidal cell layer
+        pyr = channelOrder(find(ismember(map.Var1,region_tag)));
+        % get second to last pyramidal channel
+        pyrCh = pyr(end-1);
     else
         %Pick the middle channel from the shank for LFP
         pyrCh = channelOrder(floor(length(channelOrder)/2));
     end
+    
     lfpTheta = getLFP(pyrCh,'interval',[500 1500]); % Only take 1000 seconds worth of data to keep the computation quick
     in = ica.timestamps>= 500 & ica.timestamps<= 1500;
     %% For each ICA, run CFC
@@ -216,4 +248,43 @@ if plotCFC
 end
 
 cd(prevBasepath);
+end
+
+function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
+if isfield(session,'brainRegions')
+    regions = fields(session.brainRegions);
+    for i = 1:length(regions)
+        region_idx = ismember(channel_map,...
+            session.brainRegions.(regions{i}).channels);
+    end
+end
+end
+
+function [anatomical_map,channel_map] = get_maps(session)
+max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
+anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
+channel_map = nan(size(anatomical_map));
+
+for i = 1:session.extracellular.nElectrodeGroups
+    n_ch = length(session.extracellular.electrodeGroups.channels{i});
+    anatomical_map(1:n_ch,i) = repmat({'Unknown'},1,n_ch);
+    channel_map(1:n_ch,i) = session.extracellular.electrodeGroups.channels{i};
+end
+end
+
+function [anatomical_map,pull_from_session] = get_anatomical_map_csv(basepath,anatomical_map)
+pull_from_session = false;
+filename = fullfile(basepath,'anatomical_map.csv');
+if ~exist(filename,'file')
+    warning('no .anatomical_map.csv... ')
+    disp('will try to pull from basename.session')
+    disp('you can check anatomical_map and rerun')
+    
+    writetable(cell2table(anatomical_map),...
+        fullfile(basepath,'anatomical_map.csv'),...
+        'WriteVariableNames',0)
+    pull_from_session = true;
+    return
+end
+anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
 end

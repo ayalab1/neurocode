@@ -1,7 +1,7 @@
 function [lfp,info] = getLFP(varargin)
 %[ getLFP] - Get local field potentials.
 %
-%  Load local field potentials from disk. 
+%  Load local field potentials from disk.
 %
 %    =========================================================================
 %  USAGE
@@ -32,8 +32,8 @@ function [lfp,info] = getLFP(varargin)
 %
 %    lfp              [Nt x  1 + Nd] matrix of the LFP data, where the first
 %                     column is the timestamps (in seconds) of the lfp data
-%                     and each subsequent column is the LFP data for each 
-%                     channel. 
+%                     and each subsequent column is the LFP data for each
+%                     channel.
 %    info             structure with metadata describing the lfp
 %    .channels        [Nd X 1] vector of channel ID's
 %    .samplingRate    LFP sampling rate [default = 1250]
@@ -53,7 +53,7 @@ function [lfp,info] = getLFP(varargin)
 
 %    =========================================================================
 % Copyright (C) 2004-2011 by Michaël Zugaro, 2017 David Tingley,
-% 2020 kathryn mcclain, 2022 Ralitsa Todorova
+% 2020 kathryn mcclain, 2022 Ralitsa Todorova & Laura Berkowitz
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -83,7 +83,8 @@ basepath = p.Results.basepath;
 noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
 
-basename = basenameFromBasepath(basepath); 
+basename = basenameFromBasepath(basepath);
+
 % doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
 intervals = p.Results.intervals;
 restrict = p.Results.restrict;
@@ -108,19 +109,19 @@ if isempty(basename)
         d = dir([basepath filesep '*eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
-    end
-    structure.Filename = d.name;
-    basename = strsplit(structure.Filename,'.');
-    if length(basename) > 2
-        base = [];
-        for i=1:length(basename)-1
-            base = [base basename{i} '.'];
         end
-        basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
-    else
-        basename = basename{1};
+        structure.Filename = d.name;
+        basename = strsplit(structure.Filename,'.');
+        if length(basename) > 2
+            base = [];
+            for i=1:length(basename)-1
+                base = [base basename{i} '.'];
+            end
+            basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
+        else
+            basename = basename{1};
+        end
     end
-    
 else
     switch fromDat
         case false
@@ -196,8 +197,8 @@ for i = 1:nIntervals
         structure(i).timestamps = structure(i).timestamps + add;
         structure(i).timestamps = structure(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
     end
-
-    % Get regions from session or anatomical_map 
+    
+    % Get regions from session or anatomical_map
     if isfield(session,'brainRegions')
         [anatomical_map,channel_map] = get_maps(session);
         anatomical_map = get_map_from_session(session,anatomical_map,channel_map);

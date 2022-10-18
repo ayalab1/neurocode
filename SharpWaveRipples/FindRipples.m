@@ -100,7 +100,7 @@ if isstr(varargin{1})  % if first arg is basepath
     basename = basenameFromBasepath(p.Results.basepath);
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
-    lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
+    lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath);
     signal = FilterLFP(lfp,'passband',passband);
     timestamps = lfp(:,1);
     basepath = p.Results.basepath;
@@ -248,7 +248,7 @@ disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
 bad = [];
 if ~isempty(noise)
     if length(noise) == 1 % you gave a channel number
-       noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
+       noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath);%currently cannot take path inputs
        squaredNoise = FilterLFP(noiselfp,'passband',passband).^2;
     else
             

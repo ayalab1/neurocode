@@ -15,10 +15,9 @@ function [ica] = laminarICA(varargin)
 % INPUTS
 % <optional>
 % basepath      Default pwd
-% lfp           a  structure with fields   lfp.data,
-%                                          lfp.timestamps
-%                                          lfp.samplingRate
-%                                          lfp.channels.
+% lfp           A matrix of the data organized by [timestamps x Nchannels]
+%                   first output of getLFP.m 
+% chinfo        A structure containing 
 %               If not provided, runs getLFP('all') on basepath
 %               IMPORTANT: lfp provided must be in the correct order of
 %               channels! If not provided, this function will by default
@@ -100,7 +99,7 @@ prevBasepath = pwd;
 cd(basepath); % will change this once I figure out which downstream functions require PWD
 
 % get basename from basepath
-basename = basenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath); 
 
 % load session 
 session = loadSession(basepath,basename);
@@ -130,6 +129,7 @@ if isempty(lfp)
     try
         % load lfp using mapping
         [lfp,infoLFP] = getLFP(channelOrder,'basepath',basepath);
+        [lfp,infoLFP] = getLFP('all','basepath',basepath);
     catch
         error('LFP not found!');
     end

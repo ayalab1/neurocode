@@ -73,14 +73,12 @@ addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'downsample',1,@isnumeric);
-addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
 
 parse(p,varargin{:})
 channels = p.Results.channels;
 downsamplefactor = p.Results.downsample;
 basepath = p.Results.basepath;
-noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
 
 basename = basenameFromBasepath(basepath);
@@ -105,22 +103,23 @@ if isempty(basename)
     end
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif length(d) == 0
+    elseif isempty(d)
         d = dir([basepath filesep '*eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
         end
         structure.Filename = d.name;
-        basename = strsplit(structure.Filename,'.');
-        if length(basename) > 2
-            base = [];
-            for i=1:length(basename)-1
-                base = [base basename{i} '.'];
-            end
-            basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
-        else
-            basename = basename{1};
-        end
+        % The below segment is not used, so commented out for now LB 2022
+%         basename = strsplit(structure.Filename,'.');
+%         if length(basename) > 2
+%             base = [];
+%             for i=1:length(basename)-1
+%                 base = [base basename{i} '.'];
+%             end
+%             basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
+%         else
+%             basename = basename{1};
+%         end
     end
 else
     switch fromDat
@@ -132,7 +131,7 @@ else
     
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif length(d) == 0
+    elseif isempty(d)
         d = dir([basepath filesep basename '.eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
@@ -169,11 +168,12 @@ if strcmp(channels,'all')
     channels(isnan(channels)) = [];
 else
     %Put in something here to collapse into X-Y for consecutive channels...
-    display(['Loading Channels ',num2str(channels),' (1-indexing)'])
+    disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
 end
 
-%% get the data
+% get the data
 disp('loading LFP file...')
+
 nIntervals = size(intervals,1);
 % returns lfp/bz format
 for i = 1:nIntervals
@@ -208,19 +208,12 @@ for i = 1:nIntervals
     elseif isfile(fullfile(basepath,'anatomical_map.csv'))
         [anatomical_map,channel_map] = get_maps(session);
         [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
-        info.region = get_region(channels, anatomical_map,channel_map);
-        
+        info.region = get_region(channels, anatomical_map,channel_map); 
     end
     
     
 end
 
-%%
-[anatomical_map,channel_map] = get_maps(session);
-%%
-anatomical_map = get_map_from_session(session,anatomical_map,channel_map(:,1));
-region = anatomical_map(:)';
-%%
 % save the data into a single matrix (concatenate individual intervals)
 lfp = [cat(1,structure.timestamps) double(cat(1,structure.data))];
 info.intervals = cat(1,structure.interval);

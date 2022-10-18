@@ -225,6 +225,8 @@ if isfield(session,'brainRegions')
     for i = 1:length(regions)
         region_idx = ismember(channel_map,...
             session.brainRegions.(regions{i}).channels);
+         anatomical_map(region_idx) = {regions{i}};
+
     end
 end
 end

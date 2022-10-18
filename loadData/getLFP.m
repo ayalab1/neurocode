@@ -10,9 +10,9 @@ function [lfp,info] = getLFP(varargin)
 %
 %  INPUTS
 %
-%    channels(required) -must be first input, numeric
-%                        list of channels to load (use keyword 'all' for all)
-%                        channID is 1-indexing
+%    channels(required) -must be first input, numeric row vector
+%                        of channels to load or use keyword 'all' for all
+%                        channels. Input is 1-based indexing.
 %  Name-value paired inputs:
 %    'basepath'           - folder in which .lfp file will be found (default
 %                           is pwd)

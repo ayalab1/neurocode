@@ -190,7 +190,7 @@ for i = 1:nIntervals
         'downsample',downsamplefactor);
     structure(i).timestamps = (1:length(structure(i).data))'/samplingRateLFP_out;
     % check if duration is inf, and reset to actual duration...
-    if structure(i).interval(2) == inf
+    if structure(i).interval(2) == Inf
         structure(i).interval(2) = length(structure(i).timestamps)/structure(i).samplingRate;
     end
     if structure(i).interval(1)>0 % shift the timestamps accordingly

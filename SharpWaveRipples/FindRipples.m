@@ -102,6 +102,7 @@ if isstr(varargin{1})  % if first arg is basepath
     EMGThresh = p.Results.EMGThresh;
     lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath);
     signal = FilterLFP(lfp,'passband',passband);
+    signal(:,1) = []; % remove timestamps
     timestamps = lfp(:,1);
     basepath = p.Results.basepath;
     channel = p.Results.channel;
@@ -148,7 +149,7 @@ EVENTFILE = p.Results.EVENTFILE;
 windowLength = SR/SR*11;
 
 % Square and normalize signal
-squaredSignal = signal.data.^2;
+squaredSignal = signal.^2;
 % squaredSignal = abs(opsignal);
 window = ones(windowLength,1)/windowLength;
 keep = [];
@@ -227,7 +228,7 @@ end
 % Detect negative peak position for each ripple
 peakPosition = zeros(size(thirdPass,1),1);
 for i=1:size(thirdPass,1)
-	[minValue,minIndex] = min(signal.data(thirdPass(i,1):thirdPass(i,2)));
+	[minValue,minIndex] = min(signal(thirdPass(i,1):thirdPass(i,2)));
 	peakPosition(i) = minIndex + thirdPass(i,1) - 1;
 end
 
@@ -300,7 +301,7 @@ if strcmp(show,'on')
   if plotType == 1
 	figure;
 	if ~isempty(noise)
-		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],...
+		MultiPlotXY([timestamps, signal],[timestamps squaredSignal],...
             [timestamps normalizedSquaredSignal],[timestamps squaredNoise],...
             [timestamps squaredNoise],[timestamps normalizedSquaredNoise]);
 		nPlots = 6;
@@ -309,7 +310,7 @@ if strcmp(show,'on')
 		subplot(nPlots,1,6);
   		ylim([0 highThresholdFactor*1.1]);
 	else
-		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
+		MultiPlotXY([timestamps, signal],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
 %  		MultiPlotXY(time,signal,time,squaredSignal,time,normalizedSquaredSignal);
 		nPlots = 3;
 		subplot(nPlots,1,3);
@@ -387,12 +388,13 @@ else
 end
 
 % Compute instantaneous frequency
-unwrapped = unwrap(signal.phase);
-frequency = bz_Diff(medfilt1(unwrapped,12),signal.timestamps,'smooth',0);
+hilb = hilbert(signal);
+unwrapped = unwrap(angle(hilb));
+frequency = bz_Diff(medfilt1(unwrapped,12),timestamps,'smooth',0);
 frequency = frequency/(2*pi);
 
-ripples.amplitude = interp1(signal.timestamps,signal.amp,ripples.peaks,'linear');
-ripples.frequency = interp1(signal.timestamps,frequency,ripples.peaks,'linear');
+ripples.amplitude = interp1(timestamps,abs(hilb),ripples.peaks,'linear');
+ripples.frequency = interp1(timestamps,frequency,ripples.peaks,'linear');
 ripples.duration = ripples.timestamps(:,2) - ripples.timestamps(:,1);
 
 

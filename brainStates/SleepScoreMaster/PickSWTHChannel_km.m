@@ -330,7 +330,7 @@ THchanID = ThetaChannels(goodTHidx);   %best SW and theta channels
 %% Load the best channels at sampling frequency needed for clustering later
 downsample_save = Fs./250;
 [swthLFP,lfp_info] = getLFP([SWchanID,THchanID],'basepath',basePath,...
-    'downsample',downsample_save,'intervals',scoretime,'noPrompts',noPrompts);
+    'downsample',downsample_save,'intervals',scoretime);
 
 swLFP = (swthLFP(:,2));
 thLFP = (swthLFP(:,3));

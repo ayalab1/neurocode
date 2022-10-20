@@ -1,10 +1,8 @@
 function [spectrogram,t,f] = PointSpectrogram(times,varargin)
 
-% [PointSpectrogram - Compute point process spectrogram by multi-taper
-% estimation]
+%PointSpectrogram - Compute point process spectrogram by multi-taper estimation
 %
-% [The spectrogram is computed using the <a href =
-% "http://www.chronux.org">chronux</a> toolbox]
+% [This is an optimized and simplified implementation inspired by the Chronux toolbox.]
 %
 % USAGE
 %
@@ -43,43 +41,21 @@ function [spectrogram,t,f] = PointSpectrogram(times,varargin)
 %  [t]           [time bins]
 %  [f]           [frequency bins]
 %
-% DEPENDENCIES
-%
-%  [This function requires the <a href =
-%  "http://www.chronux.org">chronux</a> toolbox]
-%
 % SEE
 %
 %  See also SpectrogramBands, PlotColorMap.
+%
+% Copyright (C) [2020-2022] by Ralitsa Todorova, [2002-2012] by Michaël Zugaro, and chronux
 % 
-% NOTE
-%
-%I put all the functions calculating a point spectrogram in this function 
-% in order to avoid multiple calculations of the fft of tapers, thus dramatically
-% increasing calculation speed. This was just for optimisation purposes, all 
-% programs were developed as referenced (i.e. by Michaël Zugaro and Chronux).
-%
-%
-% Ralitsa Todorova put all the functions calculating a point spectrogram in this function 
-% in order to avoid multiple calculations of the fft of tapers, thus dramatically
-% increasing calculation speed. This was just for optimisation purposes, all 
-% programs were developed as referenced (i.e. by Michaël Zugaro and Chronux).
-%
-%
-% [Michaël Zugaro Ralitsa Todorova, chronuz] [2005-2022]
-%
-%
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-
-
 % Defaults
 Fs = 20000;
 window = 5;
-range = [];
+range = [1 20];
 overlap = [];
 step = [];
 show = 'off';
@@ -168,15 +144,15 @@ end
 t = (min(times)+window/2:step:max(times)-window/2)';
 nSamplesPerWindow = round(Fs*window); % number of samples in window
 nfft = max(2^(nextpow2(nSamplesPerWindow)+pad),nSamplesPerWindow);
-f = getfgrid(Fs,nfft,range); Nf = length(f);
+fAll = linspace(0,Fs,nfft)'; 
+ok = fAll >= range(1) & fAll<= range(end);
+Nf = sum(ok);
 tapers = dpss(nSamplesPerWindow,tapers(1),tapers(2))*sqrt(Fs);
 nWindows = length(t);
 spectrogram = zeros(Nf,nWindows);
 H = fft(tapers,nfft,1); % fft of tapers
-f = (0:Fs/nfft:Fs)'; % all possible frequencies
 % restrict fft of tapers to required frequencies
-indexF = find(f>=range(1) & f<=range(end)); 
-f = f(indexF); H = H(indexF,:);
+f = fAll(ok); H = H(ok,:);
 w = 2*pi*f; % angular frequencies at which ft is to be evaluated
 for i = 1:nWindows,
     timegrid = linspace(t(i)-window/2,t(i)+window/2,nSamplesPerWindow);
@@ -192,164 +168,3 @@ if strcmpi(show,'on'),
     PlotColorMap(logTransformed,1,'x',t,'y',f,'cutoffs',cutoffs);	
     xlabel('Time (s)');	ylabel('Frequency (Hz)');title('Power Spectrogram');
 end
-
-%% [spectrogram,t,f] = mtspecgrampt(times,[window step],parameters); % Chronux function
-%   function [S,t,f,R,Serr] = mtspecgrampt(data,movingwin,parameters,fscorr)
-% Multi-taper time-frequency spectrum - point process times
-%
-% Usage:
-%
-% [S,t,f,R,Serr] = mtspecgrampt(data,movingwin,parameters,fscorr)
-% Input:
-%    data    (structure array of spike times with dimension channels/trials;
-%          also accepts 1d array of spike times) -- required
-%    movingwin     (in the form [window,winstep] i.e length of moving
-%                         window and step size.
-%
-%    parameters: structure with fields tapers, pad, Fs, range, err, trialave
-%    - optional
-%      tapers : precalculated tapers from dpss or in the one of the following
-%          forms:
-%          (1) A numeric vector [TW K] where TW is the
-%            time-bandwidth product and K is the number of
-%            tapers to be used (less than or equal to
-%            2TW-1).
-%          (2) A numeric vector [W T p] where W is the
-%            bandwidth, T is the duration of the data and p
-%            is an integer such that 2TW-p tapers are used. In
-%            this form there is no default i.e. to specify
-%            the bandwidth, you have to specify T and p as
-%            well. Note that the units of W and T have to be
-%            consistent: if W is in Hz, T must be in seconds
-%            and vice versa. Note that these units must also
-%            be consistent with the units of parameters.Fs: W can
-%            be in Hz if and only if parameters.Fs is in Hz.
-%            The default is to use form 1 with TW = 3 and K = 5
-%           Note that T has to be equal to movingwin(1).
-%
-%	    pad		  (padding factor for the FFT) - optional (can take values -1,0,1,2...).
-%          -1 corresponds to no padding, 0 corresponds to padding
-%          to the next highest power of 2 etc.
-%			   	 e.g. For N = 500, if PAD = -1, we do not pad; if PAD = 0, we pad the FFT
-%			   	 to 512 points, if pad = 1, we pad to 1024 points etc.
-%			   	 Defaults to 0.
-%      Fs  (sampling frequency) - optional. Default 1.
-%      range  (frequency band to be used in the calculation in the form
-%                  [fmin fmax])- optional.
-%                  Default all frequencies between 0 and Fs/2
-%      err (error calculation [1 p] - Theoretical error bars; [2 p] - Jackknife error bars
-%                  [0 p] or 0 - no error bars) - optional. Default 0.
-%      trialave (average over trials/channels when 1, don't average when 0) - optional. Default 0
-%    fscorr  (finite size corrections, 0 (don't use finite size corrections) or
-%        1 (use finite size corrections) - optional
-%        (available only for spikes). Defaults 0.
-%
-% Output:
-%    S    (spectrogram with dimensions time x frequency x channels/trials if trialave = 0;
-%        dimensions time x frequency if trialave = 1)
-%    t    (times)
-%    f    (frequencies)
-%
-%    Serr  (error bars) - only if err(1)>= 1
-%
-%% function [S,f,R,Serr] = mtspectrumpt(data,parameters,fscorr,t)
-% Multi-taper spectrum - point process times
-%
-% Usage:
-%
-% [S,f,R,Serr] = mtspectrumpt(data,parameters,fscorr,t)
-% Input:
-%    data    (structure array of spike times with dimension channels/trials;
-%          also accepts 1d array of spike times) -- required
-%    parameters: structure with fields tapers, pad, Fs, range, err, trialave
-%    - optional
-%      tapers : precalculated tapers from dpss or in the one of the following
-%          forms:
-%          (1) A numeric vector [TW K] where TW is the
-%            time-bandwidth product and K is the number of
-%            tapers to be used (less than or equal to
-%            2TW-1).
-%          (2) A numeric vector [W T p] where W is the
-%            bandwidth, T is the duration of the data and p
-%            is an integer such that 2TW-p tapers are used. In
-%            this form there is no default i.e. to specify
-%            the bandwidth, you have to specify T and p as
-%            well. Note that the units of W and T have to be
-%            consistent: if W is in Hz, T must be in seconds
-%            and vice versa. Note that these units must also
-%            be consistent with the units of parameters.Fs: W can
-%            be in Hz if and only if parameters.Fs is in Hz.
-%            The default is to use form 1 with TW = 3 and K = 5
-%
-%	    pad		  (padding factor for the FFT) - optional (can take values -1,0,1,2...).
-%          -1 corresponds to no padding, 0 corresponds to padding
-%          to the next highest power of 2 etc.
-%			   	 e.g. For N = 500, if PAD = -1, we do not pad; if PAD = 0, we pad the FFT
-%			   	 to 512 points, if pad = 1, we pad to 1024 points etc.
-%			   	 Defaults to 0.
-%      Fs  (sampling frequency) - optional. Default 1.
-%      range  (frequency band to be used in the calculation in the form
-%                  [fmin fmax])- optional.
-%                  Default all frequencies between 0 and Fs/2
-%      err (error calculation [1 p] - Theoretical error bars; [2 p] - Jackknife error bars
-%                  [0 p] or 0 - no error bars) - optional. Default 0.
-%      trialave (average over channels/trials when 1, don't average when 0) - optional. Default 0
-%    fscorr  (finite size corrections, 0 (don't use finite size corrections) or
-%        1 (use finite size corrections) - optional
-%        (available only for spikes). Defaults 0.
-%    t    (time grid over which the tapers are to be calculated:
-%           this argument is useful when calling the spectrum
-%           calculation routine from a moving window spectrogram
-%           calculation routine). If left empty, the spike times
-%           are used to define the grid.
-% Output:
-%    S    (spectrum with dimensions frequency x channels/trials if trialave = 0;
-%        dimension frequency if trialave = 1)
-%    f    (frequencies)
-%    R    (rate)
-%    Serr  (error bars) - only if err(1)>= 1
-%
-%% function [J,Msp,Nsp] = mtfftpt(data,tapers,nfft,t,f,findx)
-% Multi-taper fourier transform for point process given as times
-%
-% Usage:
-% [J,Msp,Nsp] = mtfftpt (data,tapers,nfft,t,f,findx) - all arguments required
-% Input: 
-%    data    (struct array of times with dimension channels/trials; 
-%          also takes in 1d array of spike times as a column vector) 
-%    tapers   (precalculated tapers from dpss) 
-%    nfft    (length of padded data) 
-%    t      (time points at which tapers are calculated)
-%    f      (frequencies of evaluation)
-%    findx    (index corresponding to frequencies f) 
-% Output:
-%    J (fft in form frequency index x taper index x channels/trials)
-%    Msp (number of spikes per sample in each channel)
-%    Nsp (number of spikes in each channel)
-
-function [f,findx]=getfgrid(Fs,nfft,fpass)
-% Helper function that gets the frequency grid associated with a given fft based computation
-% Called by spectral estimation routines to generate the frequency axes 
-% Usage: [f,findx]=getfgrid(Fs,nfft,fpass)
-% Inputs:
-% Fs        (sampling frequency associated with the data)-required
-% nfft      (number of points in fft)-required
-% fpass     (band of frequencies at which the fft is being calculated [fmin fmax] in Hz)-required
-% Outputs:
-% f         (frequencies)
-% findx     (index of the frequencies in the full frequency grid). e.g.: If
-% Fs=1000, and nfft=1048, an fft calculation generates 512 frequencies
-% between 0 and 500 (i.e. Fs/2) Hz. Now if fpass=[0 100], findx will
-% contain the indices in the frequency grid corresponding to frequencies <
-% 100 Hz. In the case fpass=[0 500], findx=[1 512].
-if nargin < 3; error('Need all arguments'); end;
-df=Fs/nfft;
-f=0:df:Fs; % all possible frequencies
-f=f(1:nfft);
-if length(fpass)~=1;
-   findx=find(f>=fpass(1) & f<=fpass(end));
-else
-   [fmin,findx]=min(abs(f-fpass));
-   clear fmin
-end;
-f=f(findx);

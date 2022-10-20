@@ -165,7 +165,7 @@ numThetaChannels = length(ThetaChannels);
 
 %% Load LFP files from .lfp
 [allLFP,infoLFP] = getLFP(usechannels,'basepath',basePath,...
-    'downsample',downsamplefactor,'intervals',scoretime,'noPrompts',noPrompts);
+    'downsample',downsamplefactor,'intervals',scoretime);
 Fs = infoLFP.samplingRate;
 % prepare old-style LFP structure for bz_PowerSpectrumSlope
 lfpStructure = infoLFP; lfpStructure.data = allLFP(:,2:end); lfpStructure.timestamps = allLFP(:,1); 

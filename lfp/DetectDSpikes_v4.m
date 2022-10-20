@@ -59,8 +59,8 @@ DS1wb_highThreshold = p.Results.DS1wb_highThreshold;
 DS2_mol_threshold = p.Results.DS2_mol_threshold; 
 
 %% get lfp and filter
-res_lfp_h = getLFP(ch_hilus,'basepath',basepath,'intervals',res_per,'noPrompts',true);
-res_lfp_m = getLFP(ch_molecular,'basepath',basepath,'intervals',res_per,'noPrompts',true);
+res_lfp_h = getLFP(ch_hilus,'basepath',basepath,'intervals',res_per);
+res_lfp_m = getLFP(ch_molecular,'basepath',basepath,'intervals',res_per);
 
 if res_lfp_m.samplingRate ~= 1250
    error('sorry, this code assumes 1250 fs') 

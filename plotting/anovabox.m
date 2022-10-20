@@ -156,14 +156,16 @@ end
 if length(alpha)==1, alpha = [alpha alpha]; end
 if parametric
     test0 = @(x) out2(@ttest,x);
-    testbetween = @anova1;
+    testbetween =  @(x) anova1(x,[],'off');
     if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = testbetween; end
 else
     test0 = @(x) signrank(x);
     testbetween = @kruskalwallis;
-    if paired, testpaired = @(x) friedman(x,1,'off'); else testpaired = testbetween; end
+    if paired,
+        if size(data,2)==2, testpaired = @(x) friedman(x,1,'off'); else, testpaired = @(x) helper_signrank; end
+    else testpaired = testbetween;
+    end
 end
-
 if nargin==1 || isempty(groups)
     groups = [];
     if sum(sum(~isnan(data))==0) > 0, %if one of the groups contains no real values
@@ -368,3 +370,21 @@ if nargout>0
 
     varargout{2} = comparison;
 end
+
+% ------------------------------- Helper functions -------------------------------
+
+function [h,p,stats] = helper_signrank(data)
+
+ranks = data; ranks(:) = tiedrank(data(:));
+p = signrank(diff(x,[],2));
+h = p<0.05;
+stats.source = 'friedman'; % closest thing multcompare would accept
+stats.n = size(data,1);
+meanranks = mean(ranks);
+% transform so that they fit in friedman's definition
+m0 = [mean((1:size(data,1))) mean((size(data,1)+1:numel(data)))];
+stats.meanranks = (meanranks - m0(1))/diff(m0)+1;
+stats.sigma = sqrt(2)/2;
+
+
+

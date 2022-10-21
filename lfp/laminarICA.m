@@ -68,9 +68,11 @@ function [ica] = laminarICA(varargin)
 % Updated 10/2022 by Laura Berkowitz 
 %
 % To do: 
-%       Add option for applying ICA for each shank if desired. 
-%       Remove potentially depreceiated aspects of code see comments for
-%       details. 
+%       - Add option for applying ICA for each shank if desired. 
+%       - Remove potentially depreceiated aspects of code see comments for
+%         details. 
+%       - Add option to combine epochs e.g. Theta states during Wake states
+%         etc. 
 % 
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

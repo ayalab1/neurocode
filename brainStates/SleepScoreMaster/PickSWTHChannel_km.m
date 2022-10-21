@@ -184,7 +184,7 @@ peakTH = zeros(numThetaChannels,1);
 %parfor_progress(numSWChannels);
 %tstart = tic;
 %addAttachedFiles(gcp,{'hartigansdiptest_ss.m'})
-parfor idx = 1:numSWChannels
+for idx = 1:numSWChannels
     %Progress Counter
     %     timespent=toc(tstart);
     %     percdone = parfor_progress;
@@ -252,7 +252,7 @@ SWfreqlist = SWfreqlist(1,:);
 %% Get info to allow to pick Theta channel
 %parfor_progress(numSWChannels);
 %tstart = tic;
-parfor idx = 1:numThetaChannels;
+for idx = 1:numThetaChannels
     %channum = 1;
     %Progress Counter
     bz_Counter(idx,numThetaChannels,'TH Channels')

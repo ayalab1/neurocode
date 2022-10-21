@@ -104,10 +104,11 @@ display('Picking SW and TH Channels for SleepScoreLFP.LFP.mat')
 %%
 
 xmlfilename = [datasetfolder,'/',recordingname,'/',recordingname,'.xml'];
+
 if exist (fullfile(datasetfolder,recordingname,[recordingname,'.lfp']),'file')
     rawlfppath = fullfile(datasetfolder,recordingname,[recordingname,'.lfp']);
-elseif exist (fullfile(datasetfolder,recordingname,[recordingname,'.lfp']),'file')
-    rawlfppath = fullfile(datasetfolder,recordingname,[recordingname,'.lfp']);
+elseif exist (fullfile(datasetfolder,[recordingname,'.lfp']),'file')
+    rawlfppath = fullfile(datasetfolder,[recordingname,'.lfp']);
 elseif exist (fullfile(datasetfolder,recordingname,[recordingname,'.eeg']),'file')
     rawlfppath = fullfile(datasetfolder,recordingname,[recordingname,'.eeg']);
 else

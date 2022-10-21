@@ -204,11 +204,14 @@ for i = 1:nIntervals
         [anatomical_map,channel_map] = get_maps(session);
         anatomical_map = get_map_from_session(session,anatomical_map,channel_map);
         info.region = get_region(channels, anatomical_map,channel_map);
-        
     elseif isfile(fullfile(basepath,'anatomical_map.csv'))
         [anatomical_map,channel_map] = get_maps(session);
         [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
         info.region = get_region(channels, anatomical_map,channel_map); 
+    else
+        disp('No brain regions associated with channels found. Saving ''Unkown''')
+        [anatomical_map,channel_map] = get_maps(session);
+        info.region = get_region(channels, anatomical_map,channel_map);
     end
     
     

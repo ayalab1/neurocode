@@ -146,9 +146,9 @@ elseif (size(f,1)==1)&&(multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
     if prePhy
-        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
+        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
     else
-        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
+        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels);
     end
 end
 %% 2 - compute basic cell metrics

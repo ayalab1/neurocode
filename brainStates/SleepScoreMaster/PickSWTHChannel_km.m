@@ -342,14 +342,18 @@ SWchanID = SWChannels(goodSWidx);      %Channel IDnumber of the
 THchanID = ThetaChannels(goodTHidx);   %best SW and theta channels
 
 %% Load the best channels at sampling frequency needed for clustering later
-downsample_save = Fs./250;
-[swthLFP,lfp_info] = getLFP([SWchanID,THchanID],'basepath',basePath,...
-    'downsample',downsample_save,'intervals',scoretime);
 
-swLFP = (swthLFP(:,2));
-thLFP = (swthLFP(:,3));
-t = swthLFP(:,1);
-sf = lfp_info.samplingRate;
+swthLFP = loadBinary(rawlfppath,...
+    'frequency',session.extracellular.srLfp,...
+    'nchannels',session.extracellular.nChannels,...
+    'start',scoretime(1),...
+    'duration',scoretime(2) - scoretime(1),...
+    'channels',[SWchanID, THchanID]);
+
+swLFP = swthLFP(:,1);
+thLFP = swthLFP(:,2);
+t = (scoretime(1):length(swLFP) - 1) / session.extracellular.srLfp;
+sf = session.extracellular.srLfp;
 
 
 %% SleepScoreLFP output

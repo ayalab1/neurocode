@@ -120,8 +120,9 @@ for bnd = 1:length(phaserange)-1
 end
 
 %% Extracting amplitude with different methods and selecting
+comod = zeros(length(amprange)-1,length(filtered_phase),length(ampChans));
+
 for ch = 1:length(ampChans)
-    comod = zeros(length(amprange)-1,length(filtered_phase),length(ampChans));
     
     for apr = 1:length(amprange)-1
         switch(method)

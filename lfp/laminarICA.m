@@ -134,7 +134,7 @@ end
 basename = basenameFromBasepath(basepath);
 
 % Get the channels and regions desired for the ICA. 
-[channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,shankNum);
+[channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum);
 
 % preprocess lfp for ica (load lfp and filter with passband)
 [lfpFilt,infoLFP] =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp);

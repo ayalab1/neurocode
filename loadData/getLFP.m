@@ -61,7 +61,12 @@ function [lfp,info] = getLFP(varargin)
 % (at your option) any later version.
 %
 % TODO
-% expand channel selection options (i.e. region or spikegroup)
+% -expand channel selection options (i.e. region or spikegroup)
+%
+% -Fix data duplication where lfp is loaded into 'structure' and then
+%  assigned to 'lfp' effectively using twice as much memory. Large sessions
+%  with high channel counts currently have out of memory errors.
+%
 %% Parse the inputs!
 
 channelsValidation = @(x) isnumeric(x) || strcmp(x,'all');

@@ -165,11 +165,22 @@ end
 numThetaChannels = length(ThetaChannels);
 
 %% Load LFP files from .lfp
-[allLFP,infoLFP] = getLFP(usechannels,'basepath',basePath,...
-    'downsample',downsamplefactor,'intervals',scoretime);
-Fs = infoLFP.samplingRate;
-% prepare old-style LFP structure for bz_PowerSpectrumSlope
-lfpStructure = infoLFP; lfpStructure.data = allLFP(:,2:end); lfpStructure.timestamps = allLFP(:,1); 
+lfpStructure.data = loadBinary(rawlfppath,...
+    'frequency',session.extracellular.srLfp,...
+    'nchannels',session.extracellular.nChannels,...
+    'start',scoretime(1),...
+    'duration',scoretime(2)-scoretime(1),...
+    'channels',usechannels,...
+    'downsample',downsamplefactor);
+
+% downsampled sample rate
+Fs = session.extracellular.srLfp/downsamplefactor;
+
+% prepare structure for below fuctions
+lfpStructure.samplingRate = Fs;
+lfpStructure.timestamps = (scoretime(1):length(lfpStructure.data)-1)/Fs;
+lfpStructure.intervals = scoretime;
+lfpStructure.channels = usechannels;
 
 
 %% Set up containers for parfor loop
@@ -212,8 +223,9 @@ for idx = 1:numSWChannels
         t_FFT = specslope.timestamps;
         
     else
-        [FFTspec,~,t_FFT] = spectrogram(single(allLFP(:,1+LFPchanidx)),window*Fs,noverlap*Fs,swFFTfreqs,Fs);
-        t_FFT = t_FFT+allLFP(1); %Offset for scoretime start
+        [FFTspec,~,t_FFT] = spectrogram(single(lfpStructure.data(:,LFPchanidx)),...
+            window*Fs,noverlap*Fs,swFFTfreqs,Fs);
+        t_FFT = t_FFT+lfpStructure.timestamps(1); %Offset for scoretime start
         FFTspec = abs(FFTspec);
         [zFFTspec,mu,sig] = zscore(log10(FFTspec)');
         % Remove transients before calculating SW histogram
@@ -280,8 +292,9 @@ for idx = 1:numThetaChannels
         %% Get spectrogram and calculate theta ratio
         %HERE: MATCH from GetMetrics for IRASA method
         LFPchanidx = find(usechannels==ThetaChannels(idx));
-        [thFFTspec,~,t_FFT] = spectrogram(single(allLFP(:,1+LFPchanidx)),window*Fs,noverlap*Fs,thFFTfreqs,Fs);
-        t_FFT = t_FFT+allLFP(1); %Offset for scoretime start
+        [thFFTspec,~,t_FFT] = spectrogram(single(lfpStructure.data(:,LFPchanidx)),...
+            window*Fs,noverlap*Fs,thFFTfreqs,Fs);
+        t_FFT = t_FFT+lfpStructure.timestamps(1); %Offset for scoretime start
         specdt = mode(diff(t_FFT));
         thFFTspec = (abs(thFFTspec));
         
@@ -425,8 +438,9 @@ if strcmp(SWweights,'PSS')
     [zFFTspec,mu,sig] = zscore((FFTspec));
     
 else
-    [FFTspec,~,t_FFT] = spectrogram(single(allLFP(:,1+goodSWidx)),window*Fs,noverlap*Fs,swFFTfreqs,Fs);
-    t_FFT = t_FFT+allLFP(1); %Offset for scoretime start
+    [FFTspec,~,t_FFT] = spectrogram(single(lfpStructure.data(:,goodSWidx)),...
+        window*Fs,noverlap*Fs,swFFTfreqs,Fs);
+    t_FFT = t_FFT+lfpStructure.timestamps(1); %Offset for scoretime start
     t_spec = t_FFT;
     FFTspec = abs(FFTspec);
     [zFFTspec,mu,sig] = zscore(log10(FFTspec)');
@@ -464,8 +478,9 @@ title(['SW Channel:',num2str(SWchanID)]);
 
 
 %Calculate Theta ratio for plot/return
-[thFFTspec,thFFTfreqs,t_FFT] = spectrogram(single(allLFP(:,1+goodTHidx)),window*Fs,noverlap*Fs,thFFTfreqs,Fs);
-t_FFT = t_FFT+allLFP(1); %Offset for scoretime start
+[thFFTspec,thFFTfreqs,t_FFT] = spectrogram(single(lfpStructure.data(:,goodTHidx)),...
+    window*Fs,noverlap*Fs,thFFTfreqs,Fs);
+t_FFT = t_FFT+lfpStructure.timestamps(1); %Offset for scoretime start
 t_spec = t_FFT;
 specdt = mode(diff(t_FFT));
 thFFTspec = (abs(thFFTspec));

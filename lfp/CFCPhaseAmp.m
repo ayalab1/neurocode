@@ -201,18 +201,24 @@ comodulogram.params.permutationTest_alpha = alpha;
 
 %% Plot
 if makePlot
-    figure
+fig = figure;
+fig.Color = [1 1 1];
+
     for ch = 1:length(ampChans)
         subplot(1,length(ampChans),ch);
         contourf(comodulogram.phase_bincenters,comodulogram.amp_bincenters,abs(comodulogram.comod(:,:,ch)),20,'LineColor','none');
         y = colorbar('SouthOutside');
-        xlabel(y,'CFC strength')
+        set(get(y,'title'));
+        xlabel(y,'CFC strength','Rotation',-45)
         ylabel('Amplitude Frequency (Hz)')
-        xlabel('Phase Frequency (Hz)')
+        title(['IC ',num2str(ch)])
+
         %title(signals)
         if ch > 1
-            set(gca,'YTick',[]);
+            set(gca,'YTick',[],'ylabel',[],'xlabel',[]);
         end
     end   
+    
+fig.Position = [2,445,1515,353];
 end
 

@@ -161,8 +161,8 @@ if plotCFC
     if exist('hippocampalLayers','var')
         channel = hippocampalLayers.pyramidal;
         % search for region of interest in session.
-    elseif any(contains(ica.region,'CA1sp'))
-        channel = ica.channels(contains(ica.region,'CA1sp'));
+    elseif any(contains(ica.region,'CA1slm'))
+        channel = ica.channels(contains(ica.region,'CA1slm'));
         channel = channel(floor(length(channel)/2)); % choose middle channel
         % Else search for tag in anatomical_map
     else
@@ -171,7 +171,7 @@ if plotCFC
     end
     
     % creates plot and saves
-    plot_CFC(ica,channel,channelOrder,basepath)
+    plot_CFC(ica,channel,ica.channels,basepath)
     
 end
 
@@ -329,19 +329,21 @@ ica.channels = lfp.channels;
 ica.region = lfp.region;
 ica.in_idx = lfp.in_idx;
 
-if saveMat
-    disp('Saving results...');
-    if ~isempty(brain_state)
-        save([basepath,filesep,basename '.ica_',brain_state,'.channelInfo.mat'],'ica');
-    else
-        save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica');
-    end
-end
-
 
 end
 
 % helper functions
+function save_ica(basepath,brain_state,region_tag)
+basename = basenameFromBasepath(basepath);
+
+    disp('Saving results...');
+    if ~isempty(brain_state) | ~isempty(region_tag)
+        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.channelInfo.mat'],'ica');
+    else
+        save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica');
+    end
+
+end
 
 function lfp = load_lfp(basepath,channelOrder)
 

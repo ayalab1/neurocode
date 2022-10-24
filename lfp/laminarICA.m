@@ -83,7 +83,7 @@ function [ica] = laminarICA(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'lfp',[],@isstruct);
-addParameter(p,'region_tag',[],@ischar);
+addParameter(p,'region_tag',[],@iscell);
 addParameter(p,'brain_state',[],@ischar);
 addParameter(p,'shankNum',1,@isnumeric)
 addParameter(p,'saveMat',true,@islogical);

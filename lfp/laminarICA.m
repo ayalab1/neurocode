@@ -142,9 +142,14 @@ lfp.region = region;
 lfp.timestamps = lfp.timestamps';
 
 % Run runica (saves file to basepath)
-ica =  main(lfp,nICs,basepath,basename,'saveMat',saveMat,'brain_state',brain_state);
-
+ica =  main(lfp,nICs);
 clear lfp
+
+if saveMat
+    save_ica(ica,basepath,brain_state,region_tag);
+end
+
+
 %% Plotting below
 % Plot the components
 if plotWeights
@@ -275,7 +280,7 @@ end
 
 end
 
-function ica =  main(lfp,nICs,basepath,basename,varargin)
+function ica =  main(lfp,nICs,varargin)
 % performs ica on filtered lfp using runica and saves output as structure
 % to basepath;
 %
@@ -290,14 +295,9 @@ function ica =  main(lfp,nICs,basepath,basename,varargin)
 
 p = inputParser;
 addParameter(p,'lrate',1.0000e-03,@isnumeric);
-addParameter(p,'saveMat',true,@islogical);
-addParameter(p,'brain_state',[],@ischar);
-
 
 parse(p,varargin{:});
 lrate = p.Results.lrate;
-saveMat = p.Results.saveMat;
-brain_state = p.Results.brain_state;
 
 % Perform ICA
 [weights,sphere,meanvar,bias,signs,lrates,data] = runica(lfp.data','lrate',lrate,'pca',nICs);
@@ -329,11 +329,10 @@ ica.channels = lfp.channels;
 ica.region = lfp.region;
 ica.in_idx = lfp.in_idx;
 
-
 end
 
 % helper functions
-function save_ica(basepath,brain_state,region_tag)
+function save_ica(ica,basepath,brain_state,region_tag)
 basename = basenameFromBasepath(basepath);
 
     disp('Saving results...');
@@ -520,16 +519,16 @@ interval = interval(idx,:);
 [status,~,~] = InIntervals(lfp.timestamps,interval);
 lfp.data =  lfp.data(status,:);
 lfp.timestamps =  lfp.timestamps(status');
-in = find(ica.timestamps >= interval(1) & ica.timestamps < interval(2));
+in = find(ica.timestamps >= interval(1) & ica.timestamps <= interval(2));
 
 % if interval is greater than 10 seconds, limit to 10 seconds 
-if size(lfp.data,1) > lfp.samplingRate*10 
-    %limit lfp 
-    lfp.data =  lfp.data(1:lfp.samplingRate*10,:);
-    lfp.timestamps =  lfp.timestamps(1:lfp.samplingRate*10);
-    %limit to first second of interval
-    in = in(1:lfp.samplingRate*10);
-end
+% if size(lfp.data,1) > lfp.samplingRate*10 
+%     %limit lfp 
+%     lfp.data =  lfp.data(1:lfp.samplingRate*10,:);
+%     lfp.timestamps =  lfp.timestamps(1:lfp.samplingRate*10);
+%     %limit to first second of interval
+%     in = in(1:lfp.samplingRate*10);
+% end
 
 %% For each ICA, run CFC
 

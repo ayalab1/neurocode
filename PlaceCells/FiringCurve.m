@@ -1,6 +1,6 @@
 function [curve,stats] = FiringCurve(samples,spikes,varargin)
 
-%FiringCurve - Compute firing curve (e.g. for a head direction cell).
+%  Compute firing curve (e.g. for a head direction cell).
 %
 %  Compute firing curve (e.g. for a head direction cell, or a place or grid cell
 %  on a linear track), as well as occupancy and spike count curves. Optionnally,

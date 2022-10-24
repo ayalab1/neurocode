@@ -1,33 +1,38 @@
 function PreprocessSpikes(basepath, varargin)
-%PreprocessSpikes - secondary preprocessing for after manual clustering
 %
-%  Secondary preprocessing function for after KiloSort and manual
+%
+% [PreprocessSpikes] - [secondary preprocessing for after manual
+%                       clustering]
+%
+%  [Secondary preprocessing function for after KiloSort and manual
 %  clustering has been completed. This processes the spike waveform and
-%  runs initial cell metrics.
+%  runs initial cell metrics]
 %
 %  INPUTS
-%    basepath       Character input with the file path for your files
-%                   (specifically session file)
-%    <options>   optional list of property-value pairs (see table below)
+%    [basepath]     [Character input with the file path for your files
+%                   (specifically session file)]
+%    <options>     optional list of property-value pairs (see table below)
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     multiKilosort  logical value denoting whether or not there are
-%                    multiple KiloSort files to be concatenated together.
-%     showGUI        logical value for showing the session template
-%     showCellMet    logical value for whether or not to pull up cell
-%                    metrics GUI after running initial cell metrics
-%     prePhy         logical value denoting whether or not this is a
-%                    temporary preprocessing run. Default false.
-%     spikeLabels    cell structure of spike sorting labels to read in.
+%   [multiKilosort]  [logical value denoting whether or not there are
+%                    multiple KiloSort files to be concatenated together]
+%   [showGUI]        [logical value for showing the session template]
+%   [showCellMet]    [logical value for whether or not to pull up cell
+%                    metrics GUI after running initial cell metrics]
+%   [prePhy]         [logical value denoting whether or not this is a
+%                    temporary preprocessing run. Default false]
+%   [spikeLabels]    [cell structure of spike sorting labels to read in.
 %                    Default is good. It is recommended to set to {'good',
-%                    'unsorted'} when prePhy=true.
+%                    'unsorted'} when prePhy=true]
 %    =========================================================================
 %
 %  OUTPUTS
 %    N/A
 %
-% AYA Lab 2022
+% SEE ALSO
+%
+% [HeathLarsson] [2021-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -141,9 +146,9 @@ elseif (size(f,1)==1)&&(multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
     if prePhy
-        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
+        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
     else
-        spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels);
+        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels);
     end
 end
 %% 2 - compute basic cell metrics

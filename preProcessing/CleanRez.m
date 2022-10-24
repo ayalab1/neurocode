@@ -1,44 +1,52 @@
 function rez = CleanRez(rez,varargin)
 
-% Remove noisy clusters from the rez file. This is an optional preprocessing
+% [Remove noisy clusters from the rez file. This is an optional preprocessing
 % step the user may choose to perform before exporting the Kilosort results to
 % phy. Alternatively, one may provide a path (of the Kilosort folder), where
 % the function would export the "noise" labels for the noisy clusters in
 % phy format. If prior labels exist, "noise" labels will be appended to the %
-% existing cluster_group.tsv file.
+% existing cluster_group.tsv file]
 %
 %  USAGE
 %
-%    [cleanRez] = CleanRez(rez, <options>)
+%    [[cleanRez] = CleanRez(rez, <options>)]
+%
+%  INPUTS
+%  
+%   [rez]      [rez file from kilosort (note post cleaning after sorting]
 %
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'savepath'        folder where phy files have already been exported
+%  ['savepath']         [folder where phy files have already been exported
 %                       (by default, undefined as you may run CleanRez before
 %                       exporting the clean rez to phy). If provided, cluster
-%                       labels will be saved in a cluster_groups.tsv file for phy.
-%     'mahalThreshold'  spikes exceeding this threshold will be considered
+%                       labels will be saved in a cluster_groups.tsv file for phy]
+%  ['mahalThreshold']   [spikes exceeding this threshold will be considered
 %                       outliers and removed (set to Inf to not impose threshold,
-%                       default = 12). 
-%     'minNumberOfSpikes'   clusters with nSpikes<minNumberOfSpikes will be 
-%                       removed (default = 20).
-%     'verbose'         Display progress messages (default = true).
+%                       default = 12)] 
+%  ['minNumberOfSpikes'][clusters with nSpikes<minNumberOfSpikes will be 
+%                       removed (default = 20)]
+%  ['verbose']         [Display progress messages (default = true)]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    rez                cleaned rez file, without the noisy clusters
+%    [rez]                [cleaned rez file, without the noisy clusters]
 %
 %
-% Copyright (C) 2022 by Ralitsa Todorova and Ryan Harvey
+%  SEE ALSO
+%
+% [Ralitsa Todorova and Ryan Harvey] [2021-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%-------------------------------------------------------------------------
+
 
 minNumberOfSpikes = 20;
 mahalThreshold  = 12;

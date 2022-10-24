@@ -42,6 +42,9 @@ function [r,p] = CofiringCoefficient(spikes,intervals1,intervals2)
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%-------------------------------------------------------------------------
+
 
 if nargin < 3,
     error('Incorrect number of parameters (type ''help <a href="matlab:help CofiringCoefficient">CofiringCoefficient</a>'' for details).');

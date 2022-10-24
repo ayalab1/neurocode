@@ -1,7 +1,7 @@
 function [placeFieldTemplate] = findPlaceFieldsTemplate(varargin)
+%   
+%   Creates a template with all cells acording to the arragement of their place fields in a 1D maze. 
 %   [placeFieldTemplate] = findPlaceFields1D(firingMaps)
-%   Creates a template with all cells acording to the arragement of their
-%   place fields in a 1D maze. 
 %
 %   INPUTS
 %

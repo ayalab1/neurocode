@@ -1,6 +1,6 @@
 function [estimations,actual,errors,average] = ReconstructPosition(positions,spikes,windows,varargin)
 
-%ReconstructPosition - Bayesian reconstruction of positions from spike trains.
+% Bayesian reconstruction of positions from spike trains.
 %
 % Instantaneous positions are reconstructed using a Bayesian algorithm.
 % Instantaneous population firing rates can be estimated either over fixed time

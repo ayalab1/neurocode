@@ -1,46 +1,50 @@
 function [spikes,V] = GenerateSpikeTrain(I,threshold,varargin);
 
-%GenerateSpikeTrain - Generate spike train using a leaky integrate and fire neuron model.
+%[GenerateSpikeTrain - Generate spike train using a leaky integrate and
+% fire neuron model]
 %
 %  USAGE
 %
 %    [spikes,V] = GenerateSpikeTrain(I,threshold,<options>)
 %
-%    I              input current <a href="matlab:help samples">samples</a>
-%    threshold      spiking threshold
+%    [I]            [input current <a href="matlab:help
+%                   samples">samples</a>]
+%    [threshold]    [spiking threshold]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'delay'       delay in seconds (default = 0)
-%     'tau'         decay rate (default = 0.015)
-%     'Vr'          resting membrane potential (default = 0)
-%     'sigma'       noise standard deviation (default = 0, no noise)
-%     'R'           input resistance
+%     ['delay']     [delay in seconds (default = 0)]
+%     ['tau']       [decay rate (default = 0.015)]
+%     ['Vr']        [resting membrane potential (default = 0)]
+%     ['sigma']     [noise standard deviation (default = 0, no noise)]
+%     ['R']         [input resistance]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    spikes         list of spike timestamps
-%    V              membrane potentials across time
+%    [spikes]         [list of spike timestamps]
+%    [V]              [membrane potentials across time]
 %
 %
 %  EXAMPLE
 %
-%    To get spike trains of two neurons receiving correlated inputs, provide
+%    [To get spike trains of two neurons receiving correlated inputs, provide
 %      I = mu + sigma(sqrt(1-c)*E + sqrt(c)*C)
 %    where c is the correlation, E is the exclusive input (or noise) and C is
-%    the common signal.
-
-
-% Copyright (C) 2015-2016 by Ralitsa Todorova, Michaël Zugaro
+%    the common signal]
+%
+% SEE ALSO
+%
+% [ Ralitsa Todorova, Michaël Zugaro] [2015-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
-
+%
+%-----------------------------------------------------------------------
 
 % Defaults
 delay = 0;

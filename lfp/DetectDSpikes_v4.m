@@ -59,21 +59,15 @@ DS1wb_highThreshold = p.Results.DS1wb_highThreshold;
 DS2_mol_threshold = p.Results.DS2_mol_threshold; 
 
 %% get lfp and filter
-res_lfp_h = getLFP(ch_hilus,'basepath',basepath,'intervals',res_per,'noPrompts',true);
-res_lfp_m = getLFP(ch_molecular,'basepath',basepath,'intervals',res_per,'noPrompts',true);
+res_lfp_h = getLFP(ch_hilus,'basepath',basepath,'intervals',res_per);
+res_lfp_m = getLFP(ch_molecular,'basepath',basepath,'intervals',res_per);
 
 if res_lfp_m.samplingRate ~= 1250
    error('sorry, this code assumes 1250 fs') 
 end
 
-fil_res_lfp_h = bz_Filter(res_lfp_h,'passband',[2 50]);
-fil_res_lfp_m = bz_Filter(res_lfp_m,'passband',[2 50]);
-
-res_lfp_h = [res_lfp_h.timestamps,double(res_lfp_h.data)];
-res_lfp_m = [res_lfp_m.timestamps,double(res_lfp_m.data)];
-
-fil_res_lfp_h = [fil_res_lfp_h.timestamps,double(fil_res_lfp_h.data)];
-fil_res_lfp_m = [fil_res_lfp_m.timestamps,double(fil_res_lfp_m.data)];
+fil_res_lfp_h = FilterLFP(res_lfp_h,'passband',[2 50]);
+fil_res_lfp_m = FilterLFP(res_lfp_m,'passband',[2 50]);
 
 time = fil_res_lfp_h(:,1);
 hm_dif = fil_res_lfp_h(:,2) - fil_res_lfp_m(:,2);

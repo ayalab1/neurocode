@@ -32,15 +32,15 @@ function [PSTH,index_abs] = computePSTH(event,spikes,varargin)
 %                          events, pre, during, post. Must sum to 1]
 %    ['duration']         [Duration of PSTH (for half the window - 
 %                          used in CCG [in seconds]. Default is 0.15]
-%    ['smoothing']       [Any gaussian smoothing to apply? units of bins.                        
+%    ['smoothing']        [Any gaussian smoothing to apply? units of bins.                        
 %                          Default is 5.]
-%    ['percentile']      [If events does not have the same length, the
+%    ['percentile']       [If events does not have the same length, the
 %                          event duration can be determined from percentile
 %                          of the distribution of events. Default is 99]
-%    ['plots']           [Show plots. Default is 'true']
-%    ['eventName']       [Title used for plots]
-%    ['maxWindow']       [Maximum window size in seconds. Default is 10]
-%    ['zscorePlot']      [Plot z-scored response. Default is 'true']
+%    ['plots']            [Show plots. Default is 'true']
+%    ['eventName']        [Title used for plots]
+%    ['maxWindow']        [Maximum window size in seconds. Default is 10]
+%    ['zscorePlot']       [Plot z-scored response. Default is 'true']
 %
 %  OUTPUT
 %

@@ -1,33 +1,44 @@
 function selected = SelectSpikes(spikes,varargin)
-
-%SelectSpikes - Discriminate bursts vs single spikes.
+%
+%[SelectSpikes - Discriminate bursts vs single spikes]
 %
 %  USAGE
 %
-%    selected = SelectSpikes(spikes,<options>)
+%    [selected = SelectSpikes(spikes,<options>)]
 %
-%    spikes         spike times
+%
+%  INPUT
+%
+%    [spikes]       [spike times]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'mode'        either 'bursts' (default) or 'single'
-%     'isi'         max inter-spike interval for bursts (default = 0.006),
-%                   or min for single spikes (default = 0.020)
+%     ['mode']        [either 'bursts' (default) or 'single']
+%     ['isi']         [max inter-spike interval for bursts (default = 0.006),
+%                      or min for single spikes (default = 0.020)]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    selected       a logical vector indicating for each spike whether it
-%                   matches the criterion
-
-% Copyright (C) 2011 by Michaël Zugaro
+%    [selected]      [a logical vector indicating for each spike whether it
+%                   matches the criterion]
+%
+%
+% SEE ALSO
+%
+% [Michaël Zugaro] [2011-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%
+%-------------------------------------------------------------------------
+
+
 
 % Default values
 isiBursts = 0.006;

@@ -1,24 +1,36 @@
-
 function [data] = cleanPulses(ts, varargin)
-%       [data] = cleanPulses(ts, varargin)
+%   
+%  [[data] = cleanPulses(ts, varargin)]
 %
-% Remove artifacts form square-shappped optogetic pulses form dat file
+% [Remove artifacts form square-shappped optogetic pulses form dat file]
 %
 % INPUTS
-% ts            - List of artifacts that will be removed from data (in seconds)
-% <OPTIONALS>
-% filename
-% basepath
-% correctDC     - Logical variable to indicate if DC is corrected, default
-%                   false
-% ch            - List of channels to clean pulses, default all
-% winArt        - window for artefact removal, in seconds, default 0.0005s
-% winDC         - window for DC removal, in seconds, default 0.005s
 %
-% OUTPUTS
-% data         
+%  [ts]        [List of artifacts that will be removed from data (in
+%               seconds)]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     ['filename']  [filename to clean]
+%     ['basepath']  [basepath to clean]
+%     ['correctDC'] [Logical variable to indicate if DC is corrected, default
+%                   false]
+%     ['ch']        [List of channels to clean pulses, default all]
+%     ['winArt']    [window for artefact removal, in seconds, default
+%                   0.0005s]
+%     ['winDC']     [window for DC removal, in seconds, default 0.005s]
 %
-% Manu Valero 2018. Antonio FR, 2021
+%  OUTPUTS
+%  [data]   [cleaned dat file]
+%
+%  SEE ALSO
+%
+% [Manu Valero, Antonio FR] [2021-2022]
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 % Default parameters
 filename = split(pwd,'\'); filename = filename{end};

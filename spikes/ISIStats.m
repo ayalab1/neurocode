@@ -1,35 +1,49 @@
 function [ ISIstats ] = ISIStats( spikes,varargin )
-%ISIstats = bz_ISIStats(spikes,varargin) calculates the statistics 
-%inter-spike intervals for the spiketimes in spikes.
+%
+%[ISIstats = bz_ISIStats(spikes,varargin) calculates the statistics 
+%inter-spike intervals for the spiketimes in spikes]
 %
 %   INPUTS
-%       spikes      Structure with spikes.times and spikes.UID
+%       [spikes]      [Structure with spikes.times and spikes.UID]
 %
-%       (options)
-%       'ints'        A structure with intervals in which to calculate ISIs.
+%    <options>   optional list of property-value pairs (see table below)
+%    ========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%    ['ints']          [A structure with intervals in which to calculate ISIs.
 %                       states.stateNAME = [start stop]
 %                       Will calculate ISIsstats separately for each state
-%                       (Can also 'load' from SleepState.states.mat)
-%       'cellclass'     Cell array of strings - label for each cell. 
-%                       (Can also 'load' from CellClass.cellinfo.mat)
-%       'savecellinfo'  logical (default: false) save a cellinfo file?
-%       'basePath'
-%       'figfolder'     a folder to save the figure in
-%       'showfig'       logical (default: false) show the figure?
-%       'forceRedetect' logical (default: false) to re-compute even if saved
-%       'shuffleCV2'    logical (devault: false)
-%       'numISIbins'    number of bins for ISI distribution (default: 60)
-%       'numCV2bins'    number pf bins for CV2 distribution (default: 60)
+%                       (Can also 'load' from SleepState.states.mat)]
+%    ['cellclass']     [Cell array of strings - label for each cell. 
+%                       (Can also 'load' from CellClass.cellinfo.mat)]
+%    ['savecellinfo']  [logical (default: false) save a cellinfo file?]
+%    ['basePath']
+%    ['figfolder']     [a folder to save the figure in]
+%    ['showfig']       [logical (default: false) show the figure?]
+%    ['forceRedetect'] [logical (default: false) to re-compute even if
+%                       saved]
+%    ['shuffleCV2']    [logical (devault: false)]
+%    ['numISIbins']    [number of bins for ISI distribution (default: 60)]
+%    ['numCV2bins']    [number pf bins for CV2 distribution (default: 60])
 %
 %   OUTPUTS
-%       ISIstats        cellinfo structure with ISI statistics
+%       [ISIstats      cellinfo structure with ISI statistics
 %           .summstats  summary statistics
 %           .ISIhist    histograms of ISIs etc
 %           .sorts      sorting indices
 %           .allspikes  ISI/CV2 value for each spike 
-%                       (ISI is PRECEDING interval for the spike at allspikes.times)
+%                       (ISI is PRECEDING interval for the spike at
+%                       allspikes.times)]
 %
-%DLevenstein 2018
+% SEE ALSO
+%
+% [DLevenstein] [2018-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 %% Parse the inputs
 defaultstates.ALL = [-Inf Inf];
 

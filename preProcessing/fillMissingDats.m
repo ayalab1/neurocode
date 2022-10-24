@@ -1,4 +1,32 @@
 function fillMissingDats(varargin)
+% [fillMissingDats(varagin)]
+%
+% [fills in missing dats and related files (analogin, digital in etc.) that
+% are missing]
+%
+%
+%  INPUTS
+%  [parser]  [input parser for differing options, see below]
+%   =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     ['basepath']  [basepath of missing dats. should be multiple
+%                   basepaths]
+%    =======================================================================
+%
+%
+%  OUTPUTS
+%     NA
+%
+%
+%  SEE ALSO
+%
+% [HeathLarsson] [2021-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 p = inputParser;
 otherdattypes = {'analogin';'digitalin';'auxiliary';'time';'supply'};

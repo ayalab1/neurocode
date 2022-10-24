@@ -1,38 +1,44 @@
 function frequency = Frequency(timestamps,varargin)
 
-%Frequency - Compute instantaneous frequency for a point process (e.g. a spike train).
+%[Frequency - Compute instantaneous frequency for a point process (e.g. a
+% spike train)]
 %
-% Compute instantaneous frequency either by smoothing the point process using a fixed
+% [Compute instantaneous frequency either by smoothing the point process using a fixed
 % or adaptive Gaussian kernel, or by simply taking the inverse of the interevent intervals.
-% Adaptive kernel smoothing is described in Richmond et al. (1990).
+% Adaptive kernel smoothing is described in Richmond et al. (1990)]
 %
 %  USAGE
 %
-%    frequency = Frequency(timestamps,<options>)
+%    [frequency = Frequency(timestamps,<options>)]
 %
-%    timestamps     list of timestamps
+%  INPUT
+%
+%    [timestamps]   [list of timestamps]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'method'      convolute with a fixed ('fixed', default) or adaptive
+%   ['method']      [convolute with a fixed ('fixed', default) or adaptive
 %                   ('adaptive') Gaussian kernel, or compute inverse inter-
-%                   event intervals ('inverse')
-%     'limits'      [start stop] in seconds (default = approx. first and last
-%                   timestamps)
-%     'binSize'     bin size in seconds (default = 0.050)
-%     'smooth'      Gaussian kernel width in number of samples (default = 2)
-%     'show'        plot results (default = 'off')
+%                   event intervals ('inverse')]
+%   ['limits']      [[start stop] in seconds (default = approx. first and last
+%                   timestamps)]
+%   ['binSize']     [bin size in seconds (default = 0.050)]
+%   ['smooth']      [Gaussian kernel width in number of samples (default =2)]
+%   ['show']        [plot results (default = 'off')]
 %    =========================================================================
 %
 %  NOTE
 %
-%    While the convolution method returns a Mx2 matrix (time bins in column 1,
+%    [While the convolution method returns a Mx2 matrix (time bins in column 1,
 %    frequencies in column 2), the inverse interspike intervals method returns
-%    a Nx2 matrix (original spike timestamps in column 1, frequencies in column 2)
-
-% Copyright (C) 2004-2011 by Michaël Zugaro
+%    a Nx2 matrix (original spike timestamps in column 1, frequencies in
+%    column 2)]
+%
+%  SEE ALSO
+%
+% [Michaël Zugaro] [2004-2021]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

@@ -1,9 +1,44 @@
 function [deconvolved,t] = DeconvolvePETH(signal,events,varargin)
 
-%DeconvolvePETH - compute a deconvolved version of PETH which removes the
-% smoothing effects of the events' autocorrelogram
+% [DeconvolvePETH] - [Compute a deconvolved version of PETH which removes the
+% smoothing effects of the events' autocorrelogram]
 %
-% Copyright (C) 2022 by Ralitsa Todorova
+%  INPUTS
+%    [signal]      [signal to find events for]
+%    [events]      [events for PETH]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     'durations'   durations before and after synchronizing events for each
+%                   trial (in s) (default = [-1 1])
+%     'nBins'       number of time bins around the events (default = 101)
+%     'mode'        whether the sample data is linear ('l') or circular ('c')
+%                   (for example, in the case 'samples' is the phase of an
+%                   oscillation).
+%     'show'        display the mean PETH (default = 'on' when no outputs are
+%                   requested and 'off' otherwise)
+%     'smooth'      standard deviation for Gaussian kernel (default = 1 bin)
+%                   applied to the mean peri-event activity 'm' (note, no
+%                   smoothing will be applied to the output 'matrix')
+%     'title'       if the results are displayed ('show' = 'on'), specify a
+%                   desired title (default is deduced by variable names)
+%     <plot options> any other property (and all the properties that follow)
+%                   will be passed down to "plot" (e.g. 'r', 'linewidth', etc)
+%                   Because all the following inputs are passed down to "plot",
+%                   make sure you put these properties last.
+%    =========================================================================
+%
+%  OUTPUTS
+%    [deconvolved]     [deconvolved PETH]
+%    [t]               [times of PETH]
+
+%
+% SEE ALSO
+%
+%   [PETH. This is using similar script as PETH with deconvultion]
+%
+% [Ralitsa Todorova] [2021-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

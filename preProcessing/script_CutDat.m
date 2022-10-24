@@ -1,4 +1,5 @@
-
+%Is this a funtion we want to fully write out or just a quick fix funciton?
+% --HLR 10/16/2022
 % move to the subfolder in question
 
 nChannels = ?; % set this manually

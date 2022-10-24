@@ -1,6 +1,6 @@
 function stats = MapStats(map,varargin)
 
-%MapStats - Compute statistics for a map Z = f(X,Y), or a curve Z = f(X).
+%  Compute statistics for a map Z = f(X,Y), or a curve Z = f(X).
 %
 %  Compute statistics on a continuous map, where one time-varying variable Z
 %  is represented as a function of one or two time-varying variables X and Y.

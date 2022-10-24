@@ -1,14 +1,54 @@
 function [m,t] = mPETH(data, event, varargin)
-
-% [m,t] = mPETH(data,events,<options>).
-% returns the mean PETH (see <a href="matlab:help PETH">PETH</a>)
-% Copyright (C) 2018 by Ralitsa Todorova, Michaël Zugaro
+%
+% [[m,t] = mPETH(data,events,<options>)]
+% [returns the mean PETH (see <a href="matlab:help PETH">PETH</a>)]
+%
+%
+%
+%  INPUTS
+%
+%    [data]        [data to find events for]
+%    [events]      [events for PETH]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     'durations'   durations before and after synchronizing events for each
+%                   trial (in s) (default = [-1 1])
+%     'nBins'       number of time bins around the events (default = 101)
+%     'mode'        whether the sample data is linear ('l') or circular ('c')
+%                   (for example, in the case 'samples' is the phase of an
+%                   oscillation).
+%     'show'        display the mean PETH (default = 'on' when no outputs are
+%                   requested and 'off' otherwise)
+%     'smooth'      standard deviation for Gaussian kernel (default = 1 bin)
+%                   applied to the mean peri-event activity 'm' (note, no
+%                   smoothing will be applied to the output 'matrix')
+%     'title'       if the results are displayed ('show' = 'on'), specify a
+%                   desired title (default is deduced by variable names)
+%     <plot options> any other property (and all the properties that follow)
+%                   will be passed down to "plot" (e.g. 'r', 'linewidth', etc)
+%                   Because all the following inputs are passed down to "plot",
+%                   make sure you put these properties last.
+%    =========================================================================
+%
+%  OUTPUTS
+%    [m]            [mean PETH]
+%    [t]               [times of PETH]
+%
+%
+%  SEE ALSO
+%
+%   [PETH, DeconvolvePETH]
+%
+% [Ralitsa Todorova, Michaël Zugaro] [2018-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
-
+%
+%--------------------------------------------------------------------------
 
 % default values
 duration = [-1 1];

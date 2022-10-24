@@ -109,8 +109,8 @@ end
 
 Ripple_window_start=120;
 Ripple_window_end=180;
-[lfp] = getLFP('all');
-[bbb aaa]=butter(4,[Ripple_window_start Ripple_window_end]/lfp.samplingRate*2,'bandpass');
+[lfp,infoLFP] = getLFP('all');
+[bbb aaa]=butter(4,[Ripple_window_start Ripple_window_end]/infoLFP.samplingRate*2,'bandpass');
 
 Refrence_chan=[];
 % Not Necessary, only for test ############################################
@@ -124,7 +124,7 @@ StandDev=[];
 
         for CH=1:length(SHANKS{shk})
 
-            filt = filtfilt(bbb,aaa,double(lfp.data(:,SHANKS{shk}(CH))));
+            filt = filtfilt(bbb,aaa,double(lfp(:,1+SHANKS{shk}(CH))));
             Amp = fastrms(filt,15);
             % Calculate signal to noise ratio #################################
             Amp_Sort=sort(Amp);
@@ -153,9 +153,9 @@ disp(['Reference Ripple Channel for test is : ' num2str(RefrenceRippleChannel_te
 %% Get Ripple
 [ripples] = FindRipples('basepath',basepath,'channel',RefrenceRippleChannel_test);
 Win=70;
-LfpSamplingrate = lfp.samplingRate;
+LfpSamplingrate = infoLFP.samplingRate;
 % Removing short startting and the end ripples
-ripples.peaks = ripples.peaks(ripples.peaks*LfpSamplingrate>Win+1 & ripples.peaks*LfpSamplingrate<length(lfp.timestamps)-Win+1);
+ripples.peaks = ripples.peaks(ripples.peaks*LfpSamplingrate>Win+1 & ripples.peaks*LfpSamplingrate<size(lfp,1)-Win+1);
 
 %% Calculate Ripple power ##################################################
 
@@ -170,7 +170,7 @@ for shk=1:length(SHANKS)
 
         clear var All_Ripple_Avg  ripple_ave Power
 
-        eeg=single(lfp.data(:,SHANKS{1, shk}(CH)));
+        eeg=single(lfp(:,1+SHANKS{1, shk}(CH)));
 
         for i = 1:size(ripples.peaks,1)
             ripple_ave(i,:) = eeg(round(ripples.peaks(i)*LfpSamplingrate)-Win:round(ripples.peaks(i)*LfpSamplingrate)+Win,:);

@@ -1,5 +1,8 @@
 function [behavior] = socialPlusMazeBehavior(behavior,varargin)
-%        [behavior] = socialPlusMazeBehavior(behavior,varargin)
+% 
+% Behavior code for social plus maze.
+% 
+% [behavior] = socialPlusMazeBehavior(behavior,varargin)
 % Takes basic behavior structure generated with general_behavior_file.m and
 % completes it for the plus maze social behavior task. Assumes that
 % behavior.mat already contains linearrized positions separated for the

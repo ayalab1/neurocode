@@ -1,32 +1,35 @@
 function accel = computeIntanAccel(varargin)
-% computeIntanAccel - Get accelerometer data from Intan-generated auxiliary.dat file
+%
+%
+% [computeIntanAccel - Get accelerometer data from Intan-generated
+%                       auxiliary.dat file]
 %
 % USAGE
 %
-%    acc = bz_getIntanAccel(varargin)
+%    [acc = bz_getIntanAccel(varargin)]
 %
 % INPUTS
 %
-%    basepath        -path to recording (where .dat/.clu/etc files are)
-%    lowpass         -numeric value to low-pass filter acceleration data           
-%    samplingRate    -numeric value to control final sampling rate of acceleration data            
-%    forceReload     -logical (default=false) to force loading from auxiliary.dat file            
-%    saveMat         -logical (default=false) to save in buzcode format
-%    noPrompts       -logical (default=false) to supress any user prompts
+%    [basepath]      [path to recording (where .dat/.clu/etc files are)]
+%    [lowpass]       [numeric value to low-pass filter acceleration data]           
+%    [samplingRate]  [numeric value to control final sampling rate of acceleration data]            
+%    [forceReload]   [logical (default=false) to force loading from auxiliary.dat file]           
+%    [saveMat]       [logical (default=false) to save in buzcode format]
+%    [noPrompts]     [logical (default=false) to supress any user prompts]
 %
 % OUTPUTS
 %
-%    acc - behavior struct with the following fields
+%    [acc - behavior struct with the following fields
 %          .timestamps     -array of timestamps that match the data subfields (in seconds)
 %          .acceleration   -data substruct with x, y, z acceleration and overall magnitude of acceleration
 %          .samplingRate   -sampling rate of data
 %          .lowpass        -value used to low-pass filter raw data   
 %          .units          -unit of measurement of acceleration (volts, see the note below)
-%          .behaviorinfo   -information substruct
+%          .behaviorinfo   -information substruct]
 % 
 % NOTES:
 % 
-% Extract accelerometer data from auxiliary.dat file - when doing this, downsample 
+% [Extract accelerometer data from auxiliary.dat file - when doing this, downsample 
 % to the rate of LFP acquisition, and low-pass filter the resulting signals 
 % (parameter 'lowpass'). Use acceleration along x, y, and z axes to compute 
 % magnitude of acceleration (i.e., the norm of a 3D vector). This can be used 
@@ -34,15 +37,21 @@ function accel = computeIntanAccel(varargin)
 % subintervals of acceleration values to get a desired number of values per 
 % second (parameter 'samplingRate'). Use info.rhd Intan data file to verify
 % number of active auxiliary.dat files - this step depends on a modified
-% version of 'read_Intan_RHD2000_file.m' (Intan MATLAB script)
+% version of 'read_Intan_RHD2000_file.m' (Intan MATLAB script)]
 %
-% The Intan accelerometer stores voltage values that reflect instantaneous
+% [The Intan accelerometer stores voltage values that reflect instantaneous
 % acceleration along the x, y, and z axes. On average, a value of 0.34 V maps
 % to 1g acceleration. For details, see the following link:
-% http://intantech.com/files/Intan_RHD2000_accelerometer_calibration.pdf
+% http://intantech.com/files/Intan_RHD2000_accelerometer_calibration.pdf]
 % 
-% Written by Roman Huszar, 2019
-% KM SMALL CHANGE
+%  SEE ALSO
+%
+% [Roman Huszar, KM] [2019-2022]
+% 
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 %% Process and check user input
 

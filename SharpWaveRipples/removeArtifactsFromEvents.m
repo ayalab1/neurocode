@@ -48,10 +48,10 @@ end
 disp('Computing ripples std...');
 stdEvents = [];
 parfor ii = 1:length(events.peaks) % compute rms
-%    rmsEvents(ii) = rms(double(lfp.data(find(lfp.timestamps>events.peaks(ii)-winSize &...
-%        lfp.timestamps<events.peaks(ii)+winSize))));
-    stdEvents(ii) = std(double(lfp.data(find(lfp.timestamps>events.peaks(ii)-winSize &...
-        lfp.timestamps<events.peaks(ii)+winSize))));
+%    rmsEvents(ii) = rms(double(lfp.data(find(lfp(:,1)>events.peaks(ii)-winSize &...
+%        lfp(:,1)<events.peaks(ii)+winSize))));
+    stdEvents(ii) = std(lfp(find(lfp(:,1)>events.peaks(ii)-winSize &...
+        lfp(:,1)<events.peaks(ii)+winSize),2));
 end
 
 if strcmpi(method,'minima')

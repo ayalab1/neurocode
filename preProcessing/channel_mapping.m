@@ -1,13 +1,15 @@
 function channel_mapping(varargin)
-% channel_mapping: updates basename.session with brain regions per channel
-% and creates a adjustable .csv with brain region labels.
 %
-% In the csv, each column is a shank and each row is a level on your probe
+%
+% [channel_mapping: updates basename.session with brain regions per channel
+% and creates a adjustable .csv with brain region labels]
+%
+% [In the csv, each column is a shank and each row is a level on your probe
 % corresponding to each channel. This can be adjusted as you drive down,
-% simply by copying the .csv from the last session and making minor edits.
+% simply by copying the .csv from the last session and making minor edits]
 %
 % Usage:
-%       1. To be ran after basename.session is created to set up initial
+%       [1. To be ran after basename.session is created to set up initial
 %       anatomical map for an animal. This will set up a unlabeled .csv.
 %       You are then to label each channel and run this function again to
 %       add that data to basename.session. IMPORTANT NOTE: Label the .csv 
@@ -21,18 +23,49 @@ function channel_mapping(varargin)
 %       This approach will look within cell_metrics.cellinfo for the
 %       location where each unit fired max. Manual adjustment of the
 %       anatomical map csv may be need after as many channels will be
-%       unknown if the cell counts are low.
+%       unknown if the cell counts are low]
 %
-% Note: 
-% * if you make a manual edit in the .csv, make sure to run this
-%       function again to propagate that change to basename.session. 
+%  INPUTS
+%    [parser]      [input parser, see below]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties            Values
+%    -------------------------------------------------------------------------
+% ['basepath']                   [basepath paramter. Default pwd]             
+% ['fig'],true)                  [simple debugging/summary figs. Default true]
+% ['save_csv']                   [save output to basepath. Default true]
+% ['pull_from_cell_metrics']     [to populate map from cell_metrics. Default
+%                                 False]
+% ['force_cell_metric_overwrite'][will bypass the warning if .session
+%                                 already has regions. Default false]
+% ['save_session']               [save session to basepath. Default true]
+% ['save_cell_metrics'],true) %  [save updated cell metrics to basepath.
+%                                 Default true]
+% ['session']                    [session.mat file]
+% ['show_gui_session']           [Show gui session. Default false]
+%    ========================================================================
+%   
+%  OUTPUT
+%   NA
+%
+%
+% NOTE 
+%  [* if you make a manual edit in the .csv, make sure to run this
+%       function again to propagate that change to basename.session] 
 %
 % TODO: Add functionality to optionally pull regions from basename.session
 %           to populate the .csv after .csv has been populated. One may 
 %           wish to update either basename.session or .csv. 
 %
 %
-% Ryan H 2021
+% [Ryan H] [2021-2022]
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+%------------------------------------------------------------------------
+
 
 p = inputParser;
 addParameter(p,'basepath',pwd) % path to folder

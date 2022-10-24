@@ -1,20 +1,42 @@
 function ppc = PPC(phases,optionalInput)
 
-%PPC - compute Pairwise Phase Consistency across spikes
+% [PPC - compute Pairwise Phase Consistency across spikes]
 %
-% ppc = PPC(phases) computes the Pairwise Phase Consistency as defined by  
+% [ppc = PPC(phases) computes the Pairwise Phase Consistency as defined by  
 % Vinck, Wingerden, Womelsdorf, Fries, Pennartz (2010, NeuroImage)
 % ppc = PPC(phases,trialID) computes P(hat)2 Pairwise Phase Consistency 
 % as defined by Vinck, Battaglia, Womelsdorf, Pennartz (2012, J Comp Neurosci)
 % ppc = PPC(phases1,phases2) computes the Pairwise Phase Consistency across units
-% as defined by Vinck, Wingerden, Womelsdorf, Fries, Pennartz (2010, NeuroImage)
+% as defined by Vinck, Wingerden, Womelsdorf, Fries, Pennartz (2010,
+% NeuroImage)]
 % 
-% Copyright (C) 2016-2022 by Ralitsa Todorova
+% %  INPUTS
+%    [phases]      [phases from spikes, lfp]
+%   
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     ['trial']    [if 'optionalInput' is vector, trials are assumed]             
+%    =========================================================================
+% 
+%  OUTPUTS
+%    [ppc]     [pairwise phase consistency score]
+%
+%
+% SEE ALSO
+%
+% [Ralitsa Todorova] [2016-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%
+%-------------------------------------------------------------------------
+
+
 
 if nargin==1
     phases = phases(:);

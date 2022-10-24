@@ -1,9 +1,20 @@
 function forceMergerOfInputFiles(basepath)
 
-% This function will produce a digitalIn.dat and analogin.dat files even if
-% they are missing from some of the subsessions
-
-% Copyright (C) 2022 by Ralitsa Todorova
+% [This function will produce a digitalIn.dat and analogin.dat files even if
+%  they are missing from some of the subsessions]
+%
+%
+%  INPUTS
+%    [basepath]      [basepath of input files to be merged]
+%
+%
+%  OUTPUTS
+%    NA
+%
+%
+% SEE ALSO
+%
+% [Ralitsa Todorova] [2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

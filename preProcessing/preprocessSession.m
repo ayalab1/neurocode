@@ -1,34 +1,56 @@
 function  preprocessSession(varargin)
 
-%         preprocessSession(varargin)
+% [preprocessSession(varargin)]
 
-%   Master function to run the basic pre-processing pipeline for an
+%   [Master function to run the basic pre-processing pipeline for an
 %   individual sessions. Is based on sessionsPipeline.m but in this case
-%   works on an individual session basis no in a folfer with multiple ones.
+%   works on an individual session basis no in a folfer with multiple ones]
 %
-
+%
 % INPUTS
+%   [input parser]  [inputs as opiton list of values - see below]
 %   <options>       optional list of property-value pairs (see table below)
-%   basepath        - Basepath for experiment. It contains all session
-%                       folders. If not provided takes pwd.
-%   analogCh       - List of analog channels with pulses to be detected (it support Intan Buzsaki Edition).
-%   forceSum       - Force make folder summary (overwrite, if necessary). Default false.
-%   cleanArtifacts - Remove artifacts from dat file. By default, if there is analogEv in folder, is true.
-%   stateScore     - Run automatic brain state detection with SleepScoreMaster. Default true.
-%   spikeSort      - Run automatic spike sorting using Kilosort. Default true.
-%   cleanRez       - Run automatic noise detection of the Kilosort results (these will be pre-labelled as noise in phy). Default true.
-%   getPos         - get tracking positions. Default false.
-%   runSummary     - run summary analysis using AnalysisBatchScrip. Default false.
-%   pullData       - Path for raw data. Look for not analized session to copy to the main folder basepath. To do...
-%   path_to_dlc_bat_file - path to your dlc bat file to analyze your videos (see neurocode\behavior\dlc for example files)
-%   nKilosortRuns  - number of desired Kilosort runs (default = 1). The function will break down the shanks into "nKilosortRuns" groups for each run
+%  =========================================================================
+%   Properties    Values
+%  -------------------------------------------------------------------------
+% [basepath]             [Basepath for experiment. It contains all session
+%                         folders. If not provided takes pwd]
+% [analogCh]             [List of analog channels with pulses to be detected (it
+%                         supports Intan Buzsaki Edition)]
+% [forceSum]             [Force make folder summary (overwrite, if necessary). 
+%                         Default false]
+% [cleanArtifacts]       [Remove artifacts from dat file. By default, if there is 
+%                         analogEv in folder, is true]
+% [stateScore]           [Run automatic brain state detection with SleepScoreMaster. 
+%                         Default true]
+% [spikeSort]            [Run automatic spike sorting using Kilosort. Default true]
+% [cleanRez]             [Run automatic noise detection of the Kilosort results
+%                        (these will be pre-labelled as noise in phy). Default true]
+% [getPos]               [get tracking positions. Default false]
+% [runSummary            [run summary analysis using AnalysisBatchScript.
+%                         Defualt false]
+% [pullData]             [Path for raw data. Look for not analized session to
+%                         copy to the main folder basepath. To do...]
+% [path_to_dlc_bat_file] [path to your dlc bat file to analyze your videos
+%                         (see neurocode\behavior\dlc for example files)]
+% [nKilosortRuns]        [number of desired Kilosort runs (default = 1). The
+%                         function will break down the shanks into "nKilosortRuns" 
+%                         groups for each run]
+%  OUTPUTS
+%    N/A
 %
-%  HISTORY:
-%   AntonioFR, 5/20
-
-%  TO DO:
+%  NOTES
+%   TODO:
 %   - Improve auto-clustering routine
 %   - Test cleaning and removing artifacts routines
+%  SEE ALSO
+%
+% [AntonioFR] [2020 - 2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

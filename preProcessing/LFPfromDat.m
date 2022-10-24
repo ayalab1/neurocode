@@ -1,13 +1,15 @@
 function LFPfromDat(basepath,varargin)
-% perform lowpass (2 X output Fs) sinc filter on wideband data
-% subsample the filtered data and save as a new flat binary
-% basename must have basename.dat and basename.xml
-% basepath is the full path for basename.dat
 %
-% note that sincFilter was altered to accomodate GPU filtering
 %
-%INPUTS
-%   basePath    path where the recording files are located
+%   [perform lowpass (2 X output Fs) sinc filter on wideband data
+%   subsample the filtered data and save as a new flat binary
+%   basename must have basename.dat and basename.xml
+%   basepath is the full path for basename.dat]
+%
+%   [note that sincFilter was altered to accomodate GPU filtering]
+%
+% INPUTS
+% [basePath]    [path where the recording files are located
 %               where basePath is a folder of the form:
 %                   whateverPath/baseName/
 %
@@ -20,31 +22,40 @@ function LFPfromDat(basepath,varargin)
 %                   basePath/baseName.xml
 %                   basePath/baseName.sessionInfo.mat
 %
-%               If basePath not specified, tries the current working directory.
-%
+%               If basePath not specified, tries the current working
+%               directory]
 %   (options)
-%       'datFile'       specify while file you'd like to compute lfp from
-%       'outFs'         (default: 1250) downsampled frequency of the .lfp
+%    =========================================================================
+%     Properties    Values
+%    ------------------------------------------------------------------------
+%       ['datFile']     [specify while file you'd like to compute lfp from]
+%       ['outFs']       [(default: 1250) downsampled frequency of the .lfp
 %                       output file. if no user input and not specified in
-%                       the xml, use default
-%       'lopass'        (default: 450) low pass filter frequency
-%       'useGPU'        (default: false) whether or not to use GPU to speed
-%                       processing (might not want to if limited GPU)
+%                       the xml, use default]
+%       ['lopass']      [(default: 450) low pass filter frequency]
+%       ['useGPU']      [(default: false) whether or not to use GPU to speed
+%                       processing (might not want to if limited GPU)]
 %
 %
-%OUTPUT
-%   Creates file:   basePath/baseName.lfp
+%  OUTPUT
+%   [Creates file:   basePath/baseName.lfp]
 %
-%   If no sessionInfo.mat file previously exists, creates one with
+%   [If no sessionInfo.mat file previously exists, creates one with
 %   the information from the .xml file, with the .lfp sampling frequency
-%   and the lowpass filter used.
+%   and the lowpass filter used]
+%
+% SEE ALSO
+%
+% Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
+%
+%[SMckenzie, BWatson, DLevenstein,kathrynmcclain] [2018-2022]
 %
 %
-%Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
-%
-%SMckenzie, BWatson, DLevenstein 2018
-%
-%kathrynmcclain 2020
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 
 %% Import
 

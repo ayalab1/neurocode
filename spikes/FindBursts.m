@@ -1,40 +1,47 @@
 function bursts = FindBursts(spikes,varargin)
 
-%FindBursts - Find bursts of action potentials in a spike train.
-% This function implements the method used by Wierzynski 2009. I.e. smooths
+% [FindBursts - Find bursts of action potentials in a spike train]
+% [This function implements the method used by Wierzynski 2009. I.e. smooths
 % the mua spike train and identified periods where it surpasses a low-threshold,
-% provided that a high threshold is surpassed somewhere within the burst.
+% provided that a high threshold is surpassed somewhere within the burst]
 %
 %  USAGE
 %
-%    bursts = FindBursts(spikes,<options>)
+%    [bursts = FindBursts(spikes,<options>)]
 %
-%    Find spike bursts by smoothing and thresholding the input single unit or
+%    [Find spike bursts by smoothing and thresholding the input single unit or
 %    MUA spike train. Two thresholds are used: the upper threshold defines a
 %    burst, while the lower threshold identifies the beginning and end of the
-%    burst. See e.g. Wierzynski et al. (2009).
+%    burst. See e.g. Wierzynski et al. (2009]
 %
-%    spikes         spike train (either single unit or MUA)
+% INPUTS
+%
+% [spikes]         [spike train (either single unit or MUA)]
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
-%     Properties    Values
+%     Properties         Values
 %    -------------------------------------------------------------------------
-%     'thresholds'  thresholds for burst beginning and end, in multiples of
-%                   the stdev (default = [2 5])
-%     'binSize'     bin size (in ms, default = 1)
-%     'smooth'      smoothing kernel width (in ms, default = 16.667)
-%     'intervals'   [start stop] intervals of interests (e.g. slow wave sleep).
-%                   Bursts will be confined to these windows and the function
-%                   would ignore all activity outside those windows. (default = [0 Inf])
+%     ['thresholds']  [thresholds for burst beginning and end, in multiples of
+%                     the stdev (default = [2 5])]
+%     ['binSize']     [bin size (in ms, default = 1)]
+%     ['smooth']      [smoothing kernel width (in ms, default = 16.667)]
+%     ['intervals']   [[start stop] intervals of interests (e.g. slow wave sleep)
+%                     Bursts will be confined to these windows and the function
+%                     would ignore all activity outside those windows.
+%                    (default = [0 Inf])]
 %    =========================================================================
 %
-% Copyright (C) 2016-2022 by Ralitsa Todorova, Michaël Zugaro
+% [Ralitsa Todorova, Michaël Zugaro] [2016-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%------------------------------------------------------------------------
+
+
 
 % Default values
 

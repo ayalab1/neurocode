@@ -1,5 +1,5 @@
 function find_and_move_videos(basepath,local_drive_path)
-% matlab wrapper for find_and_move_videos.py
+% Matlab wrapper for find_and_move_videos.py
 %
 % find_and_move_videos will copy videos to dlc video path and also copy
 % results back to original folder locations

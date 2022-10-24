@@ -1,57 +1,63 @@
 function ProcessBinary(inputName,outputName,nChannels,f,varargin)
 
-%ProcessBinary - Process binary data file.
+%[ProcessBinary - Process binary data file]
 %
-% Process binary data file, e.g. filter LFP file. This function loads the
+% [Process binary data file, e.g. filter LFP file. This function loads the
 % binary file segment by segment, calls a user-supplied function to process
-% each data segment, and optionally saves the result to a new file.
+% each data segment, and optionally saves the result to a new file
 %
 % If the function requires overlapping segments (e.g. to avoid edge effects),
 % it will receive data in the form [o1;s;o2], where s is the segment to process,
 % and o1 and o2 are portions of the previous and next segments (half the overlap
 % size each). The function should return the processed segment, WITHOUT the
-% overlapping portions.
+% overlapping portions]
 %
 %  USAGE
 %
-%    ProcessBinary(inputName,outputName,nChannels,f,<options>)
+%    [ProcessBinary(inputName,outputName,nChannels,f,<options>)]
+% 
+% INPUTS
 %
-%    inputName      binary input file
-%    outputName     binary output file (optional, see below)
-%    nChannels      number of channels in the input file
-%    f              function handle
-%    <options>      optional list of property-value pairs (see table below)
+%    [inputName]   [binary input file]
+%    [outputName]  [binary output file (optional, see below)]
+%    [nChannels]   [number of channels in the input file]
+%    [f]           [function handle]
+%    <options>     [optional list of property-value pairs (see table below]
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'parameters'  additional parameters for f (cell array)
-%     'overlap'     overlap in # samples (default = 0)
-%     'segment'     segment length in # samples (default = 2^16)
+%     ['parameters']  [additional parameters for f (cell array)]
+%     ['overlap']     [overlap in # samples (default = 0)]
+%     ['segment']     [segment length in # samples (default = 2^16)]
 %    =========================================================================
+%
+% OUPUT (if outputName is used (see above)
+%  
+%   [outputName]    [binary combined output file]
 %
 %  EXAMPLES
 %
-%    % Change sign (using an anonymous function)
-%    ProcessBinary('input.dat','output.dat',1,@(x) -x);
+%    [Change sign (using an anonymous function)
+%    ProcessBinary('input.dat','output.dat',1,@(x) -x);]
 %
-%    % Low-pass filter and square using the following funtion:
-%    %   function y = CustomFilter(x,b,a)
-%    %     y = filtfilt(b,a,x).^2;
-%    %     y = y(251:end-250);
-%    ProcessBinary('input.dat','output.dat',1,@CustomFilter,'parameters',{b,a},'overlap',500);
+%    [Low-pass filter and square using the following funtion:
+%       function y = CustomFilter(x,b,a)
+%         y = filtfilt(b,a,x).^2;
+%         y = y(251:end-250);
+%    ProcessBinary('input.dat','output.dat',1,@CustomFilter,'parameters',{b,a},'overlap',500);]
 %
-%    % If you require more elaborate functionality than just saving the processed
-%    % segment (e.g. save several files, or use a custom file format), pass an
-%    % empty output filename and include the appropriate code in your function.
-%    % For instance,
-%    %   function y = SaveMax(x,f)
-%    %     m = max(x);
-%    %     fwrite(f,m);
-%    ProcessBinary('input.dat','',1,@SaveMax,'parameters',{'output.dat'});
+%    [If you require more elaborate functionality than just saving the processed
+%    segment (e.g. save several files, or use a custom file format), pass an
+%     empty output filename and include the appropriate code in your function.
+%     For instance,
+%       function y = SaveMax(x,f)
+%         m = max(x);
+%         fwrite(f,m);
+%    ProcessBinary('input.dat','',1,@SaveMax,'parameters',{'output.dat'});]
 %    
 
-% Copyright (C) 2004-2018 by Michaël Zugaro
+% [Michaël Zugaro] [2014-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

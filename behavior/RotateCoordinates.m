@@ -1,6 +1,8 @@
 function [xy] = RotateCoordinates(xy,angle,center)
 
-% angle should be in radians
+% Rotates x and y coordinates around a center point by an angle.
+% 
+% (angle should be in radians)
 % This function rotates x and y coordinates (e.g. for the positions file)
 % around a center point (default=origin) by an angle.
 % EXAMPLE:

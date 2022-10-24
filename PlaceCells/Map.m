@@ -1,6 +1,6 @@
 function [map] = Map(v,z,varargin)
 
-%Map - Map z on (x,y) where x, y and z are time-varying variables (samples).
+% Map z on (x,y) where x, y and z are time-varying variables (samples).
 %
 %  Compute a continuous map, where one time-varying variable z is represented
 %  as a function of one or two time-varying variables x and y. The variable z

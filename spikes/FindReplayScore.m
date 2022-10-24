@@ -1,6 +1,6 @@
 function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled] = FindReplayScore(matrix,varargin)
 
-%FindReplayScore 
+% [FindReplayScore]
 %
 %
 % USAGE
@@ -8,39 +8,54 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 %    [r,p,a,b,rShuffled,c,cShuffled,jump,jumpShuffled,maxJump,
 %    maxJumpShuffled] = FindReplayScore(matrix,threshold,<options>);
 %
-%    matrix         
-%    threshold      
+%  INPUT
+%
+%    [matrix]   [??? Raly?]       
+%    threshold  (??)    
 %    
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'threshold'   considered distance from the line (default = 15 bins)
-%     'nShuffles'   default = 500
-%     'jumps'       compute jump distance (sum(jump)/length(windows)/length(track))
-%                   and max jump distance (Silva et al.,2015) (default = 'off')
-%     'wcorr'       compute weigthed correlation (cf Silva et al.,2015)
-%                   (type ''help <a href="matlab:help
-%                   WeightedCorrCirc">WeightedCorrCirc</a>'' for details)
-%     'circular'    for circular-linear data (default = 'on')
+%     ['threshold'] [considered distance from the line (default = 15 bins)]
+%     ['nShuffles'] [default = 500]
+%     ['jumps']     [compute jump distance
+%                    (sum(jump)/length(windows)/length(track))]
+%                    and max jump distance (Silva et al.,2015) (default =
+%                    'off')]
+%     ['wcorr']     [compute weigthed correlation (cf Silva et al.,2015)
+%                   (type ''help <a href="matlab:help]
+%                    WeightedCorrCirc">WeightedCorrCirc</a>'' for details)
+%     ['circular']  [for circular-linear data (default = 'on')]
 %    =========================================================================
 %
 %   OUTPUT
 %
-%     r                 replay score of matrix
-%     p                 p-value of replay score
-%     st                start position bin of the fitted line
-%     sp                stop position bin of the fitted line
-%     rShuffled         replay scores of shuffled matrices
-%     stShuffled        st of shuffled matrices
-%     spShuffled        sp of shuffled matrices
-%     c                 circular weigthed correlation of matrix
-%     cShuffled         circular weigthed correlations of shuffled matrices
-%     jump              jump value of matrix  
-%     jumpShuffled      jump values of shuffled matrices
-%     maxJump           max jump value of matrix
-%     maxJumpShuffled   max jump values of shuffled matrices
+%     [r]               [replay score of matrix]
+%     [p]               [p-value of replay score]
+%     [st]              [start position bin of the fitted line]
+%     [sp]              [stop position bin of the fitted line]
+%     [rShuffled]       [replay scores of shuffled matrices]
+%     [stShuffled]      [st of shuffled matrices]
+%     [spShuffled]      [sp of shuffled matrices]
+%     [c]               [circular weigthed correlation of matrix]
+%     [cShuffled]       [circular weigthed correlations of shuffled
+%                        matrices]
+%     [jump]            [jump value of matrix]  
+%     [jumpShuffled]    [jump values of shuffled matrices]
+%     [maxJump]         [max jump value of matrix
+%     [maxJumpShuffled] [max jump values of shuffled matrices]
 %
-% Raly & C??line ;)
+%  SEE ALSO
+%
+% [Raly & C??line ;)] [2021-2022]
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+%------------------------------------------------------------------------
+
+
 
 % Defaults values
 nShuffles = [];

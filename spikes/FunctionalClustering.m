@@ -1,8 +1,8 @@
 function [d,s,linkage] = FunctionalClustering(spikes,varargin)
 
-%FunctionalClustering - Determine spike train similarity tree using FCA analysis.
+%[FunctionalClustering - Determine spike train similarity tree using FCA analysis]
 %
-% Determine which spike trains are most similar in a neuronal population. This
+% [Determine which spike trains are most similar in a neuronal population. This
 % uses the Functional Clustering Algorithm (FCA) of Feldt et al. (2009).
 %
 % For each pair of neurons i and j, we first measure the distance (time elapsed)
@@ -20,39 +20,47 @@ function [d,s,linkage] = FunctionalClustering(spikes,varargin)
 %
 % Finally, the similarity tree is computed recursively by finding the two neurons
 % with the highest AMD, grouping them into a new cluster, and repeating until all
-% neurons have been grouped together.
+% neurons have been grouped together]
 %
 %  USAGE
 %
 %    [d,s,linkage] = FunctionalClustering(spikes,<options>)
 %
-%    spikes         two-column matrix of timestamps and unit IDs,
-%                   provided by <a href="matlab:help GetSpikeTimes">GetSpikeTimes</a> using 'output' = 'numbered'
+%  INPUT
+%
+%    [spikes]      [two-column matrix of timestamps and unit IDs,
+%                   provided by <a href="matlab:help
+%                   GetSpikeTimes">GetSpikeTimes</a> using 'output' = 'numbered']
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     'jitter'      jitter standard deviation, in s (default = 5)
-%     'nJitters'    number of jittered spike trains (default = 1000)
+%     ['jitter']    [jitter standard deviation, in s (default = 5)]
+%     'nJitters'    [number of jittered spike trains (default = 1000)]
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    d              normalized average minimal distance for each unit pair
-%    s              scaled significance for each unit pair
-%    linkage        network connectivity tree
+%    [d]           [normalized average minimal distance for each unit pair]
+%    [s]           [scaled significance for each unit pair]
+%    [linkage]     [network connectivity tree]
 %
 %  SEE
 %
 %  See also PlotLinkage.
-
-% Copyright (C) 2015 by Ralitsa Todorova, Michaël Zugaro
+%
+% [Ralitsa Todorova, Michaël Zugaro] [2015-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%
+%-------------------------------------------------------------------------
+
+
+
 
 % Defaults
 jitterSD = 5;

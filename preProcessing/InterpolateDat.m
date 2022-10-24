@@ -1,12 +1,29 @@
 function InterpolateDat(datFile,nChannels,noiseInterval)
-
-% Replace a noisy period in a .dat file (interpolating)
-% Copyright (C) 2021 KM and 2022 Ralitsa Todorova
+%
+% [InterpolateDat(datFile,nChannels,noiseInterval)]
+%
+% [Replace a noisy period in a .dat file (interpolating)]
+%
+%
+%  INPUTS
+%    [datFile]        [dat file to be interpolated]
+%    [nChannels]      [number of channels in dat file]
+%    [noiseIntervals] [intervals where noise is to be replaced]
+%
+%
+%  OUTPUT
+%   NA
+%
+%[KM and 2022 Ralitsa Todorova] [2021-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
+%-----------------------------------------------------------------------
+
+
+
 
 datFile = [basepath,filesep, session.general.name, '.dat'];
 datSamplingRate = 20000; 

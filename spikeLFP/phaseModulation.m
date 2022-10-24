@@ -1,4 +1,4 @@
-function [PhaseLockingData] = phaseModulation(spikes,lfp,passband,varargin)
+function [PhaseLockingData] = phaseModulation(spikes,lfp,infoLFP,passband,varargin)
 % USAGE
 % [PhaseLockingData] = phaseModulation(varargin)
 %
@@ -8,7 +8,8 @@ function [PhaseLockingData] = phaseModulation(spikes,lfp,passband,varargin)
 % INPUTS
 %
 % [spikes]       [spike time cellinfo struct]
-% [lfp]          [lfp struct with a single channel from getLFP()]
+% [lfp]          [lfp data with a single channel from getLFP()]
+% [infoLFP]      [lfp metadata struct with a single channel from getLFP()]
 % [passband]     [frequency range for phase modulation [lowHz highHz] form
 % <options>       optional list of property-value pairs (see table below)
 %=========================================================================
@@ -79,6 +80,7 @@ numBins = p.Results.numBins;
 powerThresh = p.Results.powerThresh;
 saveMat = p.Results.saveMat;
 basepath = p.Results.basepath;
+basename = basenameFromBasepath(basepath);
 
 %% Get phase for every time point in LFP
 switch lower(method)
@@ -103,7 +105,7 @@ switch lower(method)
         %             lfpphase(i) = phase(i,mIdx(i));
         %         end
         %         lfpphase = mod(lfpphase,2*pi);
-        [wave,f,t,coh,wphases,raw,coi,scale,priod,scalef]=getWavelet(double(lfp.data(:,1)),samplingRate,passband(1),passband(2),8,0);
+        [wave,f,t,coh,wphases,raw,coi,scale,priod,scalef]=getWavelet(lfp(:,2),samplingRate,passband(1),passband(2),8,0);
         [~,mIdx]=max(wave);%get index max power for each timepiont
         pIdx=mIdx'+[0;size(f,2).*cumsum(ones(size(t,1)-1,1))];%converting to indices that will pick off single maxamp index from each of the freq-based phases at eacht timepoint
         lfpphase=wphases(pIdx);%get phase of max amplitude wave at each timepoint
@@ -243,7 +245,7 @@ end
 % end
 
 detectorName = 'phaseModulation';
-channels = lfp.channels;
+channels = infoLFP.channels;
 detectorParams = v2struct(intervals,samplingRate,method,plotting,numBins,...
     passband,powerThresh,channels);
 
@@ -262,7 +264,7 @@ catch
     PhaseLockingData.sessionName = spikes.basename;
 end
 if saveMat
-    save([basepath,filesep,lfp.Filename(1:end-4) '.PhaseLockingData.cellinfo.mat'],'PhaseLockingData');
+    save([basepath,filesep,basename '.PhaseLockingData.cellinfo.mat'],'PhaseLockingData');
 end
 
 end

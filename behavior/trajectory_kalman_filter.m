@@ -1,6 +1,6 @@
 function [t,x,y,vx,vy,ax,ay] = trajectory_kalman_filter(posx,posy,post,order,Q,R)
 %
-% Kalman filter for obtaining an approximate Bayesian MAP estimate  to the rat's 
+% Kalman filter for obtaining an approximate Bayesian MAP estimate to the rat's 
 % trajectory from raw video tracker data.
 %
 % The trajectory model is the set of Taylor series expansions:

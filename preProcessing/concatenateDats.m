@@ -1,14 +1,16 @@
 function concatenateDats(basepath,sortFiles,legacy)
-% concatenateDats - Concatenate raw .dat files found in a session folder
-% - for intan type recordings 
+%
+%
+% [concatenateDats - Concatenate raw .dat files found in a session folder
+% for intan type recordings] 
 % 
-% ALGORITHM OUTLINE: looks for .dat files in a folder (or in subfolders) to
+% [ALGORITHM OUTLINE: looks for .dat files in a folder (or in subfolders) to
 % concatenate together.  The concatenation happens via system commands 
 % ("cat" command for linux/mac, "copy" command if windows/pc).  Uses
 % different assumptions to find and recognize relevant .dats depending on
-% the acquisition system.  
+% the acquisition system]  
 % 
-% REQUIREMENTS: Assumes you are in or pointed to a directory containing 
+% [REQUIREMENTS: Assumes you are in or pointed to a directory containing 
 % subdirectories for various recording files from a single session. *It is 
 % assumed that an earlier-acquired data file/folder will have a name that
 % is sorted alphanumerically earlier.  Alphanumeric sorting order is
@@ -31,37 +33,38 @@ function concatenateDats(basepath,sortFiles,legacy)
 %           channels on main board 
 %       - time.dat - int32 file giving recording sample indicies (e.g. 
 %           0,1,2,3...) for each sample recorded in other channels
-%       - supply.dat - uint16 file showing voltage supplied to (?preamp?)
+%       - supply.dat - uint16 file showing voltage supplied to (?preamp?)]
 %   
 %
 %  USAGE
 %
-%    concatenateDats(basepath,sortFiles)
+%    [concatenateDats(basepath,sortFiles)]
 %
 %  INPUTS
 %
-%    basepath          computer path to session folder.  Defaults to
-%                      current folder if no input given
-%    sortFiles               - boolean denoting whether to sort files according 
+%    [basepath]        [computer path to session folder.  Defaults to
+%                      current folder if no input given]
+%    [sortFiles]               [boolean denoting whether to sort files according 
 %                              to time of recording (1) or
 %                              not (0) and thus sort them alphabetically 
-%                              Default = 1.
-%    legacy                  - there should only be 2 inputs, so this third
+%                              Default = 1]
+%    [legacy]                  [there should only be 2 inputs, so this third
 %                              input is here temporarily for legacy reasons.
 %                              If for some reason you are using an old script
 %                              which expects the "sortFiles" input to be 3rd,
-%                              this will temporarily override your second input.
+%                              this will temporarily override your second input]
 %                              
 %                              
 %
 %  OUTPUT
-%     Operates on files in specified folder.  No output variable
+%     [Operates on files in specified folder.  No output variable]
 %
 %  EXAMPLES
-%      Can be called directly or via bz_PreprocessExtracellEphysSession.m
+%      [Can be called directly or via bz_PreprocessExtracellEphysSession.m]
 %
-% Copyright (C) 2017 by Brendon Watson
-% Modified by Antonio FR, 2018 and Ralitsa Todorova, 2022
+%  SEE ALSO
+%
+% [Brendon Watson, Antonio FR, Ralitsa Todorova] [2018-2022]
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

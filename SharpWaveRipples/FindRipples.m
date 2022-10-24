@@ -2,7 +2,7 @@ function [ripples] = FindRipples(varargin)
 %FindRipples - Find hippocampal ripples when no SW channel is present
 %
 % USAGE
-%    [ripples] = FindRipples(lfp.data,lfp.timestamps,<options>)
+%    [ripples] = FindRipples(lfp(:,2),lfp(:,1),<options>)
 %    OR
 %    [ripples] = FindRipples(basepath,channel,<options>)
 %
@@ -100,9 +100,10 @@ if isstr(varargin{1})  % if first arg is basepath
     basename = basenameFromBasepath(p.Results.basepath);
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
-    lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath,'basename',basename);
-    signal = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
-    timestamps = lfp.timestamps;
+    lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath);
+    signal = FilterLFP(lfp,'passband',passband);
+    signal(:,1) = []; % remove timestamps
+    timestamps = lfp(:,1);
     basepath = p.Results.basepath;
     channel = p.Results.channel;
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP
@@ -148,7 +149,7 @@ EVENTFILE = p.Results.EVENTFILE;
 windowLength = SR/SR*11;
 
 % Square and normalize signal
-squaredSignal = signal.data.^2;
+squaredSignal = signal.^2;
 % squaredSignal = abs(opsignal);
 window = ones(windowLength,1)/windowLength;
 keep = [];
@@ -227,7 +228,7 @@ end
 % Detect negative peak position for each ripple
 peakPosition = zeros(size(thirdPass,1),1);
 for i=1:size(thirdPass,1)
-	[minValue,minIndex] = min(signal.data(thirdPass(i,1):thirdPass(i,2)));
+	[minValue,minIndex] = min(signal(thirdPass(i,1):thirdPass(i,2)));
 	peakPosition(i) = minIndex + thirdPass(i,1) - 1;
 end
 
@@ -248,8 +249,8 @@ disp(['After duration test: ' num2str(size(ripples,1)) ' events.']);
 bad = [];
 if ~isempty(noise)
     if length(noise) == 1 % you gave a channel number
-       noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath,'basename',basename);%currently cannot take path inputs
-       squaredNoise = bz_Filter(double(noiselfp.data),'filter','butter','passband',passband,'order', 3).^2;
+       noiselfp = getLFP(p.Results.noise,'basepath',p.Results.basepath);%currently cannot take path inputs
+       squaredNoise = FilterLFP(noiselfp,'passband',passband).^2;
     else
             
 	% Filter, square, and pseudo-normalize (divide by signal stdev) noise
@@ -300,7 +301,7 @@ if strcmp(show,'on')
   if plotType == 1
 	figure;
 	if ~isempty(noise)
-		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],...
+		MultiPlotXY([timestamps, signal],[timestamps squaredSignal],...
             [timestamps normalizedSquaredSignal],[timestamps squaredNoise],...
             [timestamps squaredNoise],[timestamps normalizedSquaredNoise]);
 		nPlots = 6;
@@ -309,7 +310,7 @@ if strcmp(show,'on')
 		subplot(nPlots,1,6);
   		ylim([0 highThresholdFactor*1.1]);
 	else
-		MultiPlotXY([timestamps signal.data],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
+		MultiPlotXY([timestamps, signal],[timestamps squaredSignal],[timestamps normalizedSquaredSignal]);
 %  		MultiPlotXY(time,signal,time,squaredSignal,time,normalizedSquaredSignal);
 		nPlots = 3;
 		subplot(nPlots,1,3);
@@ -341,7 +342,7 @@ if strcmp(show,'on')
 		end
     end
   elseif plotType == 2
-      lfpPlot = bz_Filter(double(lfp.data),'filter','butter','passband',[50 300],'order', 3);
+      lfpPlot = FilterLFP(lfp,'passband',[50 300]);
      
 		plot(timestamps,lfpPlot);hold on;
   		yLim = ylim;
@@ -387,12 +388,13 @@ else
 end
 
 % Compute instantaneous frequency
-unwrapped = unwrap(signal.phase);
-frequency = bz_Diff(medfilt1(unwrapped,12),signal.timestamps,'smooth',0);
+hilb = hilbert(signal);
+unwrapped = unwrap(angle(hilb));
+frequency = bz_Diff(medfilt1(unwrapped,12),timestamps,'smooth',0);
 frequency = frequency/(2*pi);
 
-ripples.amplitude = interp1(signal.timestamps,signal.amp,ripples.peaks,'linear');
-ripples.frequency = interp1(signal.timestamps,frequency,ripples.peaks,'linear');
+ripples.amplitude = interp1(timestamps,abs(hilb),ripples.peaks,'linear');
+ripples.frequency = interp1(timestamps,frequency,ripples.peaks,'linear');
 ripples.duration = ripples.timestamps(:,2) - ripples.timestamps(:,1);
 
 

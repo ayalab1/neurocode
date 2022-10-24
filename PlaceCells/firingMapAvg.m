@@ -1,8 +1,9 @@
 function [firingMaps] = firingMapAvg(positions,spikes,varargin)
 
+% Calculates averaged firing map for a set of linear postions
+% 
 % USAGE
 % [firingMaps] = firingMapAvg(positions,spikes,varargin)
-% Calculates averaged firing map for a set of linear postions
 %
 % INPUTS
 %

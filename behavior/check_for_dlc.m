@@ -1,5 +1,6 @@
 function found_one = check_for_dlc(basepath,basename)
-%check_for_dlc - folder checker for dlc files
+ 
+%  Folder checker for dlc files
 %
 %  Quick checker for Deep Lab Cut files within the provided basepath.
 %

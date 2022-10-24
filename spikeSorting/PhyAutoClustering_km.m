@@ -1,16 +1,8 @@
 function PhyAutoClustering_km(clusteringpath,varargin)
-% AutoClustering automtically cleans Kilosort output in phy format defined
-% by a clusteringpath.
+% [AutoClustering automtically cleans Kilosort output in phy format defined
+% by a clusteringpath]
 %
-% INPUT:
-%     clusteringpath: char
-%
-% optional:
-%     AutoClustering(clusteringpath,elec,dim)
-%     where dim is the number of channels in electro group (if not
-%     defined, will read the first line of the fet file
-%
-% AutoClustering is meant to clean the output of KlustaKwik. The first
+% [AutoClustering is meant to clean the output of KlustaKwik. The first
 % thing it does is to separate electrical artifacts and MUA from putative
 % isolated units. To do so, it sorts out units which have no clear
 % refractory period (based on Hill, Mehta and Kleinfeld, J Neurosci.,
@@ -27,12 +19,39 @@ function PhyAutoClustering_km(clusteringpath,varargin)
 % isolated units, it tries to merge them based on waveform similarity
 % (mahalanobis distance) and quality of the refractory period in the new
 % merged cluster (or "Inter Common Spike Interval" from MS Fee et al. J
-% Neurosci. Meth., 1996)
+% Neurosci. Meth., 1996)]
 %
-% Original script by Adrien Peyrache, 2012.
-% Many modifications for Phy processing pipeline by 
-% Yuta Senzai and Peter Petersen
-
+%
+%
+%  INPUT
+%
+%     [clusteringpath]  [character of clustering path]
+%    <options>   optional list of property-value pairs (see table below)
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     [AutoClustering(clusteringpath,elec,dim)] [where dim is the number of
+%                                               channels in electro group
+%                                               (if not defined, will read the first line
+%                                                of the fet file]
+%
+%
+%  OUTPUT
+%    NA
+%
+%
+%  SEE ALSO
+%
+%
+% [Yuta Senzai, Peter Petersen,Adrien Peyrache] [2012-2022]
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+%
+%
+%-------------------------------------------------------------------------
 
 % if ~isempty(varargin)
 %     dim = varargin{1};

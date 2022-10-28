@@ -46,7 +46,7 @@ function reconcatenateDats(basepath,sortFiles,otherdattypes,SSD_path)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if ~exist('SSD_path','var')
+if exist('SSD_path','var')
     SSD = true; else, SSD = false;
 end
 

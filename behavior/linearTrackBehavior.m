@@ -292,7 +292,7 @@ if show_fig
 end
 
 if remove_extra_fields
-    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});
+    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun','speedTh'});
 end
 
 %% Generate output variables

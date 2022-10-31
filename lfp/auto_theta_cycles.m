@@ -38,7 +38,7 @@ function auto_theta_cycles(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd)
-addParameter(p,'passband',[6,12])
+addParameter(p,'passband',[4,12])
 addParameter(p,'maximize_theta_power',true)
 addParameter(p,'run_parallel',false)
 
@@ -81,13 +81,13 @@ if isempty(lfp)
 end
 
 % find theta cycles
-[peaktopeak, troughs] = FindThetaCycles(lfp);
+[peaktopeak, troughs, amplitude] = FindThetaCycles(lfp);
 
 % package output
 thetacycles.timestamps = peaktopeak;
 thetacycles.peaks = troughs;
-thetacycles.amplitude = [];
-thetacycles.amplitudeUnits = [];
+thetacycles.amplitude = amplitude;
+thetacycles.amplitudeUnits = 'z-units';
 thetacycles.eventID = [];
 thetacycles.eventIDlabels = [];
 thetacycles.center = median(peaktopeak,2);
@@ -154,13 +154,11 @@ end
 if maximize_theta_power
     % try to load downsampled to same time
     try
-        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,...
-            'basename',basename,'downsample',10);
+        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,'downsample',10);
         
         % if sample rate cannot be factored by 10, load entire file
     catch
-        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,...
-            'basename',basename);
+        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath);
     end
     
     % get theta power to choose channel

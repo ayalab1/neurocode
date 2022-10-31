@@ -1,4 +1,4 @@
-function [peaktopeak,troughs] = FindThetaCycles(lfp,varargin)
+function [peaktopeak,troughs, amplitude] = FindThetaCycles(lfp,varargin)
 
 %FindThetaCycles - Find intervals that qualify as theta cycles from the lfp signal
 
@@ -114,3 +114,4 @@ ok = CountInIntervals(nottheta, peaktopeak)==0; % intervals containing moments o
 
 troughs = troughs(ok);
 peaktopeak = peaktopeak(ok,:);
+amplitude = amplitude(ok,2);

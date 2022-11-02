@@ -36,13 +36,33 @@ list = dir(basepath);
 filenames = cat(1,{list.name})'; filenames(cellfun(@length,filenames)<3) = [];
 ismat = cellfun(@(x) ~isempty(strfind(x,'.mat')),filenames);
 ok = cellfun(@(x) ~isempty(strfind(x,extension)),filenames) & ismat;
-index = find(ok,1);
-if isempty(index)
+indices = find(ok); 
+if isempty(indices)
     error(['No ''' extension ''' file found in ' basepath]);
     return
 end
 if nargin<3,fieldName = extension; end
-filename = filenames{index};
+if length(indices)>1,
+    candidates = filenames(indices);
+    containsBasename = cellfun(@(x) contains(x,basenameFromBasepath(basepath)),candidates);
+    if any(containsBasename), candidates(~containsBasename) = []; end
+    % pick the shortest one of the remaining filenames (to avoid taking e.g. ripples.events.old.mat rather than ripples.events.mat)
+    [~,index] = sort(cellfun(@length,candidates));
+    filename = candidates{index(1)};
+    if length(indices)<5 % display the filenames
+        str = filenames{indices(1)}; for i=2:length(indices), str = [str '; ' filenames{indices(i)}]; end
+        disp(['Multiple (' num2str(length(indices)) ') ' extension ' files exist in ' basepath ':']);
+        disp(str);
+        disp(['Choosing file "' filename '".']);
+%         cd(basepath); keyboard
+    else
+        disp(['Multiple (' num2str(length(indices)) ') ' extension ' files exist in ' basepath '. Choosing file "' filename '".']);
+    end
+    
+else
+    filename = filenames{indices};
+end
+
 [parts] = strsplit(filename,'.');
 
 state = warning; state = state(1).state; warning('off'); % supress warnings for the following code

@@ -43,6 +43,9 @@ function varargout = anovabox(data,groups,varargin)
 %                   Set to 2 to inverse this behavior.                 
 %    'paired'       a setting indicating whether values in the same row are
 %                   paired (default = 'on').
+%    'lock'         prevent the function from changing the y-axis limits
+%                   (default = 'off').boxwidth
+%    'boxwidth'     the width of the boxes to be plotted (default = 0.3).
 %    =========================================================================
 %
 %  OUTPUT
@@ -110,6 +113,8 @@ data = double(data);
 parametric = true;
 precedence = 1;
 paired = true;
+lock = false; % lock y axis
+boxwidth = 0.3;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -147,6 +152,19 @@ for i = 1:2:length(varargin),
             if ~isdvector(precedence,'#1'),
                 error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
+        case 'boxwidth'
+            boxwidth = varargin{i+1};
+            if ~isdvector(boxwidth,'#1'),
+                error('Incorrect value for property ''boxwidth'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
+            end
+        case 'lock'
+            lock = varargin{i+1};
+            if isastring(lower(lock),'on','off')
+                if strcmpi(lock,'on'); lock = true; else, lock = false; end
+            end
+            if ~islogical(lock) || length(lock)>1
+                error('Incorrect value for property ''lock'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
+            end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).']);
     end
@@ -156,14 +174,14 @@ end
 if length(alpha)==1, alpha = [alpha alpha]; end
 if parametric
     test0 = @(x) out2(@ttest,x);
-    testbetween =  @(x) anova1(x,[],'off');
-    if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = testbetween; end
+    testbetween =  @anova1;
+    if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = @(x) testbetween(x,[],'off'); end
 else
     test0 = @(x) signrank(x);
     testbetween = @kruskalwallis;
     if paired,
-        if size(data,2)==2, testpaired = @(x) friedman(x,1,'off'); else, testpaired = @(x) helper_signrank; end
-    else testpaired = testbetween;
+        if size(data,2)==2, testpaired = @helper_signrank; else, testpaired = @(x) friedman(x,1,'off'); end
+    else testpaired = @(x) testbetween(x,[],'off');
     end
 end
 if nargin==1 || isempty(groups)
@@ -187,7 +205,7 @@ nGroups = numel(unique(groups));
 if ~isempty(groups)
     [g1,g2] = meshgrid(1:size(data,2),1:size(data,1));
     if precedence==1 % separate the groups provided by the grouping variable; test difference between columns of 'data' in the same group
-        hbox = boxchart(groups(g2(:)),data(:),'MarkerStyle','none','GroupByColor',g1(:));
+        hbox = boxchart(groups(g2(:)),data(:),'MarkerStyle','none','GroupByColor',g1(:),'boxwidth',boxwidth);
         u = unique(groups);
         xData = bsxfun(@plus,u,linspace(-0.5 + (1/(size(data,2)*2)),0.5 - (1/(size(data,2)*2)),size(data,2)));
         for j=1:size(data,2), for i=1:nGroups
@@ -197,11 +215,11 @@ if ~isempty(groups)
         yData2 = yData02 + 0.2*sqrt(std([yData01(:);yData02(:)]));
         yData1 = yData01 - 0.2*sqrt(std([yData01(:);yData02(:)]));
         yData = nanmean(cat(3,yData01,yData02),3);
-        try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end
+        if ~lock, try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end; end
         yData2 = yData02 + 0.1*sqrt(std([yData01(:);yData02(:)]));
     else
         % separate the columns of 'data'; test difference between groups provided by the grouping variable in the same column
-        hbox = boxchart(g1(:),data(:),'MarkerStyle','none','GroupByColor',groups(g2(:)));
+        hbox = boxchart(g1(:),data(:),'MarkerStyle','none','GroupByColor',groups(g2(:)),'boxwidth',boxwidth);
         xData = g1(1:nGroups,:);
         xData = bsxfun(@plus,xData,linspace(-0.5 + (1/(nGroups*2)),0.5 - (1/(nGroups*2)),nGroups)');
         for j=1:nGroups, for i=1:size(data,2),
@@ -211,19 +229,19 @@ if ~isempty(groups)
         yData2 = yData02 + 2*sqrt(std([yData01(:);yData02(:)]));
         yData1 = yData01 - 2*sqrt(std([yData01(:);yData02(:)]));
         yData = nanmean(cat(3,yData01,yData02),3);
-        ylim(mmax([yData1(:);yData2(:)]));
+        if ~lock, ylim(mmax([yData1(:);yData2(:)])); end
         yData2 = yData02 + sqrt(std([yData01(:);yData02(:)]));
     end
 else
     [g1,g2] = meshgrid(1:size(data,2),1:size(data,1));
-    hbox = boxchart(g1(:),data(:),'MarkerStyle','none');
+    hbox = boxchart(g1(:),data(:),'MarkerStyle','none','boxwidth',boxwidth);
     % add x and yData!
      xData = 1:size(data,2);
      for i=1:size(data,2), clean = RemoveOutliers(hbox.YData(hbox.XData==i));   try yData01(i) = min(clean); yData02(i) = max(clean); end; end
      yData2 = yData02 + 2*sqrt(std([yData01(:);yData02(:)]));
      yData1 = yData01 - 2*sqrt(std([yData01(:);yData02(:)]));
      yData = nanmean(cat(3,yData01,yData02),3);
-     try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end
+     if ~lock, try ylim([min([yData1(:);yData2(:)]) max([yData1(:);yData2(:)])]); end; end
      yData2 = yData02 + sqrt(std([yData01(:);yData02(:)]));
 end
 hold on;
@@ -373,10 +391,10 @@ end
 
 % ------------------------------- Helper functions -------------------------------
 
-function [h,p,stats] = helper_signrank(data)
+function [h,p,stats] = helper_signrank(data,varargin)
 
 ranks = data; ranks(:) = tiedrank(data(:));
-p = signrank(diff(x,[],2));
+p = signrank(diff(data,[],2));
 h = p<0.05;
 stats.source = 'friedman'; % closest thing multcompare would accept
 stats.n = size(data,1);

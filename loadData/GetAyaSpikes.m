@@ -1,4 +1,4 @@
-function [spikes,regionID,regionNames,spikesCell,order] = GetAyaSpikes(basepath,doSort,unsorted)
+function [spikes,regionID,regionNames,spikesCell,order,pyr] = GetAyaSpikes(basepath,doSort,unsorted)
 
 %[GetAyaSpikes] - bz_getSessionInfo(basePath) loads the spikes of the session in "basepath" 
 
@@ -67,10 +67,10 @@ if exist(filename,'file')
     end
     spikes = sortrows(cell2mat(spikesCell));
     spikesCell = cell_metrics.spikes.times(order)';
+    pyr = cellfun(@(x) contains(x,'Pyramidal'), cell_metrics.putativeCellType)';
 else
-    spikes = zeros(0,2); regionID = zeros(0,1); regionNames = {};
+    spikes = zeros(0,2); regionID = zeros(0,1); regionNames = {}; spikesCell = {}; order = zeros(0,1); pyr = false(0,1);
 end
-
 
 
 

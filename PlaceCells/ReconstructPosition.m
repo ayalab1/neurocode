@@ -312,7 +312,13 @@ ind = cell(1,nDimensions);
 [ind{:}, timebin] = ind2sub(size(estimations),(1:numel(estimations))');
 for dim = 1:nDimensions,
     shift = Bin(corrected(:,dim),[0 1],nBinsPerDim(dim));
-    ind{dim} = mod((ind{dim} - shift(timebin)) +round(nBinsPerDim(dim)/2)- 1,nBinsPerDim(dim))+1;
+    index = (ind{dim} - shift(timebin)) +round(nBinsPerDim(dim)/2);
+    if strcmp(type,'c') % if data is circular, wrap estimation around
+        ind{dim} = mod(index-1,nBinsPerDim(dim))+1;
+    else
+        index(index<1 | index>nBinsPerDim(dim)) = nan;
+        ind{dim} = index;
+    end
 end
 index = sub2ind(size(errors),ind{:},timebin);
 ok = ~isnan(index);
@@ -334,6 +340,7 @@ average = cat(nDimensions+1,average{:});
 
 end
 
+% ------------------------------- Helper functions -------------------------------
 
 function data = logfactorial(data)
 

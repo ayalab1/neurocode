@@ -35,10 +35,20 @@ else
     smooth = 0;
 end
 
+X0 = X;
+% timebins should be equally distanced
+t = (X(1,1):mode(diff(X(:,1))):X(end,1))';
+ok = ~any(isnan(X),2);
+X = interp1(X(ok,1),X(ok,:),t);
+X(isnan(X(:,1)),:) = [];
+
 DX = Diff(X,'smooth',smooth);
 Y = DX(:,2:3).*DX(:,2:3);
 N = sqrt(Y(:,1)+Y(:,2));
 V = [X(:,1) N];
+
+% return same size as previous input
+V = interp1(V(:,1),V,X0(:,1));
 
 
 

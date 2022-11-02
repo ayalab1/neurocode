@@ -1,4 +1,4 @@
-function behavior = general_behavior_file(varargin)
+function general_behavior_file(varargin)
 % converts multiple tracking data types to the standard described in cellexplorer
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %
@@ -35,7 +35,7 @@ p=inputParser;
 addParameter(p,'basepath',pwd); % single or many basepaths in cell array or uses pwd
 addParameter(p,'fs',39.0625); % behavioral tracking sample rate (will detect fs for newer datasets)
 addParameter(p,'force_overwrite',false); % overwrite previously saved data (will remove custom fields)
-addParameter(p,'force_run',true); % run even if animal.behavior already exists
+addParameter(p,'force_run',false); % run even if animal.behavior already exists
 addParameter(p,'save_mat',true); % save animal.behavior.mat
 addParameter(p,'primary_coords_dlc',1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p,'likelihood_dlc',.95); % deeplabcut likelihood threshold
@@ -100,7 +100,6 @@ if exist([basepath,filesep,[basename,'.animal.behavior.mat']],'file') &&...
         ~force_overwrite
     load([basepath,filesep,[basename,'.animal.behavior.mat']],'behavior');
     disp([basepath,filesep,[basename,'.animal.behavior.mat already detected. Loading file...']]);
-    return
 end
 
 % call extract_tracking which contains many extraction methods
@@ -177,14 +176,34 @@ if convert_xy_to_cm
                 [idx,~,~] = InIntervals(behavior.timestamps,...
                     [session.epochs{ep}.startTime,session.epochs{ep}.stopTime]);
                 
-                pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
+                files = dir(fullfile(basepath,session.epochs{ep}.name,'*.avi'));
+                if isempty(files)
+                    warning(['could not fine video: ',fullfile(basepath,session.epochs{ep}.name,'*.avi')])
+                    warning('using range of x tracking point')
+                    pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
+                else
+                    pos_range = maze_distance_gui(fullfile(files.folder,files.name));
+                end
                 convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
                 behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
                 behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
             end
         end
     else
-        pos_range = max(behavior.position.x) - min(behavior.position.x);
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+        for folder = MergePoints.foldernames
+            files = dir(fullfile(basepath,folder{1},'*.avi'));
+            if ~isempty(files)
+                break
+            end
+        end
+        if isempty(files)
+            warning('could not fine video: *.avi')
+            warning('using range of x tracking point')
+            pos_range = max(behavior.position.x) - min(behavior.position.x);
+        else
+            pos_range = maze_distance_gui(fullfile(files.folder,files.name));
+        end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
         behavior.position.x = behavior.position.x / convert_pix_to_cm_ratio;
         behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;

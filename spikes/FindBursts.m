@@ -22,8 +22,8 @@ function bursts = FindBursts(spikes,varargin)
 %    =========================================================================
 %     Properties         Values
 %    -------------------------------------------------------------------------
-%     ['thresholds']  [thresholds for burst beginning and end, in multiples of
-%                     the stdev (default = [2 5])]
+%     ['thresholds']  [thresholds for burst beginning and end, and for burst peak,
+%                     in multiples of the standard deviation (default = [0 3])]
 %     ['binSize']     [bin size (in ms, default = 1)]
 %     ['smooth']      [smoothing kernel width (in ms, default = 16.667)]
 %     ['intervals']   [[start stop] intervals of interests (e.g. slow wave sleep)
@@ -46,7 +46,7 @@ function bursts = FindBursts(spikes,varargin)
 % Default values
 
 binSize = 0.001; % in s ; 50 ms in Wierzynski
-thresholds = [2 5]; % [2 2] in Wierzynski
+thresholds = [0 3]; % [2 2] in Wierzynski
 smooth = (0.05/3); % 3σ = 50 ms in Wierzynski
 intervals = [0 Inf];
 
@@ -60,10 +60,10 @@ for i = 1:2:length(varargin),
             if ~isdvector(thresholds,'#2','<'),
                 error('Incorrect value for property ''thresholds'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
-        case 'window'
+        case 'binsize'
             binSize = varargin{i+1};
             if ~isdvector(binSize,'#1'),
-                error('Incorrect value for property ''window'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
+                error('Incorrect value for property ''binSize'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
         case 'smooth',
             smooth = varargin{i+1};
@@ -102,8 +102,24 @@ bursts(:,4) = peak;
 pass = peak>thresholds(2);
 bursts = bursts(pass,:);
 
+% Move the start of the burst to the first spike:
+bursts(:,1) = t(FindClosest(t,bursts(:,1),'higher'),1);
+% Move the end of the burst to the last spike
+bursts(:,3) = t(FindClosest(t,bursts(:,3),'lower'),1);
+% Merge overlapping bursts:
+[~,target] = ConsolidateIntervals(bursts(:,[1 3]));
+overlapping = find(ismember(target,find(Accumulate(target)>1)));
+for i=1:2:length(overlapping)
+    i1 = overlapping(i);
+    i2 = overlapping(i+1);
+    bursts(i1,3) = bursts(i2,3);
+    bursts(i1,4) = max([bursts(i1,4) bursts(i2,4)]);
+end
+bursts(overlapping(2:2:end),:) = [];
+
 % shift timestamps back to original time
 bursts0 = bursts; bursts(:) = Unshift(bursts0(:),intervals); bursts(:,4) = bursts0(:,4);
+
 end
 
 

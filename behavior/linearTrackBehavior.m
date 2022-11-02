@@ -91,7 +91,9 @@ linear_epochs = [startTime,stopTime];
 
 %% Linearize postions
 % make all coords outside linear track to nan
-behavior.position.linearized = NaN(1,length(behavior.position.x));
+if isempty(behavior.position.linearized)
+    behavior.position.linearized = NaN(1,length(behavior.position.x));
+end
 
 % make linear all linear track coords together across epochs
 if ~split_linearize 
@@ -290,7 +292,7 @@ if show_fig
 end
 
 if remove_extra_fields
-    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun'});
+    behavior = rmfield(behavior,{'positionTrials','run','positionTrialsRun','speedTh'});
 end
 
 %% Generate output variables

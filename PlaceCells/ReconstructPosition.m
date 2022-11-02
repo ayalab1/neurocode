@@ -323,6 +323,13 @@ end
 index = sub2ind(size(errors),ind{:},timebin);
 ok = ~isnan(index);
 errors(index(ok)) = estimations(ok);
+if any(isnan(errors(:)))
+    nans = double(isnan(errors)); nans(nans==0) = nan;
+    % substitute NaNs with uniform probability
+    remainingProbability = 1-nansum(errors);
+    nans = remainingProbability./nansum(nans).*nans;
+    errors(isnan(errors)) = nans(isnan(errors));
+end
 
 if nargout<4,
     return

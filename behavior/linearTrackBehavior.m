@@ -195,11 +195,8 @@ behavior.trialIDname = {'leftToRight';'rightToLeft'}; % verify that this is corr
 behavior.speedTh = speedTh;
 
 %% Get periods of running
-ok = ~isnan(behavior.position.x(:)) & ~isnan(behavior.position.y(:)); 
-t = behavior.timestamps(ok);
-speed = LinearVelocity([behavior.timestamps(ok)', behavior.position.x(ok)', behavior.position.y(ok)'],5);
-interpolated = Interpolate(speed,behavior.timestamps,'trim','off');
-behavior.speed = interpolated(:,2)';
+speed = LinearVelocity([behavior.timestamps', behavior.position.x', behavior.position.y'],5);
+behavior.speed = speed(:,2)';
 
 if isempty(maze_sizes)
     warning('data is not in cm, it is highly recommended to convert to cm')

@@ -307,7 +307,7 @@ if isfield(session.extracellular,'chanCoords')
     chanCoords.y = session.extracellular.chanCoords.y;
 end
 % if channel coords are empty, try to create them here
-if isempty(chanCoords.x)
+if ~exist('chanCoords','var') || isempty(chanCoords.x)
     try
        chanMap = generateChannelMap(session,'reorder',false);
     catch

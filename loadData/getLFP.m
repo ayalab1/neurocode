@@ -77,6 +77,7 @@ addRequired(p,'channels',channelsValidation)
 addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
 addParameter(p,'basepath',pwd,@isfolder);
+addParameter(p,'basename','',@ischar);
 addParameter(p,'downsample',1,@isnumeric);
 addParameter(p,'fromDat',false,@islogical);
 
@@ -85,8 +86,11 @@ channels = p.Results.channels;
 downsamplefactor = p.Results.downsample;
 basepath = p.Results.basepath;
 fromDat = p.Results.fromDat;
+basename = p.Results.basename;
 
-basename = basenameFromBasepath(basepath);
+if isempty(basename)
+    basename = basenameFromBasepath(basepath);
+end
 
 % doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
 intervals = p.Results.intervals;

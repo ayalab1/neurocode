@@ -129,7 +129,7 @@ nGroups = size(groups,2);
 for i = 1:nGroups
     % Distribution
     p = angles(groups(:,i));
-    h = Smooth(hist(p,binned),smooth);h = h/sum(h);
+    h = Smooth(hist(p,binned),smooth,'type','c');h = h/sum(h);
     dist(:,i) = h;
     % Stats
     if ~isempty(p)

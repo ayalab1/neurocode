@@ -270,6 +270,16 @@ if nDimensions>1,
     estimations = reshape(estimations,[nBinsPerDim size(estimations,2)]);
 end
 
+% make sure no nans remain
+if any(isnan(estimations(:)))
+    nans = double(isnan(estimations)); nans(nans==0) = nan;
+    % substitute NaNs with uniform probability
+    remainingProbability = 1-nansum(estimations);
+    remainingProbability(abs(remainingProbability)<0.0000000001) = 0;
+    nans = remainingProbability./nansum(nans).*nans;
+    estimations(isnan(estimations)) = nans(isnan(estimations));
+end
+
 if nargout==1,
     return
 end

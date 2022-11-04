@@ -36,6 +36,7 @@ function smoothed = Smooth(data,smooth,varargin)
 
 maxSize = 10001;
 ignoreNans = 'off';
+transpose = false;
 if nargin < 2,
 	error('Incorrect number of parameters (type ''help <a href="matlab:help Smooth">Smooth</a>'' for details).');
 end
@@ -49,7 +50,7 @@ end
 
 % Vectors must be 'vertical'
 if size(data,1) == 1,
-	data = data';
+	data = data'; transpose = true;
 end
 
 % Default values
@@ -59,6 +60,7 @@ if vector, type = 'l'; else type = 'll'; end
 % If Sh = Sv = 0, no smoothing required
 if all(smooth==0),
 	smoothed = data;
+     if transpose, smoothed = smoothed'; end
 	return
 end
 
@@ -94,6 +96,7 @@ if strcmp(ignoreNans,'on') && vector && any(isnan(data)),
     nans = isnan(data);
     data(nans) = [];
     smoothed(~nans) = Smooth(data, smooth, varargin{:});
+    if transpose, smoothed = smoothed'; end
     return
 end
 
@@ -285,3 +288,5 @@ else
 		smoothed = tmp(vStart:vStop,hStart:hStop);
 	end
 end
+
+if transpose, smoothed = smoothed'; end

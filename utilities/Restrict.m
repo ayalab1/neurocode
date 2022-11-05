@@ -23,9 +23,6 @@ function [samples, idx] = Restrict(samples,intervals,varargin)
 %     'shift'       shift remaining epochs together in time (default = 'off')
 %     'sep'         separate samples by which interval they fall into
 %                   (default = false)
-%     'relative'    return sample times relative to the onset of the
-%                   interval (ie a sample aligned to the start of an
-%                   interval will be returned as t=0 (default = false)
 %    =========================================================================
 %
 %  NOTE
@@ -51,7 +48,6 @@ verbose = false;
 shift = 'off';
 sep = false;
 transpose = false;
-relative = false;
 
 % Check number of parameters
 if nargin < 2 | mod(length(varargin),2) ~= 0,
@@ -83,18 +79,11 @@ for i = 1:2:length(varargin),
             end
         case 'sep'
             sep = varargin{i+1};
-        case 'relative'
-            relative = varargin{i+1};
         otherwise,
 			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help Restrict">Restrict</a>'' for details).']);
 	end
 end
-if contains(shift,'on')&&relative
-    error('shift and relative not compatible yet');
-end
-if sep&&relative
-    error('sep and relative not compatible yet');
-end
+
 % Restrict
 idx = [];
 if ~isempty(samples)
@@ -108,11 +97,7 @@ if ~isempty(samples)
         samples = temp;
     else
         samples = samples(status,:);
-        interval = interval(status);
         idx = find(status==1);
-        for i = 1:length(samples)
-            samples(i) = samples(i) - intervals(interval(i),1);
-        end
     end
 elseif isempty(samples)
     samples = [];

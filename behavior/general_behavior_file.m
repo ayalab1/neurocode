@@ -170,6 +170,7 @@ if convert_xy_to_cm
     end
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
+        maze_sizes_i = 1;
         for ep = 1:length(session.epochs)
             if ~contains(session.epochs{ep}.environment,'sleep')
                 
@@ -184,7 +185,8 @@ if convert_xy_to_cm
                 else
                     pos_range = maze_distance_gui(fullfile(files.folder,files.name));
                 end
-                convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+                convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
+                maze_sizes_i = maze_sizes_i + 1;
                 behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
                 behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
             end

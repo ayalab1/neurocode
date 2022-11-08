@@ -215,11 +215,8 @@ else
 end
 
 [nRows nCols] = size(values);
-if sum(size(xOrder)~=size(values))==0
-    hbar = bar(xOrder, values); % standard implementation of bar function
-else
-    hbar = bar(values); % standard implementation of bar function
-end
+hbar = bar(xOrder,values); % standard implementation of bar function
+
 hold on
 
 vers = version;

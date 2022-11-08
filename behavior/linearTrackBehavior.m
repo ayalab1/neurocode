@@ -205,7 +205,7 @@ if isempty(maze_sizes)
     end
 end
 
-run = t(FindInterval(interpolated(ok)>speedTh));
+run = behavior.timestamps(FindInterval(behavior.speed>speedTh));
 run = ConsolidateIntervals(run,'epsilon',0.01);
 [in,w] = InIntervals(behavior.timestamps(:),run);
 peak = Accumulate(w(in),behavior.speed(in)','mode','max');

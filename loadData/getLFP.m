@@ -1,4 +1,4 @@
-function [lfp] = getLFP(varargin)
+function lfp = getLFP(varargin)
 % getLFP - Get local field potentials.
 %
 %  Load local field potentials from disk. No longer dependent on
@@ -79,7 +79,7 @@ addRequired(p,'channels',channelsValidation)
 addParameter(p,'basename','',@isstr)
 addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
-addParameter(p,'basepath',pwd,@isstr);
+addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'downsample',1,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'forceReload',false,@islogical);
@@ -114,7 +114,7 @@ if isempty(basename)
     end
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif length(d) == 0
+    elseif isempty(d)
         d = dir([basepath filesep '*eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
@@ -127,7 +127,7 @@ if isempty(basename)
         for i=1:length(basename)-1
             base = [base basename{i} '.'];
         end
-        basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
+        basename = base(1:end-1);
     else
         basename = basename{1};
     end
@@ -142,7 +142,7 @@ else
     
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif length(d) == 0
+    elseif isempty(d)
         d = dir([basepath filesep basename '.eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
@@ -175,7 +175,7 @@ if strcmp(channels,'all')
     channels = chInfo.one.channels;
 else
     %Put in something here to collapse into X-Y for consecutive channels...
-    display(['Loading Channels ',num2str(channels),' (1-indexing)'])
+    disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
 end
 
 %% get the data
@@ -203,12 +203,77 @@ for i = 1:nIntervals
         lfp(i).duration = (lfp(i).interval(i,2)-lfp(i).interval(i,1));
     end
     if lfp(i).interval(1)>0 % shift the timestamps accordingly
-        add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; % in practice, the interval starts at the nearest lfp timestamp
+        % in practice, the interval starts at the nearest lfp timestamp
+        add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; 
         lfp(i).timestamps = lfp(i).timestamps + add;
-        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
+        % when using intervals the lfp actually starts 0s away from the first available sample
+        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; 
     end
-    if isfield(session,'brainRegions') && isfield(session,'channels')
-        [~,~,regionidx] = intersect(lfp(i).channels,session.channels,'stable');
-        lfp(i).region = session.brainRegions(regionidx); % match region order to channel order..
+    
+    % Get regions from session or anatomical_map
+    if isfield(session,'brainRegions')
+        [anatomical_map,channel_map] = get_maps(session);
+        anatomical_map = get_map_from_session(session,anatomical_map,channel_map);
+        lfp(i).region = get_region(channels, anatomical_map,channel_map);
+    elseif isfile(fullfile(basepath,'anatomical_map.csv'))
+        [anatomical_map,channel_map] = get_maps(session);
+        [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
+        lfp(i).region = get_region(channels, anatomical_map,channel_map);
+    else
+        disp('No brain regions associated with channels found. Saving ''Unkown''')
+        [anatomical_map,channel_map] = get_maps(session);
+        lfp(i).region = get_region(channels, anatomical_map,channel_map);
     end
+end
+end
+
+function region = get_region(channels, anatomical_map,channel_map)
+
+% reshape so are both row vectors for comparison with channels
+channel_map = channel_map(:)'; % make into row vector
+anatomical_map = anatomical_map(:)';
+% index region for channels
+region = anatomical_map(ismember(channel_map(:)',channels));
+
+end
+
+function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
+if isfield(session,'brainRegions')
+    regions = fields(session.brainRegions);
+    for i = 1:length(regions)
+        region_idx = ismember(channel_map,...
+            session.brainRegions.(regions{i}).channels);
+        anatomical_map(region_idx) = {regions{i}};
+        
+    end
+end
+end
+
+function [anatomical_map,channel_map] = get_maps(session)
+max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
+anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
+channel_map = nan(size(anatomical_map));
+
+for i = 1:session.extracellular.nElectrodeGroups
+    n_ch = length(session.extracellular.electrodeGroups.channels{i});
+    anatomical_map(1:n_ch,i) = repmat({'Unknown'},1,n_ch);
+    channel_map(1:n_ch,i) = session.extracellular.electrodeGroups.channels{i};
+end
+end
+
+function [anatomical_map,pull_from_session] = get_anatomical_map_csv(basepath,anatomical_map)
+pull_from_session = false;
+filename = fullfile(basepath,'anatomical_map.csv');
+if ~exist(filename,'file')
+    warning('no .anatomical_map.csv... ')
+    disp('will try to pull from basename.session')
+    disp('you can check anatomical_map and rerun')
+    
+    writetable(cell2table(anatomical_map),...
+        fullfile(basepath,'anatomical_map.csv'),...
+        'WriteVariableNames',0)
+    pull_from_session = true;
+    return
+end
+anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
 end

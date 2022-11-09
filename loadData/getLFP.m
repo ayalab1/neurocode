@@ -1,18 +1,18 @@
-function [lfp,info] = getLFP(varargin)
-%[ getLFP] - Get local field potentials.
+function [lfp] = getLFP(varargin)
+% getLFP - Get local field potentials.
 %
-%  Load local field potentials from disk.
+%  Load local field potentials from disk. No longer dependent on
+%  FMAT/SetCurrentSession.
 %
-%    =========================================================================
 %  USAGE
 %
 %    [lfp] = getLFP(channels,<options>)
 %
 %  INPUTS
 %
-%    channels(required) -must be first input, numeric row vector
-%                        of channels to load or use keyword 'all' for all
-%                        channels. Input is 1-based indexing.
+%    channels(required) -must be first input, numeric
+%                        list of channels to load (use keyword 'all' for all)
+%                        channID is 1-indexing
 %  Name-value paired inputs:
 %    'basepath'           - folder in which .lfp file will be found (default
 %                           is pwd)
@@ -27,17 +27,17 @@ function [lfp,info] = getLFP(varargin)
 %    'noPrompts'          -logical (default) to supress any user prompts
 %    'fromDat'            -option to load directly from .dat file (default:false)
 %
-%    =========================================================================
 %  OUTPUT
 %
-%    lfp              [Nt x  1 + Nd] matrix of the LFP data, where the first
-%                     column is the timestamps (in seconds) of the lfp data
-%                     and each subsequent column is the LFP data for each
-%                     channel.
-%    info             structure with metadata describing the lfp
-%    .channels        [Nd X 1] vector of channel ID's
-%    .samplingRate    LFP sampling rate [default = 1250]
-%    .intervals       [N x 2] matrix of start/stop times of LFP interval
+%    lfp             struct of lfp data. Can be a single struct or an array
+%                    of structs for different intervals.  lfp(1), lfp(2),
+%                    etc for intervals(1,:), intervals(2,:), etc
+%    .data           [Nt x Nd] matrix of the LFP data
+%    .timestamps     [Nt x 1] vector of timestamps to match LFP data
+%    .interval       [1 x 2] vector of start/stop times of LFP interval
+%    .channels       [Nd X 1] vector of channel ID's
+%    .samplingRate   LFP sampling rate [default = 1250]
+%    .duration       duration, in seconds, of LFP interval
 %
 %
 %  EXAMPLES
@@ -51,22 +51,24 @@ function [lfp,info] = getLFP(varargin)
 %    % channel # 3 (= ID 2), from 0 to 120 seconds
 %    lfp = getLFP(3,'restrict',[0 120],'select','number');
 
-%    =========================================================================
-% Copyright (C) 2004-2011 by Michaël Zugaro, 2017 David Tingley,
-% 2020 kathryn mcclain, 2022 Ralitsa Todorova & Laura Berkowitz
+% Copyright (C) 2004-2011 by Michaël Zugaro
+% editied by David Tingley, 2017
+% kathryn mcclain 2020
+% Ralitsa Todorova 2022
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 %
+% NOTES
+% -'select' option has been removed, it allowed switching between 0 and 1
+%   indexing.  This should no longer be necessary with .lfp.mat structs
+%
 % TODO
-% -expand channel selection options (i.e. region or spikegroup)
-%
-% -Fix data duplication where lfp is loaded into 'structure' and then
-%  assigned to 'lfp' effectively using twice as much memory. Large sessions
-%  with high channel counts currently have out of memory errors.
-%
+% add saveMat input
+% expand channel selection options (i.e. region or spikegroup)
+% add forcereload
 %% Parse the inputs!
 
 channelsValidation = @(x) isnumeric(x) || strcmp(x,'all');
@@ -74,23 +76,23 @@ channelsValidation = @(x) isnumeric(x) || strcmp(x,'all');
 % parse args
 p = inputParser;
 addRequired(p,'channels',channelsValidation)
+addParameter(p,'basename','',@isstr)
 addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
-addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'basename','',@ischar);
+addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'downsample',1,@isnumeric);
+addParameter(p,'saveMat',false,@islogical);
+addParameter(p,'forceReload',false,@islogical);
+addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
 
 parse(p,varargin{:})
 channels = p.Results.channels;
 downsamplefactor = p.Results.downsample;
 basepath = p.Results.basepath;
+basename = p.Results.basename; if isempty(basename), basename = basenameFromBasepath(basepath); end
+noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
-basename = p.Results.basename;
-
-if isempty(basename)
-    basename = basenameFromBasepath(basepath);
-end
 
 % doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
 intervals = p.Results.intervals;
@@ -112,24 +114,24 @@ if isempty(basename)
     end
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif isempty(d)
+    elseif length(d) == 0
         d = dir([basepath filesep '*eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
         end
-        structure.Filename = d.name;
-        % The below segment is not used, so commented out for now LB 2022
-%         basename = strsplit(structure.Filename,'.');
-%         if length(basename) > 2
-%             base = [];
-%             for i=1:length(basename)-1
-%                 base = [base basename{i} '.'];
-%             end
-%             basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
-%         else
-%             basename = basename{1};
-%         end
     end
+    lfp.Filename = d.name;
+    basename = strsplit(lfp.Filename,'.');
+    if length(basename) > 2
+        base = [];
+        for i=1:length(basename)-1
+            base = [base basename{i} '.'];
+        end
+        basename = base(1:end-1);  % this is an fugly hack to make things work with Kenji's naming system...
+    else
+        basename = basename{1};
+    end
+    
 else
     switch fromDat
         case false
@@ -140,13 +142,13 @@ else
     
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .lfp file in this directory?');
-    elseif isempty(d)
+    elseif length(d) == 0
         d = dir([basepath filesep basename '.eeg']);
         if isempty(d)
             error('could not find an lfp/eeg file..')
         end
     end
-    structure.Filename = d.name;
+    lfp.Filename = d.name;
 end
 
 %% things we can parse from sessionInfo or xml file
@@ -160,126 +162,53 @@ else
 end
 
 samplingRateLFP_out = samplingRate./downsamplefactor;
-structure.samplingRate = samplingRateLFP_out;
 
 if mod(samplingRateLFP_out,1)~=0
     error('samplingRate/downsamplefactor must be an integer')
 end
-
-
 %% Channel load options
 %Right now this assumes that all means channels 0:nunchannels-1 (neuroscope
 %indexing), we could also add options for this to be select region or spike
 %group from the xml...
 if strcmp(channels,'all')
-    [~,channel_map] = get_maps(session);
-    channels = channel_map(:)'; % create row wise vector of all mapped channels
-    channels(isnan(channels)) = [];
+    chInfo = hackInfo('basepath',basepath);
+    channels = chInfo.one.channels;
 else
     %Put in something here to collapse into X-Y for consecutive channels...
-    disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
+    display(['Loading Channels ',num2str(channels),' (1-indexing)'])
 end
 
-% get the data
+%% get the data
 disp('loading LFP file...')
-
 nIntervals = size(intervals,1);
 % returns lfp/bz format
 for i = 1:nIntervals
-    structure(i).duration = (intervals(i,2)-intervals(i,1));
-    structure(i).interval = [intervals(i,1) intervals(i,2)];
+    lfp(i).duration = (intervals(i,2)-intervals(i,1));
+    lfp(i).interval = [intervals(i,1) intervals(i,2)];
     
     % Load data and put into struct
     % we assume 0-indexing like neuroscope, but loadBinary uses 1-indexing to
     % load....
-    structure(i).data = loadBinary([basepath filesep structure.Filename],...
-        'duration',double(structure(i).duration),...
+    lfp(i).data = loadBinary([basepath filesep lfp.Filename],...
+        'duration',double(lfp(i).duration),...
         'frequency',samplingRate,'nchannels',session.extracellular.nChannels,...
-        'start',double(structure(i).interval(1)),'channels',channels,...
+        'start',double(lfp(i).interval(1)),'channels',channels,...
         'downsample',downsamplefactor);
-    structure(i).timestamps = (1:length(structure(i).data))'/samplingRateLFP_out;
+    lfp(i).timestamps = (1:length(lfp(i).data))'/samplingRateLFP_out;
+    lfp(i).channels = channels;
+    lfp(i).samplingRate = samplingRateLFP_out;
     % check if duration is inf, and reset to actual duration...
-    if structure(i).interval(2) == Inf
-        structure(i).interval(2) = length(structure(i).timestamps)/structure(i).samplingRate;
+    if lfp(i).interval(2) == inf
+        lfp(i).interval(2) = length(lfp(i).timestamps)/lfp(i).samplingRate;
+        lfp(i).duration = (lfp(i).interval(i,2)-lfp(i).interval(i,1));
     end
-    if structure(i).interval(1)>0 % shift the timestamps accordingly
+    if lfp(i).interval(1)>0 % shift the timestamps accordingly
         add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; % in practice, the interval starts at the nearest lfp timestamp
-        structure(i).timestamps = structure(i).timestamps + add;
-        structure(i).timestamps = structure(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
+        lfp(i).timestamps = lfp(i).timestamps + add;
+        lfp(i).timestamps = lfp(i).timestamps - 1/samplingRateLFP_out; % when using intervals the lfp actually starts 0s away from the first available sample
     end
-    
-    %% Get regions from session or anatomical_map
-    if isfield(session,'brainRegions')
-        [anatomical_map,channel_map] = get_maps(session);
-        anatomical_map = get_map_from_session(session,anatomical_map,channel_map);
-        info.region = get_region(channels, anatomical_map,channel_map);
-    elseif isfile(fullfile(basepath,'anatomical_map.csv'))
-        [anatomical_map,channel_map] = get_maps(session);
-        [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
-        info.region = get_region(channels, anatomical_map,channel_map); 
-    else
-        disp('No brain regions associated with channels found. Saving ''Unkown''')
-        [anatomical_map,channel_map] = get_maps(session);
-        info.region = get_region(channels, anatomical_map,channel_map);
+    if isfield(session,'brainRegions') && isfield(session,'channels')
+        [~,~,regionidx] = intersect(lfp(i).channels,session.channels,'stable');
+        lfp(i).region = session.brainRegions(regionidx); % match region order to channel order..
     end
-    
-    
-end
-
-% save the data into a single matrix (concatenate individual intervals)
-lfp = [cat(1,structure.timestamps) double(cat(1,structure.data))];
-info.intervals = cat(1,structure.interval);
-info.channels = channels;
-info.samplingRate = samplingRateLFP_out;
-end
-
-function region = get_region(channels, anatomical_map,channel_map)
-
-    % reshape so are both row vectors for comparison with channels
-    channel_map = channel_map(:)'; % make into row vector
-    anatomical_map = anatomical_map(:)';
-    % index region for channels
-    region = anatomical_map(ismember(channel_map(:)',channels));
-    
-end
-
-function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
-if isfield(session,'brainRegions')
-    regions = fields(session.brainRegions);
-    for i = 1:length(regions)
-        region_idx = ismember(channel_map,...
-            session.brainRegions.(regions{i}).channels);
-        anatomical_map(region_idx) = {regions{i}};
-        
-    end
-end
-end
-
-function [anatomical_map,channel_map] = get_maps(session)
-max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
-anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
-channel_map = nan(size(anatomical_map));
-
-for i = 1:session.extracellular.nElectrodeGroups
-    n_ch = length(session.extracellular.electrodeGroups.channels{i});
-    anatomical_map(1:n_ch,i) = repmat({'Unknown'},1,n_ch);
-    channel_map(1:n_ch,i) = session.extracellular.electrodeGroups.channels{i};
-end
-end
-
-function [anatomical_map,pull_from_session] = get_anatomical_map_csv(basepath,anatomical_map)
-pull_from_session = false;
-filename = fullfile(basepath,'anatomical_map.csv');
-if ~exist(filename,'file')
-    warning('no .anatomical_map.csv... ')
-    disp('will try to pull from basename.session')
-    disp('you can check anatomical_map and rerun')
-    
-    writetable(cell2table(anatomical_map),...
-        fullfile(basepath,'anatomical_map.csv'),...
-        'WriteVariableNames',0)
-    pull_from_session = true;
-    return
-end
-anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
 end

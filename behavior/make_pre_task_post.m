@@ -13,7 +13,7 @@ function [intstimestamps_samples,intstimestamps] = make_pre_task_post(basePath,s
 warning('this function does not work well with discontinuos task epochs')
 
 [~,recordingname] = fileparts(basePath);
-load([recordingname '.MergePoints.events.mat']);
+load(fullfile(basePath,[recordingname '.MergePoints.events.mat']));
 pre_idx_s=[];task_idx_s=[];post_idx_s=[];
 pre_idx=[];task_idx=[];post_idx=[];
 
@@ -71,5 +71,5 @@ intstimestamps.post=[post_idx(1,1) post_idx(end,2)];
 
 behavEpochs.int_samples=intstimestamps_samples;
 behavEpochs.int=intstimestamps;
-save([recordingname '.behavEpochs.mat'],'behavEpochs')
+save(fullfile(basePath,[recordingname '.behavEpochs.mat']),'behavEpochs');
 end

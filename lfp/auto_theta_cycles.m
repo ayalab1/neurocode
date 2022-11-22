@@ -19,6 +19,7 @@ function auto_theta_cycles(varargin)
 %     'passband'  frequency of theta band (default = [6,12])
 %     'maximize_theta_power' whether to find the channel that maximizes theta power (default=true)
 %     'run_parallel'  to run multiple in parallel (default = false)
+%     'overwrite'  to run overwrite existing file (default = false)
 % =========================================================================
 %
 %  OUTPUT
@@ -38,15 +39,17 @@ function auto_theta_cycles(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd)
-addParameter(p,'passband',[6,12])
+addParameter(p,'passband',[4,12])
 addParameter(p,'maximize_theta_power',true)
 addParameter(p,'run_parallel',false)
+addParameter(p,'overwrite',false)
 
 parse(p,varargin{:})
 basepath = p.Results.basepath;
 passband = p.Results.passband;
 maximize_theta_power = p.Results.maximize_theta_power;
 run_parallel = p.Results.run_parallel;
+overwrite = p.Results.overwrite;
 
 if ~iscell(basepath)
     basepath = {basepath};
@@ -55,56 +58,61 @@ end
 % iterate over basepaths
 if run_parallel && length(basepath)>1
     parfor i = 1:length(basepath)
-        run(basepath{i},passband,maximize_theta_power)
+        run(basepath{i},passband,maximize_theta_power,overwrite)
     end
 else
     for i = 1:length(basepath)
-        run(basepath{i},passband,maximize_theta_power)
+        run(basepath{i},passband,maximize_theta_power,overwrite)
     end
 end
 end
 
-function run(basepath,passband,maximize_theta_power)
+function run(basepath,passband,maximize_theta_power,overwrite)
 disp(basepath)
 basename = basenameFromBasepath(basepath);
 
 % pass if file already exists
-if exist(fullfile(basepath,[basename,'.thetacycles.events.mat']),'file')
+if exist(fullfile(basepath,[basename,'.thetacycles.events.mat']),'file') && ~overwrite
     return
 end
 
 % find deep ca1 lfp channel
-lfp = get_deep_ca1_lfp(basepath,passband,maximize_theta_power);
+[lfp,channel] = get_deep_ca1_lfp(basepath,passband,maximize_theta_power);
 if isempty(lfp)
     disp('no ca1 lfp')
     return
 end
 
 % find theta cycles
-[peaktopeak, troughs] = FindThetaCycles(lfp);
+clean = CleanLFP(lfp,'thresholds',[8 Inf]);
+[peaktopeak, troughs, amplitude] = FindThetaCycles(lfp);
 
 % package output
 thetacycles.timestamps = peaktopeak;
 thetacycles.peaks = troughs;
-thetacycles.amplitude = [];
-thetacycles.amplitudeUnits = [];
+thetacycles.amplitude = amplitude;
+thetacycles.amplitudeUnits = 'z-units';
 thetacycles.eventID = [];
 thetacycles.eventIDlabels = [];
 thetacycles.center = median(peaktopeak,2);
 thetacycles.duration = peaktopeak(:,2) - peaktopeak(:,1);
 thetacycles.detectorinfo.method = 'auto_theta_cycles';
-thetacycles.detectorinfo.theta_channel = infoLFP.channels;
+thetacycles.detectorinfo.theta_channel = channel;
 
 % save to basepath
 save(fullfile(basepath,[basename,'.thetacycles.events.mat']),'thetacycles')
 end
 
-function lfp = get_deep_ca1_lfp(basepath,passband,maximize_theta_power)
+function [lfp,channel] = get_deep_ca1_lfp(basepath,passband,maximize_theta_power)
 % get_deep_ca1_lfp: locates a deep ca1 channel that maximizes theta power
 
 basename = basenameFromBasepath(basepath);
 
 load(fullfile(basepath,[basename,'.session.mat']))
+
+if ~exist(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'file')
+    classification_DeepSuperficial(session);
+end
 load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']))
 
 % find deep ca1 channels to check
@@ -154,13 +162,13 @@ end
 if maximize_theta_power
     % try to load downsampled to same time
     try
-        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,...
-            'basename',basename,'downsample',10);
+        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,'downsample',10,...
+        'basename',basename);
         
         % if sample rate cannot be factored by 10, load entire file
     catch
         [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,...
-            'basename',basename);
+        'basename',basename);
     end
     
     % get theta power to choose channel
@@ -192,4 +200,5 @@ else
     lfp = getLFP(randsample(deep_channels,1),'basepath',basepath,...
         'basename',basename);
 end
+channel = infoLFP.channels(:,c_idx);
 end

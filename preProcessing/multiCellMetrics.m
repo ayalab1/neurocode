@@ -51,16 +51,24 @@ elseif nargin < 2
 end
 
 if isstring(basepath)
-    cd(basepath);
-    data_path = basepath;
+    if contains(basepath,'.csv')
+        useSess = readtable(basepath);
+        for i = 1:size(useSess,1)
+           basepath_use{i} = useSess.basepath{i};
+           basename_use{i} = useSess.basename{i};
+        end
+    else
+        cd(basepath);
+        data_path = basepath;
 
-    % look for all the cell_metrics.cellinfo.mat files
-    files = dir([data_path,'\**\*.cell_metrics.cellinfo.mat']);
-    
-    % pull out basepaths and basenames
-    for i = 1:length(files)
-        basepath_use{i} = files(i).folder;
-        basename_use{i} = basenameFromBasepath(files(i).folder);
+        % look for all the cell_metrics.cellinfo.mat files
+        files = dir([data_path,'\**\*.cell_metrics.cellinfo.mat']);
+
+        % pull out basepaths and basenames
+        for i = 1:length(files)
+            basepath_use{i} = files(i).folder;
+            basename_use{i} = basenameFromBasepath(files(i).folder);
+        end
     end
 elseif iscell(basepath)
     basepath_use = basepath;

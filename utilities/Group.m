@@ -20,15 +20,17 @@ if all(cellfun(@(x) min(size(x)), varargin)==1),
 	vectors = true; else vectors = false; 
 end
 for i=1:length(varargin),
-	if vectors
-    grouped = [grouped; varargin{i}(:) i*ones(size(varargin{i}(:),1),1)];
-	else
-		try
-		grouped = [grouped; varargin{i} i*ones(size(varargin{i}(:,1),1),1)];
-		catch
-			error('If you provide matrices, please make sure these matrices have the same number of columns.');
-		end
-	end
+    if vectors
+        grouped = [grouped; varargin{i}(:) i*ones(size(varargin{i}(:),1),1)];
+    else
+        if ~isempty(varargin{i}),
+            try
+                grouped = [grouped; varargin{i} i*ones(size(varargin{i}(:,1),1),1)];
+            catch
+                error('If you provide matrices, please make sure these matrices have the same number of columns.');
+            end
+        end
+    end
 end
 
 % grouped = sortrows(grouped);

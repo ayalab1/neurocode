@@ -112,17 +112,17 @@ else
 		if strcmp(direction,'v'),
 			dx = intervals(i,2)-intervals(i,1);
 			dy = yLim(2)-yLim(1);
-			rec = patch(intervals(i,1)+[0 0 dx dx],yLim(1)+[0 dy dy 0],color,'LineStyle','none');
-			alpha(rec,alphaValue);
+			rec(i) = patch(intervals(i,1)+[0 0 dx dx],yLim(1)+[0 dy dy 0],color,'LineStyle','none');
+			alpha(rec(i),alphaValue);
 		else
 			dx = xLim(2)-xLim(1);
 			dy = intervals(i,2)-intervals(i,1);
-			rec = patch(xLim(1)+[0 0 dx dx],intervals(i,1)+[0 dy dy 0],color,'LineStyle','none');
-			alpha(rec,alphaValue);
-			alpha(rec,alphaValue);
-		end
-		uistack(rec,'bottom');
-	end
+			rec(i) = patch(xLim(1)+[0 0 dx dx],intervals(i,1)+[0 dy dy 0],color,'LineStyle','none');
+			alpha(rec(i),alphaValue);
+			alpha(rec(i),alphaValue);
+        end
+    end
+    uistack(rec,'bottom');
 end
 
 

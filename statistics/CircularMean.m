@@ -58,8 +58,9 @@ if length(d)==1 % d = dimension
     n = size(angles,d);
 else
     % d = group
-    n = accumarray(d,1);
-    mid = accumarray(d,angles)./n;
+    ok = ~isnan(angles);
+    n = accumarray(d(ok),1);
+    mid = accumarray(d(ok),angles(ok))./n;
 end
 
 m = atan2(imag(mid),real(mid));

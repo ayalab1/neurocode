@@ -71,7 +71,7 @@ if ~exist(fullfile(basepath,filename),'file')
 end
 
 vars = whos('-file',fullfile(basepath,filename)); % list the variables actually contained in the file
-if length(vars) % if there is a single variable, load that variable regardless of what it's called inside the file
+if length(vars)==1 % if there is a single variable, load that variable regardless of what it's called inside the file
     struct = load(fullfile(basepath,filename),vars.name);
     struct = struct.(vars.name);
 else % try to find the variable specified in "fieldName"

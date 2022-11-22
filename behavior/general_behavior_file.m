@@ -170,20 +170,42 @@ if convert_xy_to_cm
     end
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
+        maze_sizes_i = 1;
         for ep = 1:length(session.epochs)
             if ~contains(session.epochs{ep}.environment,'sleep')
                 
                 [idx,~,~] = InIntervals(behavior.timestamps,...
                     [session.epochs{ep}.startTime,session.epochs{ep}.stopTime]);
                 
-                pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
-                convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
+                files = dir(fullfile(basepath,session.epochs{ep}.name,'*.avi'));
+                if isempty(files)
+                    warning(['could not fine video: ',fullfile(basepath,session.epochs{ep}.name,'*.avi')])
+                    warning('using range of x tracking point')
+                    pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
+                else
+                    pos_range = maze_distance_gui(fullfile(files.folder,files.name));
+                end
+                convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
+                maze_sizes_i = maze_sizes_i + 1;
                 behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
                 behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
             end
         end
     else
-        pos_range = max(behavior.position.x) - min(behavior.position.x);
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+        for folder = MergePoints.foldernames
+            files = dir(fullfile(basepath,folder{1},'*.avi'));
+            if ~isempty(files)
+                break
+            end
+        end
+        if isempty(files)
+            warning('could not fine video: *.avi')
+            warning('using range of x tracking point')
+            pos_range = max(behavior.position.x) - min(behavior.position.x);
+        else
+            pos_range = maze_distance_gui(fullfile(files.folder,files.name));
+        end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
         behavior.position.x = behavior.position.x / convert_pix_to_cm_ratio;
         behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;

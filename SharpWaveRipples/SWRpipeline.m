@@ -59,8 +59,8 @@ basename = basenameFromBasepath(basepath);
     
 %% 3- Separate ripples by task epochs     
     % creat pre/task/post structure. Need to be improved
-    [behavEpochs.int_samples,behavEpochs.int] = make_pre_task_post(pwd);
-    save([basename '.behavEpochs.mat'],'behavEpochs')
+    [behavEpochs.int_samples,behavEpochs.int] = make_pre_task_post(pwd,session_sequence);
+%     save([basename '.behavEpochs.mat'],'behavEpochs')
  
     % create swr structures for each epoch
     inputLabels={'behavEpochs.int.pre','behavEpochs.int.task','behavEpochs.int.post'};
@@ -88,7 +88,7 @@ for epochs= 1:3
             eval([outputLabels{epochs} '=[];' ])   
             end
 end
-    save([basename '.SWRepochs.mat'],'SWRepochs');   
+%     save([basename '.SWRepochs.mat'],'SWRepochs');   
  
     %optional. plot wavelet spectrogram for each epoch
     figure; names={'PRE','TASK','POST'}; clear wavAvg lfpAvg;
@@ -115,7 +115,7 @@ for epochs= 1:3
     title(names{epochs});
     end
 end   
-    saveas(gcf,['swrWaveletSample.png']);
+%     saveas(gcf,['swrWaveletSample.png']);
 
 %% 4-Compare SWR properties (duration, freq, power, rate) in each task block 
    colorR = {'b','k','r'};

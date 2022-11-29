@@ -10,8 +10,8 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 %
 %  INPUT
 %
-%    [matrix]   [??? Raly?]       
-%    threshold  (??)    
+%    [matrix]   [probability matrix for a specific event ("estimations" output of ReconstructPosition)]       
+%    threshold  distance away from the fitted line (in bins) to count towards the score (see Davidson et al. 2009)
 %    
 %    =========================================================================
 %     Properties    Values
@@ -47,7 +47,7 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 %
 %  SEE ALSO
 %
-% [Raly & C??line ;)] [2021-2022]
+% [Raly & Celine] [2021-2022]
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
@@ -113,7 +113,7 @@ for i = 1:2:length(varargin),
 	end
 end
 
-% Prepare some default values
+% Default values
 nBinsY = size(matrix,1); nBinsX = size(matrix,2); 
 if isempty(nShuffles),
     nShuffles = 500;
@@ -128,11 +128,20 @@ end
 matrix = reshape(matrix,nBinsY,[]);
 
 [x,y]= meshgrid((-threshold:1:threshold),1:nBinsY);
-indices = mod(x+y-1,nBinsY)+1;
-matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
-indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
-ind = sub2ind(size(matrix),indX,repmat(matrixID,size(indices)));
-sums = squeeze(sum(matrix(ind),2));
+if strcmp(circular,'on'),
+    indices = mod(x+y-1,nBinsY)+1;
+    matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
+    indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
+    ind = sub2ind(size(matrix),indX,repmat(matrixID,size(indices)));
+    sums = squeeze(sum(matrix(ind),2));
+else
+    matrix0  = [matrix; nan(size(matrix(1,:)))];
+    indices = (x+y); indices(indices<1 | indices>nBinsY) = nBinsY+1;
+    matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
+    indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
+    ind = sub2ind(size(matrix0),indX,repmat(matrixID,size(indices)));
+    sums = squeeze(nanmean(matrix0(ind),2))*size(x,2);
+end
 
 %% Get magic indices describing all possible lines of the sums matrix:
 
@@ -178,8 +187,12 @@ if strcmp(jumps,'on'),
         neighbour(neighbour~=1) = 0;
         [~,wherePmax] = max(matrix(:,goodWindows));
         d = diff(wherePmax);
-        delta = mod(d(logical(neighbour)),nBinsY);
-        delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+        if strcmp(circular,'on'),
+            delta = mod(d(logical(neighbour)),nBinsY);
+            delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+        else
+            delta = d;
+        end
         maxJump = max(abs(delta));
         jump = sum(abs(delta))/length(delta);
         jumps = 'ok';
@@ -199,12 +212,10 @@ if nShuffles>0,
     aShuffled = nan(nShuffles,1);
     bShuffled = nan(nShuffles,1);
     for i=1:nShuffles,
-        
         shift = round(rand(1,nBinsX)*(nBinsY-1));
         mockSums = CircularShift(sums,shift);
         [rShuffled(i,1),ind] = max(nanmean(mockSums(indices),2));
         aShuffled(i,1) = a(ind); bShuffled(i,1) = b(ind);
-
         if strcmp(wcorr,'on'),
             mockMatrix = CircularShift(matrix,shift);
             if strcmp(circular,'on'),
@@ -214,12 +225,17 @@ if nShuffles>0,
             end
         end
         
+         
         if strcmp(jumps,'ok'),
             mockMatrix = CircularShift(matrix,shift);
             [~,wherePmax] = max(mockMatrix(:,goodWindows));
             d = diff(wherePmax);
-            delta = mod(d(logical(neighbour)),nBinsY);
-            delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+            if strcmp(circular,'on'),
+                delta = mod(d(logical(neighbour)),nBinsY);
+                delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+            else
+                delta = d;
+            end
             maxJumpShuffled(i,1) = max(abs(delta));
             jumpShuffled(i,1) = sum(abs(delta))/length(delta);
         end
@@ -228,26 +244,7 @@ if nShuffles>0,
     p = sum(rShuffled>r)/nShuffles;    
 end
 
-
-% INDICES = indices;
-% 
-% [x,y]= meshgrid((-threshold:1:threshold),1:nBinsY);
-% indices = mod(x+y-1,nBinsY)+1;
-% matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
-% indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
-% ind = sub2ind(size(matrix),indX,repmat(matrixID,size(indices)));
-%     
-% rShuffled2 = nan(nShuffles,1);
-% for i=1:nShuffles,        
-%     shift = round(rand(1,nBinsX)*(nBinsY-1));
-%     mockMatrix = CircularShift(matrix,shift);
-%     mockSums = squeeze(sum(mockMatrix(ind),2));        
-%     rShuffled2(i,1) = max(nanmean(mockSums(INDICES),2));
-% end
-
-% figure;subplot(2,1,1);hist(rShuffled,50);
-% subplot(2,1,2);hist(rShuffled2,50);
-    
+% ------------------------------- Helper function -------------------------------
 
 function rho = WeightedCorrCirc(weights,x,alpha)
 
@@ -283,7 +280,6 @@ rcs = WeightedCorr(weights,sin(alpha),cos(alpha));
 % compute angular-linear correlation (equ. 27.47)
 rho = sqrt((rxc^2 + rxs^2 - 2*rxc*rxs*rcs)/(1-rcs^2));
 
-end
 
 function c = WeightedCorr(weights,x,y)
 
@@ -324,5 +320,3 @@ covXX = nansum(w.*(x-mX).*(x-mX))./nansum(w(:));
 covYY = nansum(w.*(y-mY).*(y-mY))./nansum(w(:));
 
 c = covXY ./ sqrt(covXX.*covYY);
-end
-

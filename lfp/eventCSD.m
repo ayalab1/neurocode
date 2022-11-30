@@ -46,7 +46,11 @@ function [ csd, lfpAvg ] = eventCSD (lfp, events, varargin)
 %% Parse inputs
 
 p = inputParser;
-addParameter(p,'channels',1:size(lfp.data,2),@isvector);
+if isstruct(lfp)
+    addParameter(p,'channels',1:size(lfp.data,2),@isvector);
+else
+    addParameter(p,'channels',1:size(lfp,2),@isvector);
+end
 addParameter(p,'samplingRate',1250,@isnumeric);
 addParameter(p,'twin',[0.1 0.1],@isnumeric);
 addParameter(p,'spat_sm',11,@isnumeric);
@@ -95,7 +99,7 @@ end
 
 lfp_avg = nanmean(lfp_temp,3)*-1;
 
-%% Conpute CSD
+%% Compute CSD
 
 if rearrange_by_xml
     basename = basenameFromBasepath(basepath);
@@ -167,7 +171,7 @@ if plotLFP
     subplot(1,2,2);
     for ch=1:size(lfp_avg,2)
         offset = 400*(ch-1);
-        sh_tmp = 2e0*(lfp_avg(:,ch)) + offset;
+        sh_tmp = 2*(lfp_avg(:,ch)) + offset;
         plot(taxis,sh_tmp,'k','LineWidth',1.5); hold on;
         clear sh_tmp
     end

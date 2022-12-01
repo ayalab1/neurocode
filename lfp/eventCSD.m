@@ -53,8 +53,8 @@ else
 end
 addParameter(p,'samplingRate',1250,@isnumeric);
 addParameter(p,'twin',[0.1 0.1],@isnumeric);
-addParameter(p,'spat_sm',11,@isnumeric);
-addParameter(p,'temp_sm',11,@isnumeric);
+addParameter(p,'spat_sm',0,@isnumeric);
+addParameter(p,'temp_sm',0,@isnumeric);
 addParameter(p,'doDetrend',false,@islogical);
 addParameter(p,'plotCSD',true,@islogical);
 addParameter(p,'plotLFP',true,@islogical);
@@ -163,7 +163,7 @@ if plotLFP
     subplot(1,2,1);
     
     contourf(taxis,1:size(CSD,2),CSD',40,'LineColor','none');hold on;
-    colormap(magma(255)); caxis([-cmax cmax]);
+    colormap(redblue(255)); caxis([-cmax cmax]); 
     set(gca,'YDir','reverse');xlabel('time (s)');ylabel('channel');title('CSD'); 
     %plot([0 0],[1 size(CSD,2)],'--k');hold on;
     set(gca,'visible','off');

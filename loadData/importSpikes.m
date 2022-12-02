@@ -108,37 +108,34 @@ end
 % only one region will be assigned to each cell
 if ~isempty(region)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
-    keepUID = []; keepTimes = [];
+    keepUID = [];
     for i = 1:length(region)
         tempUID = []; tempTimes = [];
         tempUID = spikes.UID(contains(cell_metrics.brainRegion, region(i)));
-        tempTimes = spikes.times(contains(cell_metrics.brainRegion, region(i)));
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
-        keepUID = [keepUID spikeT.UID(useInd)];
-        for j = 1:length(useInd)
-            keepTimes{keepUID(j)} = tempTimes{useIndTemp(j)};
-        end
+        keepUID = cat(2, keepUID, spikeT.UID(useInd));
     end
     spikeT.UID = sort(keepUID);
-    spikeT.times = keepTimes;
 end
 
 % only one type will be assigned to each cell
 if ~isempty(type)
     load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
-    keepUID = []; keepTimes = [];
+    keepUID = [];
     for i = 1:length(type)
         tempUID = []; tempTimes = [];
         tempUID = spikes.UID(contains(cell_metrics.putativeCellType, type(i)));
         tempTimes = spikes.times(contains(cell_metrics.putativeCellType, type(i)));
         [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
         keepUID = [keepUID spikeT.UID(useInd)];
-        for j = 1:length(useInd)
-            keepTimes{spikeT.UID(useInd(j))} = tempTimes{useIndTemp(j)};
-        end
     end
     spikeT.UID = sort(keepUID);
-    spikeT.times = keepTimes;
+end
+
+%update times struct before moving on
+for i = 1:length(spikeT.UID)
+    idx = find(spikes.UID==spikeT.UID(i));
+    spikeT.times(spikeT.UID(i)) = spikes.times(idx);
 end
 
 % multiple states may be assigned to each cell's firing

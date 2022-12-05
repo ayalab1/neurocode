@@ -55,7 +55,7 @@ save([basename '.placeFields.cellinfo.mat'],'placeFieldStats');
 %% 4- Phase precession - NOT CHECKED
 % theta phase
 lfp = getLFP(refCh);
-theta = FilterLFP(lfp,'passband',[5 15]);
+theta = bz_Filter(lfp,'passband',[5 15]);
 
 %% boundaries of each PF
 for i=1:numel(spikes.UID) %
@@ -73,7 +73,7 @@ for i=1:numel(spikes.UID) %
 end
 
 count = 0;
-phases = Phase(theta);
+phases = [theta.timestamps, theta.phase];
 % calculate phase precession
 for i=1:numel(spikes.UID)
     for j=1%:2
@@ -97,5 +97,4 @@ for i=1:numel(dataPP)
      %close all;
     end
 end
-
 

@@ -1,4 +1,3 @@
-
 function [events] = removeArtifactsFromEvents(events,varargin)
 %removeArtifactsFromEvents - Remove artifacts from event according to the SD
 % 
@@ -48,17 +47,15 @@ end
 disp('Computing ripples std...');
 stdEvents = [];
 parfor ii = 1:length(events.peaks) % compute rms
-%    rmsEvents(ii) = rms(double(lfp.data(find(lfp(:,1)>events.peaks(ii)-winSize &...
-%        lfp(:,1)<events.peaks(ii)+winSize))));
-    stdEvents(ii) = std(lfp(find(lfp(:,1)>events.peaks(ii)-winSize &...
-        lfp(:,1)<events.peaks(ii)+winSize),2));
+    idx = lfp.timestamps > events.peaks(ii)-winSize & lfp.timestamps < events.peaks(ii)+winSize;
+    stdEvents(ii) = std(single(lfp.data(idx,1)));
 end
 
 if strcmpi(method,'minima')
     [N, edges] = histcounts(stdEvents);
     centers = edges(2:end) - diff(edges)/2;
     [~, locs] = findpeaks(smooth([0 N]),'MinPeakDistance',5);
-    cutpoint = centers(find(min(N(locs(1):locs(2)))==N));
+    cutpoint = centers(min(N(locs(1):locs(2)))==N);
     cutpoint = cutpoint(1);
 else
     cutpoint = mean(stdEvents) + std(stdEvents) * stdThreshold;

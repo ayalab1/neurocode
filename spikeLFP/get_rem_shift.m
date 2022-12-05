@@ -24,7 +24,7 @@ function rem_shift_data = get_rem_shift(varargin)
 %
 %     ['passband']  frequency of theta band (default = [6,12])
 %     ['lfp']       matrix from getLFP with single theta channel
-%     ['infoLFP']   structure containing LFP metadata (sampling rate and channels)
+%     ['lfp']   structure containing LFP metadata (sampling rate and channels)
 %     ['spikes']    spikes structure (i.e. spikes.cellinfo)
 %     ['savemat']   save output to basepath (default true)
 %     ['numBins']   number of bins in phase histogram (default - 18)
@@ -41,8 +41,8 @@ function rem_shift_data = get_rem_shift(varargin)
 %    [PhaseLockingData_rem]    [phase locking of rem shifted cells]
 %    [PhaseLockingData_wake]   [phase locking of cells during wake] 
 %    [detectorParams.p.Result]
-%                 [.channels]     [channels used (infoLFP.channels)]
-%                 [.samplingRate] [sampling rate of lfp (infoLFP.samplingRate)]
+%                 [.channels]     [channels used (lfp.channels)]
+%                 [.samplingRate] [sampling rate of lfp (lfp.samplingRate)]
 %
 %
 %  NOTE
@@ -164,8 +164,8 @@ rem_shift_data.non_rem_shift = non_rem_shift;
 rem_shift_data.PhaseLockingData_rem = PhaseLockingData_rem;
 rem_shift_data.PhaseLockingData_wake = PhaseLockingData_wake;
 rem_shift_data.detectorParams = p.Results;
-rem_shift_data.detectorParams.channels = infoLFP.channels;
-rem_shift_data.detectorParams.samplingRate = infoLFP.samplingRate;
+rem_shift_data.detectorParams.channels = lfp.channels;
+rem_shift_data.detectorParams.samplingRate = lfp.samplingRate;
 
 
 if savemat
@@ -272,30 +272,30 @@ end
 if r>c
     deep_channels = deep_channels';
 end
-[lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,'basename',basename);
+lfp = getLFP(deep_channels,'basepath',basepath,'basename',basename);
 
 % get theta power to choose channel
 try
-    pBand = bandpower(lfp(:,2:end),...
-        infoLFP.samplingRate,passband);
+    pBand = bandpower(single(lfp.data),...
+        lfp.samplingRate,passband);
     
-    pTot = bandpower(lfp(:,2:end),...
-        infoLFP.samplingRate,...
-        [1,(infoLFP.samplingRate/2)-1]);
+    pTot = bandpower(single(lfp.data),...
+        lfp.samplingRate,...
+        [1,(lfp.samplingRate/2)-1]);
 catch
-    for c = 1:size(lfp,2)-1
-        pBand(c) = bandpower(lfp(:,1+c),...
-            infoLFP.samplingRate,passband);
+    for c = 1:size(lfp.data,2)
+        pBand(c) = bandpower(single(lfp.data(:,c)),...
+            lfp.samplingRate,passband);
         
-        pTot(c) = bandpower(lfp(:,1+c),...
-            infoLFP.samplingRate,...
-            [1,(infoLFP.samplingRate/2)-1]);
+        pTot(c) = bandpower(single(lfp.data(:,c)),...
+            lfp.samplingRate,...
+            [1,(lfp.samplingRate/2)-1]);
     end
 end
 % find max theta power, normalized by wide band
 [~,c_idx] = max(pBand./pTot);
 
 % only leave theta channel
-lfp = lfp(:,1+c_idx);
-infoLFP.samplingRate = infoLFP.channels(:,c_idx);
+lfp.data = lfp.data(:,c_idx);
+lfp.channels = lfp.channels(:,c_idx);
 end

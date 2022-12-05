@@ -2,7 +2,7 @@ function auto_theta_cycles(varargin)
 % auto_theta_cycles: automatically select theta channel and calc cycles
 %
 % auto_theta_cycles: selects deep ca1 channels and locates the channel that
-% maximizes theta power (pow 6-12 / pow 1-nyquist). Then it finds theta
+% maximizes theta power (pow 4-12 / pow 1-nyquist). Then it finds theta
 % cycles using FindThetaCycles.m. It will save basename.thetacycles.events.mat
 %
 %
@@ -83,9 +83,10 @@ if isempty(lfp)
     return
 end
 
-% find theta cycles
-clean = CleanLFP(lfp,'thresholds',[8 Inf]);
-[peaktopeak, troughs, amplitude] = FindThetaCycles(lfp);
+% find theta cycles, pass cleaned signal in using clean lfp
+[peaktopeak, troughs, amplitude] = FindThetaCycles(...
+    CleanLFP([lfp.timestamps,double(lfp.data)],'thresholds',[8 Inf])...
+    );
 
 % package output
 thetacycles.timestamps = peaktopeak;
@@ -158,43 +159,43 @@ end
 if maximize_theta_power
     % try to load downsampled to same time
     try
-        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,'downsample',10,...
-        'basename',basename);
+        lfp = getLFP(deep_channels,'basepath',basepath,'downsample',10,...
+            'basename',basename);
         
         % if sample rate cannot be factored by 10, load entire file
     catch
-        [lfp,infoLFP] = getLFP(deep_channels,'basepath',basepath,...
-        'basename',basename);
+        lfp = getLFP(deep_channels,'basepath',basepath,...
+            'basename',basename);
     end
     
     % get theta power to choose channel
     try
-        pBand = bandpower(lfp(:,2:end),...
-            infoLFP.samplingRate,passband);
+        pBand = bandpower(single(lfp.data),...
+            lfp.samplingRate,passband);
         
-        pTot = bandpower(lfp(:,2:end),...
-            infoLFP.samplingRate,...
-            [1,(infoLFP.samplingRate/2)-1]);
+        pTot = bandpower(single(lfp.data),...
+            lfp.samplingRate,...
+            [1,(lfp.samplingRate/2)-1]);
     catch
-        for c = 1:size(lfp,2)-1
-            pBand(c) = bandpower(lfp(:,1+c),...
-                infoLFP.samplingRate,passband);
+        for c = 1:size(lfp,2)
+            pBand(c) = bandpower(single(lfp.data(:,c)),...
+                lfp.samplingRate,passband);
             
-            pTot(c) = bandpower(lfp(:,1+c),...
-                infoLFP.samplingRate,...
-                [1,(infoLFP.samplingRate/2)-1]);
+            pTot(c) = bandpower(single(lfp.data(:,c)),...
+                lfp.samplingRate,...
+                [1,(lfp.samplingRate/2)-1]);
         end
     end
     % find max theta power, normalized by wide band
     [~,c_idx] = max(pBand./pTot);
     
     % only leave theta channel
-    lfp = getLFP(infoLFP.channels(:,c_idx),'basepath',basepath,...
+    lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
         'basename',basename);
     
 else
     lfp = getLFP(randsample(deep_channels,1),'basepath',basepath,...
         'basename',basename);
 end
-channel = infoLFP.channels(:,c_idx);
+channel = lfp.channels;
 end

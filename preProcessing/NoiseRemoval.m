@@ -1,5 +1,34 @@
 function NoiseRemoval(basepath)
-
+%[NoiseRemoval] - [removes noise periods in LFP/DAT files]
+%
+%  [removes noisy periods in LFP/DAT files, ensuring that noisy periods are
+%  fully removed]
+%
+%
+%  INPUTS
+%
+%    [basepath]      [basepath of session with DATs to have noise removed. 
+%                    Note that basepath must be provided]
+%
+%
+%  OUTPUTS
+%    
+%    NA
+%
+%  NOTE
+% 
+%   [uses helper function - 
+%       function y = linspaceVector(d1, d2)
+%       function Logical = Unfind(indices, n)
+%       function s = CumSum(data,stops)]
+%    HLR - are ^ needed since these should be in our "utilities" subfolder?
+%
+%
+%   TODO: added options to make basepath "pwd"
+%
+%  SEE ALSO
+%
+% [KM and 2022 Ralitsa Todorova] [2021-2022]
 % Copyright (C) 2021 KM and 2022 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

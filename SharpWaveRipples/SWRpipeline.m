@@ -48,18 +48,19 @@ basename = basenameFromBasepath(basepath);
     if ~exist([basepath '\Ripple_Profile'])
         mkdir('Ripple_Profile');
     end
-    [lfpRip,info] = getLFP(swrCh.Ripple_Channel, 'basename', basename);
-    lfpRipStructure = info; lfpRipStructure.timestamps = lfpRip(:,1); lfpRipStructure.data = lfpRip(:,2:end);
+    lfpRip = getLFP(swrCh.Ripple_Channel, 'basename', basename);
     try
-        [wavAvg,lfpAvg] = eventWavelet(lfpRipStructure,ripples.peaks(1:500),'twin',[0.1 0.1]);
+        [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks(1:500),'twin',[0.1 0.1]);
     catch
-        [wavAvg,lfpAvg] = eventWavelet(lfpRipStructure,ripples.peaks,'twin',[0.1 0.1]);
+        [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks,'twin',[0.1 0.1]);
     end
     saveas(gcf,['Ripple_Profile\swrWaveletSample.png']);
     
 %% 3- Separate ripples by task epochs     
     % creat pre/task/post structure. Need to be improved
-    [behavEpochs.int_samples,behavEpochs.int] = make_pre_task_post(pwd,session_sequence);
+
+    [behavEpochs.int_samples,behavEpochs.int] = make_pre_task_post(pwd);
+
 %     save([basename '.behavEpochs.mat'],'behavEpochs')
  
     % create swr structures for each epoch
@@ -98,7 +99,7 @@ for epochs= 1:3
     if numel(peaks) > 100
         peaks = peaks(1:100);
     end
-    [wavT,lfpT]= eventWavelet(lfpRipStructure,peaks,'twin',[0.1 0.1],'plotWave',false,'plotLFP',false);
+    [wavT,lfpT]= eventWavelet(lfpRip,peaks,'twin',[0.1 0.1],'plotWave',false,'plotLFP',false);
     wavAvg{epochs} = wavT; lfpAvg{epochs} = lfpT; clear lfpT wavT;
     
     subplot(1,3,epochs);
@@ -281,7 +282,6 @@ g = [ones(size(D)); 2*ones(size(E))];
 boxplot([D;E],g);hold on
 scatter([1,2],[D E],100,'r','.')
 set(gca,'XTickLabel',{'Task - Pre','Post - Pre'});ylabel('(B-A)/(B+A)');title('Firing rate change in participated events');
-
 
 
 

@@ -1,37 +1,25 @@
 function  H = plotEventRaster(event,varargin)
 %
-%   [Plot spike raster for invidual events (such as ripples), sorting cells
+%   Plot spike raster for invidual events (such as ripples), sorting cells
 %   by firing order and color code them according to diverse features
-%   (region, cell type, etc.)]
+%   (region, cell type, etc.)
 %
-%   INPUTS
-%
-%   [event]  [[start stop] in seconds for one or multiple events]
-%   [spikes] [structure of spike time and UID info]
-%   [lfpChan][channel to plot lfp (base 1)]
-%   [loadDat][load lfp trace from .dat instead of .lfp. Default = false]
-%   [tag]    [feature to color code raster. Now supporting: pyrInt, 
-%             brainRegion, deepSup, REMshift]
-%   [tag2]   [feature for shape of the raster. Now supporting: cellType,
-%               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**)] 
-%   [saveFig][default false]
-%   [pad]    [Amount of time surrounding each event, default 0.25s]
-%
-%  OUTPUT
-%   
-%   [h]     [event raster]
-%
+%   Inputs:
+%   event   = [start stop] in seconds for one or multiple events
+%   spikes  = structure of spike time and UID info
+%   lfpChan = channel to plot lfp (base 1)
+%   loadDat = load lfp trace from .dat instead of .lfp. Default = false
+%   tag     = feature to color code raster. Now supporting: pyrInt, 
+%               brainRegion, deepSup, REMshift
+%   tag2    = feature for shape of the raster. Now supporting: cellType,
+%               ripMod(**BUT ONLY IN CONJUNCTION WITH BRAIN REGION AS TAG**) 
+%   saveFig = default false
+%   pad     = Amount of time surrounding each event, default 0.25s
+
 %   TO DO: 
 %   add legend to plot 
-%
-%  SEE ALSO
-%
-%   [Antonio FR Lindsay Karaba] [2021-2022]
-%
-% This program is free software; you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
+
+%   Antonio FR, 10/21. Lindsay Karaba, 11/21
 
 %% inputs
 p = inputParser;
@@ -91,28 +79,38 @@ end
 %% plot lfp
 if ~isempty(lfpChan)
     lfp = [];
-    if loadDat
-        lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath,'fromDat',true);
-    else
-        lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath,'fromDat',false);
-    end
-    % add option to filter LFP
-    figure('Position', get(0, 'Screensize'));
-    for e = 1:size(event,1)
-        subplot(2,size(event,1),e);
-        in = InIntervals(lfp(:,1),event(e,:));
-        plot(lfp(in,1),lfp(in,2),'k');hold on;
-        if ~isempty(SleepState)
-            title(stateName{e});
+    if ~loadDat
+        lfp = getLFP(lfpChan,'intervals',event,'basepath',basepath);
+        % add option to filter LFP
+        figure('Position', get(0, 'Screensize'));  
+        for e = 1:size(event,1)
+            subplot(2,size(event,1),e);
+            plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            if ~isempty(SleepState)
+				title(stateName{e});
+			end
+            xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
         end
-        xlim(event(e,:));
+    elseif loadDat
+        figure('Position',[800 400 900 500]);  
+        for e = 1:size(event,1)
+            lfpdat = LoadBinary([basename '.dat'],'basepath',basepath,'frequency',sr,'nChannels',session.extracellular.nChannels,...
+                'channels',lfpChan,'start',event(e,1),'duration',event(e,2)-event(e,1));  
+            lfp(e).data = lfpdat; 
+            t = event(e,1):(1/sr):event(e,2);   lfp(e).timestamps = t(1:size(lfp(e).data(:,1),1))'; %sometimes the time array doesn't match?
+            subplot(2,size(event,1),e);
+            plot(lfp(e).timestamps,lfp(e).data(:,1),'k');hold on;
+            if ~isempty(SleepState)
+				title(stateName{e});
+			end
+            xlim([lfp(e).timestamps(1) lfp(e).timestamps(end)]);
+        end
     end
 end
 
 %% plot spike raster: pyr int
 for e = 1:size(event,1)
-    in = lfp(:,1)>=event(e,1) & lfp(:,1)<=event(e,2);
-    t = lfp(in,1); % add alternative for no lfp
+    t = lfp(e).timestamps; % add alternative for no lfp
     
     rasterT = zeros(length(spikes.times),length(t));
     for i = 1:length(spikes.times) % collect spk in rip
@@ -199,11 +197,10 @@ switch(tag)
 				regions = unique(cell_metrics.brainRegion);
 				colors = distinguishable_colors(numel(regions));
 			end
-        end
+		end
         for e = 1:size(event,1)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
-            in = lfp(:,1)>=event(e,1) & lfp(:,1)<=event(e,2);
-            t = lfp(in,1); % add alternative for no lfp
+            t = lfp(e).timestamps; % add alternative for no lfp
             
             rasterT = zeros(length(spikes.times),length(t));
             for i = 1:length(spikes.times) % colect spk in rip
@@ -276,8 +273,7 @@ switch(tag)
     case 'deepSup'
         for e = 1:size(event,1)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
-            in = lfp(:,1)>=event(e,1) & lfp(:,1)<=event(e,2);
-            t = lfp(in,1); % add alternative for no lfp
+            t = lfp(e).timestamps; % add alternative for no lfp
             
             rasterT = zeros(length(spikes.times),length(t));
             for i = 1:length(spikes.times) % colect spk in rip
@@ -333,8 +329,7 @@ switch(tag)
         load([basename '.theta_rem_shift.mat']);
         for e = 1:size(event,1)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
-            in = lfp(:,1)>=event(e,1) & lfp(:,1)<=event(e,2);
-            t = lfp(in,1); % add alternative for no lfp
+            t = lfp(e).timestamps; % add alternative for no lfp
             
             rasterT = zeros(length(spikes.times),length(t));
             for i = 1:length(spikes.times) % colect spk in rip
@@ -391,8 +386,7 @@ switch(tag)
     case 'ripParticip'
         for e = 1:size(event,1)
             clear rasterT temp firstSpk raster rasterO rasterID rasterIDo
-            in = lfp(:,1)>=event(e,1) & lfp(:,1)<=event(e,2);
-            t = lfp(in,1); % add alternative for no lfp
+            t = lfp(e).timestamps; % add alternative for no lfp
             
             rasterT = zeros(length(spikes.times),length(t));
             for i = 1:length(spikes.times) % colect spk in rip
@@ -488,7 +482,3 @@ end
 H = gcf; %save current figure as output
 
 end
-
-
-
-

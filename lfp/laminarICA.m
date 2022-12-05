@@ -300,7 +300,7 @@ parse(p,varargin{:});
 lrate = p.Results.lrate;
 
 % Perform ICA
-[weights,sphere,meanvar,bias,signs,lrates,data] = runica(lfp.data','lrate',lrate,'pca',nICs);
+[weights,sphere,meanvar,~,~,~,data,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
 
 % Normalize sphere
 sphere = sphere./norm(sphere);

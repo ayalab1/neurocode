@@ -110,6 +110,10 @@ function [lfp,channel] = get_deep_ca1_lfp(basepath,passband,maximize_theta_power
 basename = basenameFromBasepath(basepath);
 
 load(fullfile(basepath,[basename,'.session.mat']))
+
+if ~exist(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'file')
+    classification_DeepSuperficial(session);
+end
 load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']))
 
 % find deep ca1 channels to check

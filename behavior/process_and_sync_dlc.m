@@ -150,6 +150,9 @@ end
 function [tracking] = sync_ttl(folder,x,y,ts,fs,pulses_delta_range)
 
 if ~exist(fullfile(folder,'digitalIn.events.mat'),'file')
+    if ~exist(fullfile(folder,'digitalin.dat'),'file')
+        error([fullfile(folder,'digitalin.dat'),'   does not exist'])
+    end
     digitalIn = getDigitalIn('all','folder',folder);
 end
 load(fullfile(folder,'digitalIn.events.mat'))

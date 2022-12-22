@@ -103,9 +103,9 @@ pass = peak>thresholds(2);
 bursts = bursts(pass,:);
 
 % Move the start of the burst to the first spike:
-bursts(:,1) = t(FindClosest(t,bursts(:,1),'higher'),1);
+bursts(:,1) = spikes(FindClosest(spikes,bursts(:,1),'higher'),1);
 % Move the end of the burst to the last spike
-bursts(:,3) = t(FindClosest(t,bursts(:,3),'lower'),1);
+bursts(:,3) = spikes(FindClosest(spikes,bursts(:,3),'lower'),1);
 % Merge overlapping bursts:
 [~,target] = ConsolidateIntervals(bursts(:,[1 3]));
 overlapping = find(ismember(target,find(Accumulate(target)>1)));

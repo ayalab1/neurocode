@@ -141,6 +141,7 @@ else
     indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
     ind = sub2ind(size(matrix0),indX,repmat(matrixID,size(indices)));
     sums = squeeze(nanmean(matrix0(ind),2))*size(x,2);
+    sums(sums>1) = 1; % make sure if peak is at the end of the matrix, the presence of nans doesn't overly inflate the possible score
 end
 
 %% Get magic indices describing all possible lines of the sums matrix:

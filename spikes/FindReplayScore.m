@@ -68,9 +68,9 @@ maxJumpShuffled = [];
 jumpShuffled = [];
 jump = [];
 maxJump = [];
-jumps = 'off';
-wcorr = 'off';
-circular = 'on';
+if nargout>7, wcorr = 'on'; else, wcorr = 'off'; end
+if nargout>9, jumps = 'on'; else, jumps = 'off'; end
+circular = 'off';
 threshold = 15;
 
 if nargin < 1,
@@ -141,6 +141,7 @@ else
     indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
     ind = sub2ind(size(matrix0),indX,repmat(matrixID,size(indices)));
     sums = squeeze(nanmean(matrix0(ind),2))*size(x,2);
+    sums(sums>1) = 1; % make sure if peak is at the end of the matrix, the presence of nans doesn't overly inflate the possible score
 end
 
 %% Get magic indices describing all possible lines of the sums matrix:
@@ -181,7 +182,7 @@ end
 if strcmp(jumps,'on'),
     jumpShuffled = nan(nShuffles,1);
     maxJumpShuffled = nan(nShuffles,1);
-    [~,goodWindows] = find(~isnan(matrix(1,:)));
+    [~,goodWindows] = find(~isnan(matrix(1,:)) & (max(matrix)>min(matrix) + 0.0000001));
     neighbour = diff(goodWindows);
     if any(neighbour==1),
         neighbour(neighbour~=1) = 0;

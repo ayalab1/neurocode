@@ -182,7 +182,7 @@ end
 if strcmp(jumps,'on'),
     jumpShuffled = nan(nShuffles,1);
     maxJumpShuffled = nan(nShuffles,1);
-    [~,goodWindows] = find(~isnan(matrix(1,:)));
+    [~,goodWindows] = find(~isnan(matrix(1,:)) & (max(matrix)>min(matrix) + 0.0000001));
     neighbour = diff(goodWindows);
     if any(neighbour==1),
         neighbour(neighbour~=1) = 0;

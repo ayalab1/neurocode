@@ -68,9 +68,9 @@ maxJumpShuffled = [];
 jumpShuffled = [];
 jump = [];
 maxJump = [];
-jumps = 'off';
-wcorr = 'off';
-circular = 'on';
+if nargout>7, wcorr = 'on'; else, wcorr = 'off'; end
+if nargout>9, jumps = 'on'; else, jumps = 'off'; end
+circular = 'off';
 threshold = 15;
 
 if nargin < 1,

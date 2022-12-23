@@ -647,7 +647,11 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
         notes = "z to y and y to z";
         units = 'cm';
         source = '.tracking.behavior.mat';
-        
+    elseif isfield(tracking.position,'x') && isfield(tracking.position,'y')
+        x = tracking.position.x;
+        y = tracking.position.y;
+        units = 'cm';
+        source = '.tracking.behavior.mat';
     elseif isfield(tracking.position,'x1') && isfield(tracking.position,'y1')
         positions = [tracking.position.x1,tracking.position.y1,tracking.position.x2,tracking.position.y2];
         [x,y] = find_best_columns(positions,fs);
@@ -685,6 +689,16 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     %         disp(file)
     %     end
     %
+elseif exist([basepath,filesep,[basename,'.Behavior.mat']],'file')
+    disp('detected .Behavior.mat')
+    load([basepath,filesep,[basename,'.Behavior.mat']])
+    t = behavior.timestamps;
+    x = behavior.position.x;
+    y = behavior.position.y;
+    linearized = behavior.position.lin;
+    units = 'cm';
+    source = '.Behavior.mat';
+    
 elseif ~isempty(dir(fullfile(basepath,'**','*_Behavior*.mat')))
     % crcns_pfc-2_data behavior file
     

@@ -168,6 +168,11 @@ if convert_xy_to_cm
     if isempty(maze_sizes)
         error('you must provide maze sizes')
     end
+    
+    % locate tracker points to scale
+    pos_fields = fields(behavior.position);
+    pos_fields = pos_fields(structfun(@numel,behavior.position) == length(behavior.position.x));
+    
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
         maze_sizes_i = 1;
@@ -187,8 +192,12 @@ if convert_xy_to_cm
                 end
                 convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
                 maze_sizes_i = maze_sizes_i + 1;
-                behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-                behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+                
+                % iterate over each tracker point
+                for pos_fields_i = 1:length(pos_fields)
+                    behavior.position.(pos_fields{pos_fields_i})(idx) =...
+                        behavior.position.(pos_fields{pos_fields_i})(idx) / convert_pix_to_cm_ratio;
+                end
             end
         end
     else
@@ -207,8 +216,12 @@ if convert_xy_to_cm
             pos_range = maze_distance_gui(fullfile(files.folder,files.name));
         end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
-        behavior.position.x = behavior.position.x / convert_pix_to_cm_ratio;
-        behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;
+        
+        % iterate over each tracker point
+        for pos_fields_i = 1:length(pos_fields)
+            behavior.position.(pos_fields{pos_fields_i}) =...
+                behavior.position.(pos_fields{pos_fields_i}) / convert_pix_to_cm_ratio;
+        end
     end
     behavior.position.units = 'cm';
     

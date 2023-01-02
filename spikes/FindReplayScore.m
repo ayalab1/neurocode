@@ -135,7 +135,8 @@ if strcmp(circular,'on'),
     ind = sub2ind(size(matrix),indX,repmat(matrixID,size(indices)));
     sums = squeeze(sum(matrix(ind),2));
 else
-    matrix0  = [matrix; nan(size(matrix(1,:)))];
+    matrix0  = [matrix; nan(size(matrix(1,:)))]; % append nans for the cases where the linear fit goes outside of the matrix
+    matrix0  = [matrix; median(matrix)]; % Silva appended the median probability instead of nans
     indices = (x+y); indices(indices<1 | indices>nBinsY) = nBinsY+1;
     matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
     indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
@@ -167,7 +168,7 @@ x = mod(round(x)-1,nBinsY)+1;
 y = repmat(1:nBinsX,size(x,1),1);
 indices = sub2ind(size(sums),x,y);
 
-scores = nanmean(sums(indices),2);
+scores = mean(sums(indices),2);
 [r,ind] = max(scores);
 st = a(ind); sp = b(ind);
 
@@ -215,7 +216,7 @@ if nShuffles>0,
     for i=1:nShuffles,
         shift = round(rand(1,nBinsX)*(nBinsY-1));
         mockSums = CircularShift(sums,shift);
-        [rShuffled(i,1),ind] = max(nanmean(mockSums(indices),2));
+        [rShuffled(i,1),ind] = max(mean(mockSums(indices),2));
         aShuffled(i,1) = a(ind); bShuffled(i,1) = b(ind);
         if strcmp(wcorr,'on'),
             mockMatrix = CircularShift(matrix,shift);

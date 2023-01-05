@@ -59,7 +59,7 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 
 % Defaults values
 nShuffles = [];
-p = [];
+p = nan;
 rShuffled = [];
 aShuffled = [];
 bShuffled = [];
@@ -135,13 +135,13 @@ if strcmp(circular,'on'),
     ind = sub2ind(size(matrix),indX,repmat(matrixID,size(indices)));
     sums = squeeze(sum(matrix(ind),2));
 else
-    matrix0  = [matrix; nan(size(matrix(1,:)))]; % append nans for the cases where the linear fit goes outside of the matrix
+%     matrix0  = [matrix; nan(size(matrix(1,:)))]; % append nans for the cases where the linear fit goes outside of the matrix
     matrix0  = [matrix; median(matrix)]; % Silva appended the median probability instead of nans
     indices = (x+y); indices(indices<1 | indices>nBinsY) = nBinsY+1;
     matrixID = zeros(1,1,size(matrix,2));matrixID(:) = 1:size(matrix,2);
     indX = reshape(repmat(indices,1,size(matrix,2)),[nBinsY threshold*2+1 size(matrix,2)]);
     ind = sub2ind(size(matrix0),indX,repmat(matrixID,size(indices)));
-    sums = squeeze(nanmean(matrix0(ind),2))*size(x,2);
+    sums = squeeze(mean(matrix0(ind),2))*size(x,2);
     sums(sums>1) = 1; % make sure if peak is at the end of the matrix, the presence of nans doesn't overly inflate the possible score
 end
 
@@ -157,16 +157,14 @@ else
 end
 % make matrix of x-elements 'x'.
 % the first column of x is a, and its last column is b
-x = [a zeros(length(a),nBinsX-2) b];
-% the middle columns go progressively from a to b
-for i=2:(nBinsX-1),
-    x(:,i) = x(:,1)+(i-1)*(x(:,end)-x(:,1))/(nBinsX-1);
+x = bsxfun(@times,linspace(0,1,nBinsX),(b-a))+a;
+if strcmp(circular,'on'),
+    % x is rounded so that it designates bin indices
+    x = mod(round(x)-1,nBinsY)+1;
+else
+    x = round(x);
 end
-% x is rounded so that it designates bin indices
-x = mod(round(x)-1,nBinsY)+1;
-% y-coordinates
-y = repmat(1:nBinsX,size(x,1),1);
-indices = sub2ind(size(sums),x,y);
+indices = bsxfun(@plus, x, (0:nBinsX-1)*nBinsY);
 
 scores = mean(sums(indices),2);
 [r,ind] = max(scores);
@@ -206,45 +204,47 @@ end
 
 %% Shuffle to get a p-value
 
-if nShuffles>0,
-    rShuffled = nan(nShuffles,1);
-    cShuffled = nan(nShuffles,1);
-    maxJumpShuffled = nan(nShuffles,1);
-    jumpShuffled = nan(nShuffles,1);
-    aShuffled = nan(nShuffles,1);
-    bShuffled = nan(nShuffles,1);
-    for i=1:nShuffles,
-        shift = round(rand(1,nBinsX)*(nBinsY-1));
-        mockSums = CircularShift(sums,shift);
-        [rShuffled(i,1),ind] = max(mean(mockSums(indices),2));
-        aShuffled(i,1) = a(ind); bShuffled(i,1) = b(ind);
-        if strcmp(wcorr,'on'),
-            mockMatrix = CircularShift(matrix,shift);
-            if strcmp(circular,'on'),
-                cShuffled(i,1) = WeightedCorrCirc(mockMatrix);
-            else
-                cShuffled(i,1) = WeightedCorr(mockMatrix);
-            end
-        end
-        
-         
-        if strcmp(jumps,'ok'),
-            mockMatrix = CircularShift(matrix,shift);
-            [~,wherePmax] = max(mockMatrix(:,goodWindows));
-            d = diff(wherePmax);
-            if strcmp(circular,'on'),
-                delta = mod(d(logical(neighbour)),nBinsY);
-                delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
-            else
-                delta = d;
-            end
-            maxJumpShuffled(i,1) = max(abs(delta));
-            jumpShuffled(i,1) = sum(abs(delta))/length(delta);
-        end
-        
-    end
-    p = sum(rShuffled>r)/nShuffles;    
+if nShuffles==0
+    return
 end
+rShuffled = nan(nShuffles,1);
+cShuffled = nan(nShuffles,1);
+maxJumpShuffled = nan(nShuffles,1);
+jumpShuffled = nan(nShuffles,1);
+aShuffled = nan(nShuffles,1);
+bShuffled = nan(nShuffles,1);
+for i=1:nShuffles,
+    shift = round(rand(1,nBinsX)*(nBinsY-1));
+    mockSums = CircularShift(sums,shift);
+    [rShuffled(i,1),ind] = max(mean(mockSums(indices),2));
+    aShuffled(i,1) = a(ind); bShuffled(i,1) = b(ind);
+    if strcmp(wcorr,'on'),
+        mockMatrix = CircularShift(matrix,shift);
+        if strcmp(circular,'on'),
+            cShuffled(i,1) = WeightedCorrCirc(mockMatrix);
+        else
+            cShuffled(i,1) = WeightedCorr(mockMatrix);
+        end
+    end
+
+
+    if strcmp(jumps,'ok'),
+        mockMatrix = CircularShift(matrix,shift);
+        [~,wherePmax] = max(mockMatrix(:,goodWindows));
+        d = diff(wherePmax);
+        if strcmp(circular,'on'),
+            delta = mod(d(logical(neighbour)),nBinsY);
+            delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+        else
+            delta = d;
+        end
+        maxJumpShuffled(i,1) = max(abs(delta));
+        jumpShuffled(i,1) = sum(abs(delta))/length(delta);
+    end
+
+end
+p = sum(rShuffled>r)/nShuffles;
+
 
 % ------------------------------- Helper function -------------------------------
 

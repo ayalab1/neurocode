@@ -179,8 +179,8 @@ if strcmp(wcorr,'on'),
 end
 
 if strcmp(jumps,'on'),
-    jumpShuffled = nan(nShuffles,1);
-    maxJumpShuffled = nan(nShuffles,1);
+    jumpShuffled = nan(1,nShuffles);
+    maxJumpShuffled = nan(1,nShuffles);
     [~,goodWindows] = find(~isnan(matrix(1,:)) & (max(matrix)>min(matrix) + 0.0000001));
     neighbour = diff(goodWindows);
     if any(neighbour==1),
@@ -207,23 +207,23 @@ end
 if nShuffles==0
     return
 end
-rShuffled = nan(nShuffles,1);
-cShuffled = nan(nShuffles,1);
-maxJumpShuffled = nan(nShuffles,1);
-jumpShuffled = nan(nShuffles,1);
-aShuffled = nan(nShuffles,1);
-bShuffled = nan(nShuffles,1);
+rShuffled = nan(1,nShuffles);
+cShuffled = nan(1,nShuffles);
+maxJumpShuffled = nan(1,nShuffles);
+jumpShuffled = nan(1,nShuffles);
+aShuffled = nan(1,nShuffles);
+bShuffled = nan(1,nShuffles);
 for i=1:nShuffles,
     shift = round(rand(1,nBinsX)*(nBinsY-1));
     mockSums = CircularShift(sums,shift);
-    [rShuffled(i,1),ind] = max(mean(mockSums(indices),2));
-    aShuffled(i,1) = a(ind); bShuffled(i,1) = b(ind);
+    [rShuffled(i),ind] = max(mean(mockSums(indices),2));
+    aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
     if strcmp(wcorr,'on'),
         mockMatrix = CircularShift(matrix,shift);
         if strcmp(circular,'on'),
-            cShuffled(i,1) = WeightedCorrCirc(mockMatrix);
+            cShuffled(i) = WeightedCorrCirc(mockMatrix);
         else
-            cShuffled(i,1) = WeightedCorr(mockMatrix);
+            cShuffled(i) = WeightedCorr(mockMatrix);
         end
     end
 
@@ -238,8 +238,8 @@ for i=1:nShuffles,
         else
             delta = d;
         end
-        maxJumpShuffled(i,1) = max(abs(delta));
-        jumpShuffled(i,1) = sum(abs(delta))/length(delta);
+        maxJumpShuffled(i) = max(abs(delta));
+        jumpShuffled(i) = sum(abs(delta))/length(delta);
     end
 
 end

@@ -37,6 +37,7 @@ function [map,stats] = FiringMap(positions,spikes,varargin)
 %                   and ignored (default = 100)
 %     'minPeak'     peaks smaller than this size are considered spurious
 %                   and ignored (default = 1)
+%     'nShuffles'   number of shuffles to compute the p-value for specificity
 %     'verbose'     display processing information (default = 'off')
 %    =========================================================================
 %
@@ -57,6 +58,7 @@ function [map,stats] = FiringMap(positions,spikes,varargin)
 %    stats.fieldX        field x boundaries (in bins)
 %    stats.fieldY        field y boundaries (in bins)
 %    stats.specificity   spatial specificity (Skaggs et al., 1993)
+%    stats.p             spatial specificity p-value (computed over shuffles)
 %
 %  NOTE
 %
@@ -68,7 +70,7 @@ function [map,stats] = FiringMap(positions,spikes,varargin)
 %
 %    See also Map, MapStats, FiringCurve, PlotColorMap.
 
-% Copyright (C) 2004-2013 by Michaël Zugaro
+% Copyright (C) 2004-2013 by Michaël Zugaro, 2023 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -85,6 +87,7 @@ if size(positions,2) ~= 3,
   positions = positions(:,1:3);
 end
 
+nShuffles = 100;
 im = 1;argsm = {};
 is = 1;argss = {};
 % Parse parameter list
@@ -102,8 +105,10 @@ for i = 1:2:length(varargin),
 			im = im+2;
 		case {'threshold','minsize','minpeak','verbose','debug'},
 			argss{is} = varargin{i};
-			argss{is+1} = varargin{i+1};
-			is = is+2;
+            argss{is+1} = varargin{i+1};
+            is = is+2;
+        case {'nshuffles'},
+            nShuffles = varargin{i+1}(1);
 		otherwise,
 			argsm{im} = varargin{i};
 			argsm{im+1} = varargin{i+1};
@@ -114,6 +119,18 @@ end
 map = Map(positions,spikes,argsm{:});
 if nargout == 2,
 	stats = MapStats(map,argss{:});
+    if nShuffles>0
+        maxTime = max(samples(:,1)); specificity = nan(nShuffles,1);
+        for i=1:nShuffles
+            shifted = sortrows([rem(samples(:,1)+rand(1)*maxTime,maxTime) samples(:,2:end)]);
+            shuffled = Map(shifted,spikes,argsm{:});
+            s = MapStats(shuffled,argss{:});
+            specificity(i) = s.specificity;
+        end
+        stats.p = sum(specificity>=stats.specificity)./sum(~isnan(specificity));
+    else
+        stats.p = nan;
+    end
 end
 map.rate = map.z;
 map = rmfield(map,'z');

@@ -37,6 +37,7 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 %     'mode'        'interpolate' to interpolate missing points (< minTime),
 %                   or 'discard' to discard them (default)
 %     'maxDistance' maximal distance for interpolation (default = 5)
+%     'nShuffles'   number of shuffles to compute the p-value for specificity
 %     'verbose'     display processing information (default = 'off')
 %    =========================================================================
 %
@@ -54,6 +55,7 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 %    stats.field         field (1 = bin in field, 0 = bin not in field)
 %    stats.fieldX        field x boundaries (in bins)
 %    stats.specificity   spatial specificity (Skaggs et al., 1993)
+%    stats.p             spatial specificity p-value (computed over shuffles)
 %
 %    For circular data:
 %
@@ -72,7 +74,7 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 %
 %    See also Map, MapStats, FiringMap, PlotXY.
 
-% Copyright (C) 2005-2016 by Michaël Zugaro
+% Copyright (C) 2005-2016 by Michaël Zugaro, 2023 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -81,6 +83,7 @@ function [curve,stats] = FiringCurve(samples,spikes,varargin)
 
 % Default values
 type = 'linear';
+nShuffles = 100;
 
 % Check number of parameters
 if nargin < 2,
@@ -97,29 +100,44 @@ is = 1;argss = {};
 for i = 1:2:length(varargin),
 	if ~ischar(varargin{i}),
 		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help FiringCurve">FiringCurve</a>'' for details).']);
-	end
-	switch(lower(varargin{i})),
-		case 'type',
-			argss{is} = 'type';
-			argss{is+1} = varargin{i+1}(1);
-			is = is+2;
-			argsm{im} = 'type';
-			argsm{im+1} = [varargin{i+1}(1) 'l'];
-			im = im+2;
-		case {'threshold','minsize','minpeak','verbose','debug','localmax'},
-			argss{is} = varargin{i};
-			argss{is+1} = varargin{i+1};
-			is = is+2;
-		otherwise,
-			argsm{im} = varargin{i};
-			argsm{im+1} = varargin{i+1};
-			im = im+2;
-  end
+    end
+    switch(lower(varargin{i})),
+        case 'type',
+            argss{is} = 'type';
+            argss{is+1} = varargin{i+1}(1);
+            is = is+2;
+            argsm{im} = 'type';
+            argsm{im+1} = [varargin{i+1}(1) 'l'];
+            im = im+2;
+        case {'threshold','minsize','minpeak','verbose','debug','localmax'},
+            argss{is} = varargin{i};
+            argss{is+1} = varargin{i+1};
+            is = is+2;
+        case {'nshuffles'},
+            nShuffles = varargin{i+1}(1);
+        otherwise,
+            argsm{im} = varargin{i};
+            argsm{im+1} = varargin{i+1};
+            im = im+2;
+    end
 end
 
 curve = Map(samples,spikes,argsm{:});
 if nargout == 2,
-	stats = MapStats(curve,argss{:});
+    stats = MapStats(curve,argss{:});
+    if nShuffles>0
+        maxTime = max(samples(:,1)); specificity = nan(nShuffles,1);
+        for i=1:nShuffles
+            shifted = sortrows([rem(samples(:,1)+rand(1)*maxTime,maxTime) samples(:,2:end)]);
+            shuffled = Map(shifted,spikes,argsm{:});
+            s = MapStats(shuffled,argss{:});
+            specificity(i) = s.specificity;
+        end
+        stats.p = sum(specificity>=stats.specificity)./sum(~isnan(specificity));
+    else
+        stats.p = nan;
+    end
 end
 curve.rate = curve.z;
 curve = rmfield(curve,'z');
+

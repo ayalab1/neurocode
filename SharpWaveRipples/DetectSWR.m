@@ -263,25 +263,34 @@ if check, useSPW = false; end
 if isempty(extname)
     filechk = dir([Filebase '.xml']);
     if isempty(filechk)
-        error(['%s: incompatible format for 1st argument (Filebase)\n', ...
+        warning(['%s: incompatible format for 1st argument (Filebase)\n', ...
             '\tIf user supplied a relative path, the .xml and all\n', ...
             '\trelevant files must be in the current directory.\n'],mfname);
     end
 else
     filechk = dir(basepath);
     if isempty(filechk)
-        error(['%s: incompatible format for 1st argument (Filebase)\n', ...
+        warning(['%s: incompatible format for 1st argument (Filebase)\n', ...
             '\tIf user supplied a relative path, the .xml and all\n', ...
             '\trelevant files must be in the current directory.\n'],mfname);
     end
 end
 
 % Read in xml of file parameters
-fprintf(1, 'Loading XML file...\n');
-par        = LoadXml( [Filebase '.xml'] );
-% pull parameters from .xml file
-SR         = par.lfpSampleRate; % lfp sampling rate
-nChan      = par.nChannels;     % number of channels in the recording
+if exist([Filebase '.xml'],'file')
+    fprintf(1, 'Loading XML file...\n');
+    par = LoadXml([Filebase, '.xml']);
+    % pull parameters from .xml file
+    SR = par.lfpSampleRate; % lfp sampling rate
+    nChan = par.nChannels; % number of channels in the recording
+else
+    fprintf(1, 'Loading session file...\n')
+    load([Filebase, '.session.mat'],'session')
+    SR = session.extracellular.srLfp;
+    nChan = session.extracellular.nChannels;
+    % extract precision
+    par.nBits = cellfun(@str2double, regexp(session.extracellular.precision, '\d+', 'match'));
+end
 
 % 2) Channels
 if ~all(Channels > 0 & Channels <= nChan) % corrected by AFR

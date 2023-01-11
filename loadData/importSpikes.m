@@ -24,7 +24,7 @@ function [spikeT] = importSpikes(varargin)
 %    spikeT - cellinfo struct with the following fields
 %          .UID            -unique identifier for each neuron in a recording
 %          .times          -cell array of timestamps (seconds) for each neuron
-%          .sessionName
+%          .basepath       
 
 %    =========================================================================
 % TODO:
@@ -66,6 +66,7 @@ end
 
 spikeT.UID = [];
 spikeT.times = {};
+spikeT.basepath = basepath;
 
 %% Remove bad cells before we start
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);

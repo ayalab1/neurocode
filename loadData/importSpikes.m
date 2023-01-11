@@ -11,7 +11,7 @@ function [spikeT] = importSpikes(varargin)
 %    UID             -vector subset of UID's to load. Default: all.
 %    channel         -specific channels (neuroscope indexing) to use. Default: all
 
-% These inputs require CellExplorer cell_metrics pre calculated. NOT IMPLEMENTED YET
+% These inputs require CellExplorer cell_metrics pre calculated. 
 %    brainRegion     -string region ID to load neurons from specific region
 %    cellType        -cell type to load
 %    sleepState      -string sleep state to keep spikes falling within the
@@ -45,7 +45,6 @@ addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x));
 addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
 addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
 addParameter(p,'UID',[],@isvector);
-addParameter(p,'spikes',[],@isstruct);
 addParameter(p,'channel',[],@isnumeric);
 
 parse(p,varargin{:})
@@ -54,22 +53,22 @@ region = p.Results.brainRegion;
 type = p.Results.cellType;
 state = p.Results.sleepState;
 UID = p.Results.UID;
-spikes = p.Results.spikes;
 channel = p.Results.channel;
 
 %% Load spikes
 basename = basenameFromBasepath(basepath);
 
-if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
-    load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
-end
+load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'],'cell_metrics');
+
+spikes = cell_metrics.spikes;
+spikes.UID = 1:length(spikes.times);
 
 spikeT.UID = [];
 spikeT.times = {};
 spikeT.basepath = basepath;
 
 %% Remove bad cells before we start
-load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
+
 if isfield(cell_metrics, 'tags')
     if isfield(cell_metrics.tags, 'Bad')
         ct = 1;

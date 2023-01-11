@@ -134,7 +134,7 @@ if nargout == 2,
             s = MapStats(shuffled,argss{:});
             specificity(i) = s.specificity;
         end
-        stats.p = sum(specificity>=stats.specificity)./sum(~isnan(specificity));
+        stats.p = 1-sum(specificity<stats.specificity)./sum(~isnan(specificity));
     else
         stats.p = nan;
     end

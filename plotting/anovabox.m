@@ -29,9 +29,9 @@ function varargout = anovabox(data,groups,varargin)
 %                   groups (default = [0.05 0.05]). Set alpha to zero to 
 %                   skip respective test (e.g. alpha = [0 0.05] would skip
 %                   tests between each column and zero).
-%    'parametric'   either 'on' (to display means and perform t-tests) 
-%                   or 'off' (to display median and perform non-parametric 
-%                   Wilcoxon signed-rank and ranksum tests / friedman).
+%    'parametric'   either 'on' (to perform t-tests / anova) or 'off' (to 
+%                   perform non-parametric Wilcoxon signed-rank and ranksum 
+%                   tests / friedman).
 %    'correction'   type of statistical correction to use to control for
 %                   multiple comparisons, i.e. between all pairs of multiple
 %                   groups (default = tukey-kramer)

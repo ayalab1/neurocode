@@ -46,7 +46,6 @@ addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
 addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
 addParameter(p,'UID',[],@isvector);
 addParameter(p,'spikes',[],@isstruct);
-addParameter(p,'session',[],@isstruct);
 addParameter(p,'channel',[],@isnumeric);
 
 parse(p,varargin{:})
@@ -56,7 +55,6 @@ type = p.Results.cellType;
 state = p.Results.sleepState;
 UID = p.Results.UID;
 spikes = p.Results.spikes;
-session = p.Results.session;
 channel = p.Results.channel;
 
 %% Load spikes

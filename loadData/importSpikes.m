@@ -105,7 +105,6 @@ end
 
 % only one region will be assigned to each cell
 if ~isempty(region)
-    load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = [];
     for i = 1:length(region)
         tempUID = []; tempTimes = [];
@@ -118,7 +117,6 @@ end
 
 % only one type will be assigned to each cell
 if ~isempty(type)
-    load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = [];
     for i = 1:length(type)
         tempUID = []; tempTimes = [];

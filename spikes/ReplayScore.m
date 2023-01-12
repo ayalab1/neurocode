@@ -17,7 +17,8 @@ function [sequence,shuffled] = ReplayScore(matrix,varargin)
 %    -------------------------------------------------------------------------
 %     'threshold'   considered distance from the line (default = 15 bins)
 %     'nShuffles'   default = 500
-%     'circular'    for circular-linear data (default = 'on')
+%     'circular'    for circular-linear data (default = 'off')
+%     'shuffle'     either 'column' (spatial) or 'temporal' (default = 'column');
 %    =========================================================================
 %
 %   OUTPUT
@@ -52,6 +53,7 @@ function [sequence,shuffled] = ReplayScore(matrix,varargin)
 
 sequence.quadrantScore = quadrantScore;
 sequence.score = r;
+sequence.zscore = (r - mean(rShuffled))./std(rShuffled);
 sequence.p = p;
 sequence.lineStart = st;
 sequence.lineStop = sp;
@@ -59,7 +61,7 @@ sequence.slope = (sp-st)./size(matrix,2);
 sequence.weightedCorrelation = c;
 sequence.jump.mean = jump;
 sequence.jump.max = maxJump;
-shuffled.r = rShuffled;
+shuffled.score = rShuffled;
 shuffled.lineStart = aShuffled;
 shuffled.lineStop = bShuffled;
 shuffled.weightedCorrelation = cShuffled;

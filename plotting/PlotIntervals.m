@@ -1,4 +1,4 @@
-function PlotIntervals(intervals,varargin)
+function varargout = PlotIntervals(intervals,varargin)
 
 %PlotIntervals - Plot vertical bars or rectangles to show interval limits.
 %
@@ -125,4 +125,7 @@ else
     uistack(rec,'bottom');
 end
 
+if nargout>0, 
+    varargout{1} = rec;
+end
 

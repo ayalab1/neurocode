@@ -396,7 +396,6 @@ if nargout>0
     if nStars0==0, handlesStars0 = []; end
     if nObjectsBetween==0, handlesComparisons = []; end
     handles.bar = hbox;
-    handles.errorbars = hErrorbar;
     handles.stars = handlesStars0;
     handles.comparisons = handlesComparisons;
     varargout{1} = handles;

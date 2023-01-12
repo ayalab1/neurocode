@@ -1,53 +1,53 @@
-function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled] = FindReplayScore(matrix,varargin)
+function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled,quadrantScore] = FindReplayScore(matrix,varargin)
 
-% [FindReplayScore]
+% FindReplayScore
 %
 %
 % USAGE
 %
-%    [r,p,a,b,rShuffled,c,cShuffled,jump,jumpShuffled,maxJump,
-%    maxJumpShuffled] = FindReplayScore(matrix,threshold,<options>);
+%    [r,p,a,b,rShuffled,c,cShuffled,jump,jumpShuffled,maxJump, maxJumpShuffled,quadrantScore] = FindReplayScore(matrix,threshold,<options>);
 %
 %  INPUT
 %
-%    [matrix]   [probability matrix for a specific event ("estimations" output of ReconstructPosition)]       
+%    matrix     probability matrix for a specific event ("estimations" output of ReconstructPosition)       
 %    threshold  distance away from the fitted line (in bins) to count towards the score (see Davidson et al. 2009)
 %    
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     ['threshold'] [considered distance from the line (default = 15 bins)]
-%     ['nShuffles'] [default = 500]
-%     ['jumps']     [compute jump distance
-%                    (sum(jump)/length(windows)/length(track))]
-%                    and max jump distance (Silva et al.,2015) (default =
-%                    'off')]
-%     ['wcorr']     [compute weigthed correlation (cf Silva et al.,2015)
-%                   (type ''help <a href="matlab:help]
-%                    WeightedCorrCirc">WeightedCorrCirc</a>'' for details)
-%     ['circular']  [for circular-linear data (default = 'on')]
+%     'threshold'   considered distance from the line (default = 15 bins)
+%     'nShuffles'   default = 500
+%     'jumps'       compute jump distance and max jump distance (Silva et al.,2015)
+%                   (sum(jump)/length(windows)/length(track))
+%                    (default = 'off')
+%     'wcorr'       compute weigthed correlation (cf Silva et al.,2015)
+%                   (type ''help <a href="matlab:help
+%                   WeightedCorrCirc">WeightedCorrCirc</a>'' for details)
+%     'circular'    for circular-linear data (default = 'on')
 %    =========================================================================
 %
 %   OUTPUT
 %
-%     [r]               [replay score of matrix]
-%     [p]               [p-value of replay score]
-%     [st]              [start position bin of the fitted line]
-%     [sp]              [stop position bin of the fitted line]
-%     [rShuffled]       [replay scores of shuffled matrices]
-%     [stShuffled]      [st of shuffled matrices]
-%     [spShuffled]      [sp of shuffled matrices]
-%     [c]               [circular weigthed correlation of matrix]
-%     [cShuffled]       [circular weigthed correlations of shuffled
-%                        matrices]
-%     [jump]            [jump value of matrix]  
-%     [jumpShuffled]    [jump values of shuffled matrices]
-%     [maxJump]         [max jump value of matrix
-%     [maxJumpShuffled] [max jump values of shuffled matrices]
+%     r               replay score of matrix
+%     p               p-value of replay score
+%     st              start position bin of the fitted line
+%     sp              stop position bin of the fitted line
+%     rShuffled       replay scores of shuffled matrices
+%     stShuffled      st of shuffled matrices
+%     spShuffled      sp of shuffled matrices
+%     c               circular weigthed correlation of matrix
+%     cShuffled       circular weigthed correlations of shuffled
+%                        matrices
+%     jump            jump value of matrix  
+%     jumpShuffled    jump values of shuffled matrices
+%     maxJump         max jump value of matrix
+%     maxJumpShuffled max jump values of shuffled matrices
+%     quadrantScore   quadrant score (as described by Feng et al 2016)
 %
 %  SEE ALSO
 %
-% [Raly & Celine] [2021-2022]
+% Copyright (C) 2018-2023 by Ralitsa Todorova and Celine Drieu
+%
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
@@ -202,6 +202,16 @@ if strcmp(jumps,'on'),
     end
 end
 
+[nBins,nPieces] = size(matrix);
+spatialBinID = (1:nBins)'/nBins; temporalBinID = linspace(0,1,nPieces);
+underestimating = spatialBinID>0.375 & spatialBinID<0.5; overestimating = spatialBinID>0.5 & spatialBinID<0.625;
+earlyPhase = temporalBinID>=0.2 & temporalBinID<0.5; latePhase = temporalBinID>0.5 & temporalBinID<=0.8;
+Qok = false(size(matrix)); Qok(underestimating,earlyPhase) = true; Qok(overestimating,latePhase) = true;
+Qcontrol = false(nBins,nPieces); Qcontrol(underestimating,latePhase) = true; Qcontrol(overestimating,earlyPhase) = true;
+score = nanmean(nanmean(matrix(Qok)));
+score(2) = nanmean(nanmean(matrix(Qcontrol)));
+quadrantScore = (score(1)-score(2))./sum(score,2);
+
 %% Shuffle to get a p-value
 
 if nShuffles==0
@@ -244,7 +254,6 @@ for i=1:nShuffles,
 
 end
 p = sum(rShuffled>r)/nShuffles;
-
 
 % ------------------------------- Helper function -------------------------------
 

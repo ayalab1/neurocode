@@ -261,9 +261,7 @@ hold on;
 nStars0 = 0; nObjectsBetween = 0;
 % one way anova
 if ~grouped || size(data,2)==1 
-    if grouped, [~,~,stats] = testbetween(data(:,1),groups,'off'); u = unique(groups)';
-    else [~,pTest,stats] = testpaired(data); u = 1:size(data,2);
-    end
+    u = unique(xData)';
     if alpha(1)>0 % Unless alpha(1)=0, for each group, check if it's different from zero
         for i=1:length(u)
             if grouped, thesedata = data(groups==u(i),1); else thesedata = data(:,i); end
@@ -273,16 +271,18 @@ if ~grouped || size(data,2)==1
                     % Put a little star above it to show it's significantly different from zero
                     nStars0 = nStars0+1;
                     if sign(yData(i))>0, thisy = mean([max(yData2(i)),max(yData02(i))]);
-                    else, thisy = mean([min(yData1(i)),min(yData01(i))]); 
+                    else, thisy = mean([min(yData1(i)),min(yData01(i))]);
                     end
                     handlesStars0(nStars0) = plot(xData(i), thisy, 'k*', 'markersize', 5, 'MarkerEdgeColor', [0 0 0]);
                 end
             end
         end
     end
-    u = unique(xData)';
     sigFor2Groups = nan(length(u),1);
-    if alpha(2)>0 % Unless alpha(2)=0, perform tests between groups
+    if alpha(2)>0 && (grouped || size(data,2)~=1)  % Unless alpha(2)=0 or no groups are present, perform tests between groups
+        if grouped, [~,~,stats] = testbetween(data(:,1),groups,'off'); u = unique(groups)';
+        else, [~,pTest,stats] = testpaired(data); u = 1:size(data,2);
+        end
         if ischar(stats) && strcmp(stats,'signrank') % signrank test doesn't give a "stats" output compatible with multcompare
             comparison = [1 2 (pTest<alpha(2)) + (pTest<alpha(2)/5) (pTest<alpha(2)/50)];
         else

@@ -757,6 +757,10 @@ else
         fs = 1/mode(diff(t));
     else
         warning('No MergePoints file found. Concatenating timestamps...');
+        if ~exist('trackFolder','var')
+           warning('No trackFolder found. returning...');
+           return 
+        end
         for ii = 1:length(trackFolder)
             sumTs = max(t)+ tempTracking{ii}.timestamps;
             subSessions = [subSessions; [sumTs(1) sumTs(end)]];

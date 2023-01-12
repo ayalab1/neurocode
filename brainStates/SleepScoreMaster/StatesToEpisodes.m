@@ -81,7 +81,7 @@ WAKElengths = WAKEints(:,2)-WAKEints(:,1);
 MAIntervals = WAKEints(WAKElengths<=maxMicroarousalDuration,:);
 WAKEIntervals = WAKEints(WAKElengths>maxMicroarousalDuration,:);
 
-[episodeintervals{1}] = IDStateEpisode(WAKEints,maxWAKEEpisodeInterruption,minWAKEEpisodeDuration);
+[episodeintervals{1}] = IDStateEpisode(WAKEIntervals,maxWAKEEpisodeInterruption,minWAKEEpisodeDuration);
 [episodeintervals{2}] = IDStateEpisode(NREMints,maxNREMEpisodeInterruption,minNREMEpisodeDuration);
 [episodeintervals{3}] = IDStateEpisode(REMints,maxREMEpisodeInterruption,minREMEpisodeDuration);
 
@@ -125,6 +125,11 @@ MAIntervals = MAIntervals(realMA,:);
 
 %% Output: buzcode format
 % Output: SleepStateEpisodes
+
+% Remove overlapping periods as we can't be sure which state they're in:
+noOverlap = episodeintervals;
+for i=1:3, for j=1:3, if i~=j, noOverlap{i} = SubtractIntervals(noOverlap{i},episodeintervals{j}); end; end; end
+episodeintervals = noOverlap;
 SleepStateEpisodes.ints.NREMepisode = episodeintervals{2};
 SleepStateEpisodes.ints.REMepisode = episodeintervals{3};
 SleepStateEpisodes.ints.WAKEepisode = episodeintervals{1};

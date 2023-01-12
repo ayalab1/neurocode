@@ -8,7 +8,7 @@
 %% Load spikes, positions, and theta cycles
 
 basepath = 'Z:\Data\Can\OML22\day7'; % we will be using this session for the sake of this tutorial
-basename = basenameFromBasepath(pwd);
+basename = basenameFromBasepath(basepath);
 spikeStructure = importSpikes('basepath',basepath,'CellType',"Pyramidal Cell",'brainRegion','CA1'); % load CA1 pyramidal cells
 behavior = getStruct(basepath,'animal.behavior'); % load behavior structure
 
@@ -75,6 +75,9 @@ if ~isfield(behavior,'run') % Here is some example code to detect running epochs
     run(diff(run,[],2)<0.5,:) = []; % remove run epochs lasting for less than 0.5s
     behavior.run = run;
     behavior.speed = speed(:,2)'; % replace old speed with this speed
+
+    % I recommend saving the running epochs in the behavior file:
+    save(fullfile(basepath,[basename '.animal.behavior.mat']),'behavior');
 end
 
 ok = InIntervals(thetacycles.timestamps,behavior.run);

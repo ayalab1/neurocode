@@ -313,11 +313,11 @@ else
         '\tbase name of the directory supplied by the user.\n'],mfname);
 end
 
-% 3) Epochs - % not currently working - only Epoch output is all
+% 3) Epochs
 if nargin < 3 || isempty(Epochs)
     % use the whole recording if no restrictions supplied by user
     fprintf( 1, '%s: Using Default Epochs:\n', mfname );
-    fprintf( 1, '\tNo Epochs supplied by user. Using the whole recording.\n');          
+    fprintf( 1, '\tNo Epochs supplied by user. Using the whole recording.\n');
     Epochs = [1/SR lfp_info.bytes/(2*nChan*SR)];
 elseif ~all(Epochs(:,1) < Epochs(:,2)) || ...
         ~all(Epochs(:) > 0 & Epochs(:) < lfp_info.bytes/(2*nChan*SR)) || ...

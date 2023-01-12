@@ -65,7 +65,7 @@ function [ripples] = DetectSWR(Channels, varargin)
 % basepath:     full path where session is located (default pwd)
 %               e.g. /mnt/Data/buddy140_060813_reo/buddy140_060813_reo
 %
-% Epochs:       a list of time stamps [start stop] in seconds demarcating
+% Epochs:       (Not working - HeathLarsson, 2023) a list of time stamps [start stop] in seconds demarcating
 %               epochs in which to detect SWR. If this argument is empty,
 %               the entire .lfp/.lfp file will be used.
 %
@@ -178,7 +178,7 @@ function [ripples] = DetectSWR(Channels, varargin)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder);
-addParameter(p, 'Epochs', [], @isnumeric);
+addParameter(p, 'Epochs', [], @isnumeric);   %(Not working - HeathLarsson, 2023)
 addParameter(p, 'saveMat', true, @islogical);
 addParameter(p, 'forceDetect', false, @islogical);
 addParameter(p, 'swBP', [ 2 50 ], @isnumeric);
@@ -322,7 +322,7 @@ if nargin < 3 || isempty(Epochs)
 elseif ~all(Epochs(:,1) < Epochs(:,2)) || ...
         ~all(Epochs(:) > 0 & Epochs(:) < lfp_info.bytes/(2*nChan*SR)) || ...
         size(Epochs,2) > 2
-    error(['%s: Epochs are not formatted properly:\n', ...
+       error(['%s: Epochs are not formatted properly:\n', ...
         '\tEpochs must be formatted as a list of [start stop] times in seconds.\n'], mfname);
 end
 Nepochs = size(Epochs,1);

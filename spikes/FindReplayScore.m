@@ -24,6 +24,7 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 %                   (type ''help <a href="matlab:help
 %                   WeightedCorrCirc">WeightedCorrCirc</a>'' for details)
 %     'circular'    for circular-linear data (default = 'on')
+%     'shuffle'     either 'column' (spatial) or 'temporal' (default = 'column');
 %    =========================================================================
 %
 %   OUTPUT
@@ -55,19 +56,17 @@ function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,
 %
 %------------------------------------------------------------------------
 
-
-
 % Defaults values
-nShuffles = [];
+nShuffles = 500;
 p = nan;
-rShuffled = [];
-aShuffled = [];
-bShuffled = [];
-cShuffled = [];
-maxJumpShuffled = [];
-jumpShuffled = [];
-jump = [];
-maxJump = [];
+jump = nan;
+maxJump = nan;
+r = nan;
+quadrantScore = nan;
+st = nan;
+sp = nan;
+c = nan;
+shuffle = 'column';
 if nargout>7, wcorr = 'on'; else, wcorr = 'off'; end
 if nargout>9, jumps = 'on'; else, jumps = 'off'; end
 circular = 'off';
@@ -103,6 +102,11 @@ for i = 1:2:length(varargin),
             if ~isastring(circular,'on','off'),
                 builtin('error','Incorrect value for property ''circular'' (type ''help <a href="matlab:help FindReplayScore">FindReplayScore</a>'' for details).');
             end
+        case 'shuffle',
+            shuffle = lower(varargin{i+1});
+            if ~isastring(shuffle,'column','temporal'),
+                builtin('error','Incorrect value for property ''shuffle'' (type ''help <a href="matlab:help FindReplayScore">FindReplayScore</a>'' for details).');
+            end
         case 'wcorr',
             wcorr = varargin{i+1};
             if ~isastring(wcorr,'on','off'),
@@ -115,8 +119,11 @@ end
 
 % Default values
 nBinsY = size(matrix,1); nBinsX = size(matrix,2); 
-if isempty(nShuffles),
-    nShuffles = 500;
+
+
+if isempty(matrix)
+    [rShuffled, aShuffled, bShuffled, cShuffled, maxJumpShuffled, jumpShuffled] = deal(nan(1,nShuffles));
+    return
 end
 
 %% Get the matrix of sums 
@@ -223,36 +230,66 @@ maxJumpShuffled = nan(1,nShuffles);
 jumpShuffled = nan(1,nShuffles);
 aShuffled = nan(1,nShuffles);
 bShuffled = nan(1,nShuffles);
-for i=1:nShuffles,
-    shift = round(rand(1,nBinsX)*(nBinsY-1));
-    mockSums = CircularShift(sums,shift);
-    [rShuffled(i),ind] = max(mean(mockSums(indices),2));
-    aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
-    if strcmp(wcorr,'on'),
-        mockMatrix = CircularShift(matrix,shift);
-        if strcmp(circular,'on'),
-            cShuffled(i) = WeightedCorrCirc(mockMatrix);
-        else
-            cShuffled(i) = WeightedCorr(mockMatrix);
+if strcmp(shuffle,'column')
+    for i=1:nShuffles,
+        shift = round(rand(1,nBinsX)*(nBinsY-1));
+        mockSums = CircularShift(sums,shift);
+        [rShuffled(i),ind] = max(mean(mockSums(indices),2));
+        aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
+        if strcmp(wcorr,'on') || strcmp(jumps,'ok')
+            mockMatrix = CircularShift(matrix,shift);
+            if strcmp(wcorr,'on')
+                if strcmp(circular,'on'),
+                    cShuffled(i) = WeightedCorrCirc(mockMatrix);
+                else
+                    cShuffled(i) = WeightedCorr(mockMatrix);
+                end
+            end
+            if strcmp(jumps,'ok')
+                [~,wherePmax] = max(mockMatrix(:,goodWindows));
+                d = diff(wherePmax);
+                if strcmp(circular,'on'),
+                    delta = mod(d(logical(neighbour)),nBinsY);
+                    delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+                else
+                    delta = d;
+                end
+                maxJumpShuffled(i) = max(abs(delta));
+                jumpShuffled(i) = sum(abs(delta))/length(delta);
+            end
         end
     end
-
-
-    if strcmp(jumps,'ok'),
-        mockMatrix = CircularShift(matrix,shift);
-        [~,wherePmax] = max(mockMatrix(:,goodWindows));
-        d = diff(wherePmax);
-        if strcmp(circular,'on'),
-            delta = mod(d(logical(neighbour)),nBinsY);
-            delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
-        else
-            delta = d;
+else % temporal shuffle
+    for i=1:nShuffles,
+        [~,order] = sort(rand(1,nBinsX));
+        mockSums = sums(:,order);
+        [rShuffled(i),ind] = max(mean(mockSums(indices),2));
+        aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
+        if strcmp(wcorr,'on') || strcmp(jumps,'ok')
+            mockMatrix = matrix(:,order);
+            if strcmp(wcorr,'on')
+                if strcmp(circular,'on'),
+                    cShuffled(i) = WeightedCorrCirc(mockMatrix);
+                else
+                    cShuffled(i) = WeightedCorr(mockMatrix);
+                end
+            end
+            if strcmp(jumps,'ok')
+                [~,wherePmax] = max(mockMatrix(:,ismember(order,goodWindows)));
+                d = diff(wherePmax);
+                if strcmp(circular,'on'),
+                    delta = mod(d(logical(neighbour)),nBinsY);
+                    delta(delta>nBinsY/2) = delta(delta>nBinsY/2) - nBinsY;
+                else
+                    delta = d;
+                end
+                maxJumpShuffled(i) = max(abs(delta));
+                jumpShuffled(i) = sum(abs(delta))/length(delta);
+            end
         end
-        maxJumpShuffled(i) = max(abs(delta));
-        jumpShuffled(i) = sum(abs(delta))/length(delta);
     end
-
 end
+
 p = sum(rShuffled>r)/nShuffles;
 
 % ------------------------------- Helper function -------------------------------

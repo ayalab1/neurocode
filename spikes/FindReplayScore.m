@@ -119,10 +119,9 @@ end
 
 % Default values
 nBinsY = size(matrix,1); nBinsX = size(matrix,2); 
-
+[rShuffled, aShuffled, bShuffled, cShuffled, maxJumpShuffled, jumpShuffled] = deal(nan(1,nShuffles));
 
 if isempty(matrix)
-    [rShuffled, aShuffled, bShuffled, cShuffled, maxJumpShuffled, jumpShuffled] = deal(nan(1,nShuffles));
     return
 end
 

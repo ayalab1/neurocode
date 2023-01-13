@@ -96,17 +96,24 @@ for i = 1:2:length(varargin),
 		error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help FiringMap">FiringMap</a>'' for details).']);
 	end
 	switch(lower(varargin{i})),
-		case 'type',
-			argss{is} = 'type';
-			argss{is+1} = varargin{i+1}(1:2);
-			is = is+2;
-			argsm{im} = 'type';
-			argsm{im+1} = [varargin{i+1}(1:2) 'l'];
-			im = im+2;
-		case {'threshold','minsize','minpeak','verbose','debug'},
-			argss{is} = varargin{i};
+        case 'type',
+            argss{is} = 'type';
+            argss{is+1} = varargin{i+1}(1:2);
+            is = is+2;
+            argsm{im} = 'type';
+            argsm{im+1} = [varargin{i+1}(1:2) 'l'];
+            im = im+2;
+        case {'threshold','minsize','minpeak','verbose','debug'},
+            argss{is} = varargin{i};
             argss{is+1} = varargin{i+1};
             is = is+2;
+        case 'mintime',
+            argss{is} = varargin{i};
+            argss{is+1} = varargin{i+1};
+            is = is+2;
+            argsm{im} = varargin{i};
+            argsm{im+1} = varargin{i+1};
+            im = im+2;
         case {'nshuffles'},
             nShuffles = varargin{i+1}(1);
 		otherwise,
@@ -120,14 +127,14 @@ map = Map(positions,spikes,argsm{:});
 if nargout == 2,
 	stats = MapStats(map,argss{:});
     if nShuffles>0
-        maxTime = max(samples(:,1)); specificity = nan(nShuffles,1);
+        maxTime = max(positions(:,1)); specificity = nan(nShuffles,1);
         for i=1:nShuffles
-            shifted = sortrows([rem(samples(:,1)+rand(1)*maxTime,maxTime) samples(:,2:end)]);
+            shifted = sortrows([rem(positions(:,1)+rand(1)*maxTime,maxTime) positions(:,2:end)]);
             shuffled = Map(shifted,spikes,argsm{:});
             s = MapStats(shuffled,argss{:});
             specificity(i) = s.specificity;
         end
-        stats.p = sum(specificity>=stats.specificity)./sum(~isnan(specificity));
+        stats.p = 1-sum(specificity<stats.specificity)./sum(~isnan(specificity));
     else
         stats.p = nan;
     end

@@ -24,5 +24,5 @@ ok = ~isnan(r1(:)) & ~isnan(r2(:));
 % linear fit
 x = r1(ok); y = r2(ok);
 a = polyfit(x(:),y(:),1);
-residuals = r2-r1*a(1)+a(2);
+residuals = r2-(r1*a(1)+a(2));
 

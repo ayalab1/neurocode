@@ -78,6 +78,7 @@ end
 % Default values
 threshold = 0.2;
 minPeak = 1;
+minTime = 0;
 type = 'll';
 verbose = 0;
 localmax = 'off';
@@ -112,6 +113,12 @@ for i = 1:2:length(varargin),
 	  minPeak = varargin{i+1};
 	  if ~isdscalar(minPeak,'>=0'),
 	      error('Incorrect value for property ''minPeak'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
+      end
+
+        case 'mintime',
+	  minTime = varargin{i+1};
+	  if ~isdscalar(minTime,'>=0'),
+	      error('Incorrect value for property ''minTime'' (type ''help <a href="matlab:help MapStats">MapStats</a>'' for details).');
 	  end
 	  
         case 'type',
@@ -169,7 +176,8 @@ lambda = lambda_i(:)'*p_i(:);
 if T == 0 || lambda == 0,
     stats.specificity = 0;
 else
-    stats.specificity = sum(sum(p_i.*lambda_i/lambda.*log2(lambda_i/lambda)));
+    ok = map.time>minTime; 
+    stats.specificity = sum(sum(p_i(ok).*lambda_i(ok)/lambda.*log2(lambda_i(ok)/lambda)));
 end
 
 % Determine the field as the connex area around the peak where the value or rate is > threshold*peak

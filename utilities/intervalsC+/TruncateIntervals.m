@@ -34,6 +34,10 @@ function truncated = TruncateIntervals(intervals, duration)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
+if sum(diff(intervals,[],2))<duration % if the intervals are already shorter than the desired duration
+    truncated = intervals; % there is nothing to truncate
+    return
+end
 
 limit = Unshift(duration,intervals); % transform the limit in absolute time
 truncated = intervals(intervals(:,1)<limit,:); % take only intervals that start before the limit is reached

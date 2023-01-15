@@ -10,6 +10,10 @@ classdef IntervalArray < handle
     %   sort - sorts intervals by start time
     %   starts - returns the start time of each interval
     %   stops - retruns the stop time of each interval
+    %   min - minimum bound of all intervals
+    %   max - maximum bound of all intervals
+    %   is_finite - if min and max are finite
+    %   centers - mean (center) val of each interval
     %   n_intervals - returns the number of intervals in the object
     %   expand - expands or shrinks the intervals by a certain amount
     %   isempty - checks if the intervals are empty
@@ -29,11 +33,13 @@ classdef IntervalArray < handle
     %   remove_empty - remove empty intervals
     %   eq - check if intervals are equal
     %   in - check if point is within one of the intervals
+    %   plot - plot intervals using PlotIntervals
     %
     % Examples:
     %   myIntervalArray = IntervalArray([0,5;10,15])
     %   myIntervalArray.validate_intervals()
     %   myIntervalArray.sort()
+    %   myIntervalArray(1)
     %   myIntervalArray.starts()
     %   myIntervalArray.stops()
     %   myIntervalArray.n_intervals()
@@ -76,13 +82,32 @@ classdef IntervalArray < handle
         
         function interval = subsref(obj,S)
             if isequal(S.type,'()')
-                if S.subs{1} > obj.n_intervals()
+                if S.subs{1} > obj.n_intervals() || S.subs{1} < 0
                     error('Index out of bounds')
                 end
                 interval = IntervalArray(obj.intervals(S.subs{1},:));
             else
                 interval = builtin('subsref',obj,S);
             end
+        end
+        
+        function max_ = max(obj)
+            % maximum bound of all intervals in IntervalArray
+            max_ = max(obj.intervals(:,2));
+        end
+        
+        function min_ = min(obj)
+            % minimum bound of all intervals in IntervalArray
+            min_ = min(obj.intervals(:,1));
+        end
+        
+        function is_finite_ = is_finite(obj)
+            % Is the interval [start, stop) finite.
+            is_finite_ = ~(isinf(obj.min) | isinf(obj.max));
+        end
+        
+        function centers_ = centers(obj)
+            centers_ = mean(obj.intervals,2);
         end
         
         function obj = sort(obj)
@@ -345,6 +370,16 @@ classdef IntervalArray < handle
             else
                 error("unsupported operand type(s) for setdiff: %s and %s",...
                     class(obj), class(other));
+            end
+        end
+        
+        function out = plot(obj,varargin)
+            if isempty(varargin)
+                for i = 1:obj.n_intervals
+                    out = PlotIntervals(obj.intervals(i,:),'color',[rand(1),rand(1),rand(1)]);
+                end
+            else
+                out = PlotIntervals(obj.intervals,varargin);
             end
         end
     end

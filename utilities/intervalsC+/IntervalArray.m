@@ -81,6 +81,7 @@ classdef IntervalArray < handle
         
         function new = remove_empty(obj)
             new = IntervalArray();
+            new.intervals = obj.intervals;
             % remove empty intervals
             new.intervals(obj.intervals(:,1) == obj.intervals(:,2),:) = [];
         end

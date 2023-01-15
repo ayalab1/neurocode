@@ -98,6 +98,33 @@ classdef IntervalArray < handle
             end
         end
         
+        function disp(obj)
+            
+            obj_duration = seconds(obj.duration);
+            
+            if obj_duration < seconds(1)
+                duration_str = datestr(obj_duration, 'FFF');
+                units = 'ms';
+            elseif obj_duration < seconds(60)
+                duration_str = datestr(obj_duration, 'SS.FFF');
+                units = 'seconds';
+            elseif obj_duration < seconds(3600)
+                duration_str = datestr(obj_duration, 'MM:SS.FFF');
+                units = 'minutes';
+            elseif obj_duration < seconds(86400)
+                duration_str = datestr(obj_duration, 'HH:MM:SS.FFF');
+                units = 'hours';
+            else
+                duration_str = datestr(obj_duration, 'DD:HH:MM:SS.FFF');
+                units = 'days';
+            end
+            fprintf('<%s %d epochs> of length %s %s \n',...
+                "IntervalArray:",...
+                obj.n_intervals,...
+                duration_str,...
+                units);
+        end
+        
         function max_ = max(obj)
             % maximum bound of all intervals in IntervalArray
             max_ = max(obj.intervals(:,2));

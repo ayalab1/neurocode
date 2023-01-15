@@ -15,6 +15,13 @@
 % 
 % Can return a copy of the class with just one interval using the () operator.
 % 
+% You can also use MATLAB Operators! 
+%   & for intersection
+%   | for union
+%   - for set difference
+%   + for set addition
+%   ~ for complement
+%   
 % Can be useful in a variety of applications such as signal processing 
 %   where intervals are frequently used.
 
@@ -31,16 +38,19 @@ ripple_epochs = IntervalArray(ripples.timestamps)
 disp("number of intervals: ");
 ripple_epochs.n_intervals
 
+% check the overall duration (all intervals added up)
 disp("total duration: ");
 ripple_epochs.duration
 
+% first start
 disp("minimum bound of all intervals: ");
 ripple_epochs.min()
 
+% last stop
 disp("maximum bound of all intervals: ");
 ripple_epochs.max()
 
-% you can return a copy of the class at a particular index
+% you can easily return a copy of the class at a particular index
 disp("retuning class by index: ");
 ripple_epochs(2)
 
@@ -56,18 +66,43 @@ beh_epochs = IntervalArray(beh_epochs);
 beh_epochs.plot();
 
 %% get the ripples within the first epoch
-ripple_epochs = ripple_epochs.intersect(beh_epochs(1))
+ripple_epochs_new = ripple_epochs.intersect(beh_epochs(1))
 
 %% check that these ripples are within the interval
 
-ripple_epochs.max <= beh_epochs(1).max
+ripple_epochs_new.max <= beh_epochs(1).max
 
-ripple_epochs.min >= beh_epochs(1).min
+ripple_epochs_new.min >= beh_epochs(1).min
 
-%% restrict to nrem within epoch 1
+%% restrict to nrem
 
 nrem_epochs = IntervalArray(SleepState.ints.NREMstate);
 
-ripple_epochs = ripple_epochs.intersect(nrem_epochs)
+ripple_epochs_new = ripple_epochs.intersect(nrem_epochs)
+
+%% you can use MATLAB Operators (& | + - ~) as well! 
+
+% get intersection of multiple intervals using &
+intervals_1 = ripple_epochs & nrem_epochs & beh_epochs(1)
+
+% gives the same as this
+intervals_2 = ripple_epochs.intersect(nrem_epochs).intersect(beh_epochs(1))
+
+% lets check with ==
+intervals_1 == intervals_2
+
+%% Easily get complement with .complement or ~
+
+disp('all epochs outside ripples')
+~ripple_epochs
+
+%% get union with .union or |
+ripple_epochs | nrem_epochs
+
+%% addition wth .plus or +
+ripple_epochs + nrem_epochs
+
+%% set difference with .setdiff or -
+ripple_epochs - nrem_epochs
 
 

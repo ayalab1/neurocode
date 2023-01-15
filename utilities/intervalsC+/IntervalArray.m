@@ -56,7 +56,12 @@ classdef IntervalArray < handle
     %   myIntervalArray.remove_empty()
     %   myIntervalArray.eq(otherIntervalArray)
     %   myIntervalArray.in(point)
-    %
+    %   myIntervalArray + otherIntervalArray
+    %   myIntervalArray - otherIntervalArray
+    %   myIntervalArray & otherIntervalArray
+    %   myIntervalArray | otherIntervalArray
+    %   ~myIntervalArray
+
     % Ryan H 2023
     
     properties
@@ -86,6 +91,8 @@ classdef IntervalArray < handle
                     error('Index out of bounds')
                 end
                 interval = IntervalArray(obj.intervals(S.subs{1},:));
+                %             elseif isequal(S.type,'+')
+                
             else
                 interval = builtin('subsref',obj,S);
             end
@@ -201,6 +208,27 @@ classdef IntervalArray < handle
             else
                 duration_ = [];
             end
+        end
+        
+        function new = and(obj, other)
+            % intersection using interval_1 & interval_2
+            % https://www.mathworks.com/help/matlab/matlab_oop/implementing-operators-for-your-class.html
+            new = intersect(obj,other);
+        end
+        
+        function new = or(obj, other)
+            % union using interval_1 | interval_2
+            new = union(obj,other);
+        end
+        
+        function new = minus(obj, other)
+            % union using interval_1 - interval_2
+            new = setdiff(obj,other);
+        end
+        
+        function new = not(obj)
+            % complement using ~interval_1
+            new = complement(obj);
         end
         
         function new = intersect(obj, other)

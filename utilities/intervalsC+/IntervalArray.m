@@ -99,8 +99,13 @@ classdef IntervalArray < handle
         end
         
         function disp(obj)
+
+            % pull out intervals and remove inf
+            intervals_ = obj.intervals;
+            intervals_(any(isinf(intervals_),2),:) = [];
             
-            obj_duration = seconds(obj.duration);
+            % calc total duration
+            obj_duration = seconds(sum(intervals_(:,2) - intervals_(:,1)));
             
             if obj_duration < seconds(1)
                 duration_str = datestr(obj_duration, 'FFF');

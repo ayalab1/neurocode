@@ -63,8 +63,8 @@ classdef IntervalArray < handle
                 intervals_in = [-inf,inf];
             end
             obj.intervals = intervals_in;
-            obj.validate_intervals()
-            obj.sort()
+            obj.validate_intervals();
+            obj.sort();
         end
         
         function obj = validate_intervals(obj)
@@ -169,13 +169,35 @@ classdef IntervalArray < handle
         function new = intersect(obj, other)
             new = IntervalArray();
             if isa(other, 'IntervalArray')
-                % perform the set difference operation on the intervals here
-                new.intervals = SubtractIntervals(obj.intervals,other.intervals);
+                % Get intervals
+                intervals_ = obj.intervals;
+                other_intervals = other.intervals;
+                % Initialize variables to store the intersection intervals
+                intersection = [];
+                i = 1;
+                j = 1;
+                % Iterate through intervals and other_intervals
+                while (i <= size(intervals_,1) && j <= size(other_intervals,1))
+                    % Check for intersection
+                    if (intervals_(i,2) >= other_intervals(j,1) && intervals_(i,1) <= other_intervals(j,2))
+                        start = max(intervals_(i,1), other_intervals(j,1));
+                        stop = min(intervals_(i,2), other_intervals(j,2));
+                        intersection = [intersection; start,stop];
+                    end
+                    % Move to the next interval or other_interval
+                    if (intervals_(i,2) < other_intervals(j,2))
+                        i = i+1;
+                    else
+                        j = j+1;
+                    end
+                end
+                new.intervals = intersection;
             else
-                error("unsupported operand type(s) for setdiff: %s and %s",...
+                error("unsupported operand type(s) for intersection: %s and %s",...
                     class(obj), class(other));
             end
         end
+        
         
         function new = union(obj, other)
             if isa(other, 'IntervalArray')
@@ -228,27 +250,19 @@ classdef IntervalArray < handle
         
         function new = complement(obj)
             new = IntervalArray();
+            % Get intervals
             intervals_ = obj.intervals;
-            % check if intervals are not empty
+            % Check if intervals are not empty
             if ~isempty(intervals_)
-                % check if the first interval starts at a non-negative value
-                if intervals_(1,1) >= 0
-                    new_interval = [-inf intervals_(1,1)];
-                    intervals_ = [new_interval; intervals_];
-                end
-                % loop through the intervals
+                % Initialize variables to store the complement intervals
+                complement = [-inf, intervals_(1,1)];
                 for i = 1:size(intervals_,1)-1
-                    new_interval = [intervals_(i,2) intervals_(i+1,1)];
-                    intervals_ = [intervals_; new_interval];
+                    complement = [complement; intervals_(i,2), intervals_(i+1,1)];
                 end
-                % check if the last interval ends at a positive value
-                if intervals_(end,2) > 0
-                    new_interval = [intervals_(end,2) inf];
-                    intervals_ = [intervals_; new_interval];
-                end
-                new.intervals = intervals_;
+                complement = [complement; intervals_(end,2), inf];
+                new.intervals = complement;
             else
-                new.intervals = [-inf inf];
+                new.intervals = [-inf, inf];
             end
         end
         

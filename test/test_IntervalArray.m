@@ -66,4 +66,21 @@ function test_IntervalArray()
     otherIntervalArray = IntervalArray([-2,2;8,12]);
     myIntervalArray = myIntervalArray.plus(otherIntervalArray);
     assert(isequal(myIntervalArray.intervals,[-2,2;8,12;10,25]),'Error: plus not working');
+    
+    % Test remove_empty
+    myIntervalArray = IntervalArray([0,2;5,5;8,12]);
+    myIntervalArray = myIntervalArray.remove_empty();
+    assert(isequal(myIntervalArray.intervals,[0,2;8,12]),'Error: remove_empty not working');
+    
+    % Test eq
+    myIntervalArray = IntervalArray([0,2;8,12]);
+    otherIntervalArray = IntervalArray([0,2;8,12]);
+    is_equal = myIntervalArray.eq(otherIntervalArray);
+    assert(isequal(is_equal,true),'Error: eq not working');
+    
+    % Test in
+    myIntervalArray = IntervalArray([0,2;8,12]);
+    point = 9;
+    contain = myIntervalArray.in(point);
+    assert(isequal(contain,true),'Error: in not working');
 end

@@ -74,6 +74,17 @@ classdef IntervalArray < handle
             end
         end
         
+        function interval = subsref(obj,S)
+            if isequal(S.type,'()')
+                if S.subs{1} > obj.n_intervals()
+                    error('Index out of bounds')
+                end
+                interval = IntervalArray(obj.intervals(S.subs{1},:));
+            else
+                interval = builtin('subsref',obj,S);
+            end
+        end
+        
         function obj = sort(obj)
             % sort intervals by start time
             obj.intervals = sortrows(obj.intervals,1);

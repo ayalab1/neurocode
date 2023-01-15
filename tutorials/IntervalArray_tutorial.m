@@ -42,7 +42,12 @@ ripple_epochs.n_intervals
 disp("total duration: ");
 ripple_epochs.duration
 
+% also printing out the class will produce a nice overview of data
+disp('look at pretty disp')
+ripple_epochs
+
 % first start
+fprintf('\n')
 disp("minimum bound of all intervals: ");
 ripple_epochs.min()
 

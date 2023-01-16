@@ -90,9 +90,7 @@ classdef IntervalArray < handle
                 if S.subs{1} > obj.n_intervals() || S.subs{1} < 0
                     error('Index out of bounds')
                 end
-                interval = IntervalArray(obj.intervals(S.subs{1},:));
-                %             elseif isequal(S.type,'+')
-                
+                interval = IntervalArray(obj.intervals(S.subs{1},:));                
             else
                 interval = builtin('subsref',obj,S);
             end

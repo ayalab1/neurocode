@@ -234,7 +234,7 @@ if strcmp(shuffle,'column')
         shift = round(rand(1,nBinsX)*(nBinsY-1));
         mockSums = CircularShift(sums,shift);
         [rShuffled(i),ind] = max(mean(mockSums(indices),2));
-        aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
+        aShuffled(i) = a(ind); bShuffled(i) = b(ind);
         if strcmp(wcorr,'on') || strcmp(jumps,'ok')
             mockMatrix = CircularShift(matrix,shift);
             if strcmp(wcorr,'on')

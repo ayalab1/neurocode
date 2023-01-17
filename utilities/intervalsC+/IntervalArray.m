@@ -433,12 +433,24 @@ classdef IntervalArray < handle
         
         function out = plot(obj,varargin)
             if isempty(varargin)
+                yLim = ylim; alphaValue = 0.5; dy = yLim(2)-yLim(1);
+                colors = rand(size(obj.intervals,1),3);
                 for i = 1:obj.n_intervals
-                    out = PlotIntervals(obj.intervals(i,:),'color',[rand(1),rand(1),rand(1)]);
+                    % Better off implementing "PlotIntervals" directly here to avoid calling "uistack" multiple times
+                    dx = diff(obj.intervals(i,:));
+                    out(i) = patch(obj.intervals(i,1)+[0 0 dx dx],yLim(1)+[0 dy dy 0],colors(i,:),'LineStyle','none');
+                    alpha(out(i),alphaValue);
                 end
+                uistack(out,'bottom');
             else
                 out = PlotIntervals(obj.intervals,varargin);
             end
         end
     end
 end
+
+
+
+
+
+

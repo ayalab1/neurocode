@@ -111,7 +111,7 @@ classdef SpikeArray < handle
             if isempty(varargin)
                 [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals);
             else
-                [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals, varargin);
+                [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals, varargin{:});
             end
             st.uid = obj.uid(idx);
         end

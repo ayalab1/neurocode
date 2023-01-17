@@ -106,12 +106,14 @@ classdef SpikeArray < handle
             end
         end
 
-        function st  = restrict(obj, intervals)
+        function st  = restrict(obj, intervals, varargin)
             st  = SpikeArray();
-            [status,~,~] = InIntervals(obj.spikes,intervals.intervals);
-            
-            st .spikes = obj.spikes(status);
-            st .uid = obj.uid(status);
+            if isempty(varargin)
+                [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals);
+            else
+                [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals, varargin);
+            end
+            st.uid = obj.uid(idx);
         end
         
         function n_cells_ = n_cells(obj)

@@ -448,9 +448,3 @@ classdef IntervalArray < handle
         end
     end
 end
-
-
-
-
-
-

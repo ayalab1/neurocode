@@ -116,6 +116,18 @@ classdef SpikeArray < handle
             st.uid = obj.uid(idx);
         end
         
+        function bst = bin(obj,varargin)
+            
+            p = inputParser;
+            addParameter(p,'ds',0.0625,@isnumeric)
+            parse(p,varargin{:})
+            ds = p.Results.ds;
+            
+            [bst,~,~] = histcounts2(obj.uid,...
+                obj.spikes,...
+                1:obj.n_cells,obj.first_event:ds:obj.last_event);
+        end
+        
         function n_cells_ = n_cells(obj)
             n_cells_= length(unique(obj.uid));
         end

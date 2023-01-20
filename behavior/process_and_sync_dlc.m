@@ -35,12 +35,18 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             % locate file
             file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*csv'));
             
+            % if there are more than 1 csv, then it is likely to be a dlc
+            % filtered file. If so, take the filtered csv
+            if length(file) > 1
+                file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*filtered.csv'));
+            end
+            
             video_file = dir(fullfile(file(1).folder,'*.avi'));
             obj = VideoReader(fullfile(video_file.folder,video_file.name));
             fs = obj.FrameRate;
             
             % load csv with proper header
-            df = load_dlc_csv(fullfile(file.folder,file.name));
+            df = load_dlc_csv(fullfile(file(1).folder,file(1).name));
             
             % locate columns with [x,y,likelihood]
             field_names = df.Properties.VariableNames;
@@ -144,6 +150,9 @@ end
 function [tracking] = sync_ttl(folder,x,y,ts,fs,pulses_delta_range)
 
 if ~exist(fullfile(folder,'digitalIn.events.mat'),'file')
+    if ~exist(fullfile(folder,'digitalin.dat'),'file')
+        error([fullfile(folder,'digitalin.dat'),'   does not exist'])
+    end
     digitalIn = getDigitalIn('all','folder',folder);
 end
 load(fullfile(folder,'digitalIn.events.mat'))

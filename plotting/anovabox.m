@@ -29,9 +29,9 @@ function varargout = anovabox(data,groups,varargin)
 %                   groups (default = [0.05 0.05]). Set alpha to zero to 
 %                   skip respective test (e.g. alpha = [0 0.05] would skip
 %                   tests between each column and zero).
-%    'parametric'   either 'on' (to display means and perform t-tests) 
-%                   or 'off' (to display median and perform non-parametric 
-%                   Wilcoxon signed-rank and ranksum tests / friedman).
+%    'parametric'   either 'on' (to perform t-tests / anova) or 'off' (to 
+%                   perform non-parametric Wilcoxon signed-rank and ranksum 
+%                   tests / friedman).
 %    'correction'   type of statistical correction to use to control for
 %                   multiple comparisons, i.e. between all pairs of multiple
 %                   groups (default = tukey-kramer)
@@ -44,8 +44,10 @@ function varargout = anovabox(data,groups,varargin)
 %    'paired'       a setting indicating whether values in the same row are
 %                   paired (default = 'on').
 %    'lock'         prevent the function from changing the y-axis limits
-%                   (default = 'off').boxwidth
+%                   (default = 'off').
 %    'boxwidth'     the width of the boxes to be plotted (default = 0.3).
+%    'ns'           display the "n.s." label when between-group comparisons
+%                   are not significant (default = false).
 %    =========================================================================
 %
 %  OUTPUT
@@ -115,6 +117,7 @@ precedence = 1;
 paired = true;
 lock = false; % lock y axis
 boxwidth = 0.3;
+ns = false;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -156,6 +159,14 @@ for i = 1:2:length(varargin),
             boxwidth = varargin{i+1};
             if ~isdvector(boxwidth,'#1'),
                 error('Incorrect value for property ''boxwidth'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
+            end
+        case 'ns'
+            ns = varargin{i+1};
+            if isastring(lower(ns),'on','off')
+                if strcmpi(ns,'on'); ns = true; else, ns = false; end
+            end
+            if ~islogical(ns) || length(ns)>1
+                error('Incorrect value for property ''ns'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'lock'
             lock = varargin{i+1};
@@ -250,9 +261,7 @@ hold on;
 nStars0 = 0; nObjectsBetween = 0;
 % one way anova
 if ~grouped || size(data,2)==1 
-    if grouped, [~,~,stats] = testbetween(data(:,1),groups,'off'); u = unique(groups)';
-    else [~,~,stats] = testpaired(data); u = 1:size(data,2);
-    end
+    u = unique(xData)';
     if alpha(1)>0 % Unless alpha(1)=0, for each group, check if it's different from zero
         for i=1:length(u)
             if grouped, thesedata = data(groups==u(i),1); else thesedata = data(:,i); end
@@ -262,22 +271,28 @@ if ~grouped || size(data,2)==1
                     % Put a little star above it to show it's significantly different from zero
                     nStars0 = nStars0+1;
                     if sign(yData(i))>0, thisy = mean([max(yData2(i)),max(yData02(i))]);
-                    else, thisy = mean([min(yData1(i)),min(yData01(i))]); 
+                    else, thisy = mean([min(yData1(i)),min(yData01(i))]);
                     end
                     handlesStars0(nStars0) = plot(xData(i), thisy, 'k*', 'markersize', 5, 'MarkerEdgeColor', [0 0 0]);
                 end
             end
         end
     end
-    u = unique(xData)';
     sigFor2Groups = nan(length(u),1);
-    if alpha(2)>0 % Unless alpha(2)=0, perform tests between groups
-        comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction); % default alpha = 0.05
-        comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
-        comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction); % **, default alpha = 0.01
-        comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
-        comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction); % ***, default alpha = 0.001
-        comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+    if alpha(2)>0 && (grouped || size(data,2)~=1)  % Unless alpha(2)=0 or no groups are present, perform tests between groups
+        if grouped, [~,~,stats] = testbetween(data(:,1),groups,'off'); u = unique(groups)';
+        else, [~,pTest,stats] = testpaired(data); u = 1:size(data,2);
+        end
+        if ischar(stats) && strcmp(stats,'signrank') % signrank test doesn't give a "stats" output compatible with multcompare
+            comparison = [1 2 (pTest<alpha(2)) + (pTest<alpha(2)/5) (pTest<alpha(2)/50)];
+        else
+            comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction); % default alpha = 0.05
+            comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
+            comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction); % **, default alpha = 0.01
+            comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
+            comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction); % ***, default alpha = 0.001
+            comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+        end
         % Now to plot them:
         for i=1:size(comparison,1)
             s = sign(Portion(yData(:)>0)./(Portion(yData(:)>0 | yData(:)<0))-0.5); if s==0,s=sign(nanmean(yData(:)));end
@@ -289,7 +304,7 @@ if ~grouped || size(data,2)==1
             x1 = xData(comparison(i,1));
             x2 = xData(comparison(i,2));
             if comparison(i,3)==0
-                text(mean([x1 x2]), y2, 'n.s.');
+                if ns, text(mean([x1 x2]), y2, 'n.s.'); end
             else
                 plot([x1 x2], [y1 y1], 'k');
                 plot([x1 x1], [y1 y1-smallnumber/10], 'k');
@@ -381,7 +396,6 @@ if nargout>0
     if nStars0==0, handlesStars0 = []; end
     if nObjectsBetween==0, handlesComparisons = []; end
     handles.bar = hbox;
-    handles.errorbars = hErrorbar;
     handles.stars = handlesStars0;
     handles.comparisons = handlesComparisons;
     varargout{1} = handles;
@@ -396,13 +410,7 @@ function [h,p,stats] = helper_signrank(data,varargin)
 ranks = data; ranks(:) = tiedrank(data(:));
 p = signrank(diff(data,[],2));
 h = p<0.05;
-stats.source = 'friedman'; % closest thing multcompare would accept
-stats.n = size(data,1);
-meanranks = mean(ranks);
-% transform so that they fit in friedman's definition
-m0 = [mean((1:size(data,1))) mean((size(data,1)+1:numel(data)))];
-stats.meanranks = (meanranks - m0(1))/diff(m0)+1;
-stats.sigma = sqrt(2)/2;
+stats = 'signrank';
 
 
 

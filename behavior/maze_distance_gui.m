@@ -21,7 +21,7 @@ end
 vid_obj = VideoReader(video_path);
 
 % read first 10 seconds of video frames
-frames = read(vid_obj, [1, vid_obj.FrameRate*10]);
+frames = read(vid_obj, [1, round(vid_obj.FrameRate*10)]);
 % init matrix to store flattened frames
 grey_frames = zeros(vid_obj.Height, vid_obj.Width, size(frames,4));
 for i = 1:size(frames, 4)

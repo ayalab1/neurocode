@@ -1,4 +1,4 @@
-function [PhaseLockingData] = phaseModulation(spikes,lfp,infoLFP,passband,varargin)
+function [PhaseLockingData] = phaseModulation(spikes,lfp,passband,varargin)
 % USAGE
 % [PhaseLockingData] = phaseModulation(varargin)
 %
@@ -88,7 +88,7 @@ switch lower(method)
         
         [b a] = butter(3,[passband(1)/(samplingRate/2) passband(2)/(samplingRate/2)],'bandpass'); % order 3
         %         [b a] = cheby2(4,20,passband/(samplingRate/2));
-        filt = FiltFiltM(b,a,double(lfp.data(:,1)));
+        filt = FiltFiltM(b,a,single(lfp.data));
         power = fastrms(filt,ceil(samplingRate./passband(1)));  % approximate power is frequency band
         hilb = hilbert(filt);
         lfpphase = mod(angle(hilb),2*pi);
@@ -105,7 +105,7 @@ switch lower(method)
         %             lfpphase(i) = phase(i,mIdx(i));
         %         end
         %         lfpphase = mod(lfpphase,2*pi);
-        [wave,f,t,coh,wphases,raw,coi,scale,priod,scalef]=getWavelet(lfp(:,2),samplingRate,passband(1),passband(2),8,0);
+        [wave,f,t,coh,wphases,raw,coi,scale,priod,scalef]=getWavelet(lfp.data,samplingRate,passband(1),passband(2),8,0);
         [~,mIdx]=max(wave);%get index max power for each timepiont
         pIdx=mIdx'+[0;size(f,2).*cumsum(ones(size(t,1)-1,1))];%converting to indices that will pick off single maxamp index from each of the freq-based phases at eacht timepoint
         lfpphase=wphases(pIdx);%get phase of max amplitude wave at each timepoint
@@ -194,7 +194,7 @@ for a = 1:length(spikes.times)
         
         
         %% Gather binned counts and stats (incl Rayleigh Test)
-        [phasedistros(:,a),phasebins,ps]=CircularDistribution(spkphases{a},'nBins',numBins);
+        [phasedistros(:,a),phasebins,ps]=CircularDistribution(double(spkphases{a}),'nBins',numBins);
         phasestats.m(a) = mod(ps.m,2*pi);
         phasestats.r(a) = ps.r;
         phasestats.k(a) = ps.k;
@@ -245,7 +245,7 @@ end
 % end
 
 detectorName = 'phaseModulation';
-channels = infoLFP.channels;
+channels = lfp.channels;
 detectorParams = v2struct(intervals,samplingRate,method,plotting,numBins,...
     passband,powerThresh,channels);
 

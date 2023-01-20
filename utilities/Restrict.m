@@ -47,6 +47,7 @@ function [samples, idx] = Restrict(samples,intervals,varargin)
 verbose = false;
 shift = 'off';
 sep = false;
+transpose = false;
 
 % Check number of parameters
 if nargin < 2 | mod(length(varargin),2) ~= 0,
@@ -62,6 +63,7 @@ end
 
 if size(samples,1) == 1,
 	samples = samples(:);
+    transpose = true;
 end
 
 % Parse parameter list
@@ -119,3 +121,5 @@ if strcmp(shift,'on') && ~isempty(samples),
 	% 3) Shift
 	samples(:,1) = samples(:,1) - shifts - intervals(1,1);
 end
+
+if transpose, samples = samples'; end

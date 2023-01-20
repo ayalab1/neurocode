@@ -48,7 +48,7 @@ if nargin < 1 | mod(length(varargin),2) ~= 0,
 end
 
 % Check parameter sizes
-if ~isdmatrix(lfp),
+if ~(isdmatrix(lfp) || isstruct(lfp))
 	error('Parameter ''lfp'' is not a matrix (type ''help <a href="matlab:help FilterLFP">FilterLFP</a>'' for details).');
 end
 
@@ -87,23 +87,31 @@ while i <= length(varargin),
 end
 
 %% Insertion by Raly
-% original lfp
-t0 = lfp(:,1);
-ok = diff([-Inf;t0])>0;
-
-% interpolate
-t = (lfp(1,1):(1/1250):lfp(end,1))'; % interpolate the LFP to 0.8 ms bins, because the filter parameters work well for this sampling rate
-interpolated = interp1(lfp(ok,1),lfp(ok,2),t);
+if isstruct(lfp)
+    t0 = lfp.timestamps;
+    ok = diff([-Inf; t0]) > 0;
+    % interpolate
+    % interpolate the LFP to 0.8 ms bins, because the filter parameters work well for this sampling rate
+    t = (t0(1,1):(1/1250):t0(end,1))'; 
+    interpolated = interp1(t0(ok,1), double(lfp.data(ok,:)), t);
+else
+    t0 = lfp(:,1);
+    ok = diff([-Inf; t0]) > 0;
+    % interpolate
+    % interpolate the LFP to 0.8 ms bins, because the filter parameters work well for this sampling rate
+    t = (t0(1,1):(1/1250):t0(end,1))'; 
+    interpolated = interp1(t0(ok,1), lfp(ok,2:end), t);
+end
 
 if passband(1)>0
-    slow = FilterLFP([t interpolated],'passband',[0 passband(1)],'order',order,varargin{:});
+    slow = FilterLFP([t, interpolated],'passband',[0, passband(1)],'order',order,varargin{:});
     if passband(2)==Inf
-        filtered = [t interpolated-slow(:,2)];
+        filtered = [t, interpolated-slow(:,2:end)];
     else
-        filtered = FilterLFP([t interpolated-slow(:,2)],'passband',[0 passband(2)],'order',order,varargin{:});
+        filtered = FilterLFP([t, interpolated-slow(:,2:end)],'passband',[0, passband(2)],'order',order,varargin{:});
     end
 else
-    filtered = Filter([t interpolated],'passband',passband,'order',order,varargin{:});
+    filtered = Filter([t, interpolated],'passband',passband,'order',order,varargin{:});
 end
 
 % interpolate back

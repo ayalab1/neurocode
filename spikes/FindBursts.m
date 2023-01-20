@@ -1,38 +1,40 @@
 function bursts = FindBursts(spikes,varargin)
 
-% [FindBursts - Find bursts of action potentials in a spike train]
-% [This function implements the method used by Wierzynski 2009. I.e. smooths
+% FindBursts - Find bursts of action potentials in a spike train
+% This function implements the method used by Wierzynski 2009. I.e. smooths
 % the mua spike train and identified periods where it surpasses a low-threshold,
-% provided that a high threshold is surpassed somewhere within the burst]
+% provided that a high threshold is surpassed somewhere within the burst
 %
 %  USAGE
 %
-%    [bursts = FindBursts(spikes,<options>)]
+%    bursts = FindBursts(spikes,<options>)
 %
-%    [Find spike bursts by smoothing and thresholding the input single unit or
+%    Find spike bursts by smoothing and thresholding the input single unit or
 %    MUA spike train. Two thresholds are used: the upper threshold defines a
 %    burst, while the lower threshold identifies the beginning and end of the
-%    burst. See e.g. Wierzynski et al. (2009]
+%    burst. See e.g. Wierzynski et al. (2009
 %
 % INPUTS
 %
-% [spikes]         [spike train (either single unit or MUA)]
+% spikes            spike train (either single unit or MUA)
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties         Values
 %    -------------------------------------------------------------------------
-%     ['thresholds']  [thresholds for burst beginning and end, and for burst peak,
-%                     in multiples of the standard deviation (default = [0 3])]
-%     ['binSize']     [bin size (in ms, default = 1)]
-%     ['smooth']      [smoothing kernel width (in ms, default = 16.667)]
-%     ['intervals']   [[start stop] intervals of interests (e.g. slow wave sleep)
-%                     Bursts will be confined to these windows and the function
-%                     would ignore all activity outside those windows.
-%                    (default = [0 Inf])]
+%     'thresholds'      thresholds for burst beginning and end, and for burst peak,
+%                       in multiples of the standard deviation (default = [0 3])
+%     'binSize'         bin size (in s, default = 0.001)
+%     'smooth'          smoothing kernel width (in ms, default = 0.0167)
+%     'intervals'       [start stop] intervals of interests (e.g. slow wave sleep)
+%                       Bursts will be confined to these windows and the function
+%                       would ignore all activity outside those windows.
+%                       (default = [0 Inf])
+%     'durations'       [min max] durations. Bursts outside of this range will
+%                       be discarded (default = [0 Inf]).
 %    =========================================================================
 %
-% [Ralitsa Todorova, Michaël Zugaro] [2016-2022]
+% Copyright (C) 2016-2023 by Ralitsa Todorova, Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -41,14 +43,13 @@ function bursts = FindBursts(spikes,varargin)
 %
 %------------------------------------------------------------------------
 
-
-
 % Default values
 
 binSize = 0.001; % in s ; 50 ms in Wierzynski
 thresholds = [0 3]; % [2 2] in Wierzynski
 smooth = (0.05/3); % 3σ = 50 ms in Wierzynski
 intervals = [0 Inf];
+durations = [0 Inf];
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -74,6 +75,11 @@ for i = 1:2:length(varargin),
             intervals = varargin{i+1};
             if ~isdmatrix(intervals) || size(intervals,2) ~= 2,
                 error('Incorrect value for property ''intervals'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
+            end
+        case 'durations',
+            durations = varargin{i+1};
+            if ~isdmatrix(durations) || size(durations,2) ~= 2,
+                error('Incorrect value for property ''durations'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).']);
@@ -103,9 +109,9 @@ pass = peak>thresholds(2);
 bursts = bursts(pass,:);
 
 % Move the start of the burst to the first spike:
-bursts(:,1) = t(FindClosest(t,bursts(:,1),'higher'),1);
+bursts(:,1) = spikes(FindClosest(spikes,bursts(:,1),'higher'),1);
 % Move the end of the burst to the last spike
-bursts(:,3) = t(FindClosest(t,bursts(:,3),'lower'),1);
+bursts(:,3) = spikes(FindClosest(spikes,bursts(:,3),'lower'),1);
 % Merge overlapping bursts:
 [~,target] = ConsolidateIntervals(bursts(:,[1 3]));
 overlapping = find(ismember(target,find(Accumulate(target)>1)));
@@ -119,6 +125,12 @@ bursts(overlapping(2:2:end),:) = [];
 
 % shift timestamps back to original time
 bursts0 = bursts; bursts(:) = Unshift(bursts0(:),intervals); bursts(:,4) = bursts0(:,4);
+
+% duration threshold
+duration = bursts(:,3)-bursts(:,1);
+tooShort = duration<durations(1);
+tooLong = duration>durations(2);
+bursts(tooShort | tooLong,:) = [];
 
 end
 

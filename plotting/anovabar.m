@@ -43,6 +43,9 @@ function varargout = anovabar(data,groups,varargin)
 %                   Set to 2 to inverse this behavior.                 
 %    'paired'       a setting indicating whether values in the same row are
 %                   paired (default = 'on').
+%    'barwidth'     the width of the bars to be plotted (default = 0.8).
+%    'ns'           display the "n.s." label when between-group comparisons
+%                   are not significant (default = false).
 %    =========================================================================
 %
 %  OUTPUT
@@ -112,6 +115,8 @@ data = double(data);
 parametric = true;
 precedence = 1;
 paired = true;
+barWidth = 0.8;
+ns = false;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -149,6 +154,19 @@ for i = 1:2:length(varargin),
             if ~isdvector(precedence,'#1'),
                 error('Incorrect value for property ''precedence'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
             end
+        case 'barwidth'
+            barWidth = varargin{i+1};
+            if ~isdvector(barWidth,'#1'),
+                error('Incorrect value for property ''barWidth'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+            end
+        case 'ns'
+            ns = varargin{i+1};
+            if isastring(lower(ns),'on','off')
+                if strcmpi(ns,'on'); ns = true; else, ns = false; end
+            end
+            if ~islogical(ns) || length(ns)>1
+                error('Incorrect value for property ''ns'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+            end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).']);
     end
@@ -161,13 +179,19 @@ if parametric
     average = @(x) nanmean(x,1);
     semfun = @(x) nansem(x,1);
     testbetween = @anova1;
-    if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = testbetween; end
+    if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = @(x) testbetween(x,[],'off'); end
 else
     test0 = @(x) signrank(x);
     average = @(x) nanmedian(x,1);
     semfun = @(x) semedian(x);
     testbetween = @kruskalwallis;
-    if paired, testpaired = @(x) friedman(x,1,'off'); else testpaired = testbetween; end
+    if paired, 
+        if size(data,2)==2, testpaired = @helper_signrank; 
+        else, testpaired = @(x) friedman(x,1,'off'); 
+        end
+    else
+        testpaired = @(x) testbetween(x,[],'off');
+    end
 end
 
 if nargin==1 || isempty(groups)
@@ -215,11 +239,8 @@ else
 end
 
 [nRows nCols] = size(values);
-if sum(size(xOrder)~=size(values))==0
-    hbar = bar(xOrder, values); % standard implementation of bar function
-else
-    hbar = bar(values); % standard implementation of bar function
-end
+hbar = bar(xOrder,values,'BarWidth',barWidth); % standard implementation of bar function
+
 hold on
 
 vers = version;
@@ -260,7 +281,7 @@ nStars0 = 0; nObjectsBetween = 0;
 % one way anova
 if ~grouped || size(data,2)==1 
     if grouped, [~,~,stats] = testbetween(data(:,1),groups,'off'); u = unique(groups)';
-    else [~,~,stats] = testpaired(data); u = 1:size(data,2);
+    else [~,pTest,stats] = testpaired(data); u = 1:size(data,2);
     end
     if alpha(1)>0 % Unless alpha(1)=0, for each group, check if it's different from zero
         for i=1:length(u)
@@ -278,12 +299,16 @@ if ~grouped || size(data,2)==1
     u = unique(xOrder)';
     sigFor2Groups = nan(length(u),1);
     if alpha(2)>0 % Unless alpha(2)=0, perform tests between groups
-        comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction); % default alpha = 0.05
-        comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
-        comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction); % **, default alpha = 0.01
-        comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
-        comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction); % ***, default alpha = 0.001
-        comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+        if ischar(stats) && strcmp(stats,'signrank') % signrank test doesn't give a "stats" output compatible with multcompare
+            comparison = [1 2 (pTest<alpha(2)) + (pTest<alpha(2)/5) (pTest<alpha(2)/50)];
+        else
+            comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction); % default alpha = 0.05
+            comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
+            comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction); % **, default alpha = 0.01
+            comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
+            comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction); % ***, default alpha = 0.001
+            comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+        end
         % Now to plot them:
         for i=1:size(comparison,1)
             s = sign(Portion(values(:)>0)./(Portion(values(:)>0 | values(:)<0))-0.5); if s==0,s=sign(nanmean(values(:)));end
@@ -293,7 +318,7 @@ if ~grouped || size(data,2)==1
             x1 = xOrder(comparison(i,1)) - (xOrder(comparison(i,2))-xOrder(comparison(i,1)))*0.2 + 0.4;
             x2 = xOrder(comparison(i,2)) + (xOrder(comparison(i,2))-xOrder(comparison(i,1)))*0.2 - 0.4; %lines between adjecent bars are shorter; the bigger the line, the farther it goes.
             if comparison(i,3)==0
-                %         text(mean([comparison(i,1) comparison(i,2)]), y2, 'n.s.');
+                if ns, text(mean([comparison(i,1) comparison(i,2)]), y2, 'n.s.'); end
             else
                 plot([x1 x2], [y1 y1], 'k');
                 plot([x1 x1], [y1 y1-smallnumber/10], 'k');
@@ -392,3 +417,13 @@ if nargout>0
 
     varargout{2} = comparison;
 end
+
+% ------------------------------- Helper functions -------------------------------
+
+function [h,p,stats] = helper_signrank(data,varargin)
+
+ranks = data; ranks(:) = tiedrank(data(:));
+p = signrank(diff(data,[],2));
+h = p<0.05;
+stats = 'signrank';
+

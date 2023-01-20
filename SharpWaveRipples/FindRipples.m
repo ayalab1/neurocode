@@ -101,9 +101,10 @@ if isstr(varargin{1})  % if first arg is basepath
     passband = p.Results.passband;
     EMGThresh = p.Results.EMGThresh;
     lfp = getLFP(p.Results.channel,'basepath',p.Results.basepath);
-    signal = FilterLFP(lfp,'passband',passband);
-    signal(:,1) = []; % remove timestamps
-    timestamps = lfp(:,1);
+    filtered_sig = bz_Filter(lfp,'filter','butter','passband',passband,'order',3);
+    timestamps = filtered_sig.timestamps;
+    signal = filtered_sig.data;
+
     basepath = p.Results.basepath;
     channel = p.Results.channel;
 elseif isnumeric(varargin{1}) % if first arg is filtered LFP

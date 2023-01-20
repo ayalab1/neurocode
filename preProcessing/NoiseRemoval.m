@@ -1,5 +1,4 @@
 function NoiseRemoval(basepath)
-
 %[NoiseRemoval] - [removes noise periods in LFP/DAT files]
 %
 %  [removes noisy periods in LFP/DAT files, ensuring that noisy periods are
@@ -30,14 +29,12 @@ function NoiseRemoval(basepath)
 %  SEE ALSO
 %
 % [KM and 2022 Ralitsa Todorova] [2021-2022]
+% Copyright (C) 2021 KM and 2022 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
-%------------------------------------------------------------------------
-
-
 
 session = getSession('basepath',basepath);
 datFile = [basepath,filesep, session.general.name, '.dat'];
@@ -45,11 +42,11 @@ datSamplingRate = session.extracellular.sr;
 
 warning(['This function will change the file ' datFile '.']);
 nChannels = session.extracellular.nChannels;
-[lfp,infoLFP] = getLFP('all','basepath',basepath);
-lfpSamplingRate = infoLFP.samplingRate;
+lfpStructure = getLFP('all','basepath',basepath);
+lfpSamplingRate = lfpStructure.samplingRate;
 
 % Identify Noise intervals
-lfp = mean(lfp(:,2:end),2);
+lfp = mean(lfpStructure.data,2);
 
 [b,a] = cheby2(5,20,300/(lfpSamplingRate/2),'low');
 slow = filtfilt(b,a,lfp);
@@ -198,5 +195,3 @@ dk = diff([0;k]);
 z = zeros(size(data));
 z(i) = dk;
 s = s-cumsum(z);
-
-

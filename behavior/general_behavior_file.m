@@ -70,7 +70,7 @@ for i = 1:length(basepaths)
         continue
     end
     disp(basepath)
-    behavior = main(basepath,...
+    main(basepath,...
         basename,...
         fs,...
         save_mat,...
@@ -106,7 +106,7 @@ end
 [t,x,y,z,v,trials,trialsID,units,source,linearized,fs,notes,extra_points,stateNames,states] =...
     extract_tracking(basepath,basename,fs,primary_coords,likelihood,force_format);
 
-load([basepath,filesep,[basename,'.session.mat']]);
+load([basepath,filesep,[basename,'.session.mat']],'session');
 
 % package results
 behavior.sr = fs;
@@ -131,8 +131,7 @@ behavior.processinginfo.source = source;
 % deeplabcut will often have many tracking points, add them here
 if ~isempty(extra_points)
     for field = fieldnames(extra_points)'
-        field = field{1};
-        behavior.position.(field) = extra_points.(field)';
+        behavior.position.(field{1}) = extra_points.(field{1})';
     end
 end
 
@@ -168,8 +167,14 @@ if convert_xy_to_cm
     if isempty(maze_sizes)
         error('you must provide maze sizes')
     end
+    
+    % locate tracker points to scale
+    pos_fields = fields(behavior.position);
+    pos_fields = pos_fields(structfun(@numel,behavior.position) == length(behavior.position.x));
+    
     % if more than 1 maze size, convert epoch by epoch
     if length(maze_sizes) > 1
+        maze_sizes_i = 1;
         for ep = 1:length(session.epochs)
             if ~contains(session.epochs{ep}.environment,'sleep')
                 
@@ -184,13 +189,18 @@ if convert_xy_to_cm
                 else
                     pos_range = maze_distance_gui(fullfile(files.folder,files.name));
                 end
-                convert_pix_to_cm_ratio = (pos_range / maze_sizes(ep));
-                behavior.position.x(idx) = behavior.position.x(idx) / convert_pix_to_cm_ratio;
-                behavior.position.y(idx) = behavior.position.y(idx) / convert_pix_to_cm_ratio;
+                convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
+                maze_sizes_i = maze_sizes_i + 1;
+                
+                % iterate over each tracker point
+                for pos_fields_i = 1:length(pos_fields)
+                    behavior.position.(pos_fields{pos_fields_i})(idx) =...
+                        behavior.position.(pos_fields{pos_fields_i})(idx) / convert_pix_to_cm_ratio;
+                end
             end
         end
     else
-        load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints')
         for folder = MergePoints.foldernames
             files = dir(fullfile(basepath,folder{1},'*.avi'));
             if ~isempty(files)
@@ -205,8 +215,12 @@ if convert_xy_to_cm
             pos_range = maze_distance_gui(fullfile(files.folder,files.name));
         end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
-        behavior.position.x = behavior.position.x / convert_pix_to_cm_ratio;
-        behavior.position.y = behavior.position.y / convert_pix_to_cm_ratio;
+        
+        % iterate over each tracker point
+        for pos_fields_i = 1:length(pos_fields)
+            behavior.position.(pos_fields{pos_fields_i}) =...
+                behavior.position.(pos_fields{pos_fields_i}) / convert_pix_to_cm_ratio;
+        end
     end
     behavior.position.units = 'cm';
     
@@ -243,7 +257,7 @@ states = [];
 % search for DLC csv within basepath and subdirs, but not kilosort folder (takes too long)
 if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
     
-    load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+    load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints')
     for k = 1:length(MergePoints.foldernames)
         dlc_flag(k) = ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*DLC*.csv')));
     end
@@ -317,15 +331,15 @@ elseif any(opti_flag) || contains(force_format,'optitrack')
     disp('using optitrack .csv file')
     
     % load in merge points to iter over later
-    load(fullfile(basepath,[basename,'.MergePoints.events.mat']))
+    load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints')
     % load in digital in to get video ttl time stamps
     try
-        load(fullfile(basepath,[basename,'.DigitalIn.events.mat']))
+        load(fullfile(basepath,[basename,'.DigitalIn.events.mat']),'digitalIn')
     catch
         try
-            load(fullfile(basepath,'digitalIn.events.mat'))
+            load(fullfile(basepath,'digitalIn.events.mat'),'digitalIn')
         catch
-            load(fullfile(basepath,[basename,'.session.mat']))
+            load(fullfile(basepath,[basename,'.session.mat']),'session')
             digitalIn = getDigitalIn('all','fs',session.extracellular.sr,'folder',basepath);
         end
     end
@@ -401,7 +415,7 @@ elseif any(opti_flag) || contains(force_format,'optitrack')
     
 elseif exist([basepath,filesep,[basename,'.optitrack.behavior.mat']],'file')
     disp('detected optitrack')
-    load([basepath,filesep,[basename,'.optitrack.behavior.mat']])
+    load([basepath,filesep,[basename,'.optitrack.behavior.mat']],'optitrack')
     t = optitrack.timestamps;
     x = optitrack.position.x';
     y = optitrack.position.y';
@@ -497,7 +511,7 @@ elseif ~isempty(dir(fullfile(basepath,'fmat', '*.whl')))
     % postTrials format, processed linearized data
 elseif exist([basepath,filesep,['posTrials.mat']],'file')
     disp('detected posTrials.mat')
-    load([basepath,filesep,['posTrials.mat']]);
+    load([basepath,filesep,['posTrials.mat']],'posTrials');
     positions = [posTrials{1};posTrials{2}];
     [~,idx] = sort(positions(:,1));
     positions = positions(idx,:);
@@ -519,7 +533,7 @@ elseif exist([basepath,filesep,['posTrials.mat']],'file')
     end
 elseif exist([basepath,filesep,[basename,'.posTrials.mat']],'file')
     disp('detected basename.posTrials.mat')
-    load([basepath,filesep,[basename,'.posTrials.mat']]);
+    load([basepath,filesep,[basename,'.posTrials.mat']],'posTrials');
     
     positions = [];
     linearized = [];
@@ -556,7 +570,7 @@ elseif exist([basepath,filesep,[basename,'.posTrials.mat']],'file')
     % posTrials is sometimes moved
 elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')
     disp('detected posTrials.mat')
-    load([basepath,filesep,['oldfiles\posTrials.mat']]);
+    load([basepath,filesep,['oldfiles\posTrials.mat']],'posTrials');
     positions = [posTrials{1};posTrials{2}];
     [~,idx] = sort(positions(:,1));
     positions = positions(idx,:);
@@ -581,7 +595,7 @@ elseif exist([basepath,filesep,['oldfiles\posTrials.mat']],'file')
     % .position.behavior file with x,y,linear and more
 elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     disp('detected position.behavior.mat')
-    load([basepath,filesep,[basename,'.position.behavior.mat']])
+    load([basepath,filesep,[basename,'.position.behavior.mat']],'position')
     t = position.timestamps;
     x = position.position.x;
     y = position.position.y;
@@ -598,7 +612,7 @@ elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     fs = 1/mode(diff(t));
     
     if exist([basepath,filesep,['position_info.mat']],'file')
-        load([basepath,filesep,['position_info.mat']])
+        load([basepath,filesep,['position_info.mat']],'pos_inf')
         trials = [cellfun(@(x) min(x),pos_inf.ts_ep),...
             cellfun(@(x) max(x),pos_inf.ts_ep)];
     end
@@ -606,7 +620,7 @@ elseif exist([basepath,filesep,[basename,'.position.behavior.mat']],'file')
     % position_info files have xy and linearized data
 elseif exist([basepath,filesep,['position_info.mat']],'file')
     disp('detected position_info.mat')
-    load([basepath,filesep,['position_info.mat']])
+    load([basepath,filesep,['position_info.mat']],'pos_inf')
     t = pos_inf.ts';
     x = pos_inf.x;
     y = pos_inf.y;
@@ -620,7 +634,7 @@ elseif exist([basepath,filesep,['position_info.mat']],'file')
     %  _TXVt files have time, x, v, and trials
 elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
     disp('detected _TXVt.mat')
-    load([basepath,filesep,[basename,'_TXVt.mat']])
+    load([basepath,filesep,[basename,'_TXVt.mat']],'TXVt')
     t = TXVt(:,1);
     linearized = TXVt(:,2);
     x = TXVt(:,2);
@@ -634,20 +648,28 @@ elseif exist([basepath,filesep,[basename,'_TXVt.mat']],'file')
     fs = 1/mode(diff(t));
 elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     disp('detected tracking.behavior.mat')
-    load([basepath,filesep,[basename,'.tracking.behavior.mat']])
+    load([basepath,filesep,[basename,'.tracking.behavior.mat']],'tracking')
     t = tracking.timestamps;
     fs = 1/mode(diff(t));
     
-    if isfield(tracking.position,'x') && isfield(tracking.position,'y') && isfield(tracking.position,'z')
+    if isfield(tracking.position,'x') && isfield(tracking.position,'y') &&...
+            isfield(tracking.position,'z')
         x = tracking.position.x * 100;
         y = tracking.position.z * 100;
         z = tracking.position.y * 100;
         notes = "z to y and y to z";
         units = 'cm';
         source = '.tracking.behavior.mat';
-        
+    elseif isfield(tracking.position,'x') && isfield(tracking.position,'y')
+        x = tracking.position.x;
+        y = tracking.position.y;
+        units = 'cm';
+        source = '.tracking.behavior.mat';
     elseif isfield(tracking.position,'x1') && isfield(tracking.position,'y1')
-        positions = [tracking.position.x1,tracking.position.y1,tracking.position.x2,tracking.position.y2];
+        positions = [tracking.position.x1,...
+            tracking.position.y1,...
+            tracking.position.x2,...
+            tracking.position.y2];
         [x,y] = find_best_columns(positions,fs);
         if range(x) <= 1
             units = 'normalized';
@@ -683,6 +705,16 @@ elseif exist([basepath,filesep,[basename,'.tracking.behavior.mat']],'file')
     %         disp(file)
     %     end
     %
+elseif exist([basepath,filesep,[basename,'.Behavior.mat']],'file')
+    disp('detected .Behavior.mat')
+    load([basepath,filesep,[basename,'.Behavior.mat']],'behavior')
+    t = behavior.timestamps;
+    x = behavior.position.x;
+    y = behavior.position.y;
+    linearized = behavior.position.lin;
+    units = 'cm';
+    source = '.Behavior.mat';
+    
 elseif ~isempty(dir(fullfile(basepath,'**','*_Behavior*.mat')))
     % crcns_pfc-2_data behavior file
     
@@ -700,7 +732,7 @@ else
     warning('No video detected...')
     disp('attempting to add ttls from digitalIn')
     if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
-        load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints');
         count = 1;
         for ii = 1:size(MergePoints.foldernames,2)
             tempTracking{count} = sync_ttl(basepath,MergePoints.foldernames{ii});
@@ -711,7 +743,7 @@ else
     % Concatenate and sync timestamps
     t = []; subSessions = []; maskSessions = [];
     if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
-        load(fullfile(basepath,[basename,'.MergePoints.events.mat']));
+        load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints');
         for ii = 1:length(trackFolder)
             if strcmpi(fullfile(basepath,MergePoints.foldernames{trackFolder(ii)}),tempTracking{ii}.folder)
                 sumTs = tempTracking{ii}.timestamps + MergePoints.timestamps(trackFolder(ii),1);
@@ -725,6 +757,10 @@ else
         fs = 1/mode(diff(t));
     else
         warning('No MergePoints file found. Concatenating timestamps...');
+        if ~exist('trackFolder','var')
+           warning('No trackFolder found. returning...');
+           return 
+        end
         for ii = 1:length(trackFolder)
             sumTs = max(t)+ tempTracking{ii}.timestamps;
             subSessions = [subSessions; [sumTs(1) sumTs(end)]];

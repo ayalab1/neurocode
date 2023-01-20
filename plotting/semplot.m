@@ -42,11 +42,16 @@ if isvector(y),
     return
 end
 
+bad = isnan(nanmean(y));
+if any(bad)
+    semplot(x(~bad),y(:,~bad),color,smooth);
+end
+
 xx = [x(:);flipud(x(:))];
 yy = [Smooth(nanmean(y)'-nansem(y)',smooth); Smooth(flipud(nanmean(y)'+nansem(y)'),smooth)];
 y = Smooth(nanmean(y),smooth);
-
 handles = fill(xx,yy,color);
+
 if solid,
     set(handles,'FaceColor',mean([color;1 1 1]),'edgeAlpha',0);
 else % transparent

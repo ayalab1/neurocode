@@ -66,7 +66,7 @@ end
 %% get scores from each session
 % objA=control; objB=displaced
 % added multi training
-% could/should be improved to detect multi/single HeathLarsson 03/2022\
+% could/should be improved to detect multi/single HeathLarsson 03/2022
 
 sum_sessionSeq=sum(sessionsSeq);
 
@@ -85,36 +85,36 @@ cd(basepath);
 
 %
 
-if isempty(timeTh)
-    object_training_1(1,:) = sum(data_training_1.dur{1,2}); % time in seconds spent with interacting object A during training
-    object_training_1(2,:) = sum(data_training_1.dur{1,3}); % time in seconds spent with interacting object B during training
-    object_training_2(1,:) = sum(data_training_2.dur{1,2}); % time in seconds spent with interacting object A during training
-    object_training_2(2,:) = sum(data_training_2.dur{1,3}); % time in seconds spent with interacting object B during training
-    object_training_3(1,:) = sum(data_training_3.dur{1,2}); % time in seconds spent with interacting object A during training
-    object_training_3(2,:) = sum(data_training_3.dur{1,3}); % time in seconds spent with interacting object B during training
+    if isempty(timeTh)
+        object_training_1(1,:) = sum(data_training_1.dur{1,2}); % time in seconds spent with interacting object A during training
+        object_training_1(2,:) = sum(data_training_1.dur{1,3}); % time in seconds spent with interacting object B during training
+        object_training_2(1,:) = sum(data_training_2.dur{1,2}); % time in seconds spent with interacting object A during training
+        object_training_2(2,:) = sum(data_training_2.dur{1,3}); % time in seconds spent with interacting object B during training
+        object_training_3(1,:) = sum(data_training_3.dur{1,2}); % time in seconds spent with interacting object A during training
+        object_training_3(2,:) = sum(data_training_3.dur{1,3}); % time in seconds spent with interacting object B during training
+
+        object_test_multi(1,:) = sum(data_test_multi.dur{1,2}); %time in seconds spent with interacting object A during test
+        object_test_multi(2,:) = sum(data_test_multi.dur{1,3}); %time in seconds spent with interacting object B during test
+    else
+        times_train1_1 = find(data_training_1.timestampsOn{2}<timeTh(1));
+        times_train1_2 = find(data_training_1.timestampsOn{3}<timeTh(1));
+        object_training_1(1,:) = sum(data_training_1.dur{1,2}(times_train1_1)); 
+        object_training_1(2,:) = sum(data_training_1.dur{1,3}(times_train1_2)); 
+        times_train2_1 = find(data_training_2.timestampsOn{2}<timeTh(1));
+        times_train2_2 = find(data_training_2.timestampsOn{3}<timeTh(1));
+        object_training_2(1,:) = sum(data_training_2.dur{1,2}(times_train2_1)); 
+        object_training_2(2,:) = sum(data_training_2.dur{1,3}(times_train2_2));
+        times_train3_1 = find(data_training_3.timestampsOn{2}<timeTh(1));
+        times_train3_2 = find(data_training_3.timestampsOn{3}<timeTh(1));
+        object_training_3(1,:) = sum(data_training_3.dur{1,2}(times_train3_1)); 
+        object_training_3(2,:) = sum(data_training_3.dur{1,3}(times_train3_2));
     
-    object_test_multi(1,:) = sum(data_test_multi.dur{1,2}); %time in seconds spent with interacting object A during test
-    object_test_multi(2,:) = sum(data_test_multi.dur{1,3}); %time in seconds spent with interacting object B during test
-else
-    times_train1_1 = find(data_training_1.timestampsOn{2}<timeTh(1));
-    times_train1_2 = find(data_training_1.timestampsOn{3}<timeTh(1));
-    object_training_1(1,:) = sum(data_training_1.dur{1,2}(times_train1_1)); 
-    object_training_1(2,:) = sum(data_training_1.dur{1,3}(times_train1_2)); 
-    times_train2_1 = find(data_training_2.timestampsOn{2}<timeTh(1));
-    times_train2_2 = find(data_training_2.timestampsOn{3}<timeTh(1));
-    object_training_2(1,:) = sum(data_training_2.dur{1,2}(times_train2_1)); 
-    object_training_2(2,:) = sum(data_training_2.dur{1,3}(times_train2_2));
-    times_train3_1 = find(data_training_3.timestampsOn{2}<timeTh(1));
-    times_train3_2 = find(data_training_3.timestampsOn{3}<timeTh(1));
-    object_training_3(1,:) = sum(data_training_3.dur{1,2}(times_train3_1)); 
-    object_training_3(2,:) = sum(data_training_3.dur{1,3}(times_train3_2));
     
-    
-    times_test_1 = find(data_test_multi.timestampsOn{2}<timeTh(2));
-    times_test_2 = find(data_test_multi.timestampsOn{3}<timeTh(2));
-    object_test_multi(1,:) = sum(data_test_multi.dur{1,2}(times_test_1)); 
-    object_test_multi(2,:) = sum(data_test_multi.dur{1,3}(times_test_2));     
-end
+        times_test_1 = find(data_test_multi.timestampsOn{2}<timeTh(2));
+        times_test_2 = find(data_test_multi.timestampsOn{3}<timeTh(2));
+        object_test_multi(1,:) = sum(data_test_multi.dur{1,2}(times_test_1)); 
+        object_test_multi(2,:) = sum(data_test_multi.dur{1,3}(times_test_2));     
+    end
 
 
 object_A_training = (object_training_1(1,:) + object_training_2(1,:) + object_training_3(1,:)); 
@@ -134,22 +134,22 @@ cd(basepath);
 
 %
 
-if isempty(timeTh)
-    object_train(1,:) = sum(data_training.dur{1,2}); % time in seconds spent with interacting object A during training
-    object_train(2,:) = sum(data_training.dur{1,3}); % time in seconds spent with interacting object B during training
-    object_test(1,:) = sum(data_test_single.dur{1,2}); %time in seconds spent with interacting object A during test
-    object_test(2,:) = sum(data_test_single.dur{1,3}); %time in seconds spent with interacting object B during test
-else
-    times1 = find(data_training.timestampsOn{2}<timeTh(1));
-    times2 = find(data_training.timestampsOn{3}<timeTh(1));
-    object_train(1,:) = sum(data_training.dur{1,2}(times1)); 
-    object_train(2,:) = sum(data_training.dur{1,3}(times2)); 
-    
-    times3 = find(data_test_single.timestampsOn{2}<timeTh(2));
-    times4 = find(data_test_single.timestampsOn{3}<timeTh(2));
-    object_test(1,:) = sum(data_test_single.dur{1,2}(times3)); 
-    object_test(2,:) = sum(data_test_single.dur{1,3}(times4));     
-end
+    if isempty(timeTh)
+        object_train(1,:) = sum(data_training.dur{1,2}); % time in seconds spent with interacting object A during training
+        object_train(2,:) = sum(data_training.dur{1,3}); % time in seconds spent with interacting object B during training
+        object_test(1,:) = sum(data_test_single.dur{1,2}); %time in seconds spent with interacting object A during test
+        object_test(2,:) = sum(data_test_single.dur{1,3}); %time in seconds spent with interacting object B during test
+    else
+        times1 = find(data_training.timestampsOn{2}<timeTh(1));
+        times2 = find(data_training.timestampsOn{3}<timeTh(1));
+        object_train(1,:) = sum(data_training.dur{1,2}(times1)); 
+        object_train(2,:) = sum(data_training.dur{1,3}(times2)); 
+
+        times3 = find(data_test_single.timestampsOn{2}<timeTh(2));
+        times4 = find(data_test_single.timestampsOn{3}<timeTh(2));
+        object_test(1,:) = sum(data_test_single.dur{1,2}(times3)); 
+        object_test(2,:) = sum(data_test_single.dur{1,3}(times4));     
+    end
 
 
 

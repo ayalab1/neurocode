@@ -75,7 +75,7 @@ addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
-addParameter(p,'nKilosortRuns',1,@isnumeric);
+addParameter(p,'nKilosortRuns',1,@isnumeric);  %needs to be changed from shanks to probes HLR 01/05/23
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -229,7 +229,7 @@ if stateScore
     end
 end
 
-%% Kilosort concatenated sessions
+%% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
 if spikeSort
     if nKilosortRuns>1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
         shanks = session.extracellular.spikeGroups.channels;

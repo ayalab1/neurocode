@@ -164,15 +164,25 @@ for ibatch = 1:nbChunks
         end
         fprintf('%d percent complete', round(100*ibatch/nbChunks));
     end
-    
+
     if ibatch>1
         fseek(fidI,((ibatch-1)*(nbChan*sizeInBytes*chunksize))-(nbChan*sizeInBytes*ntbuff),'bof');
         dat = fread(fidI,nbChan*(chunksize+2*ntbuff),'int16');
         try
             dat = reshape(dat,[nbChan (chunksize+2*ntbuff)]);
         catch
-            warning('This should be fixed.. tell Raly!');
-            keyboard;
+            % One possible issue is that the network bugged and so the file was dropped. This can be fixed by reloading the file:
+            % === SOLUTION ===
+            fidI = fopen(fdat, 'r');
+            fseek(fidI,((ibatch-1)*(nbChan*sizeInBytes*chunksize))-(nbChan*sizeInBytes*ntbuff),'bof');
+            dat = fread(fidI,nbChan*(chunksize+2*ntbuff),'int16');
+            % === END OF SOLUTION === % if this executes fine, hit "dbcont"
+            try
+                dat = reshape(dat,[nbChan (chunksize+2*ntbuff)]);
+            catch
+                warning('This should be fixed.. tell Raly! [or repeat the solution just above and see if that works. If no errors, hit dbcont!]');
+                keyboard;
+            end
         end
     else
         dat = fread(fidI,nbChan*(chunksize+ntbuff),'int16');

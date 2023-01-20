@@ -1,0 +1,10 @@
+% This is a list of sessions that will be analysed in the pipelineBatch file
+
+% [basepath, novel] % It is good practice to label your variables.
+Z:\Data\OMLproject\OML18\day1 [1]
+Z:\Data\Can\OLM21\day19  [1]
+Z:\Data\Can\OML22\day19 [1]
+
+% the first thing on every line is usually the session basepath. 
+% This is followed by any other information you want to use in your functions.
+% It is important that the number of variables in each line matches. Here, I have two variables per line

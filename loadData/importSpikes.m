@@ -41,7 +41,7 @@ function [spikeT] = importSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x));
+addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x) || iscell(x));
 addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
 addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
 addParameter(p,'UID',[],@isvector);

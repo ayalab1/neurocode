@@ -84,18 +84,28 @@ end
 
 [~,t] = PETH(signal,events,'durations',durations,'nBins',nBins,argsToPassOn{:});
 [autoResponse,~] =  PETH(events,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:});
-[rawResponse,~] = PETH(signal,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:}); % make sure the binsize stays the same while you double the duration
+% make sure the binsize stays the same while you double the duration
+[rawResponse,~] = PETH(signal,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:}); 
 
-autocorrelogram = sum(autoResponse); rawPeth = sum(rawResponse); 
-const = mean(rawPeth); rawPeth = rawPeth - const; % remove the mean, because not all firing needs to be explained by the stimulus
-T0 = toeplitz([autocorrelogram(:); zeros(numel(rawPeth)-numel(autocorrelogram), 1)], [autocorrelogram(1), zeros(1, length(autocorrelogram)-1)]);
-T = T0(nBins:end,1:nBins);
-deconvolved = T \ rawPeth(nBins/2+0:nBins/2*3-1)' + const/length(events); % add the baseline to the final PETH
+autocorrelogram = sum(autoResponse);
+rawPeth = sum(rawResponse);
+% remove the mean, because not all firing needs to be explained by the stimulus
+const = mean(rawPeth);
+rawPeth = rawPeth - const;
 
+T0 = toeplitz(...
+    [autocorrelogram(:); zeros(numel(rawPeth) - numel(autocorrelogram), 1)],...
+    [autocorrelogram(1), zeros(1, length(autocorrelogram)-1)]...
+    );
+
+T = T0(nBins:end, 1:nBins);
+% add the baseline to the final PETH
+deconvolved = T \ rawPeth(round(nBins/2 + 0):round(nBins/2*3 - 1))' + const/length(events);
+end
 
 %% Old code:
 % function deconvolved = DeconvolvePETH(rawPeth,autocorrelogram)
-% 
+%
 % Note: "rawPETH" should be of double the duration of the autocorrelogram for this to work/
 
 % Example:
@@ -103,6 +113,6 @@ deconvolved = T \ rawPeth(nBins/2+0:nBins/2*3-1)' + const/length(events); % add 
 % [rawResponse,~]=  PETH(signal,events,,'durations',durations*2,'nBins',nBins*2-1); % make sure the binsize stays the same while you double the duration
 % deconvolved = DeconvolvePETH(sum(rawResponse),sum(autoResponse));
 % plot(t,deconvolved);
-% 
+%
 % T = toeplitz([autocorrelogram(:); zeros(numel(rawPeth)-numel(autocorrelogram), 1)], [autocorrelogram(1), zeros(1, length(autocorrelogram)-1)]);
 % deconvolved = T \ rawPeth(:);

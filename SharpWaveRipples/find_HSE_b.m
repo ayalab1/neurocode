@@ -360,26 +360,26 @@ for i = 1:length(barspk)
     end
 end
 avgISI = mean(temp_ct);
-
-if recordMetrics
-    %disp('Saving metrics for later comparison...');
-    HSEmetFiles = dir([savePath 'HSEmetrics.mat']);
-    if isempty(HSEmetFiles) %check if this exists yet, if not, create and fill
-        HSEmetrics = table(datetime('now'),Notes,nEvents,avgISI,avgFR,...
-            nSigma,tSepMax,mindur,maxdur,lastmin,sstd,estd,...
-            EMGThresh,tSmooth,binsz,avgLen,avgSep,ifCat,...
-            'VariableNames',{'date','Notes','nEvents','avgISI','avgFR'...
-            'nSigma','tSepMax','mindur','maxdur','lastmin','sstd','estd',...
-            'EMGThresh','tSmooth','binsz','avgLen','avgSep','ifCat'});
-    else
-        load([savePath 'HSEmetrics.mat']);
-        newMetrics = {datetime('now') Notes nEvents avgISI avgFR...
-            nSigma tSepMax mindur maxdur lastmin sstd estd...
-            EMGThresh tSmooth binsz avgLen avgSep ifCat};
-        HSEmetrics(runNum,:) = newMetrics;
-    end
-    save([savePath 'HSEmetrics.mat'], 'HSEmetrics');
-end
+% 
+% if recordMetrics
+%     %disp('Saving metrics for later comparison...');
+%     HSEmetFiles = dir([savePath 'HSEmetrics.mat']);
+%     if isempty(HSEmetFiles) %check if this exists yet, if not, create and fill
+%         HSEmetrics = table(datetime('now'),Notes,nEvents,avgISI,avgFR,...
+%             nSigma,tSepMax,mindur,maxdur,lastmin,sstd,estd,...
+%             EMGThresh,tSmooth,binsz,avgLen,avgSep,ifCat,...
+%             'VariableNames',{'date','Notes','nEvents','avgISI','avgFR'...
+%             'nSigma','tSepMax','mindur','maxdur','lastmin','sstd','estd',...
+%             'EMGThresh','tSmooth','binsz','avgLen','avgSep','ifCat'});
+%     else
+%         load([savePath 'HSEmetrics.mat']);
+%         newMetrics = {datetime('now') Notes nEvents avgISI avgFR...
+%             nSigma tSepMax mindur maxdur lastmin sstd estd...
+%             EMGThresh tSmooth binsz avgLen avgSep ifCat};
+%         HSEmetrics(runNum,:) = newMetrics;
+%     end
+%     save([savePath 'HSEmetrics.mat'], 'HSEmetrics');
+% end
 
 %disp('Done!');
 fprintf('\n');

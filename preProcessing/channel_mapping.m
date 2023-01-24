@@ -182,8 +182,12 @@ if save_cell_metrics &&...
 end
 
 if fig
-    try chanCoords = getStruct(basepath,'chanCoords'); generateChannelMap1(session,anatomical_map,channel_map,chanCoords); catch
-    generateChannelMap1(session,anatomical_map,channel_map); end
+    try 
+        chanCoords = getStruct(basepath,'chanCoords'); 
+        generateChannelMap1(session,anatomical_map,channel_map,chanCoords); 
+    catch
+        generateChannelMap1(session,anatomical_map,channel_map); 
+    end
     exportgraphics(gcf,fullfile(basepath,'anatomical_map.png'),'Resolution',150)
 end
 
@@ -291,6 +295,7 @@ end
 end
 
 function generateChannelMap1(session,anatomical_map,channel_map,chanCoords)
+
 channel_map_vec = channel_map(:);
 anatomical_map_vec = anatomical_map(:);
 anatomical_map_vec = anatomical_map_vec(~isnan(channel_map_vec));
@@ -301,11 +306,22 @@ for i = 1:length(anatomical_map_vec)
     label{i} = [anatomical_map_vec{i},' ',num2str(channel_map_vec(i))];
 end
 
+% check if chanCoords exist and generate using defaults
+% also, save updated session file with generated coords
+if ~exist('chanCoords','var') && ~isfield(session.extracellular,'chanCoords')
+    session.extracellular.chanCoords = generateChanCoords(session);
+    basepath = session.general.basePath;
+    if exist(basepath,'dir')
+        save(fullfile(basepath,[basenameFromBasepath(basepath),'.session.mat']),'session')
+    end
+end
+
 % attempt to pull channel coords from session
 if isfield(session.extracellular,'chanCoords')
     chanCoords.x = session.extracellular.chanCoords.x;
     chanCoords.y = session.extracellular.chanCoords.y;
 end
+
 % if channel coords are empty, try to create them here
 if isempty(chanCoords.x)
     try

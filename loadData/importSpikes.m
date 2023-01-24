@@ -11,7 +11,7 @@ function [spikeT] = importSpikes(varargin)
 %    UID             -vector subset of UID's to load. Default: all.
 %    channel         -specific channels (neuroscope indexing) to use. Default: all
 
-% These inputs require CellExplorer cell_metrics pre calculated. NOT IMPLEMENTED YET
+% These inputs require CellExplorer cell_metrics pre calculated. 
 %    brainRegion     -string region ID to load neurons from specific region
 %    cellType        -cell type to load
 %    sleepState      -string sleep state to keep spikes falling within the
@@ -24,7 +24,7 @@ function [spikeT] = importSpikes(varargin)
 %    spikeT - cellinfo struct with the following fields
 %          .UID            -unique identifier for each neuron in a recording
 %          .times          -cell array of timestamps (seconds) for each neuron
-%          .sessionName
+%          .basepath       
 
 %    =========================================================================
 % TODO:
@@ -41,12 +41,10 @@ function [spikeT] = importSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'brainRegion','',@isstring);
-addParameter(p,'cellType','',@isstring);
-addParameter(p,'sleepState','',@isstring);
+addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x) || iscell(x));
+addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
+addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
 addParameter(p,'UID',[],@isvector);
-addParameter(p,'spikes',[],@isstruct);
-addParameter(p,'session',[],@isstruct);
 addParameter(p,'channel',[],@isnumeric);
 
 parse(p,varargin{:})
@@ -55,22 +53,22 @@ region = p.Results.brainRegion;
 type = p.Results.cellType;
 state = p.Results.sleepState;
 UID = p.Results.UID;
-spikes = p.Results.spikes;
-session = p.Results.session;
 channel = p.Results.channel;
 
 %% Load spikes
 basename = basenameFromBasepath(basepath);
 
-if isempty(spikes) && exist(fullfile(basepath,[basename,'.spikes.cellinfo.mat']),'file')
-    load(fullfile(basepath,[basename,'.spikes.cellinfo.mat']))
-end
+load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'],'cell_metrics');
+
+spikes = cell_metrics.spikes;
+spikes.UID = 1:length(spikes.times);
 
 spikeT.UID = [];
 spikeT.times = {};
+spikeT.basepath = basepath;
 
 %% Remove bad cells before we start
-load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat']);
+
 if isfield(cell_metrics, 'tags')
     if isfield(cell_metrics.tags, 'Bad')
         ct = 1;
@@ -107,7 +105,6 @@ end
 
 % only one region will be assigned to each cell
 if ~isempty(region)
-    load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = [];
     for i = 1:length(region)
         tempUID = []; tempTimes = [];
@@ -120,7 +117,6 @@ end
 
 % only one type will be assigned to each cell
 if ~isempty(type)
-    load(fullfile(basepath,[basename,'.cell_metrics.cellinfo.mat']));
     keepUID = [];
     for i = 1:length(type)
         tempUID = []; tempTimes = [];

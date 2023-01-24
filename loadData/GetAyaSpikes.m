@@ -1,6 +1,6 @@
 function [spikes,regionID,regionNames,spikesCell,order,pyr] = GetAyaSpikes(basepath,doSort,unsorted)
 
-%[GetAyaSpikes] - bz_getSessionInfo(basePath) loads the spikes of the session in "basepath" 
+%[GetAyaSpikes] - bz_getSessionInfo(basePath) loads the spikes of the session in "basepath"
 
 % Loads the spikes of the session in "basepath" in a matrix [timestamp id] format
 % This is a simple function loading data saved in CellExplorer format into
@@ -33,7 +33,7 @@ function [spikes,regionID,regionNames,spikesCell,order,pyr] = GetAyaSpikes(basep
 % brain region (alphabetical order), corresponding to regionNames{3}, which was 'SomatosensoryCx'.
 %
 %    =========================================================================
-% Copyright (C) 2022 by Ralitsa Todorova
+% Copyright (C) 2022-2023 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -46,31 +46,32 @@ basename = basenameFromBasepath(basepath);
 filename = fullfile(basepath,[basename '.cell_metrics.cellinfo.mat']);
 if unsorted, filename = fullfile(basepath,[basename '.unsorted.cell_metrics.cellinfo.mat']); end
 
-if exist(filename,'file')
-    load(filename,'cell_metrics');
-    regions = cell_metrics.brainRegion;
-    regionNames = unique(regions);
-    regionCell = zeros(length(regions),1);
-    for i=1:length(regionNames)
-        regionCell(strcmp(regions,regionNames{i})) = i;
-    end
-    spikesCell = cell_metrics.spikes.times';
-    % reorder based on region:
-    if doSort,
-        [regionID,order] = sort(regionCell);
-    else, order = 1:length(spikesCell); regionID = regionCell;
-    end
-    spikesCell = spikesCell(order);
-    % make a second ID column
-    for u=1:length(spikesCell)
-        spikesCell{u,1}(:,2) = u;
-    end
-    spikes = sortrows(cell2mat(spikesCell));
-    spikesCell = cell_metrics.spikes.times(order)';
-    pyr = cellfun(@(x) contains(x,'Pyramidal'), cell_metrics.putativeCellType)';
-else
+if ~exist(filename,'file')
     spikes = zeros(0,2); regionID = zeros(0,1); regionNames = {}; spikesCell = {}; order = zeros(0,1); pyr = false(0,1);
+    return
 end
+
+load(filename,'cell_metrics');
+regions = cell_metrics.brainRegion;
+regionNames = unique(regions);
+regionCell = zeros(length(regions),1);
+for i=1:length(regionNames)
+    regionCell(strcmp(regions,regionNames{i})) = i;
+end
+spikesCell = cell_metrics.spikes.times';
+% reorder based on region:
+if doSort,
+    [regionID,order] = sort(regionCell);
+else, order = 1:length(spikesCell); regionID = regionCell;
+end
+spikesCell = spikesCell(order);
+% make a second ID column
+for u=1:length(spikesCell)
+    spikesCell{u,1}(:,2) = u;
+end
+spikes = sortrows(cell2mat(spikesCell));
+spikesCell = cell_metrics.spikes.times(order)';
+pyr = cellfun(@(x) contains(x,'Pyramidal'), cell_metrics.putativeCellType)';
 
 
 

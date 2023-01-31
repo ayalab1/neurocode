@@ -119,10 +119,9 @@ classdef analogSignalArray < handle
             if isequal(S.type,'()')
                 if isa(S.subs{1},'IntervalArray')
                     asa = restrict(self, S.subs{1});
-                    return
                 end
             else
-                asa = builtin('subsref',obj,S);
+                asa = builtin('subsref',self,S);
             end
         end
         
@@ -134,6 +133,7 @@ classdef analogSignalArray < handle
                 [asa.timestamps, idx] = Restrict(self.timestamps, intervals.intervals, varargin{:});
             end
             asa.data = self.data(idx,:);
+            asa.sampling_rate = self.sampling_rate;
         end
         
         function duration_ = duration(self)

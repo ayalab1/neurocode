@@ -136,8 +136,12 @@ classdef SpikeArray < handle
             ids_= unique(obj.uid);
         end
         
+        function duration_ = duration(obj)
+            duration_ = obj.last_event - obj.first_event;
+        end
+        
         function disp(obj)
-            obj_duration = seconds(obj.last_event - obj.first_event);
+            obj_duration = seconds(obj.duration);
             if obj_duration < seconds(1)
                 duration_str = datestr(obj_duration, 'FFF');
                 units = 'ms';

@@ -126,10 +126,20 @@ classdef SpikeArray < handle
             % set up bin edge or each cell
             uid_edge = [obj.ids;max(obj.ids)+1] - .5;
             
+            % set bin edges for time
+            time_edge = obj.first_event:ds:obj.last_event;
+            
             [bst,~,~] = histcounts2(obj.uid,...
                 obj.spikes,...
                 uid_edge,...
-                obj.first_event:ds:obj.last_event);
+                time_edge);
+            
+            bin_centers = time_edge(1:end-1) + ds/2;
+            
+            % make binned spike train into analogSignalArray
+            bst = analogSignalArray('data',bst,...
+                'timestamps',bin_centers,...
+                'sampling_rate',1/ds);
         end
         
         function n_cells_ = n_cells(obj)

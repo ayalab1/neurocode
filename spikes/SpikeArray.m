@@ -123,9 +123,13 @@ classdef SpikeArray < handle
             parse(p,varargin{:})
             ds = p.Results.ds;
             
+            % set up bin edge or each cell
+            uid_edge = [obj.ids;max(obj.ids)+1] - .5;
+            
             [bst,~,~] = histcounts2(obj.uid,...
                 obj.spikes,...
-                1:obj.n_cells,obj.first_event:ds:obj.last_event);
+                uid_edge,...
+                obj.first_event:ds:obj.last_event);
         end
         
         function n_cells_ = n_cells(obj)

@@ -31,7 +31,7 @@ addParameter(p,'spikingThreshold',.5);
 addParameter(p,'winSize',.5);
 addParameter(p,'eventSize',.01);
 addParameter(p,'figOpt',true,@islogical);
-addParameter(p,'EVENTFILE',true,@islogical);
+addParameter(p,'EVENTFILE',false,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;

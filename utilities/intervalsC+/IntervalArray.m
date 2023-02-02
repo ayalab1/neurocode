@@ -79,6 +79,14 @@ classdef IntervalArray < handle
         end
         
         function obj = validate_intervals(obj)
+            
+            % remove nan
+            nan_idx = any(isnan(obj.intervals),2);
+            if any(nan_idx)
+                warning('removing intervals with nans')
+                obj.intervals(nan_idx,:) = [];
+            end
+           
             % check if intervals are valid
             if any(obj.intervals(:,1) > obj.intervals(:,2))
                 error('Invalid intervals: start time must be less than end time')

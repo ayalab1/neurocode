@@ -1083,10 +1083,11 @@ for ep_i = 1:Nepochs
             continue
         end
         
-        % 2) detected ripple power must be > thresSD locally
-        ripPow_chk    = ripPower0(SWRs(ii)-bound:SWRs(ii)+bound);
-        MripPow   = median(ripPow_chk);
-        SDripPow  = std(ripPow_chk);
+       % 2) detected ripple power must be > thresSD locally
+        indices = (SWRs(ii)-bound:SWRs(ii)+bound)';
+        ripPow_chk    = [indices ripPower0(SWRs(ii)-bound:SWRs(ii)+bound)];
+        MripPow   = median(ripPow_chk(:,2));
+        SDripPow  = std(ripPow_chk(:,2));
         
         if ripPowerAll(SWRid(ii)) < MripPow + thresSDrip(2)*SDripPow
             if DEBUG
@@ -1114,12 +1115,13 @@ for ep_i = 1:Nepochs
         
         % Estimate duration of detected ripple power increase event
         % find index of maximum ripple power increase around Sharp-Wave
-        [~,maxRpInd]  = max(ripPow_chk(bound+1-HalfWinSize:bound+1+HalfWinSize));
-        startRP       = find(ripPow_chk(1:bound - HalfWinSize + maxRpInd) ...
-            < MripPow + thresSDrip(1)*SDripPow,1,'last');
-        stopRP        = find(ripPow_chk(bound - HalfWinSize + maxRpInd: end) ...
-            < MripPow + thresSDrip(1)*SDripPow,1,'first');
-        durRP         = (bound - HalfWinSize + maxRpInd - startRP) + stopRP;
+        potentialPeak = ripPow_chk(bound+1-HalfWinSize:bound+1+HalfWinSize,:);
+        [~,maxRpInd]  = max(potentialPeak(:,2)); 
+        potentialStart =  ripPow_chk(1:bound - HalfWinSize + maxRpInd,:);
+        startRP       = potentialStart(find(potentialStart(:,2)< MripPow + thresSDrip(1)*SDripPow,1,'last'),1);
+        potentialStop =  ripPow_chk(bound - HalfWinSize + maxRpInd: end,:);
+        stopRP        = potentialStop(find(potentialStop(:,2) < MripPow + thresSDrip(1)*SDripPow,1,'first'),1);
+        durRP         = stopRP - startRP;
         
         % 4) events associated with detections must exceed a minimum duration
         if durRP < minDurRPs && durSWR < minDurSWs
@@ -1144,7 +1146,7 @@ for ep_i = 1:Nepochs
         if useSPW, % let event boundaries be entirely determined by the sharp wave boundaries
             SWR_valid.Ts(valid,:)     = [SWRs(ii) (SWRs(ii)-(bound+1-startSWR)) (SWRs(ii)+stopSWR-1)];
         else % event boundaries are determined by the union of the sharp wave and ripple intervals
-            SWR_valid.Ts(valid,:)     = [SWRs(ii) (SWRs(ii)-(bound+1-min(startSWR,startRP))) (SWRs(ii)+max(stopSWR,stopRP)-1)];
+            SWR_valid.Ts(valid,:)     = [SWRs(ii) min([SWRs(ii)-(bound+1-startSWR),startRP]) max([SWRs(ii)+stopSWR-1,stopRP])];
         end
         
         swMax                     = swDiffAll(SWRid(ii));
@@ -1154,7 +1156,7 @@ for ep_i = 1:Nepochs
             [(swMax - MswDiff)/SDswDiff sum(swDiff_chk < swMax)/(2*bound + 1)];
         
         SWR_valid.RipMax(valid,:) = ...
-            [(ripMax - MripPow)/SDripPow sum(ripPow_chk < ripMax)/(2*bound + 1)];
+            [(ripMax - MripPow)/SDripPow sum(ripPow_chk(:,2) < ripMax)/(2*bound + 1)];
         
         if DEBUG
             h1 = subplot(2,3,[1 2]);
@@ -1185,9 +1187,9 @@ for ep_i = 1:Nepochs
             hold off
             
             h2 = subplot(2,3,[4 5]);
-            plot(timeline,ripPow_chk), axis tight, hold on
+            plot(timeline,ripPow_chk(:,2)), axis tight, hold on
             plot([timeline(startSWR) timeline(bound+stopSWR)],...
-                [ripPow_chk(startSWR) ripPow_chk(bound+stopSWR)],'og')
+                [ripPow_chk(startSWR,2) ripPow_chk(bound+stopSWR,2)],'og')
             line([0 0],get(gca,'ylim'), ...
                 'linestyle','--','color','k')
             line(get(gca,'xlim'),repmat(MripPow,[1 2]), ...
@@ -1197,10 +1199,10 @@ for ep_i = 1:Nepochs
             line(get(gca,'xlim'),repmat(MripPow-thresSDrip(2)*SDripPow,[1 2]), ...
                 'linestyle','--','color','r')
             xlabel('Samples'),ylabel('A.U.'),title('Rip Pow'), hold off
-            subplot(2,3,6), hist(ripPow_chk,100), ...
+            subplot(2,3,6), hist(ripPow_chk(:,2),100), ...
                 line(repmat(MripPow+thresSDrip(2)*SDripPow, [1 2]),get(gca,'ylim'), ...
                 'linestyle','--','color','k')
-            line(repmat(ripPow_chk(bound+1), [1 2]),get(gca,'ylim'), ...
+            line(repmat(ripPow_chk(bound+1,2), [1 2]),get(gca,'ylim'), ...
                 'linestyle','--','color','r')
             xlabel('A.U.'),
             ylabel('Counts')

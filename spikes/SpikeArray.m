@@ -123,9 +123,23 @@ classdef SpikeArray < handle
             parse(p,varargin{:})
             ds = p.Results.ds;
             
+            % set up bin edge or each cell
+            uid_edge = [obj.ids;max(obj.ids)+1] - .5;
+            
+            % set bin edges for time
+            time_edge = obj.first_event:ds:obj.last_event;
+            
             [bst,~,~] = histcounts2(obj.uid,...
                 obj.spikes,...
-                1:obj.n_cells,obj.first_event:ds:obj.last_event);
+                uid_edge,...
+                time_edge);
+            
+            bin_centers = time_edge(1:end-1) + ds/2;
+            
+            % make binned spike train into analogSignalArray
+            bst = analogSignalArray('data',bst,...
+                'timestamps',bin_centers,...
+                'sampling_rate',1/ds);
         end
         
         function n_cells_ = n_cells(obj)
@@ -136,8 +150,12 @@ classdef SpikeArray < handle
             ids_= unique(obj.uid);
         end
         
+        function duration_ = duration(obj)
+            duration_ = obj.last_event - obj.first_event;
+        end
+        
         function disp(obj)
-            obj_duration = seconds(obj.last_event - obj.first_event);
+            obj_duration = seconds(obj.duration);
             if obj_duration < seconds(1)
                 duration_str = datestr(obj_duration, 'FFF');
                 units = 'ms';

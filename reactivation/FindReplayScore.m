@@ -263,7 +263,7 @@ else % temporal shuffle
         [~,order] = sort(rand(1,nBinsX));
         mockSums = sums(:,order);
         [rShuffled(i),ind] = max(mean(mockSums(indices),2));
-        aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
+        aShuffled(i) = a(ind); bShuffled(i) = b(ind);
         if strcmp(wcorr,'on') || strcmp(jumps,'ok')
             mockMatrix = matrix(:,order);
             if strcmp(wcorr,'on')

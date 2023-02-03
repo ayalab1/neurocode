@@ -199,7 +199,6 @@ switch mode,
 		tmp = sparse(linearIndex,1,1,prod(outputSize),1);
 		n = reshape(full(tmp),outputSize);
 		a = a ./ n;
-		a(isnan(a)) = 0;
 		if nargout >= 2,
 			% Standard deviation: use V = E(X2)-E(X)2
 			tmp = sparse(linearIndex,1,values.^2,prod(outputSize),1);

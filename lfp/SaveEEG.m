@@ -25,6 +25,8 @@ function SaveEEG(varargin)
 %     'rejectChannels'  a list of channels (1-indexing, so add 1 to the number
 %                       in neuroscope) which will be ignored when computing
 %                       the mean
+%     'reference'       mean vs median referencing - input as character
+%                       string. Default = 'mean'
 %    =========================================================================
 %
 %
@@ -38,6 +40,7 @@ function SaveEEG(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'rejectChannels',[]);
+addParameter(p,'reference',['mean']);
 parse(p,varargin{:}); % add the optional inputs to replace the defaults
 % assign all varriabler from "p.Results"
 fields = fieldnames(p.Results);
@@ -52,7 +55,13 @@ if ~exist(eegFile,'file')
     copyfile(lfpFile,eegFile);
     file = memmapfile(eegFile,'Format','int16','Writable',true);
     data = reshape(file.Data,nChannels,[]);
-    m = int16(mean(data(okChannels,:)));
+    if contains(reference,'mean')
+        m = int16(mean(data(okChannels,:)));
+    elseif contains(reference,'median')
+        m = int16(median(data(okChannels,:)));
+    else
+        error('unrecognized reference style, choose mean or median');
+    end
     newData = data;
     newData(okChannels,:) = bsxfun(@minus,data(okChannels,:),m);
     file.data = newData(:);

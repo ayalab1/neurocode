@@ -104,8 +104,12 @@ load(fullfile(basepath,[recordingname,'.session.mat']))
 nChannels = session.extracellular.nChannels;
 SpkGrps = session.extracellular.spikeGroups.channels;
 Fs = session.extracellular.srLfp;
-lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
-lfpFile = [basepath filesep lfpFile(1).name];
+if exist(fullfile(basepath,[recordingname,'.lfp']),'file')
+    lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
+    lfpFile = [basepath filesep lfpFile(1).name];
+elseif exist(fullfile(basepath,[recordingname,'.eeg']),'file')
+    lfpFile = [basepath filesep recordingname '.eeg'];
+end
 if fromDat
     datFile = checkFile('basepath',basepath,'fileTypes',{'.dat'});
     datFile = [basepath filesep datFile(1).name];

@@ -137,7 +137,10 @@ classdef analogSignalArray < handle
         end
         
         function duration_ = duration(self)
-            duration_ = self.timestamps(end) - self.timestamps(1);
+            % calculate duration of contiguous timestamps
+            ts_diff = diff(self.timestamps);
+            ts_diff(ts_diff > (1/self.sampling_rate) * 2) = [];
+            duration_ = sum(ts_diff);
         end
         
         function disp(self)

@@ -22,7 +22,7 @@ function test_SpikeArray()
     assert(spike_array.n_cells() == 3);
 
     % Test ids method
-    assert(isequal(spike_array.ids(), [1, 2, 3]));
+    assert(isequal(spike_array.ids(), [1, 2, 3]'));
 
     % Test n_spikes method
     assert(isequal(spike_array.n_spikes(), [3, 3, 3]'));
@@ -48,4 +48,19 @@ function test_SpikeArray()
     assert(first_cell_array.last_event() == 3);
     assert(first_cell_array.issorted() == 1);
     assert(first_cell_array.isempty() == 0);
+    
+    % Test bin
+    spikes_cell = {[1, 2, 3], [4, 5, 6], [7, 8, 9]};
+    spike_array = SpikeArray(spikes_cell);
+    bst = spike_array.bin('ds',1);
+    X = [1,0,0;...
+        1,0,0;...
+        1,0,0;...
+        0,1,0;...
+        0,1,0;...
+        0,1,0;...
+        0,0,1;...
+        0,0,1;...
+        0,0,1];
+    assert(isequal(bst.data,X))
 end

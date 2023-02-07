@@ -127,7 +127,7 @@ classdef SpikeArray < handle
             uid_edge = [obj.ids;max(obj.ids)+1] - .5;
             
             % set bin edges for time
-            time_edge = obj.first_event:ds:obj.last_event;
+            time_edge = obj.first_event - ds/2:ds:obj.last_event + ds/2;
             
             [bst,~,~] = histcounts2(obj.uid,...
                 obj.spikes,...
@@ -148,6 +148,9 @@ classdef SpikeArray < handle
         
         function ids_ = ids(obj)
             ids_= unique(obj.uid);
+            if size(ids_,2) > size(ids_,1)
+                ids_ = ids_';
+            end
         end
         
         function duration_ = duration(obj)

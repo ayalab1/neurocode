@@ -117,7 +117,7 @@ end
 % interpolate back
 filtered = [t0 interp1(filtered(:,1),filtered(:,2),t0)];
 if isnan(filtered(end,2)), filtered(end,2) = filtered(end-1,2); end % make sure we don't lose the last bin due to interpolating above
-filtered(any(isnan(filtered),2),:) = []; % remove any errors due to unforeseen nans
+% filtered(any(isnan(filtered),2),:) = []; % remove any errors due to unforeseen nans
 
 %% Before insertion it was just this line:
 % filtered = Filter([t interpolated],'passband',passband,'order',order,varargin{:});

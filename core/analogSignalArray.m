@@ -19,6 +19,7 @@ classdef analogSignalArray < handle
     %   n_samples - returns number of samples
     %   isempty - checks if the analogSignalArray is empty
     %   issorted - checks if the analogSignalArray is sorted (time)
+    %   smooth - smooth signal with gaussian kernel
     %
     % Example:
     %
@@ -36,20 +37,20 @@ classdef analogSignalArray < handle
     % positions = analogSignalArray(...
     %     'data',[behavior.position.x;behavior.position.y],...
     %     'timestamps',behavior.timestamps)
-    % 
+    %
     % Lets restrict to epoch 3
     %
     % positions(epochs(3))
-    % ans = 
-    % <analogSignalArray: 2 signals> of length 54:06.362 minutes 
+    % ans =
+    % <analogSignalArray: 2 signals> of length 54:06.362 minutes
     %
     % check if same amount of time in epoch 3
     %
     %  epochs(3)
-    % <IntervalArray: 1 epochs> of length 54:06.387 minutes 
+    % <IntervalArray: 1 epochs> of length 54:06.387 minutes
     %
     % Ryan Harvey 2023
-
+    
     properties
         data
         timestamps
@@ -69,12 +70,12 @@ classdef analogSignalArray < handle
             addParameter(p,'data',[]);
             addParameter(p,'timestamps',[]);
             addParameter(p,'sampling_rate',[]);
-
+            
             parse(p,varargin{:});
             self.data = p.Results.data;
             self.timestamps = p.Results.timestamps;
             self.sampling_rate = p.Results.sampling_rate;
-
+            
             self = validate_signals(self);
         end
         
@@ -184,6 +185,26 @@ classdef analogSignalArray < handle
         
         function sorted = issorted(self)
             sorted = all(sort(self.timestamps) == sort(self.timestamps));
+        end
+        
+        function asa = smooth(self,varargin)
+            % gaussian smooth using Smooth.m
+            p=inputParser;
+            addParameter(p,'window',0.05); % standard deviations (50ms default)
+            parse(p,varargin{:});
+            window = p.Results.window;
+            
+            % convert window into samples
+            window = window * self.sampling_rate;
+            
+            % remove window from varargin to avoid error with Smooth
+            idx = contains(varargin{:,1},'window');
+            varargin(idx,:) = [];
+            
+            % call Smooth and pass args
+            asa.data = Smooth(self.data,...
+                [window,0],...
+                varargin{:});
         end
         
     end

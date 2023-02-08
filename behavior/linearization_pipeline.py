@@ -170,7 +170,7 @@ class NodePicker:
 
         print("saving to disk...")
         behave_df.loc[cur_epoch, "linearized"] = position_df.linear_position.values
-        behave_df.loc[cur_epoch, "track_segment_id"] = position_df.track_segment_id.values
+        behave_df.loc[cur_epoch, "states"] = position_df.track_segment_id.values
         behave_df.loc[cur_epoch, "projected_x_position"] = position_df.projected_x_position.values
         behave_df.loc[cur_epoch, "projected_y_position"] = position_df.projected_y_position.values
 
@@ -178,7 +178,7 @@ class NodePicker:
         data = loadmat(filename, simplify_cells=True)
 
         data["behavior"]["position"]["linearized"] = behave_df.linearized.values
-        data["behavior"]["states"] = behave_df.track_segment_id.values
+        data["behavior"]["states"] = behave_df.states.values
         data["behavior"]["position"]["projected_x"] = behave_df.projected_x_position.values
         data["behavior"]["position"]["projected_y"] = behave_df.projected_y_position.values
 
@@ -200,6 +200,10 @@ def load_animal_behavior(basepath):
     data = loadmat(filename, simplify_cells=True)
     df = pd.DataFrame()
     df["time"] = data["behavior"]["timestamps"]
+    try:
+        df["states"] = data["behavior"]["states"]
+    except:
+        pass
     for key in data["behavior"]["position"].keys():
         try:
             df[key] = data["behavior"]["position"][key]

@@ -183,7 +183,7 @@ class NodePicker:
         data["behavior"]["position"]["projected_y"] = behave_df.projected_y_position.values
 
         # store nodes and edges within behavior file
-        data = self.save_nodes_edges_to_behavior(behave_df)
+        data = self.save_nodes_edges_to_behavior(data, behave_df)
 
         savemat(filename, data, long_field_names=True)
 
@@ -197,7 +197,7 @@ class NodePicker:
         with open(save_file, "wb") as f:
             pickle.dump(results, f)
 
-    def save_nodes_edges_to_behavior(self,behave_df):
+    def save_nodes_edges_to_behavior(self, data, behave_df):
         """
         Store nodes and edges into behavior file
         Searches to find epochs with valid linearized coords

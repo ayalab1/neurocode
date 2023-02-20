@@ -289,7 +289,7 @@ else % temporal shuffle
     end
 end
 
-p = sum(rShuffled>r)/nShuffles;
+p = sum(rShuffled>=r)/nShuffles;
 
 % ------------------------------- Helper function -------------------------------
 

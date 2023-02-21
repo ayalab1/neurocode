@@ -133,7 +133,7 @@ classdef SpikeArray < handle
             ds = p.Results.ds;
             
             % set up bin edge or each cell
-            uid_edge = [obj.uid_labels;max(obj.uid_labels)+1] - .5;
+            uid_edge = [obj.uid_labels(:);max(obj.uid_labels)+1] - .5;
             
             % set bin edges for time
             time_edge = obj.first_event - ds/2:ds:obj.last_event + ds/2;

@@ -64,4 +64,10 @@ function test_SpikeArray()
         0,0,1;...
         0,0,1];
     assert(isequal(bst.data,X))
+    
+    % Test to_cell_array
+    spikes_cell = {[1, 2, 3], [4, 5, 6], [7, 8, 9]};
+    spike_array = SpikeArray(spikes_cell);
+    spikes_cell_2 = spike_array.to_cell_array();
+    assert(isequal(spikes_cell,spikes_cell_2))
 end

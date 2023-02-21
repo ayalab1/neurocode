@@ -19,6 +19,8 @@ classdef SpikeArray < handle
     %   last_event - returns the timestamp of the last spike
     %   issorted - checks if the spikes are sorted in chronological order
     %   isempty - checks if the SpikeArray is empty
+    %   bin - bins spikes and returns analogSignalArray
+    %   to_cell_array - returns cell array of spikes
     %   plot - plots the spikes using RasterPlot
     %
     % Examples:
@@ -34,6 +36,8 @@ classdef SpikeArray < handle
     %   mySpikeArray.last_event()
     %   mySpikeArray.issorted()
     %   mySpikeArray.isempty()
+    %   mySpikeArray.bin()
+    %   mySpikeArray.to_cell_array()
     %   mySpikeArray.plot()
     %
     % Ryan H 2023
@@ -151,6 +155,13 @@ classdef SpikeArray < handle
                 'sampling_rate',1/ds);
         end
         
+        function cell_array = to_cell_array(obj)
+            cell_array = cell(1,length(obj.uid_labels));
+            for uid_label = obj.uid_labels(:)'
+                cell_array{uid_label} = obj.spikes(obj.uid == uid_label);
+            end
+        end
+            
         function n_cells_ = n_cells(obj)
             n_cells_= length(unique(obj.uid_labels));
         end

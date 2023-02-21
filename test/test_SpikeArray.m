@@ -41,9 +41,10 @@ function test_SpikeArray()
     
     % Test cell selection method
     first_cell_array = spike_array(1);
-    assert(first_cell_array.n_cells() == 1);
-    assert(first_cell_array.ids() == 1);
-    assert(first_cell_array.n_spikes() == 3);
+    assert(first_cell_array.n_cells() == 3);
+    assert(first_cell_array.n_active_cells() == 1);
+    assert(all(first_cell_array.ids() == [1,2,3]'));
+    assert(all(first_cell_array.n_spikes() == [3,0,0]'));
     assert(first_cell_array.first_event() == 1);
     assert(first_cell_array.last_event() == 3);
     assert(first_cell_array.issorted() == 1);

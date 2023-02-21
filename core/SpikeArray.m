@@ -6,11 +6,13 @@ classdef SpikeArray < handle
     % Properties:
     %   spikes - array of spike timestamps
     %   uid - unique identifier for each neuron
+    %   uid_labels - persistent storage of unique neurons
     %
     % Methods:
     %   SpikeArray - constructor, creates a new SpikeArray object
     %   restrict - restrict spikes to the times within an IntervalArray object
     %   n_cells - returns the number of neurons in the SpikeArray
+    %   n_active_cells - returns the number of active neurons in the SpikeArray
     %   ids - returns the unique identifiers of each neuron
     %   n_spikes - returns the number of spikes for each neuron
     %   first_event - returns the timestamp of the first spike
@@ -25,6 +27,7 @@ classdef SpikeArray < handle
     %   mySpikeArray(myIntervalArray) or mySpikeArray.restrict(myIntervalArray)
     %   mySpikeArray(1)
     %   mySpikeArray.n_cells()
+    %   mySpikeArray.n_active_cells()
     %   mySpikeArray.ids()
     %   mySpikeArray.n_spikes()
     %   mySpikeArray.first_event()
@@ -38,6 +41,7 @@ classdef SpikeArray < handle
     properties
         spikes
         uid
+        uid_labels
     end
     
     methods
@@ -74,6 +78,7 @@ classdef SpikeArray < handle
                 else
                     error('Input must be numeric array or cell array of numeric arrays.');
                 end
+                obj.uid_labels = unique(obj.uid)';
             elseif nargin == 2
                 spikes_in = varargin{1};
                 uid_in = varargin{2};
@@ -83,6 +88,7 @@ classdef SpikeArray < handle
                 else
                     error('Input spikes and uid must be numeric arrays with matching number of rows.');
                 end
+                obj.uid_labels = unique(obj.uid)';
             else
                 error('Invalid number of input arguments.');
             end
@@ -101,6 +107,8 @@ classdef SpikeArray < handle
                 idx = obj.uid == S.subs{1};
                 st.spikes = obj.spikes(idx);
                 st.uid = obj.uid(idx);
+                st.uid_labels = obj.uid_labels;
+                return
             else
                 st = builtin('subsref',obj,S);
             end
@@ -114,6 +122,7 @@ classdef SpikeArray < handle
                 [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals, varargin{:});
             end
             st.uid = obj.uid(idx);
+            st.uid_labels = obj.uid_labels;
         end
         
         function bst = bin(obj,varargin)
@@ -124,7 +133,7 @@ classdef SpikeArray < handle
             ds = p.Results.ds;
             
             % set up bin edge or each cell
-            uid_edge = [obj.ids;max(obj.ids)+1] - .5;
+            uid_edge = [obj.uid_labels;max(obj.uid_labels)+1] - .5;
             
             % set bin edges for time
             time_edge = obj.first_event - ds/2:ds:obj.last_event + ds/2;
@@ -143,11 +152,15 @@ classdef SpikeArray < handle
         end
         
         function n_cells_ = n_cells(obj)
+            n_cells_= length(unique(obj.uid_labels));
+        end
+        
+        function n_cells_ = n_active_cells(obj)
             n_cells_= length(unique(obj.uid));
         end
         
         function ids_ = ids(obj)
-            ids_= unique(obj.uid);
+            ids_= unique(obj.uid_labels);
             if size(ids_,2) > size(ids_,1)
                 ids_ = ids_';
             end

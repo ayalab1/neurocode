@@ -122,7 +122,9 @@ else
 			alpha(rec(i),alphaValue);
         end
     end
-    uistack(rec,'bottom');
+    if exist('rec','var') % if something was actually plotted
+        uistack(rec,'bottom'); % show it
+    end
 end
 
 if nargout>0, 

@@ -32,6 +32,8 @@ function varargout = anovabox(data,groups,varargin)
 %    'parametric'   either 'on' (to perform t-tests / anova) or 'off' (to 
 %                   perform non-parametric Wilcoxon signed-rank and ranksum 
 %                   tests / friedman).
+%    'tail'         tail ('left', 'right', or 'both') for comparing each
+%                   group to zero (default = 'both');
 %    'correction'   type of statistical correction to use to control for
 %                   multiple comparisons, i.e. between all pairs of multiple
 %                   groups (default = tukey-kramer)
@@ -117,6 +119,7 @@ precedence = 1;
 paired = true;
 lock = false; % lock y axis
 boxwidth = 0.3;
+tail = 'both'; % tail for "test0" where each group is compared to zero
 ns = false;
 
 for i = 1:2:length(varargin),
@@ -128,6 +131,11 @@ for i = 1:2:length(varargin),
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
                 error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
+            end
+        case 'tail',
+            tail = varargin{i+1};
+            if ~isastring(lower(tail),'left','right','both')
+                error('Incorrect value for property ''tail'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -184,11 +192,11 @@ end
 % if a single value for alpha is provided, use that value for both kinds of comparisons (to zero and between groups):
 if length(alpha)==1, alpha = [alpha alpha]; end
 if parametric
-    test0 = @(x) out2(@ttest,x);
+    test0 = @(x) out2(@ttest,x,[],'tail',tail);
     testbetween =  @anova1;
     if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = @(x) testbetween(x,[],'off'); end
 else
-    test0 = @(x) signrank(x);
+    test0 = @(x) signrank(x,[],'tail',tail);
     testbetween = @kruskalwallis;
     if paired,
         if size(data,2)==2, testpaired = @helper_signrank; else, testpaired = @(x) friedman(x,1,'off'); end

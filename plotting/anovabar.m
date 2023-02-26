@@ -32,6 +32,8 @@ function varargout = anovabar(data,groups,varargin)
 %    'parametric'   either 'on' (to display means and perform t-tests) 
 %                   or 'off' (to display median and perform non-parametric 
 %                   Wilcoxon signed-rank and ranksum tests / friedman).
+%    'tail'         tail ('left', 'right', or 'both') for comparing each
+%                   group to zero (default = 'both');
 %    'correction'   type of statistical correction to use to control for
 %                   multiple comparisons, i.e. between all pairs of multiple
 %                   groups (default = tukey-kramer)
@@ -116,6 +118,7 @@ parametric = true;
 precedence = 1;
 paired = true;
 barWidth = 0.8;
+tail = 'both'; % tail for "test0" where each group is compared to zero
 ns = false;
 
 for i = 1:2:length(varargin),
@@ -127,6 +130,11 @@ for i = 1:2:length(varargin),
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
                 error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
+            end
+        case 'tail',
+            tail = varargin{i+1};
+            if ~isastring(lower(tail),'left','right','both')
+                error('Incorrect value for property ''tail'' (type ''help <a href="matlab:help anovabar">anovabar</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -175,13 +183,13 @@ end
 % if a single value for alpha is provided, use that value for both kinds of comparisons (to zero and between groups):
 if length(alpha)==1, alpha = [alpha alpha]; end
 if parametric
-    test0 = @(x) out2(@ttest,x);
+    test0 = @(x) out2(@ttest,x,[],'tail',tail);
     average = @(x) nanmean(x,1);
     semfun = @(x) nansem(x,1);
     testbetween = @anova1;
     if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = @(x) testbetween(x,[],'off'); end
 else
-    test0 = @(x) signrank(x);
+    test0 = @(x) signrank(x,[],'tail',tail);
     average = @(x) nanmedian(x,1);
     semfun = @(x) semedian(x);
     testbetween = @kruskalwallis;

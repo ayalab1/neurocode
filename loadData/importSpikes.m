@@ -163,6 +163,7 @@ if ~isempty(state)
 end
 
 % Might need to condense spikeT
+keepT = {};
 if length(spikeT.times)>length(spikeT.UID)
     for i = 1:length(spikeT.UID)
         keepT{i} = spikeT.times{spikeT.UID(i)};

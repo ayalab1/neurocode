@@ -15,7 +15,9 @@ function  preprocessSession(varargin)
 %  -------------------------------------------------------------------------
 % [basepath]             [Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd]
-% [analogCh]             [List of analog channels with pulses to be detected (it
+% [analogChannels]       [List of analog channels with pulses to be detected (it
+%                         supports Intan Buzsaki Edition)]
+% [digitalChannels]      [List of digital channels with pulses to be detected (it
 %                         supports Intan Buzsaki Edition)]
 % [forceSum]             [Force make folder summary (overwrite, if necessary). 
 %                         Default false]
@@ -168,7 +170,7 @@ end
 if digitalInputs
     if ~isempty(digitalChannels)
         % need to change to only include specified channels
-        digitalInp = getDigitalIn('all','fs',session.extracellular.sr);
+        digitalInp = getDigitalIn('all','fs',session.extracellular.sr,'digUse',digitalChannels);
     else
         digitalInp = getDigitalIn('all','fs',session.extracellular.sr);
     end

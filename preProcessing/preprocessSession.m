@@ -240,6 +240,7 @@ if spikeSort
             channels = cat(2,shanks{kilosortGroup==i});
             excludeChannels = find(~ismember((1:session.extracellular.nChannels),channels));
             excludeChannels = cat(2,excludeChannels,session.channelTags.Bad.channels);
+            excludeChannels = unique(excludeChannels);
             kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels);
             if cleanRez
                 load(fullfile(kilosortFolder,'rez.mat'),'rez');

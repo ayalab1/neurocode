@@ -124,7 +124,7 @@ behavior.states = states;
 behavior.stateNames = stateNames;
 behavior.notes = notes;
 behavior.epochs = session.epochs;
-behavior.processinginfo.date = date;
+behavior.processinginfo.date = datetime("today");
 behavior.processinginfo.function = 'general_behavioral_file.mat';
 behavior.processinginfo.source = source;
 
@@ -141,14 +141,11 @@ if clean_tracker_jumps
         disp('you need to specify your environments in session')
         session = gui_session(session);
     end
-    start = [];
-    stop = [];
-    for ep = 1:length(session.epochs)
-        if ~contains(session.epochs{ep}.environment,'sleep')
-            start = [start,session.epochs{ep}.startTime];
-            stop = [stop,session.epochs{ep}.stopTime];
-        end
-    end
+    % load epochs and locate non-sleep epochs
+    epoch_df = load_epoch('basepath',basepath);
+    epoch_df = epoch_df(epoch_df.environment ~= "sleep",:);
+    start = epoch_df.startTime;
+    stop = epoch_df.stopTime;
     
     good_idx = manual_trackerjumps(behavior.timestamps,...
         behavior.position.x,...

@@ -188,7 +188,10 @@ if convert_xy_to_cm
                 end
                 convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
                 maze_sizes_i = maze_sizes_i + 1;
-                
+
+                % add convert_pix_to_cm_ratio to epochs in behavior file
+                behavior.epochs{ep}.pix_to_cm_ratio = convert_pix_to_cm_ratio;
+
                 % iterate over each tracker point
                 for pos_fields_i = 1:length(pos_fields)
                     behavior.position.(pos_fields{pos_fields_i})(idx) =...
@@ -212,7 +215,14 @@ if convert_xy_to_cm
             pos_range = maze_distance_gui(fullfile(files.folder,files.name));
         end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
-        
+
+        % add convert_pix_to_cm_ratio to epochs in behavior file
+        for ep = 1:length(session.epochs)
+            if ~contains(session.epochs{ep}.environment,'sleep')
+                behavior.epochs{ep}.pix_to_cm_ratio = convert_pix_to_cm_ratio;
+            end
+        end
+
         % iterate over each tracker point
         for pos_fields_i = 1:length(pos_fields)
             behavior.position.(pos_fields{pos_fields_i}) =...

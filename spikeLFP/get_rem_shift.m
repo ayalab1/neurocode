@@ -234,8 +234,12 @@ function lfp = get_deep_ca1_lfp(basepath,passband)
 
 basename = basenameFromBasepath(basepath);
 
-load(fullfile(basepath,[basename,'.session.mat']))
-load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']))
+load(fullfile(basepath,[basename,'.session.mat']),'session')
+
+if ~exist(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'file')
+    classification_DeepSuperficial(session);
+end
+load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'deepSuperficialfromRipple')
 
 % find deep ca1 channels to check
 try
@@ -248,18 +252,26 @@ if isempty(deep_channels)
     return
 end
 
+% search for ca1 channels
+brainRegions = fields(session.brainRegions);
+ca1_layers = brainRegions(contains(brainRegions,'CA1'));
+if isempty(ca1_layers)
+    lfp = [];
+    return
+end
+ca1_channels = [];
+for region = ca1_layers'
+    ca1_channels = [ca1_channels;session.brainRegions.(region{1}).channels'];
+end
+ca1_channels = unique(ca1_channels);
+
+% find channels that are deep and ca1
+deep_channels = deep_channels(ismember(deep_channels,ca1_channels))';
+
+% kick out bad channels
 try
-    deep_channels = deep_channels(ismember(deep_channels,...
-        session.brainRegions.CA1.channels))';
+    deep_channels = deep_channels(~ismember(deep_channels,session.channelTags.Bad.channels));
 catch
-    try
-        ca1_channels = [session.brainRegions.rCA1.channels,...
-            session.brainRegions.lCA1.channels];
-        deep_channels = deep_channels(ismember(deep_channels,ca1_channels))';
-    catch
-        lfp = [];
-        return
-    end
 end
 
 if isempty(deep_channels)
@@ -276,18 +288,18 @@ lfp = getLFP(deep_channels,'basepath',basepath,'basename',basename);
 
 % get theta power to choose channel
 try
-    pBand = bandpower(single(lfp.data),...
+    pBand = bandpower(double(lfp.data),...
         lfp.samplingRate,passband);
     
-    pTot = bandpower(single(lfp.data),...
+    pTot = bandpower(double(lfp.data),...
         lfp.samplingRate,...
         [1,(lfp.samplingRate/2)-1]);
 catch
     for c = 1:size(lfp.data,2)
-        pBand(c) = bandpower(single(lfp.data(:,c)),...
+        pBand(c) = bandpower(double(lfp.data(:,c)),...
             lfp.samplingRate,passband);
         
-        pTot(c) = bandpower(single(lfp.data(:,c)),...
+        pTot(c) = bandpower(double(lfp.data(:,c)),...
             lfp.samplingRate,...
             [1,(lfp.samplingRate/2)-1]);
     end

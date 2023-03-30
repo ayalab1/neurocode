@@ -63,13 +63,20 @@ end
    
 % 
 validEvents = find(stdEvents<=cutpoint);
-events.timestamps = events.timestamps(validEvents,:);
-try 
-    events.peaks = events.peaks(validEvents,:);
-    events.peakNormedPower = events.peakNormedPower(validEvents,:);
+fields = fieldnames(events);
+matchLength = size(events.timestamps,1);
+for i = 1:length(fields)
+    currentField = fields{i};
+    if size(events.(currentField),1)==matchLength
+        events.(currentField)= events.(currentField)(validEvents,:);
+    elseif size(events.(currentField),2)==matchLength
+        events.(currentField) = evetns.(currentField)(:,validEvents);
+    end
 end
+      
 events.artifactsRemovalParameters.cutpoint = cutpoint;
 events.artifactsRemovalParameters.winSize = winSize;
+events.removed = ~ismember((1:length(stdEvents)),validEvents);
 
 fprintf('Keeping %4.0f of %4.0f events \n',length(validEvents),length(stdEvents));
 

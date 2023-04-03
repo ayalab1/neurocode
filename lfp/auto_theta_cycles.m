@@ -130,6 +130,14 @@ end
 % search for ca1 channels
 brainRegions = fields(session.brainRegions);
 ca1_layers = brainRegions(contains(brainRegions,'CA1'));
+
+if isempty(ca1_layers)
+    ca1_layers = brainRegions(contains(brainRegions,'CA2'));
+    if ~isempty(ca1_layers)
+        warning("using CA2 channel as theta channel")
+    end
+end
+
 if isempty(ca1_layers)
     lfp = [];
     return

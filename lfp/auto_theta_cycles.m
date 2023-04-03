@@ -107,6 +107,9 @@ end
 function [lfp,channel] = get_deep_ca1_lfp(basepath,passband,maximize_theta_power)
 % get_deep_ca1_lfp: locates a deep ca1 channel that maximizes theta power
 
+lfp = [];
+channel=[];
+
 basename = basenameFromBasepath(basepath);
 
 load(fullfile(basepath,[basename,'.session.mat']))
@@ -123,7 +126,6 @@ catch % different spelling
     deep_channels = deepSuperficialfromRipple.channels(contains(deepSuperficialfromRipple.channelClass,'Deep'));
 end
 if isempty(deep_channels)
-    lfp = [];
     return
 end
 
@@ -136,7 +138,6 @@ if isempty(deep_channels_temp)
 end
 % if no CA1 or CA2, return
 if isempty(deep_channels_temp)
-    lfp = [];
     return
 else
     deep_channels = deep_channels_temp;

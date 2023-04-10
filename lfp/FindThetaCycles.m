@@ -7,7 +7,7 @@ function [peaktopeak,troughs, amplitude] = FindThetaCycles(lfp,varargin)
 % as the troughs take theta asymmetry into account.
 %
 % It's recommended to provide lfp restricted to a behavior session (excluding
-% sleep sessions). The function will take into account theta asymmetry to find 
+% sleep sessions). The function will take into account theta asymmetry to find
 % the exact peak and trough timestamps as described by Belluscio et al (2012).
 %
 % USAGE
@@ -25,14 +25,14 @@ function [peaktopeak,troughs, amplitude] = FindThetaCycles(lfp,varargin)
 %     'artefactThreshold' threshold to use to pass on to CleanLFP to exclude
 %                       artifacts when computing theta amplitude (default = 5)
 %     'baseline'        interval(s) of the behavior session, excluding sleep sessions,
-%                       (there is no need to restrict to running epochs) provided in [start stop] 
+%                       (there is no need to restrict to running epochs) provided in [start stop]
 %                       matrix format. These intervals will be used to estimate
 %                       the expected theta amplitude and compute amplitude thresholds.
 %                       (default = [0 Inf]);
 %     'marginAmplitude' the minimum theta amplitude (in sd-s). If the theta amplitude
 %                       during a cycle is lower than this amplitude, the cycle will
 %                       be discarded (default = -1). Note that this should be low
-%                       because during a behavioral epoch, theta oscillations are 
+%                       because during a behavioral epoch, theta oscillations are
 %                       expected (as the animal is running) in the majority of the
 %                       session.
 %    =========================================================================
@@ -107,11 +107,15 @@ ok = true(length(peaktopeak),1);
 badsize = diff(peaktopeak,[],2) > maxDuration | diff(peaktopeak,[],2) < minDuration;
 ok(badsize) = false;
 % apply minimum amplitude threshold
-[~,bad,~] = CleanLFP(lfp,'thresholds',[artefactThreshold Inf],'manual',false); % the derivative threshold is set to Inf because theta is a slow signal and fast artefacts captured by the derivative are not relevant
+% the derivative threshold is set to Inf because theta is a slow signal
+% and fast artefacts captured by the derivative are not relevant
+[~,bad,~] = CleanLFP(lfp,'thresholds',[artefactThreshold Inf],'manual',false);
 amplitude(bad,2) = nan;
-nottheta = amplitude(~(amplitude(:,2)>amplitudeThreshold),1); 
-ok = CountInIntervals(nottheta, peaktopeak)==0; % intervals containing moments of low amplitude theta are not theta cycles
+nottheta = amplitude(~(amplitude(:,2)>amplitudeThreshold),1);
+% intervals containing moments of low amplitude theta are not theta cycles
+ok = CountInIntervals(nottheta, peaktopeak)==0 & ok;
 
 troughs = troughs(ok);
 peaktopeak = peaktopeak(ok,:);
 amplitude = amplitude(ok,2);
+end

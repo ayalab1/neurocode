@@ -287,7 +287,7 @@ session.brainRegions = [];
 
 for region = regions'
     session.brainRegions.(region{1}).channels =...
-        channel_map_vec(contains(anatomical_map_vec,region))';
+        channel_map_vec(ismember(anatomical_map_vec,region))';
     % add electrode groups
     [~,c]=find(ismember(channel_map,session.brainRegions.(region{1}).channels));
     session.brainRegions.(region{1}).electrodeGroups = unique(c)';

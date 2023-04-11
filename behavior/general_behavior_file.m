@@ -124,7 +124,7 @@ behavior.states = states;
 behavior.stateNames = stateNames;
 behavior.notes = notes;
 behavior.epochs = session.epochs;
-behavior.processinginfo.date = date;
+behavior.processinginfo.date = datetime("today");
 behavior.processinginfo.function = 'general_behavioral_file.mat';
 behavior.processinginfo.source = source;
 
@@ -141,14 +141,11 @@ if clean_tracker_jumps
         disp('you need to specify your environments in session')
         session = gui_session(session);
     end
-    start = [];
-    stop = [];
-    for ep = 1:length(session.epochs)
-        if ~contains(session.epochs{ep}.environment,'sleep')
-            start = [start,session.epochs{ep}.startTime];
-            stop = [stop,session.epochs{ep}.stopTime];
-        end
-    end
+    % load epochs and locate non-sleep epochs
+    epoch_df = load_epoch('basepath',basepath);
+    epoch_df = epoch_df(epoch_df.environment ~= "sleep",:);
+    start = epoch_df.startTime;
+    stop = epoch_df.stopTime;
     
     good_idx = manual_trackerjumps(behavior.timestamps,...
         behavior.position.x,...
@@ -191,7 +188,10 @@ if convert_xy_to_cm
                 end
                 convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
                 maze_sizes_i = maze_sizes_i + 1;
-                
+
+                % add convert_pix_to_cm_ratio to epochs in behavior file
+                behavior.epochs{ep}.pix_to_cm_ratio = convert_pix_to_cm_ratio;
+
                 % iterate over each tracker point
                 for pos_fields_i = 1:length(pos_fields)
                     behavior.position.(pos_fields{pos_fields_i})(idx) =...
@@ -215,7 +215,14 @@ if convert_xy_to_cm
             pos_range = maze_distance_gui(fullfile(files.folder,files.name));
         end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
-        
+
+        % add convert_pix_to_cm_ratio to epochs in behavior file
+        for ep = 1:length(session.epochs)
+            if ~contains(session.epochs{ep}.environment,'sleep')
+                behavior.epochs{ep}.pix_to_cm_ratio = convert_pix_to_cm_ratio;
+            end
+        end
+
         % iterate over each tracker point
         for pos_fields_i = 1:length(pos_fields)
             behavior.position.(pos_fields{pos_fields_i}) =...

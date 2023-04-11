@@ -34,20 +34,20 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
         if ~isempty(dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*csv')))
             % locate file
             file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*csv'));
-            
+
             % if there are more than 1 csv, then it is likely to be a dlc
             % filtered file. If so, take the filtered csv
             if length(file) > 1
                 file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*filtered.csv'));
             end
-            
+
             video_file = dir(fullfile(file(1).folder,'*.avi'));
             obj = VideoReader(fullfile(video_file.folder,video_file.name));
             fs = obj.FrameRate;
-            
+
             % load csv with proper header
             df = load_dlc_csv(fullfile(file(1).folder,file(1).name));
-            
+
             % locate columns with [x,y,likelihood]
             field_names = df.Properties.VariableNames;
 
@@ -63,10 +63,10 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
             ts = df{:,1}/fs;
             %             x = df{:,x_col(primary_coords)};
             %             y = df{:,y_col(primary_coords)};
-            
+
             x = df{:,x_col};
             y = df{:,y_col};
-            
+
             tempTracking{count} = sync_ttl(file.folder,x,y,ts,fs,pulses_delta_range);
             trackFolder(count) = ii;
             count = count + 1;
@@ -118,14 +118,14 @@ for ii = 1:size(tempTracking,2)
     % determine shape of data to insert
     n_col = size(tempTracking{ii}.position.x,2);
     n_row = size(tempTracking{ii}.position.x,1);
-    
+
     % insert data using above shape and offset
     x(row_offset+1:n_row+row_offset,1:n_col) = tempTracking{ii}.position.x;
     y(row_offset+1:n_row+row_offset,1:n_col) = tempTracking{ii}.position.y;
-    
+
     % change offset to reflect last inserted data
     row_offset = n_row + row_offset;
-    
+
     % metadata
     folder{ii} = tempTracking{ii}.folder;
     samplingRate = [samplingRate; tempTracking{ii}.samplingRate];
@@ -151,11 +151,26 @@ function [tracking] = sync_ttl(folder,x,y,ts,fs,pulses_delta_range)
 
 if ~exist(fullfile(folder,'digitalIn.events.mat'),'file')
     if ~exist(fullfile(folder,'digitalin.dat'),'file')
-        error([fullfile(folder,'digitalin.dat'),'   does not exist'])
+
+        warning([fullfile(folder,'digitalin.dat'),'   does not exist'])
+
+        disp('decide if you want to use tracking without ttls (not recommended), if so type dbcont')
+        keyboard
+
+        [~,folder_name] = fileparts(folder);
+        tracking.position.x = x;
+        tracking.position.y = y;
+        tracking.timestamps = ts;
+        tracking.originalTimestamps = ts;
+        tracking.folder = folder_name;
+        tracking.samplingRate = fs;
+        tracking.description = '';
+        tracking.notes = 'no ttls';
+        return
     end
     digitalIn = getDigitalIn('all','folder',folder);
 end
-load(fullfile(folder,'digitalIn.events.mat'))
+load(fullfile(folder,'digitalIn.events.mat'),'digitalIn')
 
 Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
 [~,idx] = max(cell2mat(Len));
@@ -166,9 +181,9 @@ extra_pulses = diff(bazlerTtl)<((1/fs)-(1/fs)*pulses_delta_range);
 bazlerTtl(extra_pulses) = [];
 
 if isempty(bazlerTtl)
-   warning('no real ttls, something went wrong')
-   disp('fix the issue and type dbcont to continue')
-   keyboard 
+    warning('no real ttls, something went wrong')
+    disp('fix the issue and type dbcont to continue')
+    keyboard
 end
 
 basler_intan_diff = length(bazlerTtl) - size(x,1);
@@ -194,7 +209,7 @@ notes = [];
 if (length(bazlerTtl) == size(x,1)) || abs(basler_intan_diff)<=2 %assumes 1 frame could be cut at 0 and 1 frame at end
     notes = 'N of frames match!!';
     warning(notes);
-    
+
 elseif basler_intan_diff>0 && abs(basler_intan_diff)<fs
     notes = [num2str(abs(length(bazlerTtl) - size(x,1))) ' of frames dont match, probably at the end of the recording'];
     warning(notes);
@@ -210,7 +225,7 @@ elseif basler_intan_diff<0 && abs(basler_intan_diff)>fs
     warning(notes);
     x = x(1:length(bazlerTtl),:);
     y = y(1:length(bazlerTtl),:);
-    
+
 elseif abs(basler_intan_diff)>60*fs
     notes = 'More than 1 minute missalignment in total in this session...will interpolate ts';
     warning(notes);
@@ -218,7 +233,7 @@ elseif abs(basler_intan_diff)>60*fs
     bazlerTtl_new = interp1(bazlerTtl,bazlerTtl,simulated_ts);
     bazlerTtl = bazlerTtl_new';
     fs = mode(diff(bazlerTtl));
-    
+
 elseif abs(basler_intan_diff)>2*fs
     notes = 'More than 2 seconds missalignment in total in this session...will adjust to the closer one...';
     warning(notes);
@@ -338,7 +353,7 @@ for ii = 1:size(digital_on,2)
         % take timestamp in seconds
         digitalIn.timestampsOn{ii} = digital_on{ii}/fs;
         digitalIn.timestampsOff{ii} = digital_off{ii}/fs;
-        
+
         % intervals
         d = zeros(2,max([size(digitalIn.timestampsOn{ii},1) size(digitalIn.timestampsOff{ii},1)]));
         d(1,1:size(digitalIn.timestampsOn{ii},1)) = digitalIn.timestampsOn{ii};
@@ -349,7 +364,7 @@ for ii = 1:size(digital_on,2)
         if d(2,end) == 0; d(2,end) = nan; end
         digitalIn.ints{ii} = d;
         digitalIn.dur{ii} = digitalIn.ints{ii}(2,:) - digitalIn.ints{ii}(1,:); % durantion
-        
+
         clear intsPeriods
         intsPeriods(1,1) = d(1,1); % find stimulation intervals
         intPeaks =find(diff(d(1,:))>lag);
@@ -366,13 +381,13 @@ if exist('digitalIn','var')==1
     xt = linspace(0,size(data,2)/fs,size(data,2));
     data = flip(data);
     data = data(1:size(digitalIn.intsPeriods,2),:);
-    
+
     h=figure;
     imagesc(xt,1:size(data,2),data);
     xlabel('s'); ylabel('Channels'); colormap gray
     mkdir(fullfile(folder,'Pulses'));
     saveas(h,fullfile(folder,'Pulses','digitalIn.png'));
-    
+
     save(fullfile(folder,'digitalIn.events.mat'),'digitalIn');
 else
     digitalIn = [];

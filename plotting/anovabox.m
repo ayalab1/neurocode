@@ -345,19 +345,23 @@ else
     if alpha(2)>0 % If alpha(2)=0, skip this
         if precedence==1, maxj = length(u); else, maxj = size(data,2); end
         for j=1:maxj
-            if precedence==1, [~,~,stats] = testpaired(data(groups==u(j),:));
+            if precedence==1, [~,pTest,stats] = testpaired(data(groups==u(j),:));
             else, [~,~,stats] = testbetween(data(:,j), groups,'off');
             end
-            try
-        		comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction);
-            catch
-                continue % if a whole column of data is missing, then comparisons are impossible
+            if ischar(stats) && strcmp(stats,'signrank') % signrank test doesn't give a "stats" output compatible with multcompare
+                comparison = [1 2 (pTest<alpha(2)) + (pTest<alpha(2)/5) (pTest<alpha(2)/50)];
+            else
+                try
+                    comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction);
+                    comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
+                    comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction);
+                    comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
+                    comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction);
+                    comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+                catch
+                    continue % if a whole column of data is missing, then comparisons are impossible
+                end
             end
-            comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
-            comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction);
-            comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
-            comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction);
-            comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
             sigFor2Groups(j,1) = comparison(1,3);
             for i=1:size(comparison,1)
                 smallnumber = 0.1*diff(ylim); %for display purposes, so things don't overlap

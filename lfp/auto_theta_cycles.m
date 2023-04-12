@@ -16,7 +16,7 @@ function auto_theta_cycles(varargin)
 %    -------------------------------------------------------------------------
 %    <options>      optional list of property-value pairs (see table below)
 %     'basepath'  basepath to session (can be cell array of many) (default = pwd)
-%     'passband'  frequency of theta band (default = [6,12])
+%     'passband'  frequency of theta band (default = [4,12])
 %     'maximize_theta_power' whether to find the channel that maximizes theta power (default=true)
 %     'run_parallel'  to run multiple in parallel (default = false)
 %     'overwrite'  to run overwrite existing file (default = false)

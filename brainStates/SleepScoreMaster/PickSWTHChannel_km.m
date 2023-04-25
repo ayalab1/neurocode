@@ -475,7 +475,7 @@ imagesc(t_spec,log2(swFFTfreqs),(FFTspec))
 axis xy; hold on
 plot(t_FFT,bz_NormToRange(broadbandSlowWave,log2(swFFTfreqs([1 end]))),'k','Linewidth',0.1)
 LogScale_ss('y',2)
-caxis([min(mu)-2*max(sig) max(mu)+2*max(sig)])
+clim([double(min(mu)-2*max(sig)), double(max(mu)+2*max(sig))])
 ylim([log2(swFFTfreqs(1)) log2(swFFTfreqs(end))+0.2])
 xlim(t_FFT([1,end]))
 
@@ -516,7 +516,7 @@ plot(t_spec([1,end]),log2(f_theta([2,2])),'w')
 axis xy
 plot(t_FFT,bz_NormToRange(thratio,log2(thFFTfreqs([1 end]))),'k','Linewidth',0.1)
 LogScale_ss('y',2)
-caxis([min(mu)-2.5*max(sig) max(mu)+2.5*max(sig)])
+clim([double(min(mu)-2.5*max(sig)), double(max(mu)+2.5*max(sig))])
 ylim([log2(thFFTfreqs(1)) log2(thFFTfreqs(end))+0.2])
 ylabel({'LFP - FFT','f (Hz)'})
 title(['Theta Channel: ',num2str(THchanID)]);

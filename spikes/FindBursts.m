@@ -50,6 +50,8 @@ thresholds = [0 3]; % [2 2] in Wierzynski
 smooth = (0.05/3); % 3σ = 50 ms in Wierzynski
 intervals = [0 Inf];
 durations = [0 Inf];
+basepath = [];
+save_mat = false;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -80,6 +82,16 @@ for i = 1:2:length(varargin),
             durations = varargin{i+1};
             if ~isdmatrix(durations) || size(durations,2) ~= 2,
                 error('Incorrect value for property ''durations'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
+            end
+        case 'basepath'
+            basepath = varargin{i+1};
+            if ~exist(basepath,'dir')
+                error('Incorrect value for property ''basepath'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
+            end
+        case 'save_mat'
+            save_mat = varargin{i+1};
+            if ~islogical(save_mat)
+                error('Incorrect value for property ''save_mat'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).']);
@@ -132,10 +144,42 @@ tooShort = duration<durations(1);
 tooLong = duration>durations(2);
 bursts(tooShort | tooLong,:) = [];
 
+% save event file
+if save_mat && ~isempty(basepath)
+    save_mat_file(bursts,basepath,intervals,binSize,durations,thresholds,smooth)
 end
 
+end
 
 %% HELPER FUNCTIONS
+
+function save_mat_file(bursts,basepath,intervals,binSize,durations,thresholds,smooth)
+% package cellexplorer format
+
+bursts_.timestamps = bursts(:,[1, 3]);
+bursts_.peaks = bursts(:,2);
+bursts_.amplitude = bursts(:,4);
+bursts_.amplitudeUnits = 'zscore';
+bursts_.eventID = [];
+bursts_.eventIDlabels = [];
+bursts_.eventIDbinary = [];
+bursts_.duration = bursts_.timestamps(:,2) - bursts_.timestamps(:,1);
+bursts_.center = bursts_.timestamps(:,1) + bursts_.duration/2;
+
+detectorinfo.detectorname = 'FindBurst.m';
+detectorinfo.detectiondate = datetime("today");
+detectorinfo.detectionintervals = intervals;
+detectorinfo.detectionparms.binSize = binSize;
+detectorinfo.detectionparms.durations = durations;
+detectorinfo.detectionparms.thresholds = thresholds;
+detectorinfo.detectionparms.smooth = smooth;
+bursts_.detectorinfo = detectorinfo;
+
+bursts = bursts_;
+basename = basenameFromBasepath(basepath);
+save(fullfile(basepath,[basename,'.bursts.events.mat']),'bursts')
+end
+
 % Chronux' binspikes
 function [dN,t]=binspikes(data,Fs,t)
 % bin spikes at a specified frequency sampling i.e. sampling rate 1/sampling

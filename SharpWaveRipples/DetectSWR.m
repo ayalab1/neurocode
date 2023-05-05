@@ -57,6 +57,8 @@ function [ripples] = DetectSWR(Channels, varargin)
 %
 % Channels:     an array of two channel IDs following LoadBinary format (base 1)
 %               First RIPPLE channel, and second the SHARP WAVE channel.
+%               A noise channel is the third channel (optional) - HLarsson
+%                                                                   05/23 
 %               Detection in based on these order, please be careful
 %               E.g. [1 11]
 %

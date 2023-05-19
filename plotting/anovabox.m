@@ -220,6 +220,9 @@ else
     groups = double(groups);
 end
 
+% ignore NaNs:
+nans = any(isnan(data),2); data(nans,:) = []; if grouped, groups(nans) = []; end;
+
 nGroups = numel(unique(groups));
 if ~isempty(groups)
     [g1,g2] = meshgrid(1:size(data,2),1:size(data,1));

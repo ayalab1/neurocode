@@ -10,6 +10,15 @@ function PlotJointPETH(PETH1,PETH2,smooth,names,durations)
 % [h2,ht] = PETH(barrages.timestamps(:,1),deltaWaves.timestamps(:,1),'nBins',101,'durations',durations);
 % smooth = 2; names = {'ripples','barrages','delta waves'}; 
 % PlotJointPETH(h1,h2,smooth,names,durations);
+%
+%
+% Copyright (C) 2019-2022 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 
 clf
 if ~exist('smooth','var') || isempty(smooth), smooth = 0; end

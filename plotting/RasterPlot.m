@@ -5,6 +5,13 @@ function H = RasterPlot(spikes, height, varargin)
 % "spikes" is a list of [timestamps id]
 % provide desired height of spikes
 % any other inputs will be passed on to "plot"
+%
+% Copyright (C) 2018-2022 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 if nargin==1,
     height = 1;

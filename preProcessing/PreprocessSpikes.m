@@ -51,7 +51,7 @@ multiKilosort = p.Results.multiKilosort;
 showGUI = p.Results.showGUI;
 showCellMet = p.Results.showCellMet;
 prePhy = p.Results.prePhy;
-spikeLabels = p.Results.spikeLabels; %spike labels is causing issues even when good channels are noted - Heathlarsson 05/29/23
+spikeLabels = p.Results.spikeLabels; %spike labels is causing issues even when no bad channels are noted - Heathlarsson 05/29/23
 
 %% 1- extract spike times and waveforms for sorted clusters
 cd(basepath);

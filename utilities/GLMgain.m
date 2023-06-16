@@ -129,12 +129,17 @@ for unit = 1:nUnits,
     %% Split data into nSets balanced sets
     setID = nan(nEvents,1);
     zero = target(:,unit)==0;
-    % initialise (number sets sequentially)
-    setID(zero) = ceil(linspace(1/sum(zero),1,sum(zero))*nSets); % we keep zero and non-zero sets separately for balance
-    setID(~zero) = ceil(linspace(1/sum(~zero),1,sum(~zero))*nSets);
-    % scramble respective sets sets
-    setID(zero) = Scramble(setID(zero));
-    setID(~zero) = Scramble(setID(~zero));
+    ok = false; tictoc = tic; 
+    while ~ok && ((toc - tictoc) <5) % timeout in 5 seconds to prevent an infinite loop
+        % initialise (number sets sequentially)
+        setID(zero) = ceil(linspace(1/sum(zero),1,sum(zero))*nSets); % we keep zero and non-zero sets separately for balance
+        setID(~zero) = ceil(linspace(1/sum(~zero),1,sum(~zero))*nSets);
+        % scramble respective sets sets
+        setID(zero) = Scramble(setID(zero));
+        setID(~zero) = Scramble(setID(~zero));
+        % Make sure there is some variance for each of the sources in each set. Otherwises, re-initialize
+        ok = true; for set = 1:nSets, if any(~(max(source(setID~=set,:))>min(source(setID~=set,:)))), ok = false; end; end 
+    end
     shuffled = nan(nSets,nIterations);
     errors = nan(nSets,1);
     for set = 1:nSets,

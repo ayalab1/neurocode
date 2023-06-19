@@ -41,7 +41,15 @@ if exist(fullfile(basepath,[basename,'.MergePoints.events.mat']),'file')
                 file = dir(fullfile(basepath,MergePoints.foldernames{ii},'*DLC*filtered.csv'));
             end
 
+            % look for avi files first (we will almost always use avi)
             video_file = dir(fullfile(file(1).folder,'*.avi'));
+            
+            % if avi doesn't exist, search mp4
+            if isempty(video_file)
+                video_file = dir(fullfile(file(1).folder,'*.mp4'));
+            end
+            
+            % read video to get framerate
             obj = VideoReader(fullfile(video_file.folder,video_file.name));
             fs = obj.FrameRate;
 

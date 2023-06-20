@@ -202,7 +202,13 @@ if convert_xy_to_cm
     else
         load(fullfile(basepath,[basename,'.MergePoints.events.mat']),'MergePoints')
         for folder = MergePoints.foldernames
+            % check for avi
             files = dir(fullfile(basepath,folder{1},'*.avi'));
+            if ~isempty(files)
+                break
+            end
+            % check for mp4
+            files = dir(fullfile(basepath,folder{1},'*.mp4'));
             if ~isempty(files)
                 break
             end

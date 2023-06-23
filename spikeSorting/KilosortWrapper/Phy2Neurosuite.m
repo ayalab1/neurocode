@@ -1,313 +1,108 @@
-function Phy2Neurosuite(basepath,clustering_path)
-% Converts Phy output (NPY files) to Neurosuite files: fet, res, clu, spk files.
-% Based on the GPU enable filter from Kilosort and fractions from Brendon
-% Watson's code for saving Neurosuite files. 
+function Phy2Neurosuite(clustering_path,savePath,datFile)
 
-% The script has a high memory usage as all waveforms are loaded into 
-% memory at the same time. If you experience a memory error, increase 
-% your swap/cashe file, and increase the amount of memory MATLAB can use.
+% Generate Neurosuite files (.clu, .res., .spk, .fet) for 
+% each shank given the phy files directory and the .dat file.
+% 
+% Hint: this works much faster if the "savePath" is local, transfer your files later
 %
-% 1) Waveforms are extracted from the dat file via GPU enabled filters.
-% 2) Features are calculated in parfor loops.
+% Copyright (C) 2020-2023 by Ralitsa Todorova
 %
-% Inputs:
-% basepath -  location of your data / dat file. rez structure from Kilosort
-% clustering_path - location of your kilosort output. 
-%
-% By Peter Petersen 2018
-% petersen.peter@gmail.com
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
-t1 = tic;
-% cd(clustering_path)
-rezpath = fullfile(clustering_path,'rez.mat');
-if exist(rezpath)
-    load(rezpath)
-    spikeTimes = uint64(rez.st3(:,1)); % uint64
-    if isfield(rez.ops,'basename')
-        basename = rez.ops.basename;
-    else
-        basename = bz_BasenameFromBasepath(rez.ops.root);
-        rez.ops.basename = basename;
+
+if ~exist('clustering_path','var'), clustering_path = pwd; end
+if ~exist('savePath','var'), savePath = clustering_path; end
+if ~exist('datFile','var'), [basepath,~] = fileparts(clustering_path); [~,basename] = fileparts(basepath); datFile = fullfile(basepath,[basename '.dat']); end
+[basepath,basename] = fileparts(datFile);
+
+xmlFile = fullfile(basepath,[basename '.xml']);
+if ~exist(xmlFile,'file'),error(['Please make sure file ' xmlFile ' exists.']); end
+
+%% Initialize variables
+session = import_xml2session(xmlFile,struct);
+nChannels = session.extracellular.nChannels;
+
+cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv')); 
+shankID = cluster_info_table.data(:,end); 
+clusterIDlist = cellfun(@str2double,cluster_info_table.textdata(2:end,1)); 
+noisyIDs = clusterIDlist(cellfun(@(x) contains(x,'noise'),cluster_info_table.textdata(2:end,6)));
+muaIDs = clusterIDlist(cellfun(@(x) contains(x,'mua'),cluster_info_table.textdata(2:end,6)));
+allSpiketimes = double(readNPY(fullfile(clustering_path, 'spike_times.npy')));
+channels = double(readNPY('channel_map.npy'));
+channelShanks = double(readNPY('channel_shanks.npy'))';
+spikeIDs = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
+nShanks = max(shankID);
+
+%% Loop all shanks
+nSamples = 32;
+nFeatures = 4;
+borders = [true(5,1); false(nSamples,1); true(5,1)];
+for i = 1:nShanks
+    currentIDs = clusterIDlist(shankID==i); % clusters on current octrode
+    ok = ismember(spikeIDs,currentIDs); % spikes on current octrode
+    
+    % Save .clu file (cluster id)
+    clusterID = spikeIDs(ok);
+    if any(ismember(currentIDs,noisyIDs)), noisy = ismember(clusterID,noisyIDs); else, noisy = false(size(clusterID)); end
+    if any(ismember(currentIDs,muaIDs)), mua = ismember(clusterID,muaIDs); else, mua = false(size(clusterID)); end
+    % Change cluster numbers to start with 2 (in a clu-file, cluster 1 is for noise)
+    clusterID(noisy) = 0; clusterID(mua) = 1; nonnoisy = ~noisy & ~mua; 
+    [~,~,clusterID(nonnoisy)] = unique(clusterID(nonnoisy));
+    clusterID(nonnoisy) = clusterID(nonnoisy)+1;
+    dlmwrite(fullfile(savePath,[basename '.clu.' num2str(i)]),[max(clusterID)+1;clusterID]);
+%     
+%     % Save .res file (spikes times)
+    spiketimes = allSpiketimes(ok);
+    dlmwrite(fullfile(savePath,[basename '.res.' num2str(i)]),spiketimes,'precision','%.0f');
+
+    spkFilename = fullfile(savePath,[basename '.spk.' num2str(i)]);
+    theseChannels = channels(channelShanks==i)+1;
+    pointer = fopen(spkFilename,'w');
+    disp([datestr(clock) ': Starting .spk. ' num2str(i) '...']);
+    for k=1:length(spiketimes)
+        if rem(k,100000)==0,
+            disp([datestr(clock) ': Done with ' num2str(k) ' out of ' num2str(length(spiketimes)) ' spikes for spk.' num2str(i) ' (' num2str(100*k/length(spiketimes)) '%)...']);
+        end
+        spk = loadBinary(datFile,'start',spiketimes(k)/20000-(16+5)/20000,'duration',(nSamples+10)/20000,'nChannels',nChannels,'channels',theseChannels)';
+        % consider loading a bigger chunk and correcting for small shifts (also noting them, so you can correct the .res file)
+        % Filter
+        filtered = spk;
+        for j=5+1:size(spk,2)-5
+            filtered(:,j) = bsxfun(@minus,filtered(:,j),median(spk(:,j-5:j+5),2));
+        end
+        filtered(:,borders) = []; spk(:,borders) = [];
+        fwrite(pointer,filtered(:),'int16');
     end
-elseif exist(fullfile(basepath,'ops.mat'))
-    rez = [];
-    load(fullfile(basepath,'ops.mat'))
-    rez.ops = ops;
-    spikeTimes = readNPY(fullfile(clustering_path, 'spike_times.npy'))';
-    rez.st3(:,1) = spikeTimes;
-%     load(fullfile(basepath,'chanMap.mat'))
-    rez.connected = ones(1,ops.NchanTOT);
-    basename = bz_BasenameFromBasepath(basepath);
-    ops.basename = basename;
-    rez.ops = ops;
-else
-    disp('No rez.mat or ops.mat file exist!')
-end
+    fclose(pointer);
 
-rez.ops.root = clustering_path;
-rez.ops.fbinary = fullfile(basepath, [basename,'.dat']);
-rez.ops.fshigh = 500;
+    m = memmapfile(spkFilename, 'Format', 'int16','Writable',false);
+    data = reshape(m.Data,length(theseChannels),nSamples,length(spiketimes));
+    fet = [];
+    for ch = 1:size(data,1)
+        c = corr(squeeze(double(data(ch,:,:)))');
+        [v,~] = eig(c);
+        v = v(:,1:nFeatures);
+        proj = (v' *double(squeeze(data(ch,:,:))))';
+        fet = [fet proj];
+    end
+    fet = round((fet)/max(abs(fet(:))) * (2^15 - 1));
+    fet(:,end+1) = spiketimes;
 
-spikeTemplates = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
-spike_clusters = unique(spikeTemplates);
-cluster_ids = readNPY(fullfile(clustering_path, 'cluster_ids.npy'));
-template_kcoords = readNPY(fullfile(clustering_path, 'shanks.npy'));
-template_kcoords33 = readNPY(fullfile(clustering_path, 'channel_positions.npy'));
-if isfield(rez.ops,'kcoords')
-    kcoords = rez.ops.kcoords;
-else
-    kcoords = readNPY(fullfile(clustering_path, 'channel_shanks.npy'));
-end
-
-Nchan = rez.ops.Nchan;
-samples = rez.ops.nt0;
-
-kcoords2 = unique(template_kcoords);
-ia = [];
-for i = 1:length(kcoords2)
-    kcoords3 = kcoords2(i);
-    if mod(i,4)==1; fprintf('\n'); end
-    fprintf(['Loading data for spike group ', num2str(kcoords3),'. '])
-    template_index = cluster_ids(find(template_kcoords == kcoords3));
-    ia{i} = find(ismember(spikeTemplates,template_index));
-end
-rez.ia = ia;
-fprintf('\n'); toc(t1)
-
-fprintf('\nSaving .clu files to disk (cluster indexes)')
-for i = 1:length(kcoords2)
-    kcoords3 = kcoords2(i);
-    if mod(i,4)==1; fprintf('\n'); end
-    fprintf(['Saving .clu file for group ', num2str(kcoords3),'. '])
-    tclu = spikeTemplates(ia{i});
-    tclu = cat(1,length(unique(tclu)),double(tclu));
-    cluname = fullfile([basename '.clu.' num2str(kcoords3)]);
-    fid=fopen(cluname,'w');
-    fprintf(fid,'%.0f\n',tclu);
-    fclose(fid);
-    clear fid
-end
-fprintf('\n'); toc(t1)
-
-fprintf('\nSaving .res files to disk (spike times)')
-for i = 1:length(kcoords2)
-    kcoords3 = kcoords2(i);
-    tspktimes = spikeTimes(ia{i});
-    if mod(i,4)==1; fprintf('\n'); end
-    fprintf(['Saving .res file for group ', num2str(kcoords3),'. '])
-    resname = fullfile([basename '.res.' num2str(kcoords3)]);
-    fid=fopen(resname,'w');
-    fprintf(fid,'%.0f\n',tspktimes);
-    fclose(fid);
-    clear fid
-end
-fprintf('\n'); toc(t1)
-
-fprintf('\nExtracting waveforms\n')
-waveforms_all = Kilosort_ExtractWaveforms(rez);
-fprintf('\n'); toc(t1)
-
-fprintf('\nSaving .spk files to disk (waveforms)')
-for i = 1:length(kcoords2)
-    if mod(i,4)==1; fprintf('\n'); end
-    fprintf(['Saving .spk for group ', num2str(kcoords2(i)),'. '])
-    fid=fopen([basename,'.spk.',num2str(kcoords2(i))],'w');
-    fwrite(fid,waveforms_all{i}(:),'int16');
+    fid = fopen(fullfile(savePath,[basename '.fet.' num2str(i)]),'w');
+    fprintf(fid, '%d\n', size(fet,2));
+    fprintf(fid,['%d' repmat('\t%d',1,size(fet,2)-1) '\n'],fet');
     fclose(fid);
 end
-fprintf('\n'); toc(t1)
 
-fprintf('\nComputing PCAs')
-% Starting parpool if stated in the Kilosort settings
-if (rez.ops.parfor & isempty(gcp('nocreate'))); parpool; end
-
-for i = 1:length(kcoords2)
-    kcoords3 = kcoords2(i);
-    if mod(i,2)==1; fprintf('\n'); end
-    fprintf(['Computing PCAs for group ', num2str(kcoords3),'. '])
-    PCAs_global = zeros(3,sum(kcoords==kcoords3),length(ia{i}));
-    waveforms = waveforms_all{i};
     
-    waveforms2 = reshape(waveforms,[size(waveforms,1)*size(waveforms,2),size(waveforms,3)]);
-    wranges = int64(range(waveforms2,1));
-    wpowers = int64(sum(waveforms2.^2,1)/size(waveforms2,1)/100);
-    
-    % Calculating PCAs in parallel if stated in ops.parfor
-    if isempty(gcp('nocreate'))
-        for k = 1:size(waveforms,1)
-            PCAs_global(:,k,:) = pca(zscore(permute(waveforms(k,:,:),[2,3,1]),[],2),'NumComponents',3)';
-        end
-    else
-        parfor k = 1:size(waveforms,1)
-            PCAs_global(:,k,:) = pca(zscore(permute(waveforms(k,:,:),[2,3,1]),[],2),'NumComponents',3)';
-        end
-    end
-    fprintf(['Saving .fet files for group ', num2str(kcoords3),'. '])
-    PCAs_global2 = reshape(PCAs_global,size(PCAs_global,1)*size(PCAs_global,2),size(PCAs_global,3));
-    factor = (2^15)./max(abs(PCAs_global2'));
-    PCAs_global2 = int64(PCAs_global2 .* factor');
-    
-    fid=fopen([basename,'.fet.',num2str(kcoords3)],'w');
-    Fet = double([PCAs_global2; wranges; wpowers; spikeTimes(ia{i})']);
-    nFeatures = size(Fet, 1);
-    formatstring = '%d';
-    for ii=2:nFeatures
-        formatstring = [formatstring,'\t%d'];
-    end
-    formatstring = [formatstring,'\n'];
-    
-    fprintf(fid, '%d\n', nFeatures);
-    fprintf(fid,formatstring,Fet);
-    fclose(fid);
-end
-fprintf('\n'); toc(t1)
-fprintf('\nComplete!')
 
-	function waveforms_all = Kilosort_ExtractWaveforms(rez)
-        % Extracts waveforms from a dat file using GPU enable filters.
-        % Based on the GPU enable filter from Kilosort.
-        % All settings and content are extracted from the rez input structure
-        %
-        % Inputs:
-        %   rez -  rez structure from Kilosort
-        %
-        % Outputs:
-        %   waveforms_all - structure with extracted waveforms
-        
-        % Extracting content from the .rez file
-        ops = rez.ops;
-        NT = ops.NT;
-        if exist(ops.fbinary) == 0
-            warning(['Binary file does not exist: ', ops.fbinary])
-        end
-        d = dir(ops.fbinary);
 
-        NchanTOT = ops.NchanTOT;
-        chanMap = ops.chanMap;
-        chanMapConn = readNPY(fullfile('channel_map.npy'))+1;
-        kcoords = readNPY(fullfile('channel_shanks.npy')); % ops.kcoords;
-        ia = rez.ia;
-        spikeTimes = rez.st3(:,1);
-        
-        if ispc
-            dmem         = memory;
-            memfree      = dmem.MemAvailableAllArrays/8;
-            memallocated = min(ops.ForceMaxRAMforDat, dmem.MemAvailableAllArrays) - memfree;
-            memallocated = max(0, memallocated);
-        else
-            memallocated = ops.ForceMaxRAMforDat;
-        end
-        ops.ForceMaxRAMforDat   = 10000000000;
-        memallocated = ops.ForceMaxRAMforDat;
-        nint16s      = memallocated/2;
-        
-        NTbuff      = NT + 4*ops.ntbuff;
-        Nbatch      = ceil(d.bytes/2/NchanTOT /(NT-ops.ntbuff));
-        Nbatch_buff = floor(4/5 * nint16s/ops.Nchan /(NT-ops.ntbuff)); % factor of 4/5 for storing PCs of spikes
-        Nbatch_buff = min(Nbatch_buff, Nbatch);
-        
-        DATA =zeros(NT, NchanTOT,Nbatch_buff,'int16');
-        
-        if isfield(ops,'fslow')&&ops.fslow<ops.fs/2
-            [b1, a1] = butter(3, [ops.fshigh/ops.fs,ops.fslow/ops.fs]*2, 'bandpass');
-        else
-            [b1, a1] = butter(3, ops.fshigh/ops.fs*2, 'high');
-        end
-        
-        if isfield(ops,'xml')
-            disp('Loading xml from rez for probe layout')
-            xml = ops.xml;
-        elseif exist(fullfile(ops.root,[ops.basename,'.xml']))==2
-            disp('Loading xml for probe layout from root folder')
-            xml = LoadXml(fullfile(ops.root,[ops.basename,'.xml']));
-            ops.xml = xml;
-        end
-        
-        fid = fopen(ops.fbinary, 'r');
-        
-        waveforms_all = [];
-        kcoords2 = unique(kcoords); % ops.kcoords
-        
-        channel_order = {};
-        indicesTokeep = {};
-%         connected_index = zeros(size(rez.connected));
-%         connected_index(rez.connected)=1:length(chanMapConn);
-        
-        for i = 1:length(kcoords2)
-            kcoords3 = kcoords2(i);
-            if i<=length(rez.ia)%case where no clus in last group... like if last group was non-ephys
-                waveforms_all{i} = zeros(sum(kcoords==kcoords3),ops.nt0,size(rez.ia{i},1));
-                if exist('xml')
-                    [channel_order,channel_index] = sort(xml.AnatGrps(kcoords2(i)).Channels+1);
-                    [~,indicesTokeep{i},~] = intersect(chanMapConn,channel_order);
 
-                    %indicesTokeep{i} = connected_index(indicesTokeep{i});
-                end
-            else
-                kcoords2(i) = [];
-            end
-        end
-        
-        fprintf('Extraction of waveforms begun \n')
-        for ibatch = 1:Nbatch
-            if mod(ibatch,10)==0
-                if ibatch~=10
-                    fprintf(repmat('\b',[1 length([num2str(round(100*(ibatch-10)/Nbatch)), ' percent complete'])]))
-                end
-                fprintf('%d percent complete', round(100*ibatch/Nbatch));
-            end
-            
-            offset = max(0, 2*NchanTOT*((NT - ops.ntbuff) * (ibatch-1) - 2*ops.ntbuff));
-            if ibatch==1
-                ioffset = 0;
-            else
-                ioffset = ops.ntbuff;
-            end
-            fseek(fid, offset, 'bof');
-            buff = fread(fid, [NchanTOT NTbuff], '*int16');
-            
-            %         keyboard;
-            
-            if isempty(buff)
-                break;
-            end
-            nsampcurr = size(buff,2);
-            if nsampcurr<NTbuff
-                buff(:, nsampcurr+1:NTbuff) = repmat(buff(:,nsampcurr), 1, NTbuff-nsampcurr);
-            end
-            if ops.GPU
-                try%control for if gpu is busy
-                    dataRAW = gpuArray(buff);
-                catch
-                    dataRAW = buff;
-                end
-            else
-                dataRAW = buff;
-            end
-            
-            dataRAW = dataRAW';
-            dataRAW = single(dataRAW);
-            dataRAW = dataRAW(:, chanMapConn);
-            dataRAW = dataRAW-median(dataRAW,2);
-            datr = filter(b1, a1, dataRAW);
-            datr = flipud(datr);
-            datr = filter(b1, a1, datr);
-            datr = flipud(datr);
-            DATA = gather_try(int16( datr(ioffset + (1:NT),:)));
-            dat_offset = offset/NchanTOT/2+ioffset;
-            % Saves the waveforms occuring within each batch
-            for i = 1:length(kcoords2)
-                kcoords3 = kcoords2(i);
-%                 ch_subset = 1:length(chanMapConn);
-                temp = find(ismember(spikeTimes(ia{i}), [ops.nt0/2+1:size(DATA,1)-ops.nt0/2] + dat_offset));
-                temp2 = spikeTimes(ia{i}(temp))-dat_offset;
-                
-                startIndicies = temp2-ops.nt0/2+1;
-                stopIndicies = temp2+ops.nt0/2;
-                X = cumsum(accumarray(cumsum([1;stopIndicies(:)-startIndicies(:)+1]),[startIndicies(:);0]-[0;stopIndicies(:)]-1)+1);
-                X = X(1:end-1);
-                waveforms_all{i}(:,:,temp) = reshape(DATA(X,indicesTokeep{i})',size(indicesTokeep{i},1),ops.nt0,[]);
-            end
-        end
-    end
-end
+
+
+
+
+

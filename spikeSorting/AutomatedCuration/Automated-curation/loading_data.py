@@ -44,7 +44,9 @@ def make_mSPK(filebase,shank,Nchannels=10,Nsamp= 32):
         dif             = vec[i+1]-j
         count           = dif*Nchannels*Nsamp
         ofset           = j*Nchannels*Nsamp
-        spk             = np.fromfile(spkFname,dtype=np.int16,count=count,offset=ofset*2)
+        ofset = ofset.astype(np.int64) # to prevent overflow in next line
+        # memory map the file and select the relevant part according to the offset and count
+        spk = np.memmap(spkFname, dtype=np.int16, mode="r", offset=ofset*2)[:count]
         spk             = np.reshape(spk,(dif,Nsamp,Nchannels),order='C')
         spk             = np.int64(spk)
         A               = int(ofset/Nvar)
@@ -75,7 +77,7 @@ def get_CCmat(filebase,shank):
 
 def get_time_mat1(res, clu):
     if len(res) == 0:
-        T = [];
+        T = []
     else:
         timeVec          = np.linspace(res[0],res[-1],num=88)
         timeVec          = np.int64(timeVec)
@@ -93,7 +95,7 @@ def get_time_mat1(res, clu):
                 v1[k]    = n1
             m1           = np.mean(v1)
             threshold1   = m1*0.1
-            v1[v1<=threshold1] = 0;
+            v1[v1<=threshold1] = 0
             v3           = np.zeros((87,1))
 
             for k in range(87):

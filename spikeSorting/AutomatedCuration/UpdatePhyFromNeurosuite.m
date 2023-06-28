@@ -1,7 +1,7 @@
 function UpdatePhyFromNeurosuite(clustering_path,neurosuite_path)
 
-% After running the AutomatedCuration, use this to export the results 
-% back to a phy format. 
+% After running the AutomatedCuration, use this to export the results
+% back to a phy format.
 % The old phy files will be moved.
 %
 % Copyright (C) 2023 by Ralitsa Todorova
@@ -35,7 +35,7 @@ for shank = possibleShanks
     end
 end
 
-% Decide whether to merge clusters after applying CCG criterion. 
+% Decide whether to merge clusters after applying CCG criterion.
 % Mark noise clusters as noise
 % Concatenate all cluster IDs
 add = 1; clus = []; noiseIndices = [];
@@ -48,28 +48,34 @@ for shank = possibleShanks
         proposedGroup = pickleCell{shank}{group};
         proposedGroup = sortby(proposedGroup,-nSpikes(proposedGroup));
         proposedGroup1 = proposedGroup;
-        i = proposedGroup(findmax(nSpikes(proposedGroup))); 
+        i = proposedGroup(findmax(nSpikes(proposedGroup)));
         isDifferent = false(numel(proposedGroup));
         for ii=1:length(proposedGroup)
             for jj=1:length(proposedGroup)
                 i = proposedGroup(ii); j = proposedGroup(jj);
-                try isDifferent(ii,jj) = kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,i,i))) || kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,j,j))) || kstest2(repelem(t,ccg(:,j,j)),repelem(t,ccg(:,i,i))); end
+                try
+                    isDifferent(ii,jj) = kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,i,i)),'alpha',0.001)...
+                        || kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,j,j)),'alpha',0.001) ||...
+                        kstest2(repelem(t,ccg(:,j,j)),repelem(t,ccg(:,i,i)),'alpha',0.001);
+                end
             end
         end
-        
+
         if ~any(isDifferent(:)), % No cluster is different, merge the whole group
             clu(ismember(clu,proposedGroup)) = i; proposedGroup1(ismember(proposedGroup1,proposedGroup)) = i;
         else
-            similarity = nan(size(isDifferent));  
+            similarity = nan(size(isDifferent));
             for ii=1:length(proposedGroup)
                 for jj=1:length(proposedGroup)
                     i = proposedGroup(ii); j = proposedGroup(jj);
-                    similarity(ii,jj) = min([nancorr(ccg(:,j,j),ccg(:,i,i)),nancorr(ccg(:,i,j),ccg(:,i,i)),nancorr(ccg(:,i,j),ccg(:,j,j))]);
+                    similarity(ii,jj) = min([nancorr(ccg(:,j,j),ccg(:,i,i)),...
+                        nancorr(ccg(:,i,j),ccg(:,i,i)),nancorr(ccg(:,i,j),ccg(:,j,j))]);
                 end
             end
             similarity(isnan(similarity)) = 0;
-            similarity = min(cat(3,similarity,similarity'),[],3); d = isDifferent(~triu(ones(size(similarity)))) - similarity(~triu(ones(size(similarity))))*0.5;
-            idx = cluster(linkage(d','complete'),'criterion','distance','cutoff',eps); 
+            similarity = min(cat(3,similarity,similarity'),[],3);
+            d = isDifferent(~triu(ones(size(similarity)))) - similarity(~triu(ones(size(similarity))))*0.5;
+            idx = cluster(linkage(d','complete'),'criterion','distance','cutoff',eps);
             for ii=1:max(idx)
                 if any(isDifferent(idx==ii,idx==ii))
                     error('These weren''t supposed to be grouped together...');
@@ -169,7 +175,4 @@ for i=1:length(indices)
     fwrite(fid, sprintf('%d\t%s\r\n', indices(i), 'noise'));
 end
 fclose(fid);
-
-
-
-
+end

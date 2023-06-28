@@ -42,7 +42,7 @@ add = 1; clus = []; noiseIndices = [];
 for shank = possibleShanks
     clu = dlmread(fullfile(neurosuite_path,[basename '.clu.' num2str(shank)])); clu(1) = [];
     res = dlmread(fullfile(neurosuite_path,[basename '.res.' num2str(shank)]));
-    [ccg,t] = CCG(res(clu>0)/20000,clu(clu>0),'duration',0.03*2);
+    [ccg,t] = CCG(res(clu>0)/20000,clu(clu>0),'duration',0.03*2,'binSize',0.001);
     nSpikes = Accumulate(clu(clu>0));
     for group = 2:length(pickleCell{shank})
         proposedGroup = pickleCell{shank}{group};
@@ -53,7 +53,7 @@ for shank = possibleShanks
         for ii=1:length(proposedGroup)
             for jj=1:length(proposedGroup)
                 i = proposedGroup(ii); j = proposedGroup(jj);
-                isDifferent(ii,jj) = kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,i,i))) || kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,j,j))) || kstest2(repelem(t,ccg(:,j,j)),repelem(t,ccg(:,i,i)));
+                try isDifferent(ii,jj) = kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,i,i))) || kstest2(repelem(t,ccg(:,i,j)),repelem(t,ccg(:,j,j))) || kstest2(repelem(t,ccg(:,j,j)),repelem(t,ccg(:,i,i))); end
             end
         end
         
@@ -67,6 +67,7 @@ for shank = possibleShanks
                     similarity(ii,jj) = min([nancorr(ccg(:,j,j),ccg(:,i,i)),nancorr(ccg(:,i,j),ccg(:,i,i)),nancorr(ccg(:,i,j),ccg(:,j,j))]);
                 end
             end
+            similarity(isnan(similarity)) = 0;
             similarity = min(cat(3,similarity,similarity'),[],3); d = isDifferent(~triu(ones(size(similarity)))) - similarity(~triu(ones(size(similarity))))*0.5;
             idx = cluster(linkage(d','complete'),'criterion','distance','cutoff',eps); 
             for ii=1:max(idx)

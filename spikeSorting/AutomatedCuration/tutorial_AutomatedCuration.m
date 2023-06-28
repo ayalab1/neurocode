@@ -44,11 +44,18 @@ Phy2Neurosuite(clustering_path,parentFolder,datFile);
 channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy')));
 
 github_path = 'C:\Users\Cornell\Documents\GitHub\';
+if ~exist(github_path,'dir')
+    github_path = 'D:\github\neurocode\';
+end
 fid = fopen(fullfile(neurosuite_path,'launch_curation.bat'),'w');
 fwrite(fid, sprintf('%s\n', '@echo_on'));
 fwrite(fid, sprintf('%s\n', 'call conda deactivate'));
 fwrite(fid, sprintf('%s\n', 'call conda activate AutomatedCurator'));
 lineStart = ['python ' fullfile(github_path,'neurocode','spikeSorting','AutomatedCuration','Automated-curation','running_AI_pipeline_bash.py') ' ' strrep(fullfile(neurosuite_path,basename),'\','\\')];
+
+cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv')); 
+shankID = cluster_info_table.data(:,end); 
+nShanks = max(shankID);
 for i=1:nShanks
     line = [lineStart ' ' num2str(i) ' ' num2str(sum(channelShanks==i))];
     fwrite(fid, sprintf('%s\n\n', line));

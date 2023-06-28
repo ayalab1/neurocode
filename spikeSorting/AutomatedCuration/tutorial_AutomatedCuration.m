@@ -12,13 +12,15 @@ conda install -c fastchan fastai anaconda      % agree to install when prompted
 pip install phylib      
 
 %% =============================== PREP DATA ===============================
-% Now that your enviroment is installed, we need to prep the phy outputs
-% of kilosort to make sure clusters are sufficiently clean to be run through
-% the automated curator.
 
 % If you want to cluster-cut on your local machine's SSD drive, now is the 
 % time to copy your phy files and the .dat file to your local drive, as you
 % normally, would before this step.
+
+% Open phy and use the plugin: "Recluster Local PCAs all"
+% This will take some time, but this is a very important step of 
+% oversplitting to make sure clusters are sufficiently clean to be 
+% run through the automated curator.
 
 % You absolutely need your .xml file in the same folder.
 clustering_path = pwd; 

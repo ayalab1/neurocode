@@ -32,7 +32,7 @@ noisyIDs = clusterIDlist(cellfun(@(x) contains(x,'noise'),cluster_info_table.tex
 muaIDs = clusterIDlist(cellfun(@(x) contains(x,'mua'),cluster_info_table.textdata(2:end,6)));
 allSpiketimes = double(readNPY(fullfile(clustering_path, 'spike_times.npy')));
 channels = double(readNPY('channel_map.npy'));
-channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy'))';
+channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy')))';
 spikeIDs = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
 nShanks = max(shankID);
 

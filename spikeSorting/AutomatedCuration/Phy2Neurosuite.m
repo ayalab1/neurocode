@@ -73,7 +73,8 @@ for i = 1:nShanks
         for j=5+1:size(spk,2)-5
             filtered(:,j) = bsxfun(@minus,filtered(:,j),median(spk(:,j-5:j+5),2));
         end
-        filtered(:,borders) = []; spk(:,borders) = [];
+        if size(filtered,2)<length(borders), filtered(:,length(borders)) = 0; end
+        filtered(:,borders) = []; 
         fwrite(pointer,filtered(:),'int16');
     end
     fclose(pointer);

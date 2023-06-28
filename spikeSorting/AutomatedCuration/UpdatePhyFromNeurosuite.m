@@ -1,4 +1,4 @@
-function UpdatePhyFromNeurosuite(clustering_path)
+function UpdatePhyFromNeurosuite(clustering_path,neurosuite_path)
 
 % After running the AutomatedCuration, use this to export the results 
 % back to a phy format. 
@@ -18,17 +18,20 @@ try rmdir(fullfile(clustering_path, '.phy'), 's'); end
 
 channels = double(readNPY('channel_map.npy'));
 channelShanks = double(readNPY('channel_shanks.npy'))';
+possibleShanks = unique(channelShanks(:))';
 nShanks = max(channelShanks);
-xml = dir([clustering_path '\*.xml']);
+xml = dir([neurosuite_path '\*.xml']);
 [~,basename] = fileparts(fullfile(xml.folder,xml.name));
 
 %%
 pickleCell = cell(nShanks,1);
-for shank = 1:nShanks,
-    fid=py.open(fullfile(clustering_path,[basename '.' num2str(shank) '.pkl']),'rb');
-    data=py.pickle.load(fid);
-    for j=1:length(data)
-        pickleCell{shank}{j} = double(int64(data(j).pop)');
+for shank = possibleShanks
+    try
+        fid=py.open(fullfile(neurosuite_path,[basename '.' num2str(shank) '.pkl']),'rb');
+        data=py.pickle.load(fid);
+        for j=1:length(data)
+            pickleCell{shank}{j} = double(int64(data(j).pop)');
+        end
     end
 end
 
@@ -36,9 +39,9 @@ end
 % Mark noise clusters as noise
 % Concatenate all cluster IDs
 add = 1; clus = []; noiseIndices = [];
-for shank = 1:nShanks
-    clu = dlmread(fullfile(clustering_path,[basename '.clu.' num2str(shank)])); clu(1) = [];
-    res = dlmread(fullfile(clustering_path,[basename '.res.' num2str(shank)]));
+for shank = possibleShanks
+    clu = dlmread(fullfile(neurosuite_path,[basename '.clu.' num2str(shank)])); clu(1) = [];
+    res = dlmread(fullfile(neurosuite_path,[basename '.res.' num2str(shank)]));
     [ccg,t] = CCG(res(clu>0)/20000,clu(clu>0),'duration',0.03*2);
     nSpikes = Accumulate(clu(clu>0));
     for group = 2:length(pickleCell{shank})
@@ -66,7 +69,6 @@ for shank = 1:nShanks
             end
             similarity = min(cat(3,similarity,similarity'),[],3); d = isDifferent(~triu(ones(size(similarity)))) - similarity(~triu(ones(size(similarity))))*0.5;
             idx = cluster(linkage(d','complete'),'criterion','distance','cutoff',eps); 
-            dendrogram(linkage(d','complete'),0);
             for ii=1:max(idx)
                 if any(isDifferent(idx==ii,idx==ii))
                     error('These weren''t supposed to be grouped together...');
@@ -75,7 +77,7 @@ for shank = 1:nShanks
                 proposedGroup1(ismember(proposedGroup1,proposedGroup(idx==ii))) = proposedGroup(find(idx==ii,1));
             end
         end
-        yaa{group} = proposedGroup1;
+        yaa{shank,group} = proposedGroup1;
     end
     clu = clu+add; noiseIndices = [noiseIndices; pickleCell{shank}{1}(:)+add];
     add = max(clu)+1;
@@ -87,15 +89,15 @@ end
 %% Rename original phy files
 rawPath = fullfile(clustering_path,['clustering_copy_' datestr(clock,'yyyy-mm-dd_HHMMSS')]);
 try mkdir(rawPath); end
-movefile(fullfile(clustering_path, 'cluster_info.tsv'),fullfile(rawPath, 'cluster_info.tsv'));
-movefile(fullfile(clustering_path, 'spike_templates.npy'),fullfile(rawPath, 'spike_templates.npy'));
-movefile(fullfile(clustering_path, 'spike_clusters.npy'),fullfile(rawPath, 'spike_clusters.npy'));
-movefile(fullfile(clustering_path, 'cluster_group.tsv'),fullfile(rawPath, 'cluster_group.tsv'));
-movefile(fullfile(clustering_path, 'templates.npy'),fullfile(rawPath, 'templates.npy'));
-movefile(fullfile(clustering_path, 'template_feature_ind.npy'),fullfile(rawPath, 'template_feature_ind.npy'));
-movefile(fullfile(clustering_path, 'pc_features.npy'),fullfile(rawPath, 'pc_features.npy'));
-movefile(fullfile(clustering_path, 'pc_feature_ind.npy'),fullfile(rawPath, 'pc_feature_ind.npy'));
-movefile(fullfile(clustering_path, 'similar_templates.npy'),fullfile(rawPath, 'similar_templates.npy'));
+try movefile(fullfile(clustering_path, 'cluster_info.tsv'),fullfile(rawPath, 'cluster_info.tsv')); end
+try movefile(fullfile(clustering_path, 'spike_templates.npy'),fullfile(rawPath, 'spike_templates.npy')); end
+try movefile(fullfile(clustering_path, 'spike_clusters.npy'),fullfile(rawPath, 'spike_clusters.npy')); end
+try movefile(fullfile(clustering_path, 'cluster_group.tsv'),fullfile(rawPath, 'cluster_group.tsv')); end
+try movefile(fullfile(clustering_path, 'templates.npy'),fullfile(rawPath, 'templates.npy')); end
+try movefile(fullfile(clustering_path, 'template_feature_ind.npy'),fullfile(rawPath, 'template_feature_ind.npy')); end
+try movefile(fullfile(clustering_path, 'pc_features.npy'),fullfile(rawPath, 'pc_features.npy')); end
+try movefile(fullfile(clustering_path, 'pc_feature_ind.npy'),fullfile(rawPath, 'pc_feature_ind.npy')); end
+try movefile(fullfile(clustering_path, 'similar_templates.npy'),fullfile(rawPath, 'similar_templates.npy')); end
 
 %% Write new phy files
 
@@ -107,9 +109,9 @@ writeNPY(uint32(clus(:,1))-1, fullfile(clustering_path, 'spike_clusters.npy')); 
 
 % Get mean spike waveform instead of a "template"
 meanWaveforms = single(zeros(nUnits,44,length(channels)));
-for shank = 1:nShanks
+for shank = possibleShanks
     clu = clus(shankID==shank);
-    m = memmapfile(fullfile(clustering_path,[basename '.spk.' num2str(shank)]),'Format', 'int16','Writable',false);
+    m = memmapfile(fullfile(neurosuite_path,[basename '.spk.' num2str(shank)]),'Format', 'int16','Writable',false);
     spk = reshape(m.Data,[],32,size(clu,1));
     for j=unique(clu)',
         mm = mean(spk(:,:,clu==j),3);
@@ -136,8 +138,8 @@ c0(isnan(c0)) = 0; c0(c0<0) = 0;
 writeNPY(single(c0), fullfile(clustering_path, 'similar_templates.npy'));
 
 fets = single(zeros(size(clus,1),3,16)); tops = uint32(zeros(16,nUnits));
-for shank = 1:nShanks
-    fet = dlmread(fullfile(clustering_path,[basename '.fet.' num2str(shank)]));
+for shank = possibleShanks
+    fet = dlmread(fullfile(neurosuite_path,[basename '.fet.' num2str(shank)]));
     fet(1,:) = [];
     these_channels = find(channelShanks==shank);
     fet = fet(:,1:length(these_channels)*3);

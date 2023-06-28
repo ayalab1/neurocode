@@ -45,7 +45,7 @@ channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy')))
 
 github_path = 'C:\Users\Cornell\Documents\GitHub\';
 if ~exist(github_path,'dir')
-    github_path = 'D:\github\neurocode\';
+    github_path = 'D:\github\';
 end
 fid = fopen(fullfile(neurosuite_path,'launch_curation.bat'),'w');
 fwrite(fid, sprintf('%s\n', '@echo_on'));

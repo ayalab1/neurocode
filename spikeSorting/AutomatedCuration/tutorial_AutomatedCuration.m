@@ -9,6 +9,7 @@
 conda create --name AutomatedCurator
 conda activate AutomatedCurator  
 conda install -c fastchan fastai anaconda      % agree to install when prompted
+pip install phylib      
 
 %% =============================== PREP DATA ===============================
 % Now that your enviroment is installed, we need to prep the phy outputs

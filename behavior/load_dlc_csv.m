@@ -24,7 +24,7 @@ while true
     df = readtable(file_path,opts);
     % get names of fields, these will be as long as tracker points
     % used times 3 because [x,y,likelihood]
-    field_names = df.Properties.VariableNames;
+    field_names = cellfun(@(x) regexprep(x,'_\d',''),df.Properties.VariableNames,'UniformOutput',false);
     unique_fields(header_i,:) = field_names;
     if any(contains(field_names,'x')) &&...
             any(contains(field_names,'y')) &&...

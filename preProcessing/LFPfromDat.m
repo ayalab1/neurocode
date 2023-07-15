@@ -73,6 +73,7 @@ addParameter(p,'outFs',[],@isnumeric);
 addParameter(p,'lopass',450,@isnumeric);
 addParameter(p,'useGPU',false,@islogical);
 addParameter(p,'inFs',[],@isnumeric);
+addParameter(p,'localDir',[],@isfolder);
 
 parse(p,varargin{:})
 datFile = p.Results.datFile;
@@ -80,6 +81,7 @@ outFs = p.Results.outFs;
 lopass = p.Results.lopass;
 useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
+localDir = p.Results.localDir;
 
 session = getSession('basepath',basepath);
 basename = session.general.name;
@@ -105,8 +107,8 @@ sizeInBytes = 2; %
 %% housekeeping
 
 %Check the dat
-fInfo = checkFile('basepath',basepath,'filename',datFile);
-fdat = [fInfo.folder, filesep, fInfo.name];
+fInfo = checkFile('basepath',basepath,'filename',datFile,'searchSubdirs',false');
+fdat = fInfo.name;
 
 %Get the metadata
 if isempty(inFs)
@@ -128,7 +130,11 @@ ratio = lopass/(inFs/2) ;
 sampleRatio = (inFs/outFs);
 
 %output file
-flfp = fullfile(basepath,[basename,'.lfp']);
+if ~isempty(localDir)
+    flfp = fullfile(localDir,[basename,'.lfp']);
+else
+    flfp = fullfile(basepath,[basename,'.lfp']);
+end
 
 %% Set Chunk and buffer size at even multiple of sampleRatio
 chunksize = 1e5; % depends on the system... could be bigger I guess
@@ -268,4 +274,7 @@ if useGPU
 end
 
 disp('lfp file created')
+if ~isempty(localDir)
+    movefile(flfp,fullfile(basepath,[basename '.lfp']));
+end
 end

@@ -23,7 +23,7 @@ ops.root                = basepath; % 'openEphys' only: where raw files are
 ops.fs                  = session.extracellular.sr;        % sampling rate
 
 load([chanMapFile.folder filesep chanMapFile.name])
-ops.NchanTOT            = length(connected); % total number of channels
+ops.NchanTOT            = length(kcoords); % total number of channels
 
 ops.Nchan = sum(connected>1e-6); % number of active channels
 

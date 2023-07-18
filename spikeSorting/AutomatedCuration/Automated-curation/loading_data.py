@@ -36,6 +36,7 @@ def make_mSPK(filebase,shank,Nchannels=10,Nsamp= 32):
     Nspkblock          = 10000
     Nspk               = len(res)
     vec                = np.append(np.arange(0,Nspk,Nspkblock),Nspk)
+    vec                = vec.astype(np.int64)
     Uclu               = np.unique(clu)
     mSPK               = np.zeros((len(Uclu),Nsamp,Nchannels))
     sSPK               = np.zeros((len(Uclu),Nsamp,Nchannels))

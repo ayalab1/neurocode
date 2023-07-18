@@ -40,7 +40,7 @@ nShanks = max(shankID);
 nSamples = 32;
 nFeatures = 4;
 borders = [true(5,1); false(nSamples,1); true(5,1)];
-for i = 1:nShanks
+for i = unique(shankID(:))'
     currentIDs = clusterIDlist(shankID==i); % clusters on current octrode
     ok = ismember(spikeIDs,currentIDs); % spikes on current octrode
     

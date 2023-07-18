@@ -56,7 +56,7 @@ lineStart = ['python ' fullfile(github_path,'neurocode','spikeSorting','Automate
 cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv')); 
 shankID = cluster_info_table.data(:,end); 
 nShanks = max(shankID);
-for i=1:nShanks
+for i=unique(shankID(:))'
     line = [lineStart ' ' num2str(i) ' ' num2str(sum(channelShanks==i))];
     fwrite(fid, sprintf('%s\n\n', line));
 end

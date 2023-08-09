@@ -28,10 +28,14 @@ nChannels = session.extracellular.nChannels;
 cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv')); 
 shankID = cluster_info_table.data(:,end); 
 clusterIDlist = cellfun(@str2double,cluster_info_table.textdata(2:end,1)); 
+if isempty(clusterIDlist)
+    clusterIDlist = cluster_info_table.data(:,1);
+end
+    
 noisyIDs = clusterIDlist(cellfun(@(x) contains(x,'noise'),cluster_info_table.textdata(2:end,6)));
 muaIDs = clusterIDlist(cellfun(@(x) contains(x,'mua'),cluster_info_table.textdata(2:end,6)));
 allSpiketimes = double(readNPY(fullfile(clustering_path, 'spike_times.npy')));
-channels = double(readNPY('channel_map.npy'));
+channels = double(readNPY(fullfile(clustering_path,'channel_map.npy')));
 channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy')))';
 spikeIDs = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
 nShanks = max(shankID);

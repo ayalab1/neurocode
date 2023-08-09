@@ -86,7 +86,10 @@ for shank = possibleShanks
         end
         yaa{shank,group} = proposedGroup1;
     end
-    clu = clu+add; noiseIndices = [noiseIndices; pickleCell{shank}{1}(:)+add];
+    clu = clu+add; 
+    if ~isempty(pickleCell{shank})
+        noiseIndices = [noiseIndices; pickleCell{shank}{1}(:)+add];
+    end
     add = max(clu)+1;
     clu(:,2) = shank;
     clu(:,3) = res;

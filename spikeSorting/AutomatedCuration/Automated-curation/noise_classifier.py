@@ -5,6 +5,7 @@ from fastai.text.all import *
 import numpy as np
 import torch
 from prepare_features_nc import *
+import os
 
 def getX(item):
     x = X1[:, :, item].float()
@@ -22,7 +23,7 @@ def predict(fet_mat):
     posix_backup = pathlib.PosixPath
     try:
         pathlib.PosixPath = pathlib.WindowsPath
-        learn = load_learner('C:\\Users\\Cornell\\Automated-curation\\new_nc_301022.pkl')
+        learn = load_learner(os.path.join(pathlib.Path(__file__).parent.resolve(),"new_nc_301022.pkl"))
     finally:
         pathlib.PosixPath = posix_backup    
 

@@ -16,14 +16,17 @@ function Phy2Neurosuite(clustering_path,savePath,datFile)
 if ~exist('clustering_path','var')
     clustering_path = pwd;
 end
+
 if ~exist('savePath','var')
     savePath = clustering_path;
 end
+
 if ~exist('datFile','var')
     [basepath,~] = fileparts(clustering_path);
     [~,basename] = fileparts(basepath);
     datFile = fullfile(basepath,[basename '.dat']);
 end
+
 [basepath,basename] = fileparts(datFile);
 
 xmlFile = fullfile(basepath,[basename '.xml']);
@@ -49,6 +52,11 @@ channels = double(readNPY(fullfile(clustering_path,'channel_map.npy')));
 channelShanks = double(readNPY(fullfile(clustering_path, 'channel_shanks.npy')))';
 spikeIDs = double(readNPY(fullfile(clustering_path, 'spike_clusters.npy')));
 
+% load dat file into memory map
+d = dir(datFile);
+nSamp = d.bytes/2/nChannels;
+mmf = memmapfile(datFile, 'Format', {'int16', [nChannels, nSamp], 'data'});
+
 %% Loop all shanks
 nSamples = 32;
 nFeatures = 4;
@@ -64,6 +72,7 @@ for i = unique(shankID(:))'
     else
         noisy = false(size(clusterID));
     end
+
     if any(ismember(currentIDs,muaIDs))
         mua = ismember(clusterID,muaIDs);
     else
@@ -74,8 +83,10 @@ for i = unique(shankID(:))'
     clusterID(noisy) = 0;
     clusterID(mua) = 1;
     nonnoisy = ~noisy & ~mua;
+
     [~,~,clusterID(nonnoisy)] = unique(clusterID(nonnoisy));
     clusterID(nonnoisy) = clusterID(nonnoisy) + 1;
+
     dlmwrite(fullfile(savePath,[basename '.clu.' num2str(i)]),[max(clusterID)+1;clusterID]);
 
     % Save .res file (spikes times)
@@ -83,27 +94,36 @@ for i = unique(shankID(:))'
     dlmwrite(fullfile(savePath,[basename '.res.' num2str(i)]),spiketimes,'precision','%.0f');
 
     spkFilename = fullfile(savePath,[basename '.spk.' num2str(i)]);
-    theseChannels = channels(channelShanks==i)+1;
+    theseChannels = channels(channelShanks==i) + 1;
     pointer = fopen(spkFilename,'w');
 
     disp([datestr(clock) ': Starting .spk. ' num2str(i) '...']);
 
     for k=1:length(spiketimes)
+
         if rem(k,100000)==0
             disp([datestr(clock), ': Done with ', num2str(k),...
                 ' out of ', num2str(length(spiketimes)),...
                 ' spikes for spk.', num2str(i),...
                 ' (' num2str(100*k/length(spiketimes)), '%)...']);
         end
-        spk = loadBinary(datFile,'start',spiketimes(k)/20000-(16+5)/20000,'duration',(nSamples+10)/20000,'nChannels',nChannels,'channels',theseChannels)';
-        % consider loading a bigger chunk and correcting for small shifts (also noting them, so you can correct the .res file)
+
+        % load current spike with padding
+        %   consider loading a bigger chunk and correcting for small shifts
+        %       (also noting them, so you can correct the .res file)
+        spk = mmf.Data.data(theseChannels,spiketimes(k)-(16+4):spiketimes(k)+21);
+
         % Filter
         filtered = spk;
         for j=5+1:size(spk,2)-5
-            filtered(:,j) = bsxfun(@minus,filtered(:,j),median(spk(:,j-5:j+5),2));
+            filtered(:,j) = bsxfun(@minus,filtered(:,j), median(spk(:,j-5:j+5),2));
         end
-        if size(filtered,2)<length(borders), filtered(:,length(borders)) = 0; end
+        if size(filtered,2) < length(borders)
+            filtered(:,length(borders)) = 0;
+        end
         filtered(:,borders) = [];
+
+        % save to file
         fwrite(pointer,filtered(:),'int16');
     end
     fclose(pointer);

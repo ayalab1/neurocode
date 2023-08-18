@@ -67,6 +67,7 @@ end
 fclose(fid);
 
 % Run the file! 
+%run outside of kilosort folder but inside day folder (where .res, .fet,.spk files are)
 evalc(['!' fullfile(neurosuite_path,'launch_curation.bat')]); % Here, we are trying to run the file from matlab. 
 % If you cannot run the file from matlab, run the newly created "launch_curation.bat" file manually. You may need to click "Enter" to help it along...
 

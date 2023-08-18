@@ -22,7 +22,10 @@ pip install phylib
 % oversplitting to make sure clusters are sufficiently clean to be 
 % run through the automated curator.
 
+
 % You absolutely need your .xml file in the same folder.
+% Note - Launch this within Kilosort folder 
+
 clustering_path = pwd; 
 [parentFolder] = fileparts(clustering_path);
 [~,basename] = fileparts(parentFolder);
@@ -33,6 +36,7 @@ datFile = fullfile(parentFolder,[basename '.dat']);
 
 % Launch the convertion of the phy format into the Neurosuite format that the 
 % Automated Curator needs
+% Note - Launch this within Kilosort folder 
 Phy2Neurosuite(clustering_path,parentFolder,datFile);
 
 %% ======================= LAUNCH AUTOMATED CURATION =======================

@@ -3,7 +3,7 @@ import joblib
 from fastai.text.all import *
 from prepare_features_MC import prepare_features_MC
 from uptade_all import update_all2
-
+import os
 
 
 
@@ -13,7 +13,8 @@ def predict2(feat_mat):
     posix_backup = pathlib.PosixPath
     try:
         pathlib.PosixPath = pathlib.WindowsPath
-        clf = load_learner('C:\\Users\\Cornell\\Automated-curation\\MC_v1.pkl')
+        clf = load_learner(os.path.join(pathlib.Path(__file__).parent.resolve(),"MC_v1.pkl"))
+
     finally:
         pathlib.PosixPath = posix_backup   
     

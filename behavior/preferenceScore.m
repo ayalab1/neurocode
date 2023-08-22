@@ -1,4 +1,4 @@
-function [objScore] = preferenceScore(basepath, timeTh, runDigIn)
+function [objScore] = preferenceScore(basepath, timeTh, runDigIn, digChans)
 
 if ~exist('basepath','var')
     basepath = pwd;
@@ -8,6 +8,9 @@ if ~exist('timeTh','var')
 end  
 if ~exist('runDigIn','var')
     runDigIn=false;
+end
+if ~exist('digChans','var')
+    digChans = [2,3]; %channels to compare (A,B)
 end
 
 %%
@@ -65,24 +68,24 @@ for i = 1:length(nsespaths)
     end
     if contains(nsespaths{i}, 'rain') %train or Train
        if isempty(timeTh)
-           train_time(trainCt,1) = sum(digitalIn.dur{1,2});
-           train_time(trainCt,2) = sum(digitalIn.dur{1,3});
+           train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)});
+           train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)});
        else
           clicker_trainA = find(digitalIn.timestampsOn{2}<timeTh(1));
           clicker_trainB = find(digitalIn.timestampsOn{3}<timeTh(1));
-          train_time(trainCt,1) = sum(digitalIn.dur{1,2}(clicker_trainA));
-          train_time(trainCt,2) = sum(digitalIn.dur{1,3}(clicker_trainB));
+          train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)}(clicker_trainA));
+          train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)}(clicker_trainB));
        end
        trainCt = trainCt+1; clear digitalIn;
     elseif contains(nsespaths{i}, 'test')
         if isempty(timeTh)
-           test_time(1) = sum(digitalIn.dur{1,2});
-           test_time(2) = sum(digitalIn.dur{1,3});
+           test_time(1) = sum(digitalIn.dur{1,digChans(1)});
+           test_time(2) = sum(digitalIn.dur{1,digChans(2)});
        else
-          clicker_testA = find(digitalIn.timestampsOn{2}<timeTh(1));
-          clicker_testB = find(digitalIn.timestampsOn{3}<timeTh(1));
-          test_time(1) = sum(digitalIn.dur{1,2}(clicker_testA));
-          test_time(2) = sum(digitalIn.dur{1,3}(clicker_testB));
+          clicker_testA = find(digitalIn.timestampsOn{digChans(1)}<timeTh(1));
+          clicker_testB = find(digitalIn.timestampsOn{digChans(2)}<timeTh(1));
+          test_time(1) = sum(digitalIn.dur{1,digChans(1)}(clicker_testA));
+          test_time(2) = sum(digitalIn.dur{1,digChans(2)}(clicker_testB));
        end
        trainCt = trainCt+1; clear digitalIn;
     end
@@ -91,11 +94,11 @@ end
 DI = ((test_time(2)-test_time(1))/(test_time(2)+test_time(1)))*100;
 obj_pref = (test_time(2)/(test_time(2)+test_time(1))*100) - (sum(train_time(:,2))/sum(train_time,'all')*100);
 
-objPref.train_time = train_time;
-objPref.test_time = test_time;
-objPref.DI = DI;
-objPref.obj_pref = obj_pref;
+objScore.object_training_time = train_time;
+objPref.object_test_time = test_time;
+objPref.discrmination_index = DI;
+objPref.object_preference = obj_preference;
 
-save([basepath '\' 'objPref.mat'], 'objPref');
+save([basepath '\' 'objScore.mat'], 'objScore');
 cd(basepath);
 end

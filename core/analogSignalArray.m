@@ -50,82 +50,82 @@ classdef analogSignalArray < handle
     % <IntervalArray: 1 epochs> of length 54:06.387 minutes
     %
     % Ryan Harvey 2023
-    
+
     properties
         data
         timestamps
         sampling_rate
     end
-    
+
     methods
         function self = analogSignalArray(varargin)
             self.data = [];
             self.timestamps = [];
-            
+
             if nargin == 0
                 return;
             end
-            
-            p=inputParser;
-            addParameter(p,'data',[]);
-            addParameter(p,'timestamps',[]);
-            addParameter(p,'sampling_rate',[]);
-            
-            parse(p,varargin{:});
+
+            p = inputParser;
+            addParameter(p, 'data', []);
+            addParameter(p, 'timestamps', []);
+            addParameter(p, 'sampling_rate', []);
+
+            parse(p, varargin{:});
             self.data = p.Results.data;
             self.timestamps = p.Results.timestamps;
             self.sampling_rate = p.Results.sampling_rate;
-            
+
             self = validate_signals(self);
         end
-        
+
         function self = validate_signals(self)
-            
+
             % make into (sample x signal) format
-            n_rows_data = size(self.data,1);
-            n_cols_data = size(self.data,2);
-            
-            n_rows_timestamps = size(self.timestamps,1);
-            n_cols_timestamps = size(self.timestamps,2);
-            
+            n_rows_data = size(self.data, 1);
+            n_cols_data = size(self.data, 2);
+
+            n_rows_timestamps = size(self.timestamps, 1);
+            n_cols_timestamps = size(self.timestamps, 2);
+
             if n_rows_data < n_cols_data
                 self.data = self.data';
             end
-            
+
             if n_rows_timestamps < n_cols_timestamps
                 self.timestamps = self.timestamps';
             end
-            
+
             % check if data and timestamps are the same length
-            n_rows_data = size(self.data,1);
-            n_rows_timestamps = size(self.timestamps,1);
-            
+            n_rows_data = size(self.data, 1);
+            n_rows_timestamps = size(self.timestamps, 1);
+
             if n_rows_data ~= n_rows_timestamps
                 error('timestamps and data have different n samples')
             end
-            
+
             % make sure is sorted
             if ~self.issorted()
                 [self.timestamps, sort_idx] = sort(self.timestamps);
-                self.data = self.data(sort_idx,:);
+                self.data = self.data(sort_idx, :);
             end
-            
+
             % if no sample rate is provided, estimate from timestamps
             if isempty(self.sampling_rate)
-                self.sampling_rate = 1/mode(diff(self.timestamps));
+                self.sampling_rate = 1 / mode(diff(self.timestamps));
             end
         end
-        
-        function asa = subsref(self,S)
-            if isequal(S.type,'()')
-                if isa(S.subs{1},'IntervalArray')
+
+        function asa = subsref(self, S)
+            if isequal(S.type, '()')
+                if isa(S.subs{1}, 'IntervalArray')
                     asa = restrict(self, S.subs{1});
                 end
             else
-                asa = builtin('subsref',self,S);
+                asa = builtin('subsref', self, S);
             end
         end
-        
+
         function asa = restrict(self, intervals, varargin)
             asa = analogSignalArray();
             if isempty(varargin)
@@ -133,17 +133,17 @@ classdef analogSignalArray < handle
             else
                 [asa.timestamps, idx] = Restrict(self.timestamps, intervals.intervals, varargin{:});
             end
-            asa.data = self.data(idx,:);
+            asa.data = self.data(idx, :);
             asa.sampling_rate = self.sampling_rate;
         end
-        
+
         function duration_ = duration(self)
             % calculate duration of contiguous timestamps
             ts_diff = diff(self.timestamps);
-            ts_diff(ts_diff > (1/self.sampling_rate) * 2) = [];
+            ts_diff(ts_diff > (1 / self.sampling_rate)*2) = [];
             duration_ = sum(ts_diff);
         end
-        
+
         function disp(self)
             obj_duration = seconds(self.duration);
             if obj_duration < seconds(1)
@@ -162,50 +162,50 @@ classdef analogSignalArray < handle
                 duration_str = datestr(obj_duration, 'DD:HH:MM:SS.FFF');
                 units = 'days';
             end
-            
-            fprintf('<%s %d signals %.3f Hz> of length %s %s \n',...
-                "analogSignalArray:",...
-                self.n_signals,...
-                self.sampling_rate,...
-                duration_str,...
+
+            fprintf('<%s %d signals %.3f Hz> of length %s %s \n', ...
+                "analogSignalArray:", ...
+                self.n_signals, ...
+                self.sampling_rate, ...
+                duration_str, ...
                 units);
         end
-        
+
         function n_signals_ = n_signals(self)
-            n_signals_ = size(self.data,2);
+            n_signals_ = size(self.data, 2);
         end
-        
+
         function n_samples_ = n_samples(self)
-            n_samples_ = size(self.data,1);
+            n_samples_ = size(self.data, 1);
         end
-        
+
         function isempty_ = isempty(self)
             isempty_ = isempty(self.data);
         end
-        
+
         function sorted = issorted(self)
             sorted = all(sort(self.timestamps) == sort(self.timestamps));
         end
-        
-        function asa = smooth(self,varargin)
+
+        function asa = smooth(self, varargin)
             % gaussian smooth using Smooth.m
-            p=inputParser;
-            addParameter(p,'window',0.05); % standard deviations (50ms default)
-            parse(p,varargin{:});
+            p = inputParser;
+            addParameter(p, 'window', 0.05); % standard deviations (50ms default)
+            parse(p, varargin{:});
             window = p.Results.window;
-            
+
             % convert window into samples
             window = window * self.sampling_rate;
-            
+
             % remove window from varargin to avoid error with Smooth
-            idx = contains(varargin{:,1},'window');
-            varargin(idx,:) = [];
-            
+            idx = contains(varargin{:, 1}, 'window');
+            varargin(idx, :) = [];
+
             % call Smooth and pass args
-            asa.data = Smooth(self.data,...
-                [window,0],...
+            asa.data = Smooth(self.data, ...
+                [window, 0], ...
                 varargin{:});
         end
-        
+
     end
 end

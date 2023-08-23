@@ -63,56 +63,56 @@ classdef IntervalArray < handle
     %   ~myIntervalArray
 
     % Ryan H 2023
-    
+
     properties
         intervals
     end
-    
+
     methods
         function obj = IntervalArray(intervals_in)
-            if ~exist('intervals_in','var')
-                intervals_in = [-inf,inf];
+            if ~exist('intervals_in', 'var')
+                intervals_in = [-inf, inf];
             end
             obj.intervals = intervals_in;
             obj.validate_intervals();
             obj.sort();
         end
-        
+
         function obj = validate_intervals(obj)
-            
+
             % remove nan
-            nan_idx = any(isnan(obj.intervals),2);
+            nan_idx = any(isnan(obj.intervals), 2);
             if any(nan_idx)
                 warning('removing intervals with nans')
-                obj.intervals(nan_idx,:) = [];
+                obj.intervals(nan_idx, :) = [];
             end
-           
+
             % check if intervals are valid
-            if any(obj.intervals(:,1) > obj.intervals(:,2))
+            if any(obj.intervals(:, 1) > obj.intervals(:, 2))
                 error('Invalid intervals: start time must be less than end time')
             end
         end
-        
-        function interval = subsref(obj,S)
-            if isequal(S.type,'()')
+
+        function interval = subsref(obj, S)
+            if isequal(S.type, '()')
                 if S.subs{1} > obj.n_intervals() || S.subs{1} < 0
                     error('Index out of bounds')
                 end
-                interval = IntervalArray(obj.intervals(S.subs{1},:));                
+                interval = IntervalArray(obj.intervals(S.subs{1}, :));
             else
-                interval = builtin('subsref',obj,S);
+                interval = builtin('subsref', obj, S);
             end
         end
-        
+
         function disp(obj)
 
             % pull out intervals and remove inf
             intervals_ = obj.intervals;
-            intervals_(any(isinf(intervals_),2),:) = [];
-            
+            intervals_(any(isinf(intervals_), 2), :) = [];
+
             % calc total duration
-            obj_duration = seconds(sum(intervals_(:,2) - intervals_(:,1)));
-            
+            obj_duration = seconds(sum(intervals_(:, 2)-intervals_(:, 1)));
+
             if obj_duration < seconds(1)
                 duration_str = datestr(obj_duration, 'FFF');
                 units = 'ms';
@@ -129,86 +129,86 @@ classdef IntervalArray < handle
                 duration_str = datestr(obj_duration, 'DD:HH:MM:SS.FFF');
                 units = 'days';
             end
-            fprintf('<%s %d epochs> of length %s %s \n',...
-                "IntervalArray:",...
-                obj.n_intervals,...
-                duration_str,...
+            fprintf('<%s %d epochs> of length %s %s \n', ...
+                "IntervalArray:", ...
+                obj.n_intervals, ...
+                duration_str, ...
                 units);
         end
-        
+
         function max_ = max(obj)
             % maximum bound of all intervals in IntervalArray
-            max_ = max(obj.intervals(:,2));
+            max_ = max(obj.intervals(:, 2));
         end
-        
+
         function min_ = min(obj)
             % minimum bound of all intervals in IntervalArray
-            min_ = min(obj.intervals(:,1));
+            min_ = min(obj.intervals(:, 1));
         end
-        
+
         function is_finite_ = is_finite(obj)
             % Is the interval [start, stop) finite.
             is_finite_ = ~(isinf(obj.min) | isinf(obj.max));
         end
-        
+
         function centers_ = centers(obj)
-            centers_ = mean(obj.intervals,2);
+            centers_ = mean(obj.intervals, 2);
         end
-        
+
         function obj = sort(obj)
             % sort intervals by start time
-            obj.intervals = sortrows(obj.intervals,1);
+            obj.intervals = sortrows(obj.intervals, 1);
         end
-        
+
         function new = remove_empty(obj)
             new = IntervalArray();
             new.intervals = obj.intervals;
             % remove empty intervals
-            new.intervals(obj.intervals(:,1) == obj.intervals(:,2),:) = [];
+            new.intervals(obj.intervals(:, 1) == obj.intervals(:, 2), :) = [];
         end
-        
+
         function equal = eq(obj, other)
             % check if intervals are equal
             equal = isequal(obj.intervals, other.intervals);
         end
-        
+
         function contains = in(obj, point)
             % check if point is within one of the intervals
-            contains = any(point >= obj.intervals(:,1) & point <= obj.intervals(:,2));
+            contains = any(point >= obj.intervals(:, 1) & point <= obj.intervals(:, 2));
         end
-        
+
         function starts_ = starts(obj)
             % check if intervals are not empty
             if ~obj.isempty()
-                starts_ = obj.intervals(:,1);
+                starts_ = obj.intervals(:, 1);
             else
                 starts_ = [];
             end
         end
-        
+
         function stops_ = stops(obj)
             % check if intervals are not empty
             if ~obj.isempty()
-                stops_ = obj.intervals(:,2);
+                stops_ = obj.intervals(:, 2);
             else
                 stops_ = [];
             end
         end
-        
+
         function n_intervals_ = n_intervals(obj)
             % check if intervals are not empty
             if ~obj.isempty()
-                n_intervals_ = size(obj.intervals,1);
+                n_intervals_ = size(obj.intervals, 1);
             else
                 n_intervals_ = 0;
             end
         end
-        
+
         function new = expand(obj, amount, direction)
-            if ~exist('direction','var')
+            if ~exist('direction', 'var')
                 direction = 'both';
             end
-            if contains(direction,'both')
+            if contains(direction, 'both')
                 resize_starts = obj.intervals(:, 1) - amount;
                 resize_stops = obj.intervals(:, 2) + amount;
             elseif contains(direction == 'start')
@@ -221,24 +221,24 @@ classdef IntervalArray < handle
                 error("direction must be 'both', 'start', or 'stop'")
             end
             new = IntervalArray();
-            new.intervals = [resize_starts,resize_stops];
+            new.intervals = [resize_starts, resize_stops];
         end
-        
+
         function isempty_ = isempty(obj)
             % check if intervals are not empty
             isempty_ = isempty(obj.intervals);
         end
-        
+
         function lengths_ = lengths(obj)
             intervals_ = obj.intervals;
             % check if intervals are not empty
             if ~isempty(intervals_)
-                lengths_ = intervals_(:,2) - intervals_(:,1);
+                lengths_ = intervals_(:, 2) - intervals_(:, 1);
             else
                 lengths_ = [];
             end
         end
-        
+
         function duration_ = duration(obj)
             % check if intervals are not empty
             if ~isempty(obj.intervals)
@@ -247,28 +247,28 @@ classdef IntervalArray < handle
                 duration_ = [];
             end
         end
-        
+
         function new = and(obj, other)
             % intersection using interval_1 & interval_2
             % https://www.mathworks.com/help/matlab/matlab_oop/implementing-operators-for-your-class.html
-            new = intersect(obj,other);
+            new = intersect(obj, other);
         end
-        
+
         function new = or(obj, other)
             % union using interval_1 | interval_2
-            new = union(obj,other);
+            new = union(obj, other);
         end
-        
+
         function new = minus(obj, other)
             % union using interval_1 - interval_2
-            new = setdiff(obj,other);
+            new = setdiff(obj, other);
         end
-        
+
         function new = not(obj)
             % complement using ~interval_1
             new = complement(obj);
         end
-        
+
         function new = intersect(obj, other)
             new = IntervalArray();
             if isa(other, 'IntervalArray')
@@ -280,28 +280,28 @@ classdef IntervalArray < handle
                 i = 1;
                 j = 1;
                 % Iterate through intervals and other_intervals
-                while (i <= size(intervals_,1) && j <= size(other_intervals,1))
+                while (i <= size(intervals_, 1) && j <= size(other_intervals, 1))
                     % Check for intersection
-                    if (intervals_(i,2) >= other_intervals(j,1) && intervals_(i,1) <= other_intervals(j,2))
-                        start = max(intervals_(i,1), other_intervals(j,1));
-                        stop = min(intervals_(i,2), other_intervals(j,2));
-                        intersection = [intersection; start,stop];
+                    if (intervals_(i, 2) >= other_intervals(j, 1) && intervals_(i, 1) <= other_intervals(j, 2))
+                        start = max(intervals_(i, 1), other_intervals(j, 1));
+                        stop = min(intervals_(i, 2), other_intervals(j, 2));
+                        intersection = [intersection; start, stop];
                     end
                     % Move to the next interval or other_interval
-                    if (intervals_(i,2) < other_intervals(j,2))
-                        i = i+1;
+                    if (intervals_(i, 2) < other_intervals(j, 2))
+                        i = i + 1;
                     else
-                        j = j+1;
+                        j = j + 1;
                     end
                 end
                 new.intervals = intersection;
             else
-                error("unsupported operand type(s) for intersection: %s and %s",...
+                error("unsupported operand type(s) for intersection: %s and %s", ...
                     class(obj), class(other));
             end
         end
-        
-        
+
+
         function new = union(obj, other)
             if isa(other, 'IntervalArray')
                 intervals_ = obj.intervals;
@@ -310,47 +310,47 @@ classdef IntervalArray < handle
                 if ~isempty(intervals_) && ~isempty(other_intervals)
                     i = 1;
                     j = 1;
-                    while (i <= size(intervals_,1) && j <= size(other_intervals,1))
-                        if (intervals_(i,1) < other_intervals(j,1))
-                            if (intervals_(i,2) < other_intervals(j,1))
-                                i = i+1;
+                    while (i <= size(intervals_, 1) && j <= size(other_intervals, 1))
+                        if (intervals_(i, 1) < other_intervals(j, 1))
+                            if (intervals_(i, 2) < other_intervals(j, 1))
+                                i = i + 1;
                             else
-                                if (intervals_(i,2) < other_intervals(j,2))
-                                    intervals_(i,2) = other_intervals(j,2);
-                                    j = j+1;
+                                if (intervals_(i, 2) < other_intervals(j, 2))
+                                    intervals_(i, 2) = other_intervals(j, 2);
+                                    j = j + 1;
                                 else
-                                    j = j+1;
+                                    j = j + 1;
                                 end
                             end
                         else
-                            if (other_intervals(j,2) < intervals_(i,1))
-                                j = j+1;
+                            if (other_intervals(j, 2) < intervals_(i, 1))
+                                j = j + 1;
                             else
-                                if (other_intervals(j,2) < intervals_(i,2))
-                                    intervals_ = [intervals_(1:i-1,:);...
-                                        other_intervals(j,:); intervals_(i:end,:)];
-                                    i = i+1;
-                                    j = j+1;
+                                if (other_intervals(j, 2) < intervals_(i, 2))
+                                    intervals_ = [intervals_(1:i-1, :); ...
+                                        other_intervals(j, :); intervals_(i:end, :)];
+                                    i = i + 1;
+                                    j = j + 1;
                                 else
-                                    intervals_(i,1) = other_intervals(j,1);
-                                    j = j+1;
+                                    intervals_(i, 1) = other_intervals(j, 1);
+                                    j = j + 1;
                                 end
                             end
                         end
                     end
-                    if (j <= size(other_intervals,1))
-                        intervals_ = [intervals_; other_intervals(j:end,:)];
+                    if (j <= size(other_intervals, 1))
+                        intervals_ = [intervals_; other_intervals(j:end, :)];
                     end
                 elseif isempty(intervals_)
                     intervals_ = other_intervals;
                 end
                 new = IntervalArray(intervals_);
             else
-                error("unsupported operand type(s) for union: %s and %s",...
+                error("unsupported operand type(s) for union: %s and %s", ...
                     class(obj), class(other));
             end
         end
-        
+
         function new = complement(obj)
             new = IntervalArray();
             % Get intervals
@@ -358,26 +358,26 @@ classdef IntervalArray < handle
             % Check if intervals are not empty
             if ~isempty(intervals_)
                 % Initialize variables to store the complement intervals
-                complement = [-inf, intervals_(1,1)];
-                for i = 1:size(intervals_,1)-1
-                    complement = [complement; intervals_(i,2), intervals_(i+1,1)];
+                complement = [-inf, intervals_(1, 1)];
+                for i = 1:size(intervals_, 1) - 1
+                    complement = [complement; intervals_(i, 2), intervals_(i+1, 1)];
                 end
-                complement = [complement; intervals_(end,2), inf];
+                complement = [complement; intervals_(end, 2), inf];
                 new.intervals = complement;
             else
                 new.intervals = [-inf, inf];
             end
         end
-        
-        function new = merge(obj,varargin)
+
+        function new = merge(obj, varargin)
             new = IntervalArray();
             if isempty(varargin)
-                [new.intervals,~] = ConsolidateIntervals(obj.intervals);
+                [new.intervals, ~] = ConsolidateIntervals(obj.intervals);
             else
-                [new.intervals,~] = ConsolidateIntervals(obj.intervals,varargin);
+                [new.intervals, ~] = ConsolidateIntervals(obj.intervals, varargin);
             end
         end
-        
+
         function new = plus(obj, other)
             if isa(other, 'IntervalArray')
                 new = IntervalArray();
@@ -392,66 +392,68 @@ classdef IntervalArray < handle
                     new = other;
                 end
             else
-                error("unsupported operand type(s) for +: %s and %s",...
+                error("unsupported operand type(s) for +: %s and %s", ...
                     class(obj), class(other));
             end
         end
-        
+
         function new = setdiff(obj, other)
             if isa(other, 'IntervalArray')
                 new = IntervalArray();
                 other_intervals = other.intervals;
                 intervals_ = obj.intervals;
                 % loop through the intervals of other
-                for i = 1:size(other_intervals,1)
+                for i = 1:size(other_intervals, 1)
                     % loop through the intervals of the object
                     j = 1;
-                    for jj = 1:size(intervals_,1)
-                        if (intervals_(j,1) >= other_intervals(i,1) &&...
-                                intervals_(j,2) <= other_intervals(i,2))
+                    for jj = 1:size(intervals_, 1)
+                        if (intervals_(j, 1) >= other_intervals(i, 1) && ...
+                                intervals_(j, 2) <= other_intervals(i, 2))
                             % interval is completely inside the other interval
-                            intervals_(j,:) = [];
+                            intervals_(j, :) = [];
                             continue
-                        elseif (intervals_(j,1) < other_intervals(i,1) &&...
-                                intervals_(j,2) > other_intervals(i,1) &&...
-                                intervals_(j,2) <= other_intervals(i,2))
+                        elseif (intervals_(j, 1) < other_intervals(i, 1) && ...
+                                intervals_(j, 2) > other_intervals(i, 1) && ...
+                                intervals_(j, 2) <= other_intervals(i, 2))
                             % interval starts before and ends inside the other interval
-                            intervals_(j,2) = other_intervals(i,1);
-                        elseif (intervals_(j,1) >= other_intervals(i,1) &&...
-                                intervals_(j,1) < other_intervals(i,2) &&...
-                                intervals_(j,2) > other_intervals(i,2))
+                            intervals_(j, 2) = other_intervals(i, 1);
+                        elseif (intervals_(j, 1) >= other_intervals(i, 1) && ...
+                                intervals_(j, 1) < other_intervals(i, 2) && ...
+                                intervals_(j, 2) > other_intervals(i, 2))
                             % interval starts inside and ends after the other interval
-                            intervals_(j,1) = other_intervals(i,2);
-                        elseif (intervals_(j,1) < other_intervals(i,1) &&...
-                                intervals_(j,2) > other_intervals(i,2))
+                            intervals_(j, 1) = other_intervals(i, 2);
+                        elseif (intervals_(j, 1) < other_intervals(i, 1) && ...
+                                intervals_(j, 2) > other_intervals(i, 2))
                             % interval starts before and ends after the other interval
-                            new_interval = [other_intervals(i,2) intervals_(j,2)];
-                            intervals_(j,2) = other_intervals(i,1);
+                            new_interval = [other_intervals(i, 2), intervals_(j, 2)];
+                            intervals_(j, 2) = other_intervals(i, 1);
                             intervals_ = [intervals_; new_interval];
                         end
-                        j = j+1;
+                        j = j + 1;
                     end
                 end
                 new.intervals = intervals_;
             else
-                error("unsupported operand type(s) for setdiff: %s and %s",...
+                error("unsupported operand type(s) for setdiff: %s and %s", ...
                     class(obj), class(other));
             end
         end
-        
-        function out = plot(obj,varargin)
+
+        function out = plot(obj, varargin)
             if isempty(varargin)
-                yLim = ylim; alphaValue = 0.5; dy = yLim(2)-yLim(1);
-                colors = rand(size(obj.intervals,1),3);
+                yLim = ylim;
+                alphaValue = 0.5;
+                dy = yLim(2) - yLim(1);
+                colors = rand(size(obj.intervals, 1), 3);
                 for i = 1:obj.n_intervals
                     % Better off implementing "PlotIntervals" directly here to avoid calling "uistack" multiple times
-                    dx = diff(obj.intervals(i,:));
-                    out(i) = patch(obj.intervals(i,1)+[0 0 dx dx],yLim(1)+[0 dy dy 0],colors(i,:),'LineStyle','none');
-                    alpha(out(i),alphaValue);
+                    dx = diff(obj.intervals(i, :));
+                    out(i) = patch(obj.intervals(i, 1)+[0, 0, dx, dx], yLim(1)+[0, dy, dy, 0], colors(i, :), 'LineStyle', 'none');
+                    alpha(out(i), alphaValue);
                 end
-                uistack(out,'bottom');
+                uistack(out, 'bottom');
             else
-                out = PlotIntervals(obj.intervals,varargin);
+                out = PlotIntervals(obj.intervals, varargin);
             end
         end
     end

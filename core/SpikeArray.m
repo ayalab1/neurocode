@@ -41,22 +41,22 @@ classdef SpikeArray < handle
     %   mySpikeArray.plot()
     %
     % Ryan H 2023
-    
+
     properties
         spikes
         uid
         uid_labels
     end
-    
+
     methods
         function obj = SpikeArray(varargin)
             obj.spikes = [];
             obj.uid = [];
-            
+
             if nargin == 0
                 return;
             end
-            
+
             if nargin == 1
                 spikes_in = varargin{1};
                 if isnumeric(spikes_in)
@@ -68,13 +68,13 @@ classdef SpikeArray < handle
                         groups{cc} = cc * ones(size(spikes_in{cc}));
                     end
                     if numcells > 0
-                        alltimes = cat(1,spikes_in{:});
-                        groups_ = cat(1,groups{:});
+                        alltimes = cat(1, spikes_in{:});
+                        groups_ = cat(1, groups{:});
                         % check if dim of cat was correct and fix if not
-                        n_spikes_total = sum(cellfun('length',spikes_in));
+                        n_spikes_total = sum(cellfun('length', spikes_in));
                         if n_spikes_total ~= length(alltimes)
-                            alltimes = cat(2,spikes_in{:});
-                            groups_ = cat(2,groups{:});
+                            alltimes = cat(2, spikes_in{:});
+                            groups_ = cat(2, groups{:});
                         end
                         [obj.spikes, sortidx] = sort(alltimes);
                         obj.uid = groups_(sortidx);
@@ -97,14 +97,14 @@ classdef SpikeArray < handle
                 error('Invalid number of input arguments.');
             end
         end
-        
-        function st = subsref(obj,S)
-            if isequal(S.type,'()')
-                if isa(S.subs{1},'IntervalArray')
+
+        function st = subsref(obj, S)
+            if isequal(S.type, '()')
+                if isa(S.subs{1}, 'IntervalArray')
                     st = restrict(obj, S.subs{1});
                     return
                 end
-                if ~any(ismember(S.subs{1},obj.ids))
+                if ~any(ismember(S.subs{1}, obj.ids))
                     error('Index out of bounds')
                 end
                 st = SpikeArray();
@@ -114,12 +114,12 @@ classdef SpikeArray < handle
                 st.uid_labels = obj.uid_labels;
                 return
             else
-                st = builtin('subsref',obj,S);
+                st = builtin('subsref', obj, S);
             end
         end
 
-        function st  = restrict(obj, intervals, varargin)
-            st  = SpikeArray();
+        function st = restrict(obj, intervals, varargin)
+            st = SpikeArray();
             if isempty(varargin)
                 [st.spikes, idx] = Restrict(obj.spikes, intervals.intervals);
             else
@@ -128,59 +128,59 @@ classdef SpikeArray < handle
             st.uid = obj.uid(idx);
             st.uid_labels = obj.uid_labels;
         end
-        
-        function bst = bin(obj,varargin)
-            
+
+        function bst = bin(obj, varargin)
+
             p = inputParser;
-            addParameter(p,'ds',0.0625,@isnumeric)
-            parse(p,varargin{:})
+            addParameter(p, 'ds', 0.0625, @isnumeric)
+            parse(p, varargin{:})
             ds = p.Results.ds;
-            
+
             % set up bin edge or each cell
-            uid_edge = [obj.uid_labels(:);max(obj.uid_labels)+1] - .5;
-            
+            uid_edge = [obj.uid_labels(:); max(obj.uid_labels) + 1] - .5;
+
             % set bin edges for time
-            time_edge = obj.first_event - ds/2:ds:obj.last_event + ds/2;
-            
-            [bst,~,~] = histcounts2(obj.uid,...
-                obj.spikes,...
-                uid_edge,...
+            time_edge = obj.first_event - ds / 2:ds:obj.last_event + ds / 2;
+
+            [bst, ~, ~] = histcounts2(obj.uid, ...
+                obj.spikes, ...
+                uid_edge, ...
                 time_edge);
-            
-            bin_centers = time_edge(1:end-1) + ds/2;
-            
+
+            bin_centers = time_edge(1:end-1) + ds / 2;
+
             % make binned spike train into analogSignalArray
-            bst = analogSignalArray('data',bst,...
-                'timestamps',bin_centers,...
-                'sampling_rate',1/ds);
+            bst = analogSignalArray('data', bst, ...
+                'timestamps', bin_centers, ...
+                'sampling_rate', 1/ds);
         end
-        
+
         function cell_array = to_cell_array(obj)
-            cell_array = cell(1,length(obj.uid_labels));
+            cell_array = cell(1, length(obj.uid_labels));
             for uid_label = obj.uid_labels(:)'
                 cell_array{uid_label} = obj.spikes(obj.uid == uid_label);
             end
         end
-            
+
         function n_cells_ = n_cells(obj)
-            n_cells_= length(unique(obj.uid_labels));
+            n_cells_ = length(unique(obj.uid_labels));
         end
-        
+
         function n_cells_ = n_active_cells(obj)
-            n_cells_= length(unique(obj.uid));
+            n_cells_ = length(unique(obj.uid));
         end
-        
+
         function ids_ = ids(obj)
-            ids_= unique(obj.uid_labels);
-            if size(ids_,2) > size(ids_,1)
+            ids_ = unique(obj.uid_labels);
+            if size(ids_, 2) > size(ids_, 1)
                 ids_ = ids_';
             end
         end
-        
+
         function duration_ = duration(obj)
             duration_ = obj.last_event - obj.first_event;
         end
-        
+
         function disp(obj)
             obj_duration = seconds(obj.duration);
             if obj_duration < seconds(1)
@@ -199,42 +199,42 @@ classdef SpikeArray < handle
                 duration_str = datestr(obj_duration, 'DD:HH:MM:SS.FFF');
                 units = 'days';
             end
-            
-            fprintf('<%s %d units> of length %s %s \n',...
-                "SpikeArray:",...
-                obj.n_cells,...         
-                duration_str,...
+
+            fprintf('<%s %d units> of length %s %s \n', ...
+                "SpikeArray:", ...
+                obj.n_cells, ...
+                duration_str, ...
                 units);
         end
-        
+
         function n_spikes_ = n_spikes(obj)
             n_spikes_ = [];
-            for ids_ = reshape(ids(obj),1,[])
-                n_spikes_ = [n_spikes_;sum(obj.uid == ids_)];
+            for ids_ = reshape(ids(obj), 1, [])
+                n_spikes_ = [n_spikes_; sum(obj.uid == ids_)];
             end
         end
-        
+
         function first_event_ = first_event(obj)
             first_event_ = obj.spikes(1);
         end
-        
+
         function last_event_ = last_event(obj)
             last_event_ = obj.spikes(end);
         end
-        
+
         function sorted = issorted(obj)
             sorted = all(sort(obj.spikes) == sort(obj.spikes));
         end
-        
+
         function isempty_ = isempty(obj)
             isempty_ = isempty(obj.spikes);
         end
-        
-        function ax = plot(obj,varargin)
+
+        function ax = plot(obj, varargin)
             if isempty(varargin)
-                ax = RasterPlot([obj.spikes,obj.uid],1);
+                ax = RasterPlot([obj.spikes, obj.uid], 1);
             else
-                ax = RasterPlot([obj.spikes,obj.uid],1,varargin{:});
+                ax = RasterPlot([obj.spikes, obj.uid], 1, varargin{:});
             end
         end
     end

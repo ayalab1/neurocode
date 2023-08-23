@@ -95,9 +95,9 @@ DI = ((test_time(2)-test_time(1))/(test_time(2)+test_time(1)))*100;
 obj_pref = (test_time(2)/(test_time(2)+test_time(1))*100) - (sum(train_time(:,2))/sum(train_time,'all')*100);
 
 objScore.object_training_time = train_time;
-objPref.object_test_time = test_time;
-objPref.discrmination_index = DI;
-objPref.object_preference = obj_preference;
+objScore.object_test_time = test_time;
+objScore.discrimination_index = DI;
+objScore.object_preference = obj_pref;
 
 save([basepath '\' 'objScore.mat'], 'objScore');
 cd(basepath);

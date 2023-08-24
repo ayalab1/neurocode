@@ -5,7 +5,7 @@ function [spikes, varargout] = import_spikes(varargin)
 % Inputs:
 %   basepath: optional, path to recording session
 %   brainRegion: optional, string, char, or cell array
-%   putativeCellType: optional, string, char, or cell array
+%   cellType: optional, string, char, or cell array
 %   UID: optional, numeric array
 %   state: optional, string or char, sleep state to restrict to
 %
@@ -14,7 +14,7 @@ function [spikes, varargout] = import_spikes(varargin)
 %       times: spike times for each neuron
 %       UID: unique unit ID
 %       brainRegion: brain region of neuron
-%       putativeCellType: cell type of neuron
+%       cellType: cell type of neuron
 %       n_spikes: number of spikes for each neuron
 %       support: time support of spikes
 %  varargout:
@@ -23,23 +23,23 @@ function [spikes, varargout] = import_spikes(varargin)
 %
 % Examples:
 % spikes = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
-%     'brainRegion', 'CA1', 'putativeCellType', 'Pyr')
+%     'brainRegion', 'CA1', 'cellType', 'Pyr')
 % 
 % spikes = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
-%     'brainRegion', {'CA1', 'CA3'}, 'putativeCellType', 'Pyr')
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', 'Pyr')
 % 
 % spikes = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
-%     'brainRegion', {'CA1', 'CA3'}, 'putativeCellType', {'Pyr', 'Int'})
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', {'Pyr', 'Int'})
 % 
 % spikes = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
-%     'brainRegion', {'CA1', 'CA3'}, 'putativeCellType', {'Pyr', 'Int'}, ...
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', {'Pyr', 'Int'}, ...
 %     'state', 'NREMstate')
 % 
 % spikes = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
 %     'UID', [1, 2, 3])
 % 
 % [spikes, spike_array] = import_spikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
-%     'brainRegion', 'CA1', 'putativeCellType', 'Pyr')
+%     'brainRegion', 'CA1', 'cellType', 'Pyr')
 % spike_array
 % <SpikeArray: 15 units> of length 06:23:07.270 hours
 %
@@ -49,14 +49,14 @@ function [spikes, varargout] = import_spikes(varargin)
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder);
 addParameter(p, 'brainRegion', '', @(x) ischar(x) || isstring(x) || iscell(x));
-addParameter(p, 'putativeCellType', '', @(x) ischar(x) || isstring(x) || iscell(x));
+addParameter(p, 'cellType', '', @(x) ischar(x) || isstring(x) || iscell(x));
 addParameter(p, 'UID', [], @(x) isnumeric(x));
-addParameter(p, 'state', [], @(x) ischar(x) || isstring(x));
+addParameter(p, 'state', '', @(x) ischar(x) || isstring(x));
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
 brainRegion = p.Results.brainRegion;
-putativeCellType = p.Results.putativeCellType;
+cellType = p.Results.cellType;
 UID = p.Results.UID;
 state = p.Results.state;
 
@@ -68,21 +68,21 @@ load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'cell_metrics'
 spikes = cell_metrics.spikes;
 spikes.UID = cell_metrics.UID;
 spikes.brainRegion = cell_metrics.brainRegion;
-spikes.putativeCellType = cell_metrics.putativeCellType;
+spikes.cellType = cell_metrics.putativeCellType;
 
 % add time support by getting the min and max times
 spikes.support = [min(cellfun(@min, spikes.times)), max(cellfun(@max, spikes.times))];
 
 % restrict to brainRegion
 if ~isempty(brainRegion)
-    valid_uid = cell_metrics.UID(contains(cell_metrics.brainRegion, brainRegion));
+    valid_uid = spikes.UID(contains(spikes.brainRegion, brainRegion));
     keep_idx = ismember(spikes.UID, valid_uid);
     spikes = restrict_cells(spikes, keep_idx);
 end
 
-% restrict to putativeCellType
-if ~isempty(putativeCellType)
-    valid_uid = cell_metrics.UID(contains(cell_metrics.putativeCellType, putativeCellType));
+% restrict to cellType
+if ~isempty(cellType)
+    valid_uid = spikes.UID(contains(spikes.cellType, cellType));
     keep_idx = ismember(spikes.UID, valid_uid);
     spikes = restrict_cells(spikes, keep_idx);
 end
@@ -120,12 +120,16 @@ spikes.n_spikes = cellfun(@length, spikes.times);
 n_cells = length(spikes.times);
 assert(length(spikes.UID) == n_cells)
 assert(length(spikes.brainRegion) == n_cells)
-assert(length(spikes.putativeCellType) == n_cells)
+assert(length(spikes.cellType) == n_cells)
 assert(length(spikes.n_spikes) == n_cells)
 
 % output SpikeArray if requested, otherwise just return spikes struct
 if nargout == 2
-    varargout{1} = SpikeArray(spikes.times);
+    if isempty(spikes.times)
+        varargout{1} = SpikeArray();
+    else
+        varargout{1} = SpikeArray(spikes.times);
+    end
 end
 end
 
@@ -134,5 +138,5 @@ function spikes = restrict_cells(spikes, keep_idx)
 spikes.times = spikes.times(keep_idx);
 spikes.UID = spikes.UID(keep_idx);
 spikes.brainRegion = spikes.brainRegion(keep_idx);
-spikes.putativeCellType = spikes.putativeCellType(keep_idx);
+spikes.cellType = spikes.cellType(keep_idx);
 end

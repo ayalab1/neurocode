@@ -178,7 +178,11 @@ classdef SpikeArray < handle
         end
 
         function duration_ = duration(obj)
-            duration_ = obj.last_event - obj.first_event;
+            if obj.isempty()
+                duration_ = 0;
+            else
+                duration_ = obj.last_event - obj.first_event;
+            end
         end
 
         function disp(obj)

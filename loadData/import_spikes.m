@@ -19,7 +19,7 @@ function spikes = import_spikes(varargin)
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder);
 addParameter(p, 'brainRegion', '', @(x) ischar(x) || isstring(x) || iscell(x));
-addParameter(p, 'putativeCellType', '', @(x) ischar(x) || isstring(x));
+addParameter(p, 'putativeCellType', '', @(x) ischar(x) || isstring(x) || iscell(x));
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;

@@ -6,6 +6,8 @@ function [spikes, varargout] = import_spikes(varargin)
 %   basepath: optional, path to recording session
 %   brainRegion: optional, string, char, or cell array
 %   putativeCellType: optional, string, char, or cell array
+%   UID: optional, numeric array
+%   state: optional, string or char, sleep state to restrict to
 %
 % Outputs:
 %   spikes
@@ -43,6 +45,7 @@ function [spikes, varargout] = import_spikes(varargin)
 %
 % Ryan H
 
+% parse inputs  
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder);
 addParameter(p, 'brainRegion', '', @(x) ischar(x) || isstring(x) || iscell(x));
@@ -57,11 +60,11 @@ putativeCellType = p.Results.putativeCellType;
 UID = p.Results.UID;
 state = p.Results.state;
 
-
+% load cell metrics
 basename = basenameFromBasepath(basepath);
-
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'cell_metrics');
 
+% create spikes struct
 spikes = cell_metrics.spikes;
 spikes.UID = cell_metrics.UID;
 spikes.brainRegion = cell_metrics.brainRegion;
@@ -120,12 +123,14 @@ assert(length(spikes.brainRegion) == n_cells)
 assert(length(spikes.putativeCellType) == n_cells)
 assert(length(spikes.n_spikes) == n_cells)
 
+% output SpikeArray if requested, otherwise just return spikes struct
 if nargout == 2
     varargout{1} = SpikeArray(spikes.times);
 end
 end
 
 function spikes = restrict_cells(spikes, keep_idx)
+% restricts spikes struct to keep_idx
 spikes.times = spikes.times(keep_idx);
 spikes.UID = spikes.UID(keep_idx);
 spikes.brainRegion = spikes.brainRegion(keep_idx);

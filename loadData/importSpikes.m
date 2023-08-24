@@ -13,7 +13,7 @@ function [spikeT] = importSpikes(varargin)
 
 % These inputs require CellExplorer cell_metrics pre calculated. 
 %    brainRegion     -string region ID to load neurons from specific region
-%    cellType        -cell type to load
+%    cellType        -string cell type to load
 %    sleepState      -string sleep state to keep spikes falling within the
 %                       specified sleep state.
 % *** If inputting multiple regions, types, or states, ensure the input
@@ -41,9 +41,9 @@ function [spikeT] = importSpikes(varargin)
 
 p = inputParser;
 addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x) || iscell(x));
-addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
-addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
+addParameter(p,'brainRegion','',@(x) isstring(x) || iscell(x));
+addParameter(p,'cellType','',@(x) isstring(x) || iscell(x));
+addParameter(p,'sleepState','',@(x) isstring(x) || iscell(x));
 addParameter(p,'UID',[],@isvector);
 addParameter(p,'channel',[],@isnumeric);
 

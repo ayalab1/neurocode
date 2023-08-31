@@ -40,7 +40,7 @@ nChannels = session.extracellular.nChannels;
 
 tsv_check = fullfile(clustering_path,'cluster_info.tsv');
 if ~exist(tsv_check, 'file') 
-    error('Cluster_info.tsv does not exist! Open up phy and save to create it.');
+    error('Cluster_info.tsv does not exist! Open up phy and save to create it. Did you open phy earlier and local "Recluster Local PCAs all?"'); 
 end
 cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv'));
 shankID = cluster_info_table.data(:,end);

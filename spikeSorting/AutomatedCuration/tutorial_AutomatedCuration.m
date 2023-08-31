@@ -25,7 +25,6 @@ pip install phylib
 
 % You absolutely need your .xml file in the same folder.
 % Note - Launch this within Kilosort folder 
-
 clustering_path = pwd; 
 [parentFolder] = fileparts(clustering_path);
 [~,basename] = fileparts(parentFolder);

@@ -172,6 +172,7 @@ writeNPY(tops'-1, fullfile(clustering_path, 'pc_feature_ind.npy'));% -1 for zero
 
 % Tell phy which clusters were marked as noisy
 fid = fopen(fullfile(clustering_path,'cluster_group.tsv'),'w');
+
 fwrite(fid, sprintf('cluster_id\t%s\r\n', 'group'));
 indices = noiseIndices-1; % phy notation starts from 0
 for i=1:length(indices)

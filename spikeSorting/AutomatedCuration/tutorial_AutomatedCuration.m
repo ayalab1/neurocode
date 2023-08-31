@@ -78,6 +78,8 @@ evalc(['!' fullfile(neurosuite_path,'launch_curation.bat')]); % Here, we are try
 %Run inside kilosort folder (ensure clustering_path, neurosuite_path is run
 %INSIDE kilosort folder, if not then below will look for .clu in wrong dir)
 UpdatePhyFromNeurosuite(clustering_path,neurosuite_path);
+%if you have issues finding cluster_info.tsv - open up kilosort folder in
+%phy and save once and cluster_info.tsv will be created
 
 % Enjoy!
 

@@ -36,7 +36,7 @@ datFile = fullfile(parentFolder,[basename '.dat']);
 
 % Launch the convertion of the phy format into the Neurosuite format that the 
 % Automated Curator needs
-% Note - Launch this within Kilosort folder 
+% NOTE - Launch this within Kilosort folder 
 Phy2Neurosuite(clustering_path,parentFolder,datFile);
 
 %% ======================= LAUNCH AUTOMATED CURATION =======================
@@ -67,7 +67,7 @@ end
 fclose(fid);
 
 % Run the file! 
-%run outside of kilosort folder but inside day folder (where .res, .fet,.spk files are)
+%NOTE - run outside of kilosort folder but inside day folder (where .res, .fet,.spk files are)
 evalc(['!' fullfile(neurosuite_path,'launch_curation.bat')]); % Here, we are trying to run the file from matlab. 
 % If you cannot run the file from matlab, run the newly created "launch_curation.bat" file manually. You may need to click "Enter" to help it along...
 
@@ -75,7 +75,7 @@ evalc(['!' fullfile(neurosuite_path,'launch_curation.bat')]); % Here, we are try
 
 
 
-%Run inside kilosort folder (ensure clustering_path, neurosuite_path is run
+%NOTE - Run inside kilosort folder (ensure clustering_path, neurosuite_path is run
 %INSIDE kilosort folder, if not then below will look for .clu in wrong dir)
 UpdatePhyFromNeurosuite(clustering_path,neurosuite_path);
 %if you have issues finding cluster_info.tsv - open up kilosort folder in

@@ -386,26 +386,25 @@ elseif any(opti_flag) || contains(force_format, 'optitrack')
                 warning(fullfile(MergePoints.foldernames{k}, [file.name]), ' IS NOT OPTITRACK FILE')
                 continue
             end
-        if ~isempty(dir(fullfile(basepath,MergePoints.foldernames{k},'*.csv'))) || ~isempty(dir(fullfile(basepath,[MergePoints.foldernames{k}(1:end-14),'*.csv'])))
+        elseif ~isempty(dir(fullfile(basepath, MergePoints.foldernames{k}, '*.csv'))) || ~isempty(dir(fullfile(basepath, [MergePoints.foldernames{k}(1:end - 14), '*.csv'])))
             % locate the .tak file in this subfolder
-            file = dir(fullfile(basepath,MergePoints.foldernames{k},'*.csv'));
-            if isempty(file),
-                file = dir(fullfile(basepath,[MergePoints.foldernames{k}(1:end-14),'*.csv']));
-                try copyfile(fullfile(basepath,file(1).name),fullfile(basepath,MergePoints.foldernames{k},[MergePoints.foldernames{k}(1:end-14),'.csv'])); end
-                  file = dir(fullfile(basepath,MergePoints.foldernames{k},'*.csv'));
+            file = dir(fullfile(basepath, MergePoints.foldernames{k}, '*.csv'));
+            if isempty(file)
+                file = dir(fullfile(basepath, [MergePoints.foldernames{k}(1:end - 14), '*.csv']));
+                try
+                    copyfile(fullfile(basepath, file(1).name), fullfile(basepath, MergePoints.foldernames{k}, [MergePoints.foldernames{k}(1:end - 14), '.csv']));
+                catch
+                end
+                file = dir(fullfile(basepath, MergePoints.foldernames{k}, '*.csv'));
             end
             % use func from cellexplorer to load tracking data
             % here we are using the .csv
-%             try
-                optitrack = loadOptitrack('basepath', basepath,...
-                    'basename', basename,...
-                    'filenames',{fullfile(MergePoints.foldernames{k},[file.name])},...
-                    'saveMat',false,...
-                    'saveFig',false);
-%             catch
-%                 warning(fullfile(MergePoints.foldernames{k},[file.name]),' IS NOT OPTITRACK FILE')
-%                 continue
-%             end
+            optitrack = loadOptitrack('basepath', basepath, ...
+                'basename', basename, ...
+                'filenames', {fullfile(MergePoints.foldernames{k}, [file.name])}, ...
+                'saveMat', false, ...
+                'saveFig', false);
+
             % find timestamps within current session
             ts_idx = digitalIn_ttl >= MergePoints.timestamps(k, 1) & digitalIn_ttl <= MergePoints.timestamps(k, 2);
             ts = digitalIn_ttl(ts_idx);
@@ -419,18 +418,12 @@ elseif any(opti_flag) || contains(force_format, 'optitrack')
                 y = [y, optitrack.position.y(1:length(ts))];
                 z = [z, optitrack.position.z(1:length(ts))];
                 keyboard
-                t = [t,ts'];
-                x = [x,optitrack.position.x(1:length(ts))];
-                y = [y,optitrack.position.y(1:length(ts))];
-                z = [z,optitrack.position.z(1:length(ts))];
+                t = [t, ts'];
+                x = [x, optitrack.position.x(1:length(ts))];
+                y = [y, optitrack.position.y(1:length(ts))];
+                z = [z, optitrack.position.z(1:length(ts))];
                 continue
             end
-
-            % align ttl timestamps,
-            % there always are differences in n ttls vs. n coords, so we interp
-            %             simulated_ts = linspace(min(ts),max(ts),length(optitrack.position.x));
-            %             ts = interp1(ts,ts,simulated_ts);
-            %             t = [t,ts];
 
             % store xyz
             x = [x, optitrack.position.x];

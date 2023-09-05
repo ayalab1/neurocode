@@ -59,6 +59,15 @@ else
     swr_p = p.Results.peak;
     swr_e = p.Results.stop;
     check_r = 0;
+    if (size(swr_s,1)==1)&&(size(swr_s,2)>1)
+        swr_s = swr_s';
+    end
+    if (size(swr_p,1)==1)&&(size(swr_p,2)>1)
+        swr_p = swr_p';
+    end
+    if (size(swr_e,1)==1)&&(size(swr_e,2)>1)
+        swr_e = swr_e';
+    end    
 end
 
 % Assign parameters to variables accordingly

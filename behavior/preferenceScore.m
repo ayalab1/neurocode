@@ -45,10 +45,10 @@ per_day = sort(per_day, 'ascend');
 count = 1;
 for i = 1:length(per_day)
     use_idx = (dates2sort==per_day(i));
-    [~,sortBy] = sort(names2sort(use_idx==1));
+    [~,sortBy] = sort(names2sort(use_idx==1),'ascend');
     for j = 1:sum(use_idx)
         path_idx = find(use_idx==1);
-        nsespaths{count} = sespaths{path_idx(sortBy==j)};
+        nsespaths{count} = sespaths{path_idx(sortBy(j))};
         count = count+1;
     end
 end

@@ -44,6 +44,7 @@ addParameter(p,'multiKilosort',false,@islogical);
 addParameter(p,'showGUI',false,@islogical);
 addParameter(p,'showCellMet',true,@islogical);
 addParameter(p,'prePhy',false,@islogical);
+addParameter(p,'datFolder',[],@isfolder);
 addParameter(p,'spikeLabels',{'good'},@iscell);
 parse(p,varargin{:});
 
@@ -51,6 +52,7 @@ multiKilosort = p.Results.multiKilosort;
 showGUI = p.Results.showGUI;
 showCellMet = p.Results.showCellMet;
 prePhy = p.Results.prePhy;
+datFolder = p.Results.datFolder;
 spikeLabels = p.Results.spikeLabels; %spike labels is causing issues even when no bad channels are noted - Heathlarsson 05/29/23
 
 %% 1- extract spike times and waveforms for sorted clusters
@@ -64,6 +66,9 @@ catch
     session = sessionTemplate(basepath,'showGUI',showGUI);
     save(fullfile(basepath,[basename '.session.mat']),'session');
 end
+
+if ~isempty(datFolder), session.extracellular.fileName = fullfile(datFolder,[basename '.dat']); end
+
 f = dir('Kilosort*');
 if (size(f,1) ~= 1)&&(~multiKilosort)
     error('Too many kiloSort folders - should multiKilosort=1?');

@@ -6,10 +6,10 @@
 % do this on Windows:
 %
 % Run (in a cosole or anaconda prompt): [NOT matlab]
-conda create --name AutomatedCurator
-conda activate AutomatedCurator  
-conda install -c fastchan fastai anaconda      % agree to install when prompted
-pip install phylib      
+% conda create --name AutomatedCurator
+% conda activate AutomatedCurator  
+% conda install -c fastchan fastai anaconda      % agree to install when prompted
+% pip install phylib      
 
 %% =============================== PREP DATA ===============================
 

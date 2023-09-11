@@ -79,8 +79,8 @@ addParameter(p,'filterOrder',4,@isnumeric);
 addParameter(p,'numBins',50,@isnumeric);
 addParameter(p,'method','wavelet',@ischar);
 addParameter(p,'perm_test',false,@islogical);
-addParameter(p,'alpha',.05,@isscalar);
-addParameter(p,'num_iter',200,@isscalar);
+addParameter(p,'alpha',[.05],@isscalar);
+addParameter(p,'num_iter',[200],@isscalar);
 addParameter(p,'units','MI',@ischar)
 
 parse(p,varargin{:});
@@ -134,7 +134,7 @@ for ch = 1:length(ampChans)
                 amplitude_data = lfp_amp.amp;
         end
         
-        % Bin phase and power
+        %% Bin phase and power
         
         phasebins = linspace(-pi,pi,numBins+1);
         

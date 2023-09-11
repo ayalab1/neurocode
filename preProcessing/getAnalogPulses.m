@@ -41,7 +41,7 @@ function [pulses] = getAnalogPulses(varargin)
 % [eventID]       [Numeric ID for classifying various event types (C X 1)]
 % [eventIDlabels] [label for classifying various event types defined in eventID (cell array C X 1)]  
 % [intsPeriods]   [Stimulation periods, as defined by perioLag]
-%
+% [xaxis_adj_ints] [change xaxis for IDing intsPeriods[xmin xmax]]
 % SEE ALSO
 %
 % [Manu-BuzsakiLab] [2018]
@@ -66,6 +66,7 @@ addParameter(p,'useGPU',true,@islogical);
 addParameter(p,'minDur',[],@isnumeric);
 addParameter(p,'showFig',true,@islogical);
 addParameter(p,'forceDetect',false,@islogical);
+addParameter(p,'xaxis_adj_ints', [], @isnumeric)
 
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
@@ -81,6 +82,7 @@ useGPU = p.Results.useGPU;
 minDur = p.Results.minDur;
 showFig = p.Results.showFig;
 forceDetect = p.Results.forceDetect;
+xaxis_adj_ints = p.Results.xaxis_adj_ints;
 
 prevPath = pwd;
 cd(basepath);
@@ -230,9 +232,21 @@ for jj = 1 : length(analogCh)
         h = figure;
         plot(xt(1:100:end), d(1:100:end));
         hold on
+        xlim([2000,12000])
         xlabel('s'); ylabel('amp');
         title('Group stimulation periods by pressing left click. Press enter when done.');
         selecting = 1;
+        [a, aa] = xaxis_adj_ints; %#ok<ASGLU> 
+        if aa ~=2
+            error('Incorrect inputs for xlim! Change to [xmin xmax]')
+        else
+            disp('Adjusting xaxis for groupPulses!')
+        end
+        if ~isempty(xaxis_adj_ints)
+            xlim([0 xt(end)]);
+        else
+            xlim(xaxis_ajd_ints)
+        end
         while selecting
             [x,~] = ginput(2);
             if ~isempty(x)

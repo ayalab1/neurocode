@@ -30,6 +30,8 @@ function [pulses] = getAnalogPulses(varargin)
 % [minDur]      [pulses with shorter duration than this are removed]
 % [showFig]     [Whether or not to show final pulse figure, best to set to
 %               false when manually scoring long sessions. Default, true]
+%[xaxis_adj_ints] [change xaxis for IDing groupPulses[xmin xmax]. Default is [0 xmax]]
+%
 %
 %  OUTPUT
 %                 [pulses - events struct with the following fields
@@ -41,11 +43,13 @@ function [pulses] = getAnalogPulses(varargin)
 % [eventID]       [Numeric ID for classifying various event types (C X 1)]
 % [eventIDlabels] [label for classifying various event types defined in eventID (cell array C X 1)]  
 % [intsPeriods]   [Stimulation periods, as defined by perioLag]
-% [xaxis_adj_ints] [change xaxis for IDing intsPeriods[xmin xmax]]
+% 
+% [concatenate_
 % SEE ALSO
 %
 % [Manu-BuzsakiLab] [2018]
 % [Antonio FR] [2021-2022]
+% [HLarsson] [2023-2024]
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
@@ -68,6 +72,7 @@ addParameter(p,'showFig',true,@islogical);
 addParameter(p,'forceDetect',false,@islogical);
 addParameter(p,'xaxis_adj_ints', [], @isnumeric)
 
+
 parse(p, varargin{:});
 samplingRate = p.Results.samplingRate;
 offset = p.Results.offset;
@@ -83,6 +88,7 @@ minDur = p.Results.minDur;
 showFig = p.Results.showFig;
 forceDetect = p.Results.forceDetect;
 xaxis_adj_ints = p.Results.xaxis_adj_ints;
+
 
 prevPath = pwd;
 cd(basepath);
@@ -232,20 +238,20 @@ for jj = 1 : length(analogCh)
         h = figure;
         plot(xt(1:100:end), d(1:100:end));
         hold on
-        xlabel('s'); ylabel('amp');
-        title('Group stimulation periods by pressing left click. Press enter when done.');
-        selecting = 1;
         [a, aa] = size(xaxis_adj_ints); %#ok<ASGLU> 
         if aa ~=2
             error('Incorrect inputs for xlim! Change to [xmin xmax]')
         else
             disp('Adjusting xaxis for groupPulses!')
         end
-        if ~isempty(xaxis_adj_ints)
-            xlim([0 xt(end)]);
+        if aa == 2
+            xlim(xaxis_adj_ints)
         else
-            xlim(xaxis_ajd_ints)
+            xlim([0 xt(end)])
         end
+        xlabel('s'); ylabel('amp');
+        title('Group stimulation periods by pressing left click. Press enter when done.');
+        selecting = 1;
         while selecting
             [x,~] = ginput(2);
             if ~isempty(x)
@@ -349,6 +355,7 @@ mkdir('Pulses');
 saveas(gca,['pulses\analogPulsesDetection.png']);
 % close all
 
+
 filetarget = split(pwd,filesep); filetarget = filetarget{end};
 if ~isempty(pul) % if no pulses, not save anything... 
     pulses.timestamps = stackCell(pul);
@@ -400,3 +407,6 @@ function [outMat] = stackCell(inCell)
         outMat = [outMat; inCell{ii}'];
     end
 end
+
+
+

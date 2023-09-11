@@ -232,11 +232,10 @@ for jj = 1 : length(analogCh)
         h = figure;
         plot(xt(1:100:end), d(1:100:end));
         hold on
-        xlim([2000,12000])
         xlabel('s'); ylabel('amp');
         title('Group stimulation periods by pressing left click. Press enter when done.');
         selecting = 1;
-        [a, aa] = xaxis_adj_ints; %#ok<ASGLU> 
+        [a, aa] = size(xaxis_adj_ints); %#ok<ASGLU> 
         if aa ~=2
             error('Incorrect inputs for xlim! Change to [xmin xmax]')
         else

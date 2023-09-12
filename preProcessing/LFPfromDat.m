@@ -57,6 +57,10 @@ function LFPfromDat(basepath,varargin)
 % (at your option) any later version.
 
 
+%TODO - make actual output file and enable outputting name differently 
+% (for instance extracting lfp with different downsampling and different
+% .lfp  name)
+
 %% Import
 
 import iosr.dsp.*

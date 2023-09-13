@@ -25,7 +25,6 @@ function analogfromDat(basepath,varargin)
 %    =========================================================================
 %     Properties    Values
 %    ------------------------------------------------------------------------
-%       ['datFile']     [specify while file you'd like to compute lfp from]
 %       ['outFs']       [(default: 1250) downsampled frequency of the .lfp
 %                       output file. if no user input and not specified in
 %                       the xml, use default]
@@ -38,7 +37,7 @@ function analogfromDat(basepath,varargin)
 %   [Creates file:   basePath/baseName.analogin]
 %
 %   [If no sessionInfo.mat file previously exists, creates one with
-%   the information from the .xml file, with the .lfp sampling frequency
+%   the information from the .xml file, with the .analogin sampling frequency
 %   and the lowpass filter used]
 %
 % SEE ALSO
@@ -67,29 +66,25 @@ if ~exist('basepath','var')
 end
 
 p = inputParser;
-addParameter(p,'datFile',[],@isstr);
-addParameter(p,'outFs',[],@isnumeric);
+
+addParameter(p,'outFs',1250,@isnumeric);
 addParameter(p,'lopass',450,@isnumeric);
 addParameter(p,'useGPU',false,@islogical);
-addParameter(p,'inFs',[],@isnumeric);
-addParameter(p,'localDir',[],@isfolder);
+
+
 
 parse(p,varargin{:})
-datFile = p.Results.datFile;
 outFs = p.Results.outFs;
 lopass = p.Results.lopass;
 useGPU = p.Results.useGPU;
-inFs = p.Results.inFs;
-localDir = p.Results.localDir;
+
 
 session = getSession('basepath',basepath);
 basename = session.general.name;
 
-if isempty(datFile)
-    datFile = [analogin,'.dat'];
-elseif ~strcmp(datFile(end-3:end),'.dat')
-    datFile = [datFile,'.dat'];
-end
+
+datFile = 'analogin.dat';
+
 
 % if no gpuDevice found dont try to use
 if useGPU && gpuDeviceCount<1
@@ -109,12 +104,16 @@ sizeInBytes = 2; %
 fInfo = checkFile('basepath',basepath,'filename',datFile,'searchSubdirs',false');
 fdat = fInfo.name;
 
-%Get the metadata
-if isempty(inFs)
-    inFs = session.extracellular.sr;
-end
+%Get the metadata - update approach to avoid descripenancies if session
+%file has different sampling rate (would theoritically be fine but still)
 
-nbChan = session.extracellular.nChannels;
+[amplifier_channels, notes, aux_input_channels, spike_triggers,...         
+        board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
+        read_Intan_RHD2000_file_bz;
+inFs = frequency_parameters.amplifier_sample_rate;
+
+[a, aa] = size(aux_input_channels);
+nbChan = aa;
 
 %set output sampling rate from xml, user input
 if isempty(outFs)          %If user input - priority (keep from above)
@@ -129,11 +128,8 @@ ratio = lopass/(inFs/2) ;
 sampleRatio = (inFs/outFs);
 
 %output file
-if ~isempty(localDir)
-    flfp = fullfile(localDir,[basename,'.lfp']);
-else
-    flfp = fullfile(basepath,[basename,'.lfp']);
-end
+flfp = fullfile(basepath,[basename,'.analogin']);
+
 
 %% Set Chunk and buffer size at even multiple of sampleRatio
 chunksize = 1e5; % depends on the system... could be bigger I guess
@@ -152,13 +148,13 @@ nbChunks = floor(nBytes/(nbChan*sizeInBytes*chunksize))-1;
 
 %% GET LFP FROM DAT
 
-if exist([basepath '\' basename '.lfp'],'file') || exist([basepath '\' basename '.eeg'],'file')
-    fprintf('LFP file already exists \n')
+if exist([basepath '\' basename '.analogin'],'file') 
+    fprintf('.analogin file already exists \n')
     return
 end
 
 fidI = fopen(fdat, 'r');
-fprintf('Extraction of LFP begun \n')
+fprintf('Extraction of analog signal has begun \n')
 fidout = fopen(flfp, 'a');
 
 for ibatch = 1:nbChunks
@@ -272,8 +268,5 @@ if useGPU
     gpuDevice([]);
 end
 
-disp('lfp file created')
-if ~isempty(localDir)
-    movefile(flfp,fullfile(basepath,[basename '.lfp']));
-end
+
 end

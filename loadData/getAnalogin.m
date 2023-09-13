@@ -32,10 +32,15 @@ function analogin = getAnalogin(varargin)
 %                           will load a 1250Hz .lfp file at 250Hz)
 %    'noPrompts'          -logical (default) to supress any user prompts
 %    'fromDat'            -option to load directly from .dat file (default:false)
+%    'loadLFP'            -option to load LFP as well with analog and 
+%                           concatenate with LFP, where analog signals are
+%                           added at the end of lfp structure. Note loads
+%                           all LFP.
+%     
 %
 %  OUTPUT
 %
-%    lfp             struct of lfp data. Can be a single struct or an array
+%    analog             struct of lfp data. Can be a single struct or an array
 %                    of structs for different intervals.  lfp(1), lfp(2),
 %                    etc for intervals(1,:), intervals(2,:), etc
 %    .data           [Nt x Nd] matrix of the LFP data
@@ -92,6 +97,8 @@ addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'forceReload',false,@islogical);
 addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
+addParameter(p,'loadLFP',false, @islogical)
+
 
 parse(p,varargin{:})
 channels = p.Results.channels;
@@ -100,6 +107,8 @@ basepath = p.Results.basepath;
 basename = p.Results.basename; if isempty(basename), basename = basenameFromBasepath(basepath); end
 noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
+loadLFP = p.Results.loadLFP;
+
 
 % doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
 intervals = p.Results.intervals;
@@ -192,7 +201,7 @@ end
 %% get the data
 disp('loading Analogin file...')
 nIntervals = size(intervals,1);
-channels = channels + 1 % offest for binary
+channels = channels + 1; % offest for loadBinary
 [a, aa] = size(channels);
 nbChan = aa;
 
@@ -230,5 +239,29 @@ for i = 1:nIntervals
     analogin(i).region ='analog';
 
 end
+% if loading LFP, add analogin to the end as extra if lfp channel withs
+% brain region analog
+
+if loadLFP 
+    lfp = getLFP('all');
+    analogin.data = [lfp.data, analogin.data];
+    [x,xx] = size(lfp.data);
+    [y, yy] = size(analogin.data);
+    if x ~= y
+        error('lfp and analogin data dimensions do not match!')
+    end
+    analogin.channels = [lfp.channels, (length(lfp.channels) +nbChan)];
+    lfp.region{end + 1} = analogin.region;
+    analogin.region = lfp.region;
+    analogin.Filename = lfp.Filename;
+    analogin.duration = lfp.duration;
+    analogin.interval = lfp.interval;
+    analogin.timestamps = lfp.timestamps;
+    analogin.samplingRate = lfp.samplingRate;
+
+end
+   
+
+
 end
 

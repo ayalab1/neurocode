@@ -41,10 +41,11 @@ function analogfromDat(basepath,varargin)
 %   and the lowpass filter used]
 %
 % SEE ALSO
+% Function was built off of LFPfromDat 
 %
 % Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
 %
-%[HLarsson] [2023-2024]
+% [HLarsson] [2023-2024]
 %
 %
 % This program is free software; you can redistribute it and/or modify

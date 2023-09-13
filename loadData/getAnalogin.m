@@ -8,15 +8,17 @@ function analogin = getAnalogin(varargin)
 %   extraction of analog signals from stimulation (opto/stim fiber) that
 %   can be used as lfp type file for lfp type analysis.
 %
+%  Channel option removed as analog channels are spare and sparsely used
+%
+%
 %  USAGE
 %
 %    [analogin] = getAnalogin(channels,<options>)
 %
 %  INPUTS
 %
-%    channels(required) -must be first input, numeric
-%                        list of channels to load (use keyword 'all' for all)
-%                        channID is 1-indexing
+%  channels - takes all channels as input. 
+%
 %  Name-value paired inputs:
 %    'basepath'           - folder in which .lfp file will be found (default
 %                           is pwd)
@@ -160,15 +162,19 @@ end
 
 session = getSession('basepath',basepath);
 
+[amplifier_channels, notes, aux_input_channels, spike_triggers,...         
+        board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
+        read_Intan_RHD2000_file_bz;
+
 if fromDat
     samplingRate = session.extracellular.sr;
 else
     samplingRate = session.extracellular.srLfp;
 end
 
-samplingRateLFP_out = samplingRate./downsamplefactor;
+samplingRateanalogin_out = samplingRate./downsamplefactor;
 
-if mod(samplingRateLFP_out,1)~=0
+if mod(samplingRateanalogin_out,1)~=0
     error('samplingRate/downsamplefactor must be an integer')
 end
 %% Channel load options
@@ -176,16 +182,18 @@ end
 %indexing), we could also add options for this to be select region or spike
 %group from the xml...
 if strcmp(channels,'all')
-    chInfo = hackInfo('basepath',basepath);
-    channels = chInfo.one.channels;
+    channels = [aux_input_channels.native_order];
 else
     %Put in something here to collapse into X-Y for consecutive channels...
+    channels = [aux_input_channels.native_order];
     disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
 end
 
 %% get the data
 disp('loading LFP file...')
 nIntervals = size(intervals,1);
+[a, aa] = size(aux_input_channels);
+nbChan = aa;
 % returns lfp/bz format
 for i = 1:nIntervals
     analogin(i).duration = (intervals(i,2)-intervals(i,1));
@@ -196,12 +204,12 @@ for i = 1:nIntervals
     % load....
     analogin(i).data = loadBinary([basepath filesep analogin.Filename],...
         'duration',double(analogin(i).duration),...
-        'frequency',samplingRate,'nchannels',session.extracellular.nChannels,...
+        'frequency',samplingRate,'nchannels',nbChan,...
         'start',double(analogin(i).interval(1)),'channels',channels,...
         'downsample',downsamplefactor);
-    analogin(i).timestamps = (1:length(analogin(i).data))'/samplingRateLFP_out;
+    analogin(i).timestamps = (1:length(analogin(i).data))'/samplingRateanalogin_out;
     analogin(i).channels = channels;
-    analogin(i).samplingRate = samplingRateLFP_out;
+    analogin(i).samplingRate = samplingRateanalogin_out;
     % check if duration is inf, and reset to actual duration...
     if analogin(i).interval(2) == inf
         analogin(i).interval(2) = length(analogin(i).timestamps)/analogin(i).samplingRate;
@@ -209,76 +217,16 @@ for i = 1:nIntervals
     end
     if analogin(i).interval(1)>0 % shift the timestamps accordingly
         % in practice, the interval starts at the nearest lfp timestamp
-        add = floor(intervals(i,1)*samplingRateLFP_out)/samplingRateLFP_out; 
+        add = floor(intervals(i,1)*samplingRateanalogin_out)/samplingRateanalogin_out; 
         analogin(i).timestamps = analogin(i).timestamps + add;
         % when using intervals the lfp actually starts 0s away from the first available sample
-        analogin(i).timestamps = analogin(i).timestamps - 1/samplingRateLFP_out; 
+        analogin(i).timestamps = analogin(i).timestamps - 1/samplingRateanalogin_out; 
     end
     
-    % Get regions from session or anatomical_map
-    if isfield(session,'brainRegions')
-        [anatomical_map,channel_map] = get_maps(session);
-        anatomical_map = get_map_from_session(session,anatomical_map,channel_map);
-        analogin(i).region = get_region(channels, anatomical_map,channel_map);
-    elseif isfile(fullfile(basepath,'anatomical_map.csv'))
-        [anatomical_map,channel_map] = get_maps(session);
-        [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
-        analogin(i).region = get_region(channels, anatomical_map,channel_map);
-    else
-        disp('No brain regions associated with channels found. Saving ''Unkown''')
-        [anatomical_map,channel_map] = get_maps(session);
-        analogin(i).region = get_region(channels, anatomical_map,channel_map);
-    end
+    % Assign region as analog to be able to integrate with metadata
+    % neccessities
+    analogin(i).region ='analog';
+
 end
 end
 
-function region = get_region(channels, anatomical_map,channel_map)
-
-% reshape so are both row vectors for comparison with channels
-channel_map = channel_map(:)'; % make into row vector
-anatomical_map = anatomical_map(:)';
-% index region for channels
-region = anatomical_map(ismember(channel_map(:)',channels));
-
-end
-
-function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
-if isfield(session,'brainRegions')
-    regions = fields(session.brainRegions);
-    for i = 1:length(regions)
-        region_idx = ismember(channel_map,...
-            session.brainRegions.(regions{i}).channels);
-        anatomical_map(region_idx) = {regions{i}};
-        
-    end
-end
-end
-
-function [anatomical_map,channel_map] = get_maps(session)
-max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
-anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
-channel_map = nan(size(anatomical_map));
-
-for i = 1:session.extracellular.nElectrodeGroups
-    n_ch = length(session.extracellular.electrodeGroups.channels{i});
-    anatomical_map(1:n_ch,i) = repmat({'Unknown'},1,n_ch);
-    channel_map(1:n_ch,i) = session.extracellular.electrodeGroups.channels{i};
-end
-end
-
-function [anatomical_map,pull_from_session] = get_anatomical_map_csv(basepath,anatomical_map)
-pull_from_session = false;
-filename = fullfile(basepath,'anatomical_map.csv');
-if ~exist(filename,'file')
-    warning('no .anatomical_map.csv... ')
-    disp('will try to pull from basename.session')
-    disp('you can check anatomical_map and rerun')
-    
-    writetable(cell2table(anatomical_map),...
-        fullfile(basepath,'anatomical_map.csv'),...
-        'WriteVariableNames',0)
-    pull_from_session = true;
-    return
-end
-anatomical_map = table2cell(readtable(filename,'ReadVariableNames',false));
-end

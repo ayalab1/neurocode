@@ -82,7 +82,7 @@ channelsValidation = @(x) isnumeric(x) || strcmp(x,'all');
 
 % parse args
 p = inputParser;
-addRequired(p,'channels',channelsValidation)
+addParameter(p,'channels',channelsValidation)
 addParameter(p,'basename','',@isstr)
 addParameter(p,'intervals',[],@isnumeric)
 addParameter(p,'restrict',[],@isnumeric)
@@ -112,12 +112,12 @@ end
 
 %% let's check that there is an appropriate LFP file
 if isempty(basename)
-    disp('No basename given, so we look for a .analogin file...')
+    %disp('No basename given, so we look for a .analogin file...')
     switch fromDat
         case false
             d = dir([basepath filesep '*analogin']);
         case true
-            d = dir(['analogin.dat']);
+            d = dir('analogin.dat');
     end
     if length(d) > 1 % we assume one .lfp file or this should break
         error('there is more than one .analogin file in this directory?');
@@ -182,18 +182,20 @@ end
 %indexing), we could also add options for this to be select region or spike
 %group from the xml...
 if strcmp(channels,'all')
-    channels = [aux_input_channels.native_order];
+    channels = [board_adc_channels.native_order];
 else
     %Put in something here to collapse into X-Y for consecutive channels...
-    channels = [aux_input_channels.native_order];
+    channels = [board_adc_channels.native_order];
     disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
 end
 
 %% get the data
-disp('loading LFP file...')
+disp('loading Analogin file...')
 nIntervals = size(intervals,1);
-[a, aa] = size(aux_input_channels);
+channels = channels + 1 % offest for binary
+[a, aa] = size(channels);
 nbChan = aa;
+
 % returns lfp/bz format
 for i = 1:nIntervals
     analogin(i).duration = (intervals(i,2)-intervals(i,1));

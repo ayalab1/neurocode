@@ -113,7 +113,10 @@ fdat = fInfo.name;
         read_Intan_RHD2000_file_bz;
 inFs = frequency_parameters.amplifier_sample_rate;
 
-[a, aa] = size(aux_input_channels);
+active_adc= board_adc_channels.native_channel_name;
+
+
+[a, aa] = size(board_adc_channels);
 nbChan = aa;
 
 %set output sampling rate from xml, user input

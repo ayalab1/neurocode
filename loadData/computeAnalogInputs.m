@@ -5,19 +5,25 @@ function analogInp = computeAnalogInputs(varargin)
 %  USAGE
 %
 %INPUT
-%   [analogCh]         [channel number]
-%   (options)
-%   [ 'saveMat' ]      (default: prompt)
-%   ['fs' ]   DAQ (intan) samlping 
+%   [analogCh]         [channel number. Before 1-indexing]
 %                       
-
-%    =========================================================================
-
-%OUTPUT
-%  analogInp     
-%   =========================================================================
-% 
-
+%=========================================================================
+%     Properties    Values
+%    ------------------------------------------------------------------------
+%     ['savMat']       [option to save as .mat output. Default false]
+%     ['downsample']   [Whether to downsample analogin. Default false]
+%
+%     ['downsampfreq'] [If downsample is true, then what frequency 
+%                       to downsample to. Default is 1250]
+%     ['intervals']    [Intervals to extract in form of [start stop]
+%                           Default is [0 inf]]
+%     ['restrict']     [Similar for intervals, for FMA preference of
+%                           Restrict]
+%
+%  OUTPUT
+%   [Creates file:   basePath/baseName.analogin]
+%
+%   [Hlearsson] [2023-2024]
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
@@ -26,17 +32,18 @@ function analogInp = computeAnalogInputs(varargin)
 p = inputParser;
 
 addParameter(p,'analogCh', [], @isnumeric)
-addParameter(p,'fs',20000,@isnumeric)
 addParameter(p,'filename',[],@isstring)
 addParameter(p,'saveMat',false,@islogical)
-addParameter(p,'downsampling', 1250, @isnumeric)
+addParameter(p, 'downsample', false, @logical)
+addParameter(p,'downsampfreq', 1250, @isnumeric)
 addParameter(p,'intervals',[],@isnumeric)
+addParameter(p,'restrict',[],@isnumeric)
 
 parse(p, varargin{:});
 analogCh = p.Results.analogCh;
-fs = p.Results.fs;
 saveMat = p.Results.saveMat;
-downsampling = p.Results.downsampling;
+downsample = p.Results.downsample;
+downsampfreq = p.Results.downsampfreq;
 
 % Checking analog input file
 filename = p.Results.filename;
@@ -106,10 +113,10 @@ data = data(wantedInds,:);
 
 %% Downsampling - note this downsampling is using loadBinary to ensure compatibility with lfp - Hlarsson 2023
 fs_analog = intaninfo.frequency_parameters.board_adc_sample_rate;
-if fs_analog > downsampling
+if downsample
     nIntervals = size(intervals,1);
     disp('loading Analogin file and downsampling...');
-    downsampleFactor = round(fs_analog/downsampling);
+    downsampleFactor = round(fs_analog/downsampfreq);
     for i = 1:nIntervals
         analogInp = struct();
         analogInp(i).duration = (intervals(i,2)-intervals(i,1));
@@ -118,14 +125,15 @@ if fs_analog > downsampling
         % Load data and put into struct
         % we assume 0-indexing like neuroscope, but loadBinary uses 1-indexing to
         % load....
-        analogInp(i).data = loadBinary([basepath filesep analogInp.Filename],...
+        active_channels = active_channels +1; %binarize it
+        analogInp(i).data = loadBinary('analogin.dat',...
             'duration',double(analogInp(i).duration),...
-            'frequency',samplingRate,'nchannels',nbChan,...
-            'start',double(analogInp(i).interval(1)),'channels',channels,...
+            'frequency',fs_analog,'nchannels',n_active_channels,...
+            'start',double(analogInp(i).interval(1)),'channels',active_channels,...
             'downsample',downsampleFactor);
-        analogInp(i).timestamps = (1:length(analogInp(i).data))'/samplingRateanalogin_out;
-        analogInp(i).channels = channels;
-        analogInp(i).samplingRate = samplingRateanalogin_out;
+        analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
+        analogInp(i).channels = active_channels;
+        analogInp(i).samplingRate = downsampfreq;
         % check if duration is inf, and reset to actual duration...
         if analogInp(i).interval(2) == inf
             analogInp(i).interval(2) = length(analogInp(i).timestamps)/analogInp(i).samplingRate;
@@ -133,10 +141,10 @@ if fs_analog > downsampling
         end
         if analogInp(i).interval(1)>0 % shift the timestamps accordingly
             % in practice, the interval starts at the nearest lfp timestamp
-            add = floor(intervals(i,1)*samplingRateanalogin_out)/samplingRateanalogin_out; 
+            add = floor(intervals(i,1)*downsampfreq)/downsampfreq; 
             analogInp(i).timestamps = analogInp(i).timestamps + add;
             % when using intervals the lfp actually starts 0s away from the first available sample
-            analogInp(i).timestamps = analogInp(i).timestamps - 1/samplingRateanalogin_out; 
+            analogInp(i).timestamps = analogInp(i).timestamps - 1/downsampfreq; 
         end
         
         % Assign region as analog to be able to integrate with metadata
@@ -149,12 +157,45 @@ end
 %% Output
 % set up downsampling if necessary - added above downsampling HLarsson 2023
 
-
-analogInp = struct();
-analogInp.timestamps = [0 : 1/fs_analog : (num_samples-1)/fs_analog]';
-analogInp.data = (data'-6800)*5/(59000-6800); % convert to voltage- values taken from data
-analogInp.samplingRate = fs_analog;
-analogInp.inputChannels = active_channels;
+if ~downsample
+        nIntervals = size(intervals,1);
+    disp('loading Analogin file and downsampling...');
+    downsampleFactor = 1;
+    for i = 1:nIntervals
+        analogInp = struct();
+        analogInp(i).duration = (intervals(i,2)-intervals(i,1));
+        analogInp(i).interval = [intervals(i,1) intervals(i,2)];
+        
+        % Load data and put into struct
+        % we assume 0-indexing like neuroscope, but loadBinary uses 1-indexing to
+        % load....
+        active_channels = active_channels +1; %binarize it
+        analogInp(i).data = loadBinary('analogin.dat',...
+            'duration',double(analogInp(i).duration),...
+            'frequency',fs_analog,'nchannels',n_active_channels,...
+            'start',double(analogInp(i).interval(1)),'channels',active_channels,...
+            'downsample',downsampleFactor);
+        analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
+        analogInp(i).channels = active_channels;
+        analogInp(i).samplingRate = downsampfreq;
+        % check if duration is inf, and reset to actual duration...
+        if analogInp(i).interval(2) == inf
+            analogInp(i).interval(2) = length(analogInp(i).timestamps)/analogInp(i).samplingRate;
+            analogInp(i).duration = (analogInp(i).interval(i,2)-analogInp(i).interval(i,1));
+        end
+        if analogInp(i).interval(1)>0 % shift the timestamps accordingly
+            % in practice, the interval starts at the nearest lfp timestamp
+            add = floor(intervals(i,1)*downsampfreq)/downsampfreq; 
+            analogInp(i).timestamps = analogInp(i).timestamps + add;
+            % when using intervals the lfp actually starts 0s away from the first available sample
+            analogInp(i).timestamps = analogInp(i).timestamps - 1/downsampfreq; 
+        end
+        
+        % Assign region as analog to be able to integrate with metadata
+        % neccessities
+        analogInp(i).region ='analog';
+    end
+end
 
 if saveMat
     %savepath = [fileinfo.folder, 'analogInput.mat'];

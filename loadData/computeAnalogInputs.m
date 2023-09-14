@@ -29,11 +29,14 @@ addParameter(p,'analogCh', [], @isnumeric)
 addParameter(p,'fs',20000,@isnumeric)
 addParameter(p,'filename',[],@isstring)
 addParameter(p,'saveMat',false,@islogical)
+addParameter(p,'downsampling', 1250, @isnumeric)
+addParameter(p,'intervals',[],@isnumeric)
 
 parse(p, varargin{:});
 analogCh = p.Results.analogCh;
 fs = p.Results.fs;
 saveMat = p.Results.saveMat;
+downsampling = p.Results.downsampling;
 
 % Checking analog input file
 filename = p.Results.filename;
@@ -47,7 +50,14 @@ fileinfo = dir(filename);
 if fileinfo.bytes == 0
     error('Analog input file empty');
 end
-
+% doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
+intervals = p.Results.intervals;
+restrict = p.Results.restrict;
+if isempty(intervals) && isempty(restrict) % both empty
+    intervals = [0 Inf];
+elseif isempty(intervals) && ~isempty(restrict) % intervals empty, restrict isn't
+    intervals = restrict;
+end
 %% Get info from info.rhd file
 
 % Finding file
@@ -93,19 +103,52 @@ data = fread(fid, [n_active_channels, num_samples], 'uint16');
 fclose(fid);
 data = data(wantedInds,:);
 
-%% Put together output data structure
-try % temporary solution
+
+%% Downsampling - note this downsampling is using loadBinary to ensure compatibility with lfp - Hlarsson 2023
 fs_analog = intaninfo.frequency_parameters.board_adc_sample_rate;
-fs_lfp = intaninfo.frequency_parameters.amplifier_sample_rate;
-catch
-fs_analog = intaninfo.supply_voltage_channels.board_adc_sample_rate;
-fs_lfp = intaninfo.supply_voltage_channels.amplifier_sample_rate;
+if fs_analog > downsampling
+    nIntervals = size(intervals,1);
+    disp('loading Analogin file and downsampling...');
+    downsampleFactor = round(fs_analog/downsampling);
+    for i = 1:nIntervals
+        analogInp = struct();
+        analogInp(i).duration = (intervals(i,2)-intervals(i,1));
+        analogInp(i).interval = [intervals(i,1) intervals(i,2)];
+        
+        % Load data and put into struct
+        % we assume 0-indexing like neuroscope, but loadBinary uses 1-indexing to
+        % load....
+        analogInp(i).data = loadBinary([basepath filesep analogInp.Filename],...
+            'duration',double(analogInp(i).duration),...
+            'frequency',samplingRate,'nchannels',nbChan,...
+            'start',double(analogInp(i).interval(1)),'channels',channels,...
+            'downsample',downsampleFactor);
+        analogInp(i).timestamps = (1:length(analogInp(i).data))'/samplingRateanalogin_out;
+        analogInp(i).channels = channels;
+        analogInp(i).samplingRate = samplingRateanalogin_out;
+        % check if duration is inf, and reset to actual duration...
+        if analogInp(i).interval(2) == inf
+            analogInp(i).interval(2) = length(analogInp(i).timestamps)/analogInp(i).samplingRate;
+            analogInp(i).duration = (analogInp(i).interval(i,2)-analogInp(i).interval(i,1));
+        end
+        if analogInp(i).interval(1)>0 % shift the timestamps accordingly
+            % in practice, the interval starts at the nearest lfp timestamp
+            add = floor(intervals(i,1)*samplingRateanalogin_out)/samplingRateanalogin_out; 
+            analogInp(i).timestamps = analogInp(i).timestamps + add;
+            % when using intervals the lfp actually starts 0s away from the first available sample
+            analogInp(i).timestamps = analogInp(i).timestamps - 1/samplingRateanalogin_out; 
+        end
+        
+        % Assign region as analog to be able to integrate with metadata
+        % neccessities
+        analogInp(i).region ='analog';
+    
+    end
 end
 
-% set up downsampling if necessary
-if fs_analog ~= fs_lfp
-    error('analog sampling rate not equal to lfp sampling rate')
-end
+%% Output
+% set up downsampling if necessary - added above downsampling HLarsson 2023
+
 
 analogInp = struct();
 analogInp.timestamps = [0 : 1/fs_analog : (num_samples-1)/fs_analog]';

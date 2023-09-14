@@ -120,6 +120,7 @@ if downsample
     downsampleFactor = round(fs_analog/downsampfreq);
     for i = 1:nIntervals
         analogInp = struct();
+        analogInp.Filename = 'analogin.dat';
         analogInp(i).duration = (intervals(i,2)-intervals(i,1));
         analogInp(i).interval = [intervals(i,1) intervals(i,2)];
         
@@ -137,6 +138,7 @@ if downsample
         analogInp(i).samplingRate = downsampfreq;
         % check if duration is inf, and reset to actual duration...
         if analogInp(i).interval(2) == inf
+            analogInp(i).duration = [];
             analogInp(i).interval(2) = length(analogInp(i).timestamps)/analogInp(i).samplingRate;
             analogInp(i).duration = (analogInp(i).interval(i,2)-analogInp(i).interval(i,1));
         end
@@ -164,6 +166,7 @@ if ~downsample
     downsampleFactor = 1;
     for i = 1:nIntervals
         analogInp = struct();
+        analogInp.Filename = 'analogin.dat';
         analogInp(i).duration = (intervals(i,2)-intervals(i,1));
         analogInp(i).interval = [intervals(i,1) intervals(i,2)];
         
@@ -181,6 +184,7 @@ if ~downsample
         analogInp(i).samplingRate = downsampfreq;
         % check if duration is inf, and reset to actual duration...
         if analogInp(i).interval(2) == inf
+            analogInp(i).duration = [];
             analogInp(i).interval(2) = length(analogInp(i).timestamps)/analogInp(i).samplingRate;
             analogInp(i).duration = (analogInp(i).interval(i,2)-analogInp(i).interval(i,1));
         end

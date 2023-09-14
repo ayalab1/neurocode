@@ -23,7 +23,8 @@ function analogInp = computeAnalogInputs(varargin)
 %  OUTPUT
 %   [Creates file:   basePath/baseName.analogin]
 %
-%   [Hlearsson] [2023-2024]
+%   [Hlearsson] [2023-2024] -[added intervals, downsampling equal to getLFP
+%                               and output structure equal to getLFP]
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or

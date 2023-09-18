@@ -133,6 +133,7 @@ if downsample
             'frequency',fs_analog,'nchannels',n_active_channels,...
             'start',double(analogInp(i).interval(1)),'channels',active_channels,...
             'downsample',downsampleFactor);
+        analogInp.data = (data'-6800)*5/(59000-6800);
         analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
         analogInp(i).channels = active_channels;
         analogInp(i).samplingRate = downsampfreq;
@@ -179,6 +180,7 @@ if ~downsample
             'frequency',fs_analog,'nchannels',n_active_channels,...
             'start',double(analogInp(i).interval(1)),'channels',active_channels,...
             'downsample',downsampleFactor);
+        analogInp.data = (data'-6800)*5/(59000-6800);
         analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
         analogInp(i).channels = active_channels;
         analogInp(i).samplingRate = downsampfreq;

@@ -104,13 +104,6 @@ else
     end
 end
 
-%% Read the analog data
-num_samples = fileinfo.bytes/(n_active_channels*2);
-fid = fopen(filename,'r');
-data = fread(fid, [n_active_channels, num_samples], 'uint16');
-fclose(fid);
-data = data(wantedInds,:);
-
 
 %% Downsampling - note this downsampling is using loadBinary to ensure compatibility with lfp - Hlarsson 2023
 fs_analog = intaninfo.frequency_parameters.board_adc_sample_rate;
@@ -133,6 +126,7 @@ if downsample
             'frequency',fs_analog,'nchannels',n_active_channels,...
             'start',double(analogInp(i).interval(1)),'channels',active_channels,...
             'downsample',downsampleFactor);
+        data = analogInp(i).data;
         analogInp.data = (data'-6800)*5/(59000-6800);
         analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
         analogInp(i).channels = active_channels;
@@ -163,7 +157,7 @@ end
 
 if ~downsample
         nIntervals = size(intervals,1);
-    disp('loading Analogin file and downsampling...');
+    disp('loading Analogin file but not downsampling...');
     downsampleFactor = 1;
     for i = 1:nIntervals
         analogInp = struct();
@@ -180,6 +174,7 @@ if ~downsample
             'frequency',fs_analog,'nchannels',n_active_channels,...
             'start',double(analogInp(i).interval(1)),'channels',active_channels,...
             'downsample',downsampleFactor);
+        data = analogInp(i).data;
         analogInp.data = (data'-6800)*5/(59000-6800);
         analogInp(i).timestamps = (1:length(analogInp(i).data))'/downsampfreq;
         analogInp(i).channels = active_channels;

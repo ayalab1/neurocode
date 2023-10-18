@@ -97,8 +97,13 @@ elseif ~exist(fullfile(basepath,[basename,'.dat']))
 end
 
 %% Creates a channel map file
-disp('Creating ChannelMapFile')
-createChannelMapFile_KSW(basepath,basename,'staggered',rejectChannels);
+if ~exist(fullfile(basepath,'chanMap.mat'))
+    disp('Creating ChannelMapFile')
+    createChannelMapFile_KSW(basepath,basename,'staggered',rejectChannels);
+else
+    disp('Loading ChannelMapFile')
+    load(fullfile(basepath,'chanMap.mat'));
+end
 
 %% Loading configurations
 %K%XMLFilePath = fullfile(basepath, [basename '.xml']);

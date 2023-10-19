@@ -1,5 +1,4 @@
-
-function [digitalIn] = getDigitalIn(ch,varargin)
+function [digitalIn,sessPeriods] = getDigitalIn(ch,varargin)
 % [getDigitalIn] = extracts digital pulses from session 
 %
 
@@ -43,14 +42,16 @@ addParameter(p,'fs',[],@isnumeric)
 addParameter(p,'offset',0,@isnumeric)
 addParameter(p,'filename',[],@isstring)
 addParameter(p,'periodLag',5,@isnumeric)
+addParameter(p,'noSig',false,@islogical); %DigIn only, no ephys
 
 parse(p, varargin{:});
 fs = p.Results.fs;
 offset = p.Results.offset;
 filename = p.Results.filename;
 lag = p.Results.periodLag;
+noSig = p.Results.noSig;
 
-if ~isempty(dir('*.xml'))
+if ~isempty(dir('*.xml'))&&~noSig
     %sess = bz_getSessionInfo(pwd,'noPrompts',true);
     sess = getSession;
 end
@@ -58,6 +59,50 @@ if ~isempty(dir('*DigitalIn.events.mat'))
     disp('Pulses already detected! Loading file.');
     file = dir('*DigitalIn.events.mat');
     load(file.name);
+    
+    if nargout==2
+        disp('Pulling session times separate from digitalIn detection');
+        sessPeriods = [];
+        if exist('digitalIn')==1
+            if isempty(filename)
+                filename=dir('digitalIn.dat');
+                filename = filename.name;
+            elseif exist('filename','var')
+                disp(['Using input: ',filename])
+            else
+                disp('No digitalIn file indicated...');
+            end
+            
+            disp('Loading digital channels...');
+            m = memmapfile(filename,'Format','uint16','writable',false);
+            digital_word2 = double(m.Data);
+            clear m
+            Nchan = 16;
+            Nchan2 = 17;
+            for k = 1:Nchan
+                tester(:,Nchan2-k) = (digital_word2 - 2^(Nchan-k))>=0;
+                digital_word2 = digital_word2 - tester(:,Nchan2-k)*2^(Nchan-k);
+                test = tester(:,Nchan2-k) == 1;
+                test2 = diff(test);
+                pulses{Nchan2-k} = find(test2 == 1);
+                pulses2{Nchan2-k} = find(test2 == -1);
+                data(k,:) = test;
+            end
+            digital_on = pulses;
+            digital_off = pulses2;
+            disp('Done!');
+            
+            xt = linspace(0,size(data,2)/fs,size(data,2));
+            sessPeriods = [xt(1) xt(end)];
+            %            h=figure;
+            %            imagesc(xt,1:size(data,2),data);
+            %            xlabel('s'); ylabel('Channels'); colormap gray
+            %            mkdir('Pulses');
+            %            saveas(h,'pulses\digitalIn.png');
+        else
+            digitalIn = [];
+        end
+    end
     return
 end
 
@@ -71,8 +116,8 @@ else
 end
 
 try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
-    board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...    
-    read_Intan_RHD2000_file_bz;
+        board_dig_in_channels, supply_voltage_channels, frequency_parameters,board_adc_channels] =...
+        read_Intan_RHD2000_file_bz;
     fs = frequency_parameters.board_dig_in_sample_rate;
 catch
     disp('File ''info.rhd'' not found. (Type ''help <a href="matlab:help loadAnalog">loadAnalog</a>'' for details) ');
@@ -125,9 +170,10 @@ for ii = 1:size(digital_on,2)
         digitalIn.intsPeriods{ii} = intsPeriods;
     end
 end
-
+sessPeriods = [];
 if exist('digitalIn')==1
     xt = linspace(0,size(data,2)/fs,size(data,2));
+    sessPeriods = [xt(1) xt(end)];
     data = flip(data);
     data = data(1:size(digitalIn.intsPeriods,2),:);
 
@@ -136,9 +182,13 @@ if exist('digitalIn')==1
     xlabel('s'); ylabel('Channels'); colormap gray 
     mkdir('Pulses');
     saveas(h,'pulses\digitalIn.png');
-
-    try save([sess.FileName '.DigitalIn.events.mat'],'digitalIn');
-    catch
+    
+    if ~noSig
+        try save([sess.FileName '.DigitalIn.events.mat'],'digitalIn');
+        catch
+            save('digitalIn.events.mat','digitalIn');
+        end
+    else
         save('digitalIn.events.mat','digitalIn');
     end
 else

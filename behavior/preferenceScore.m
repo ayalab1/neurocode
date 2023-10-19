@@ -4,7 +4,8 @@ if ~exist('basepath','var')
     basepath = pwd;
 end
 if ~exist('timeTh','var')
-    timeTh = [300 300];
+    timeTh = [];
+%     timeTh = [300 300]; %often 5 min
 end  
 if ~exist('runDigIn','var')
     runDigIn=false;
@@ -32,10 +33,12 @@ for idx = 3:length(d)
     if d(idx).isdir
         if (numel(d(idx).name) > 13)
             if(numel(num2str(str2num(d(idx).name(end-5:end))))>=5 && numel(num2str(str2num(d(idx).name(end-12:end-7))))==6) %detecting intan recordings
-                fidx = fidx+1;
-                sespaths{fidx} = fullfile(d(idx).name);
-                names2sort(fidx) = str2num(d(idx).name(end-5:end));
-                dates2sort(fidx) = str2num(d(idx).name(end-12:end-7));
+                if (contains(d(idx).name, 'train')||contains(d(idx).name, 'test'))||(contains(d(idx).name, 'trial'))
+                    fidx = fidx+1;
+                    sespaths{fidx} = fullfile(d(idx).name);
+                    names2sort(fidx) = str2num(d(idx).name(end-5:end));
+                    dates2sort(fidx) = str2num(d(idx).name(end-12:end-7));
+                end
             end
         end
     end
@@ -66,15 +69,35 @@ for i = 1:length(nsespaths)
         cd([basepath '\' nsespaths{i}]);
         load('digitalIn.events.mat');
     end
-    if contains(nsespaths{i}, 'rain') %train or Train
+    if contains(nsespaths{i}, 'rain')||contains(nsespaths{i}, 'rial') %train or Train or trial or Trial
        if isempty(timeTh)
-           train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)});
-           train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)});
+           try
+               train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)});
+           catch
+               disp('no interaction time object 1');
+               train_time(trainCt,1) = NaN;
+           end
+           try
+               train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)});
+           catch
+               disp('no interaction time object 2');
+               train_time(trainCt,2) = NaN;
+           end
        else
-          clicker_trainA = find(digitalIn.timestampsOn{2}<timeTh(1));
-          clicker_trainB = find(digitalIn.timestampsOn{3}<timeTh(1));
-          train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)}(clicker_trainA));
-          train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)}(clicker_trainB));
+           try
+               clicker_trainA = find(digitalIn.timestampsOn{2}<timeTh(1));
+               train_time(trainCt,1) = sum(digitalIn.dur{1,digChans(1)}(clicker_trainA));
+           catch
+               disp('no interaction time object 1');
+               train_time(trainCt,1) = NaN;
+           end
+           try
+               clicker_trainB = find(digitalIn.timestampsOn{3}<timeTh(1));
+               train_time(trainCt,2) = sum(digitalIn.dur{1,digChans(2)}(clicker_trainB));
+           catch
+               disp('no interaction time object 2');
+               train_time(trainCt,2) = NaN;
+           end
        end
        trainCt = trainCt+1; clear digitalIn;
     elseif contains(nsespaths{i}, 'test')

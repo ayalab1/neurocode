@@ -40,13 +40,13 @@ function PreprocessSpikes(basepath, varargin)
 % (at your option) any later version.
 
 p = inputParser;
-addParameter(p,'multiKilosort',false,@islogical);
-addParameter(p,'showGUI',false,@islogical);
-addParameter(p,'showCellMet',true,@islogical);
-addParameter(p,'prePhy',false,@islogical);
-addParameter(p,'datFolder',[],@isfolder);
-addParameter(p,'spikeLabels',{'good'},@iscell);
-parse(p,varargin{:});
+addParameter(p, 'multiKilosort', false, @islogical);
+addParameter(p, 'showGUI', false, @islogical);
+addParameter(p, 'showCellMet', true, @islogical);
+addParameter(p, 'prePhy', false, @islogical);
+addParameter(p, 'datFolder', [], @isfolder);
+addParameter(p, 'spikeLabels', {'good'}, @iscell);
+parse(p, varargin{:});
 
 multiKilosort = p.Results.multiKilosort;
 showGUI = p.Results.showGUI;
@@ -59,20 +59,20 @@ spikeLabels = p.Results.spikeLabels; %spike labels is causing issues even when n
 cd(basepath);
 basename = basenameFromBasepath(pwd);
 %if you intend to concatenate multiple kilosort runs into one spikes structure
-try 
-    load(fullfile(basepath,[basename '.session.mat']),'session');
+try
+    load(fullfile(basepath, [basename, '.session.mat']), 'session');
     session.extracellular.chanCoords; % if this already exists, no need to re-load rez file
 catch
-    session = sessionTemplate(basepath,'showGUI',showGUI);
-    save(fullfile(basepath,[basename '.session.mat']),'session');
+    session = sessionTemplate(basepath, 'showGUI', showGUI);
+    save(fullfile(basepath, [basename, '.session.mat']), 'session');
 end
 
-if ~isempty(datFolder), session.extracellular.fileName = fullfile(datFolder,[basename '.dat']); end
+if ~isempty(datFolder), session.extracellular.fileName = fullfile(datFolder, [basename, '.dat']); end
 
 f = dir('Kilosort*');
-if (size(f,1) ~= 1)&&(~multiKilosort)
+if (size(f, 1) ~= 1) && (~multiKilosort)
     error('Too many kiloSort folders - should multiKilosort=1?');
-elseif (size(f,1) ~= 1)&&(multiKilosort)
+elseif (size(f, 1) ~= 1) && (multiKilosort)
     warning('Make sure all spike groups in neuroscope are reactivated (yellow tab, groups should be assigned to a numbered group');
 end
 % Make sure there is only one KiloSort folder before running, unless you
@@ -83,44 +83,46 @@ end
 
 % check if spikes.cellinfo has already been created
 pre_exist_spike_files = dir('*spikes*.cellinfo.mat');
-if (size(f,1) > 1) && multiKilosort
-    for i = 1:size(f,1)
-        session.spikeSorting{1,1}.relativePath = f(i).name;
+if (size(f, 1) > 1) && multiKilosort
+    for i = 1:size(f, 1)
+        session.spikeSorting{1, 1}.relativePath = f(i).name;
         % if all the spike files exist, load instead of making from scratch
         if length(pre_exist_spike_files) == length(f)
             temp_spikes = load(pre_exist_spike_files(i).name);
             tempSpikes{i} = temp_spikes.spikes;
         else
-            tempSpikes{i} = loadSpikes('session',session,...
-                'clusteringpath',[f(i).name],...
-                'savemat', false,'labelsToRead',spikeLabels);
+            tempSpikes{i} = loadSpikes('session', session, ...
+                'clusteringpath', [f(i).name], ...
+                'savemat', false, 'labelsToRead', spikeLabels);
         end
         if i == 1
             spikes = tempSpikes{i};
         else
-            fields{1}= fieldnames(spikes);
+            fields{1} = fieldnames(spikes);
             fields{2} = fieldnames(tempSpikes{i});
             if length(fields{1}) >= length(fields{2})
-                base = 1; comp = 2;
+                base = 1;
+                comp = 2;
             else
-                base = 2; comp = 1;
+                base = 2;
+                comp = 1;
             end
             prevUID = length(spikes.UID);
             for j = 1:length(fields{base})
                 currentField = fields{base}{j};
-                if sum(contains(fields{comp},currentField))
+                if sum(contains(fields{comp}, currentField))
                     %check special cases
                     if contains(currentField, 'spindices')
-                        tempSpindices2 = tempSpikes{i}.spindices(:,2)+prevUID;
-                        spikes.spindices = [spikes.spindices; [tempSpikes{i}.spindices(:,1) tempSpindices2]];
+                        tempSpindices2 = tempSpikes{i}.spindices(:, 2) + prevUID;
+                        spikes.spindices = [spikes.spindices; [tempSpikes{i}.spindices(:, 1), tempSpindices2]];
                     elseif contains(currentField, 'UID')
-                        spikes.UID = [spikes.UID tempSpikes{i}.UID+prevUID];
+                        spikes.UID = [spikes.UID, tempSpikes{i}.UID + prevUID];
                     elseif contains(currentField, 'basename')
                         if ~(spikes.basename == tempSpikes{i}.basename)
                             error('Incompatible basenames');
                         end
                     elseif contains(currentField, 'numcells')
-                        spikes.numcells = spikes.numcells+tempSpikes{i}.numcells;
+                        spikes.numcells = spikes.numcells + tempSpikes{i}.numcells;
                     elseif contains(currentField, 'sr')
                         if ~(spikes.sr == tempSpikes{i}.sr)
                             error('Incompatible sampling rates');
@@ -128,46 +130,67 @@ if (size(f,1) > 1) && multiKilosort
                     elseif contains(currentField, 'processinginfo')
                         disp('Processing info assumed to be the same')
                     elseif iscell(spikes.(currentField))
-                        spikes.(currentField) = cat(2,spikes.(currentField),tempSpikes{i}.(currentField));
+                        spikes.(currentField) = cat(2, spikes.(currentField), tempSpikes{i}.(currentField));
                     else
-                        spikes.(currentField) = [spikes.(currentField) tempSpikes{i}.(currentField)];
+                        spikes.(currentField) = [spikes.(currentField), tempSpikes{i}.(currentField)];
                     end
                 else
-                    disp(['Forced to remove ' currentField]);
+                    disp(['Forced to remove ', currentField]);
                     if isfield(spikes, currentField)
-                        spikes = rmfield(spikes,currentField);
+                        spikes = rmfield(spikes, currentField);
                     end
                 end
             end
         end
     end
     if prePhy
-        save(strcat(basename,'.unsorted.spikes.cellinfo.mat'),'spikes');
+        save(strcat(basename, '.unsorted.spikes.cellinfo.mat'), 'spikes');
     else
-        save(strcat(basename,'.spikes.cellinfo.mat'),'spikes');
+        save(strcat(basename, '.spikes.cellinfo.mat'), 'spikes');
     end
     clear tempSpikes i j tempSpindices2 prevUID base comp
-elseif (size(f,1)==1)&&(multiKilosort)
+elseif (size(f, 1) == 1) && (multiKilosort)
     error('Only one kilosort folder present, cannot combine multiple runs');
 else
     if prePhy
-        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false);
+        spikes = loadSpikes('session', session, ...
+            'clusteringpath', [f.name], ...
+            'labelsToRead', spikeLabels, ...
+            'basename', [basename, '.unsorted'], ...
+            'getWaveformsFromDat', false);
     else
-        spikes = loadSpikes('session',session,'clusteringpath',[f.name],'labelsToRead',spikeLabels);
+        spikes = loadSpikes('session', session, ...
+            'clusteringpath', [f.name], ...
+            'labelsToRead', spikeLabels);
     end
 end
+
 %% 2 - compute basic cell metrics
-if exist([basepath '\anatomical_map.csv'])
+if exist([basepath, '\anatomical_map.csv'], 'file')
     channel_mapping;
 end
 if prePhy
-    spikes = loadSpikes('session',session,'clusteringpath',[f.folder filesep f.name],'labelsToRead',spikeLabels,'basename',[basename '.unsorted'],'getWaveformsFromDat',false,'forceReload',true);
-    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false,'excludeMetrics',{'deepSuperficial','monoSynaptic_connections'},'saveAs','unsorted.cell_metrics','getWaveformsFromDat',false);
+    spikes = loadSpikes('session', session, ...
+        'clusteringpath', [f.folder, filesep, f.name], ...
+        'labelsToRead', spikeLabels, ...
+        'basename', [basename, '.unsorted'], ...
+        'getWaveformsFromDat', false, ...
+        'forceReload', true);
+
+    cell_metrics = ProcessCellMetrics('session', session, ...
+        'spikes', spikes, ...
+        'manualAdjustMonoSyn', false, ...
+        'excludeMetrics', {'deepSuperficial', 'monoSynaptic_connections'}, ...
+        'saveAs', 'unsorted.cell_metrics', ...
+        'getWaveformsFromDat', false);
 else
-    cell_metrics = ProcessCellMetrics('session',session,'spikes',spikes,'manualAdjustMonoSyn',false);
+    cell_metrics = ProcessCellMetrics('session', session, ...
+        'spikes', spikes, ...
+        'manualAdjustMonoSyn', false);
 end
+
 % GUI to manually curate cell classification
 if showCellMet
-    cell_metrics = CellExplorer('metrics',cell_metrics);
+    cell_metrics = CellExplorer('metrics', cell_metrics);
 end
 end

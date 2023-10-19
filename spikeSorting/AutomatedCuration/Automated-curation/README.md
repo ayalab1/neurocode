@@ -2,6 +2,8 @@
 
 This repository contains the code of automated spike sorting curation, recently presented as “Multi-channel automated spike sorting achieves near-human performance”, in FENS forum 2022, Paris, France, July 2022.
 
+https://github.com/EranStarkLab/AutomatedCurator
+
 ## Overview
 
 Identifying spike timing of individual neurons recorded simultaneously is essential for investigating the neuronal circuits that underlie cognitive functions. Recent developments allow the simultaneous recording of multi-channel extracellular spikes from hundreds of neurons. Yet classifying extracellular spikes into putative source neurons remains a challenge. 

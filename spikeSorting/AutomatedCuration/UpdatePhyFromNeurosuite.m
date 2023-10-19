@@ -45,7 +45,7 @@ for shank = possibleShanks
     [ccg,t] = CCG(res(clu>0)/20000,clu(clu>0),'duration',0.03*2,'binSize',0.001);
     nSpikes = Accumulate(clu(clu>0));
     for group = 2:length(pickleCell{shank})
-        proposedGroup = pickleCell{shank}{group};
+        proposedGroup = pickleCell{shank}{group}; proposedGroup(proposedGroup==0) = [];
         proposedGroup = sortby(proposedGroup,-nSpikes(proposedGroup));
         proposedGroup1 = proposedGroup;
         i = proposedGroup(findmax(nSpikes(proposedGroup)));

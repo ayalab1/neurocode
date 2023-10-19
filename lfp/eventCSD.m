@@ -170,7 +170,7 @@ if plotLFP
     
     subplot(1,2,2);
     for ch=1:size(lfp_avg,2)
-        offset = 400*(ch-1);
+        offset = 900*(ch-1);
         sh_tmp = 2*(lfp_avg(:,ch)) + offset;
         plot(taxis,sh_tmp,'k','LineWidth',1.5); hold on;
         clear sh_tmp

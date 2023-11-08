@@ -40,8 +40,8 @@ addParameter(p, 'save_mat', true); % save animal.behavior.mat
 addParameter(p, 'primary_coords_dlc', 1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
 addParameter(p, 'likelihood_dlc', .95); % deeplabcut likelihood threshold
 addParameter(p, 'force_format', 'none'); % force loading type (options: 'optitrack','dlc')
-addParameter(p, 'clean_tracker_jumps', false); % option to manually clean tracker jumps
-addParameter(p, 'convert_xy_to_cm', false); % option to convert xy to cm (best if used with clean_tracker_jumps)
+addParameter(p, 'clean_tracker_jumps', true); % option to manually clean tracker jumps
+addParameter(p, 'convert_xy_to_cm', true); % option to convert xy to cm (best if used with clean_tracker_jumps)
 addParameter(p, 'maze_sizes', []); % list of maze sizes (x-dim) per non-sleep epoch (if same maze & cam pos over epochs use single number)
 
 parse(p, varargin{:});

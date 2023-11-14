@@ -152,7 +152,7 @@ positions(ignore,:) = [];
 
 % Defaults (training)
 if isdscalar(training), %If 'training' was provided as a portion, convert it to an interval
-    training = [-Inf positions(1,1)+training*(positions(end,1)-positions(1,1))];
+    training = [0 positions(1,1)+training*(positions(end,1)-positions(1,1))];
 end
 
 % Convert from legacy format for backward compatibility with previous versions of the code (spikes)
@@ -170,7 +170,6 @@ else
     nUnits = max(id);
 end
 %% TRAINING
-
 trainingPositions = Restrict(positions,training,'shift','on');
 trainingSpikes = Restrict(spikes,training,'shift','on');
 
@@ -179,7 +178,7 @@ lambda = nan(prod(nBins),nUnits);
 for i = 1:nUnits,
     unit = trainingSpikes(:,2) == i;
     s = trainingSpikes(unit,1);
-    if size(s,2)<2,
+    if size(trainingPositions,2)<3,
         map = Map(trainingPositions,s,'nbins',nBins,'smooth',5,'type',[type 'l']);
         % extra letter for 'type' required as input for 'Map' even though this extra 'l' does not refer to anything in the case of a point process (spikes) provided
     else
@@ -334,11 +333,13 @@ index = sub2ind(size(errors),ind{:},timebin);
 ok = ~isnan(index);
 errors(index(ok)) = estimations(ok);
 if any(isnan(errors(:)))
-    nans = double(isnan(errors)); nans(nans==0) = nan;
+    flat = reshape(errors,[],nWindows);
+    nans = double(isnan(flat)); nans(nans==0) = nan;
     % substitute NaNs with uniform probability
-    remainingProbability = 1-nansum(errors);
+    remainingProbability = 1-nansum(flat);
     nans = remainingProbability./nansum(nans).*nans;
-    errors(isnan(errors)) = nans(isnan(errors));
+    flat(isnan(flat)) = nans(isnan(flat));
+    errors = reshape(flat,size(errors));
 end
 
 if nargout<4,

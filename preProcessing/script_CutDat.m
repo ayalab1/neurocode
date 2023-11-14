@@ -1,9 +1,20 @@
-%Is this a funtion we want to fully write out or just a quick fix funciton?
-% --HLR 10/16/2022
-% move to the subfolder in question
+% script_CutDat
+% Use this script if you want to remove the end of your dat files (ephys and other input files).
+% Just set the number of channels and the cutoff time (max time) (in seconds)
+% in the lines below and run the script!
+% The original files will remain but renamed to append _original. Feel free 
+% to remove them afterwards.
+%
+% Copyright (C) 2021-2023 Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 
 nChannels = ?; % set this manually
-maxTime = ?; % set manually: this should be in seconds
+maxTime = ; % set manually: this should be in seconds
 
 % rename files: do this only once as doing it more than once would remove the original files!!!
 if exist('amplifier_original.dat','file')

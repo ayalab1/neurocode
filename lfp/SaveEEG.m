@@ -62,8 +62,7 @@ if ~exist(eegFile,'file')
     else
         error('unrecognized reference style, choose mean or median');
     end
-    newData = data;
-    newData(okChannels,:) = bsxfun(@minus,data(okChannels,:),m);
+    newData = bsxfun(@minus,data,m);
     file.data = newData(:);
     clear file
 else

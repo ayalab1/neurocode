@@ -72,6 +72,7 @@ addParameter(p,'CreateSubdirectory',1,@isnumeric)   % Puts the Kilosort output i
 addParameter(p,'performAutoCluster',0,@isnumeric)   % Performs PhyAutoCluster once Kilosort is complete when exporting to Phy
 addParameter(p,'config','',@ischar)                 % Specify a configuration file to use from the ConfigurationFiles folder. e.g. 'Omid'
 addParameter(p,'NT',[],@isnumeric)                  % Specify desired batch size (default = 32*1024; reduce if out of memory)
+addParameter(p,'datFilename',[],@ischar)                  % Specify desired batch size (default = 32*1024; reduce if out of memory)
 
 parse(p,varargin{:})
 
@@ -84,14 +85,19 @@ performAutoCluster = p.Results.performAutoCluster;
 config = p.Results.config;
 rejectChannels = p.Results.rejectchannels;
 NT = p.Results.NT;
+datFilename = p.Results.datFilename;
 
 cd(basepath)
 
 %% Checking if dat and xml files exist
+if ~isempty(datFilename)
+    datFilename = fullfile(basepath,[basename,'.dat']);
+end
+
 if ~exist(fullfile(basepath,[basename,'.xml']))
     warning('KilosortWrapper  %s.xml file not in path %s',basename,basepath);
     return
-elseif ~exist(fullfile(basepath,[basename,'.dat']))
+elseif ~exist(datFilename)
     warning('KilosortWrapper  %s.dat file not in path %s',basename,basepath)
     return
 end
@@ -126,7 +132,7 @@ end
 if isfolder(SSD_path)
     FileObj = java.io.File(SSD_path);
     free_bytes = FileObj.getFreeSpace;
-    dat_file = dir(fullfile(basepath,[basename,'.dat']));
+    dat_file = dir(datFilename);
     if dat_file.bytes*1.1<FileObj.getFreeSpace
         disp('Creating a temporary dat file on the SSD drive')
         ops.fproc = fullfile(SSD_path, [basename,'_temp_wh.dat']);
@@ -137,6 +143,7 @@ if isfolder(SSD_path)
 else
     ops.fproc = fullfile(basepath,'temp_wh.dat');
 end
+ops.fbinary = datFilename;
 
 %%
 if ops.GPU

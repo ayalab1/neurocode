@@ -6,10 +6,10 @@ function multi_day_spikesort(animal, sessions, shanks)
 %
 % animal = 'Z:\Data\HMC1';
 % sessions = {'day8', 'day9', 'day10'};
-% shanks = 1;
+% shanks = [1,2,3,4];
 % multi_day_spikesort(animal,sessions,shanks)
 
-batch_size = 20000 * 4; % samples
+batch_size = 20000 * 10; % samples
 
 % load session metadata
 load(fullfile(animal, sessions{1}, [sessions{1}, '.session.mat']), 'session')
@@ -35,7 +35,7 @@ mkdir(fullfile(animal, [sessions{:}]))
 f = fopen(fullfile(animal, [sessions{:}], [[sessions{:}], '.dat']), 'a');
 
 % anonymous function to flatten signal for saving
-flatten = @(x) x(:);
+% flatten = @(x) x(:);
 
 % iterate over sessions
 for session_i = 1:length(sessions)
@@ -50,11 +50,12 @@ for session_i = 1:length(sessions)
     % iterate over batches
     for batch_i = 1:length(batches) - 1
         WaitMessage.Send;
-        fwrite(f, flatten(mmf{session_i}.Data.x(chans, batches(batch_i):batches(batch_i+1))), 'int16');
+        % fwrite(f, flatten(mmf{session_i}.Data.x(chans, batches(batch_i):batches(batch_i+1))), 'int16');
+        fwrite(f, mmf{session_i}.Data.x(chans, batches(batch_i):batches(batch_i+1)), 'int16');
+
     end
     WaitMessage.Destroy;
 end
 fclose(f);
 
-% make xml
 end

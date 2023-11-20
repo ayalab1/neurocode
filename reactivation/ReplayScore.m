@@ -49,7 +49,7 @@ function [sequence,shuffled] = ReplayScore(matrix,varargin)
 %
 %------------------------------------------------------------------------
 
-[r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled,quadrantScore] = FindReplayScore(matrix,varargin{:});
+[r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled,quadrantScore,qShuffled] = FindReplayScore(matrix,varargin{:});
 
 sequence.quadrantScore = quadrantScore;
 sequence.score = r;
@@ -71,7 +71,7 @@ sequence.jump.zMax = (maxJump - mean(maxJumpShuffled,2))./std(maxJumpShuffled,[]
 sequence.jump.pMax = sum(maxJumpShuffled<sequence.jump.max,2)/size(maxJumpShuffled,2);
 sequence.jump.zMean = (jump - mean(jumpShuffled,2))./std(jumpShuffled,[],2);
 sequence.jump.pMean = sum(jumpShuffled < jump,2)/size(jumpShuffled,2);
-
+sequence.pQuadrant =  sum(qShuffled>=quadrantScore,2)./sum(~isnan(qShuffled),2);
 shuffled.score = rShuffled;
 shuffled.lineStart = aShuffled;
 shuffled.lineStop = bShuffled;

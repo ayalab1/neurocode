@@ -115,7 +115,7 @@ basename = basenameFromBasepath(basepath);
 load(fullfile(basepath,[basename,'.session.mat']))
 
 if ~exist(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'file')
-    classification_DeepSuperficial(session);
+    classification_DeepSuperficial(session,'basepath',basepath);
 end
 load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']))
 

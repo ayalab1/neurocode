@@ -1,0 +1,47 @@
+This contains the original repository as cloned from
+https://github.com/EranStarkLab/AutomatedCurator
+
+The following changes were implemented, mostly to allow use in Windows, allow using large files, and providing output to be exported to phy.
+
+ 
+============== Change 1) add full paths to mode variables ============== 
+
+change 
+learn = load_learner('new_nc_301022.pkl') 
+to 
+learn = load_learner('C:\\Users\\Cornell\\Automated-curation\\new_nc_301022.pkl')
+on line 21 in the noise noise_classifier.py, right after "def predict(fet_mat):"
+
+In noise_classifier.py on line 21, right after "def predict(fet_mat):"
+
+
+Also, in sort_shank.py, change
+    clf = load_learner('MC_v1.pkl')
+to 
+    clf = load_learner('C:\\Users\\Cornell\\Automated-curation\\MC_v1.pkl')
+
+
+==============  Change 2) Fix pathlib issues to prevent the error "NotImplementedError: cannot instantiate 'PosixPath' on your system". ============== 
+
+Change:
+    learn = load_learner('C:\\Users\\Cornell\\Automated-curation\\new_nc_301022.pkl')
+to
+    import pathlib
+    posix_backup = pathlib.PosixPath
+    try:
+        pathlib.PosixPath = pathlib.WindowsPath
+        learn = load_learner('C:\\Users\\Cornell\\Automated-curation\\new_nc_301022.pkl')
+    finally:
+        pathlib.PosixPath = posix_backup   
+on line 21 in the noise noise_classifier.py, right after "def predict(fet_mat):"
+
+Same for sort_shank.py
+
+
+============== Change 3) Add output ============== 
+
+On line 80 of running_AI_pipeline_bash.py, add:
+import pickle
+filename = filebase + 'model-' + str(shank) + '.pkl'
+with open(filename, "wb") as fp:   #Pickling
+   pickle.dump(reco_list, fp)

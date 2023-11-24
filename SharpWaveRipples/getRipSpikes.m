@@ -17,26 +17,26 @@ function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
 %     'events'      It can be either the following options:
 %                   1. Buzcode structure for specific events (ripples, UDStates, ...)
 %                      By default it will load ripples (output from bz_DetectSWR).
-%                      Specifically, if not provided, it loads this ripple 
+%                      Specifically, if not provided, it loads this ripple
 %                      structure from 'basepath' (if provided), or from current
-%                      folder (if not). The input structure must have the 
+%                      folder (if not). The input structure must have the
 %                      following field:
-%                        .timestamps: Nx2 matrix with starting and ending times 
+%                        .timestamps: Nx2 matrix with starting and ending times
 %                                     (in sec) of each event.
 %                   2. A Nx2 matrix with starting and ending times (in sec)
 %                      of each event, just like the .timestamps field.
 %                       (N: number of events)
-%     'spikes'      buzcode ripple structure (from bz_GetSpikes). 
+%     'spikes'      buzcode ripple structure (from bz_GetSpikes).
 %                   If not provided, it loads it from 'basepath' (if provided),
 %                   or from current folder (if not)
 %     'UIDs'        A Mx1 boolean matrix with 1s for units to be considered
 %                   and 0s for units to be discarded.(M: number of units)
-%     'padding'     additional time before and after ripple end to still search for spikes. 
+%     'padding'     additional time before and after ripple end to still search for spikes.
 %                   (default is 0.05 sec)
 %     'savePath'    Definition of the path to save the output structure
 %                   (default: pwd)
 %     'saveNum'     Detection number to save as
-%     'saveMat'   	Saves file, logical (default: true) 
+%     'saveMat'   	Saves file, logical (default: true)
 %
 %    =========================================================================
 %
@@ -52,18 +52,18 @@ function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
 %	  .UnitEventAbs     MxN cell matrix. In each cell, absolute times of
 %                       spikes for that particular unit and event
 %	  .UnitEventRel     MxN cell matrix. In each cell, relative times of
-%                       spikes (relative to the starting time of events)  
+%                       spikes (relative to the starting time of events)
 %                       for that particular unit and event
 %	  .UnitAbs          1xM cell matrix. In each cell, absolute times of
 %                       spikes for that particular unit across all events
 %	  .UnitRel          1xM cell matrix. In each cell, relative times of
 %                       spikes for that particular unit across all events
-%	  .EventAbs         2xN cell matrix. In the first row, absolute times 
-%                       of spikes for that particular event across all 
-%                       units. In the second row, the UID associated to the 
+%	  .EventAbs         2xN cell matrix. In the first row, absolute times
+%                       of spikes for that particular event across all
+%                       units. In the second row, the UID associated to the
 %                       above spike
-%	  .EventRel         2xN cell matrix. In the first row, relative times 
-%                       of spikes for that particular event across all 
+%	  .EventRel         2xN cell matrix. In the first row, relative times
+%                       of spikes for that particular event across all
 %                       units. In the second row, the UID associated to the
 %                       above spike
 %
@@ -71,13 +71,13 @@ function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
 %
 %    Antonio FR, 2017
 
-% Parse inputs 
+% Parse inputs
 p = inputParser;
 addParameter(p,'basepath',pwd,@isstr);
 addParameter(p,'padding',0.05,@isnumeric);
 addParameter(p,'savePath',pwd,@isstring);
 addParameter(p,'saveNum',0,@isnumeric);
-addParameter(p,'saveMat', true, @islogical);
+addParameter(p,'saveMat', false, @islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -90,7 +90,7 @@ saveMat = p.Results.saveMat;
 if isempty(events)
     spkEventTimes=[];
     return
-elseif isstruct(events)&&isfield(events,'timestamps')
+elseif isstruct(events) && isfield(events,'timestamps')
     %this comes from a work around to Restrict when empty intervals
     if isempty(events.timestamps)
         spkEventTimes=[];
@@ -100,7 +100,7 @@ elseif isstruct(events)&&isfield(events,'timestamps')
     end
 elseif isnumeric(events)
     timestamps = events;
-else 
+else
     error('Events must be either a Nx2 vector or a bz event structure!');
 end
 
@@ -165,11 +165,11 @@ for event = 1:size(timestamps,1)
     for unit = 1:length(spikes.UID)
         if UIDs(unit)
             spkEventTimes.EventAbs{event} = [ spkEventTimes.EventAbs{event}, ...
-                                        [cell2mat(spkEventTimes.UnitEventAbs(unit,event)); ...
-                                         cell2mat(spkEventTimes.UnitEventAbs(unit,event))*0+spikes.UID(unit)] ];
+                [cell2mat(spkEventTimes.UnitEventAbs(unit,event)); ...
+                cell2mat(spkEventTimes.UnitEventAbs(unit,event))*0+spikes.UID(unit)] ];
             spkEventTimes.EventRel{event} = [ spkEventTimes.EventRel{event}, ...
-                                         [cell2mat(spkEventTimes.UnitEventRel(unit,event)); ...
-                                          cell2mat(spkEventTimes.UnitEventRel(unit,event))*0+spikes.UID(unit)] ];
+                [cell2mat(spkEventTimes.UnitEventRel(unit,event)); ...
+                cell2mat(spkEventTimes.UnitEventRel(unit,event))*0+spikes.UID(unit)] ];
         end
     end
     spkEventTimes.EventAbs{event} = sortrows(spkEventTimes.EventAbs{event}')';

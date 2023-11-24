@@ -1,4 +1,4 @@
-function [p,means] = HierarchicalBootstrap(data)
+function [p,means] = HierarchicalBootstrap(data,varargin)
 
 % HierarchicalBootstrap:
 %
@@ -7,6 +7,11 @@ function [p,means] = HierarchicalBootstrap(data)
 % of a within-subject design bootstrap, where data from the same e.g. 
 % animal is sampled together for both conditions (rather than independently
 % for each condition, which would ignore the paired design).
+% The function will give you a p-value testing if the values of condition
+% 1 are systematically higher than the values corresponding to condition 2, 
+% after controlling for all the in-between nesting variables. 
+% The output "means" is the bootstrapped average of the values of conditions
+% 1 and 2 for each of the iterations. 
 %
 %  USAGE
 %
@@ -16,12 +21,14 @@ function [p,means] = HierarchicalBootstrap(data)
 %                   column being the values to be tested, and subsequent 
 %                   columns indicate nested groupings of the data, from 
 %                   deepest to highest (see EXAMPLE)
-% e.g. 
-% The function will give you a p-value testing if the values of condition
-% 1 are systematically higher than the values corresponding to condition 2, 
-% after controlling for all the in-between nesting variables. 
-% The output "results" is the bootstrapped mean of the values of conditions
-% 1 and 2 for each of the iterations. 
+%    =========================================================================
+%     Properties    Values
+%    -------------------------------------------------------------------------
+%     'nIterations' how many iterations to perform, resampling from the data
+%                   (default = 1000)
+%     'fun'         the function handle of the function computing the average 
+%                   value per condition (default = @mean)
+%    =========================================================================
 %
 %  OUTPUT
 %
@@ -51,18 +58,45 @@ function [p,means] = HierarchicalBootstrap(data)
 if iscell(data)
     % find out how deep the cell nesting goes:
     % Somehow group them into a matrix:
-    error('Grouping of nested data not yet implemented. Please provide matrix format');
+    error('Grouping of nested data in cells not yet implemented. Please provide matrix format');
 end
 
 if any(~ismember(data(:,end),[1 2]))
     error('The last column should provide the grouping variable (1 or 2)');
 end
 
-nShuffles = 1000;
+nIterations = 1000;
 average = @nanmean; % change to nanmedian for testing if the group medians are different
-means = nan(nShuffles,2);
+means = nan(nIterations,2);
 
-for k=1:nShuffles,
+
+% Parse parameters
+for i = 1:2:length(varargin),
+    if ~ischar(varargin{i}),
+        builtin('error',['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help HierarchicalBootstrap">HierarchicalBootstrap</a>'' for details).']);
+    end
+    switch(lower(varargin{i})),
+        case {'niterations','nshuffles','n'}
+            nIterations = varargin{i+1};
+            if ~(isscalar(nIterations) && (nIterations>0))
+                builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help HierarchicalBootstrap">HierarchicalBootstrap</a>'' for details).']);
+            end
+        case {'fun','function','handle','average'}
+      	  average = varargin{i+1};
+    	  if ~isa(average,'function_handle')
+    	      builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help HierarchicalBootstrap">HierarchicalBootstrap</a>'' for details).']);
+          end
+        otherwise,
+            builtin('error',['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help HierarchicalBootstrap">HierarchicalBootstrap</a>'' for details).']);
+    end
+end
+
+% Remove empty groups (sessions, animals):
+for k=2:size(data,2)-1
+    [~,~,data(:,k)] = unique(data(:,k));
+end
+
+for k=1:nIterations,
     resampled = data;
     level=size(data,2)-1;
     while level>1

@@ -82,7 +82,7 @@ end
 startTime = [];
 stopTime = [];
 for ep = session.epochs
-    if contains(ep{1}.environment,'linear')
+    if contains(lower(ep{1}.environment),'linear')
         startTime = [startTime;ep{1}.startTime];
         stopTime = [stopTime;ep{1}.stopTime];
     end
@@ -165,6 +165,14 @@ else % if want to linearize tracking epoch by epoch
     end
 end
 
+% Clean:
+xy = ([behavior.position.x(:) behavior.position.y(:)]);
+smoothed = nansmooth(xy,[10 0]);
+d = sqrt(sum((xy-smoothed).^2,2));
+[~,~,threshold] = isoutlier(d,'quartiles','ThresholdFactor', 5); 
+bad = isnan(xy(:,1)) | (d>threshold);
+behavior.position.x(bad) = nan; behavior.position.y(bad) = nan; behavior.position.linearized(bad) = nan;
+
 %% Get laps
 % add option to get laps from tracking or from sensors
 laps=FindLapsNSMAadapted(behavior.timestamps,behavior.position.linearized,lapStart);
@@ -210,7 +218,7 @@ run = ConsolidateIntervals(run,'epsilon',0.01);
 [in,w] = InIntervals(behavior.timestamps(:),run);
 peak = Accumulate(w(in),behavior.speed(in)','mode','max');
 % remove outliers (data in between sessions gives outlier speeds)
-[~,isOutlier] = RemoveOutliers(peak);
+[~,isOutlier] = RemoveOutliers(peak,10); % set the "outlier" threshold pretty high to make sure high-speed running epochs don't get removed
 % remove run epochs that don't reach the speed threshold
 run(peak<0.1 | isOutlier,:) = [];
 

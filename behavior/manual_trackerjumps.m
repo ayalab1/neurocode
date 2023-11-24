@@ -1,9 +1,9 @@
 function good_idx = manual_trackerjumps(ts,x,y,StartofRec,EndofRec,basepath,varargin)
-% 
-% Manually cut out xy coordinates that are outside the bounds of your maze. 
-% 
-% These can be caused by unplugs or if the rat jumps out. 
-% If you do not remove these points, your ratemap will be messed up. 
+%
+% Manually cut out xy coordinates that are outside the bounds of your maze.
+%
+% These can be caused by unplugs or if the rat jumps out.
+% If you do not remove these points, your ratemap will be messed up.
 %
 % Input:
 %       ts
@@ -22,6 +22,7 @@ addParameter(p,'restic_dir',1,@isnumeric);
 addParameter(p,'axis_equal',true,@islogical);
 addParameter(p,'alpha',.2,@isnumeric);
 addParameter(p,'add_scatter',true,@islogical);
+addParameter(p,'save_boundary_file',false,@islogical);
 
 parse(p,varargin{:});
 darkmode = p.Results.darkmode;
@@ -29,6 +30,7 @@ restic_dir = p.Results.restic_dir;
 axis_equal = p.Results.axis_equal;
 alpha = p.Results.alpha;
 add_scatter = p.Results.add_scatter;
+save_boundary_file = p.Results.save_boundary_file;
 
 savets=[];
 for i=1:length(StartofRec)
@@ -37,35 +39,40 @@ for i=1:length(StartofRec)
     ytemp=y(ts>=StartofRec(i) & ts<=EndofRec(i));
     tstemp=ts(ts>=StartofRec(i) & ts<=EndofRec(i));
     % use the gui to cut out points
-    [~,~,in]=restrictMovement(xtemp,ytemp,restic_dir,darkmode,axis_equal,alpha,add_scatter);
+    [~,~,in]=restrictMovement(xtemp,ytemp,restic_dir,darkmode,axis_equal,...
+        alpha,add_scatter);
     % save the ts where the tracker error exists
     savets=[savets,tstemp(in)];
 end
+
 % locate the index for each tracker error
 good_idx=ismember(ts,savets);
+
 % save that index to your session folder so you won't have to do this again
 % each time you run your data
-basename = basenameFromBasepath(basepath);
-save(fullfile(basepath,[basename,'.restrictxy.mat']),'good_idx')
+if save_boundary_file
+    basename = basenameFromBasepath(basepath);
+    save(fullfile(basepath,[basename,'.restrictxy.mat']),'good_idx')
+end
 end
 
 function [x,y,in]=restrictMovement(x,y,direction,darkmode,axis_equal,alpha,add_scatter)
 % restrictMovement allows you to draw a line around xy coordinates in order
 % to eliminate certain points you don't want...ie when the rat jumps out of
-% maze or tracker errors. 
+% maze or tracker errors.
 %
 % Also, I have included a direction input argument so you have either
 % restrict outside or inside points. This is valuable if you have a maze
 % like a circular track where the rat could jump out away or towards the
-% center of the maze. 
+% center of the maze.
 %
-% Input         x,y: coordinates 
+% Input         x,y: coordinates
 %         direction: 1 (default) to remove outside points; 0 to remove inside points
-%         
+%
 %
 % Output        x,y: retained coordinates
 %                in: logical of which coordinates were retained (so you can index ts etc.)
-%       
+%
 %
 % Ryan Harvey
 

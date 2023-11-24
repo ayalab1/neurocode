@@ -40,7 +40,7 @@ spikingThreshold = p.Results.spikingThreshold;
 winSize = p.Results.winSize;
 eventSize = p.Results.eventSize;
 figOpt = p.Results.figOpt;
-EVENTFILE = p.Results.figOpt;
+EVENTFILE = p.Results.EVENTFILE;
 
 % 
 if isempty(spikes)

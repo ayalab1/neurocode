@@ -163,14 +163,14 @@ if plotLFP
     subplot(1,2,1);
     
     contourf(taxis,1:size(CSD,2),CSD',40,'LineColor','none');hold on;
-    colormap(redblue(255)); caxis([-cmax cmax]); 
+    colormap(redblue(255)); clim([-cmax cmax]); 
     set(gca,'YDir','reverse');xlabel('time (s)');ylabel('channel');title('CSD'); 
     %plot([0 0],[1 size(CSD,2)],'--k');hold on;
     set(gca,'visible','off');
     
     subplot(1,2,2);
     for ch=1:size(lfp_avg,2)
-        offset = 400*(ch-1);
+        offset = 900*(ch-1);
         sh_tmp = 2*(lfp_avg(:,ch)) + offset;
         plot(taxis,sh_tmp,'k','LineWidth',1.5); hold on;
         clear sh_tmp

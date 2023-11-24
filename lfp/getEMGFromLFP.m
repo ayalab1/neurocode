@@ -104,55 +104,19 @@ load(fullfile(basepath,[recordingname,'.session.mat']))
 nChannels = session.extracellular.nChannels;
 SpkGrps = session.extracellular.spikeGroups.channels;
 Fs = session.extracellular.srLfp;
-lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
-lfpFile = [basepath filesep lfpFile(1).name];
+if exist(fullfile(basepath,[recordingname,'.lfp']),'file')
+    lfpFile = checkFile('basepath',basepath,'fileTypes',{'.lfp','.eeg'});
+    lfpFile = [basepath filesep lfpFile(1).name];
+elseif exist(fullfile(basepath,[recordingname,'.eeg']),'file')
+    lfpFile = [basepath filesep recordingname '.eeg'];
+end
 if fromDat
     datFile = checkFile('basepath',basepath,'fileTypes',{'.dat'});
     datFile = [basepath filesep datFile(1).name];
     datFs = session.extracellular.sr;
 end
-%% get basics about.lfp/lfp file
-% if ~isempty(chInfo)
-%     nChannels = chInfo.nChannel;
-%     SpkGrps = chInfo.one.AnatGrps;
-%     Fs = chInfo.lfpSR;
-%     lfpFile = checkFile('basepath',basepath,'fileType','.lfp');
-%     lfpFile = [basepath filesep lfpFile(1).name];
-% end
-% sessionInfo = bz_getSessionInfo(basePath,'noPrompts',noPrompts); % now using the updated version
-% switch fromDat
-%     case false
-%         if exist([basePath filesep sessionInfo.FileName '.lfp'])
-%             lfpFile = [basePath filesep sessionInfo.FileName '.lfp'];
-%         elseif exist([basePath filesep sessionInfo.FileName '.eeg'])
-%             lfpFile = [basePath filesep sessionInfo.FileName '.eeg'];
-%         else
-%             error('could not find an LFP or EEG file...')    
-%         end
-%         
-%         Fs = sessionInfo.lfpSampleRate; % Hz, LFP sampling rate
-% 
-% 
-%     case true
-%         if exist([basePath filesep sessionInfo.FileName '.dat'])
-%             datFile = [basePath filesep sessionInfo.FileName '.dat'];
-%         else
-%             error('could not find a dat file...')    
-%         end
-%         
-%         datFs = sessionInfo.rates.wideband;
-%         Fs = sessionInfo.lfpSampleRate; % Hz, LFP sampling rate
-% end
-% nChannels = sessionInfo.nChannels;
-% 
-% if isfield(sessionInfo,'SpkGrps')
-%     SpkGrps = sessionInfo.SpkGrps;
-% elseif isfield(sessionInfo,'AnatGrps')
-%     SpkGrps = sessionInfo.AnatGrps;
-%     display('No SpikeGroups, Using AnatomyGroups')
-% else
-%     error('No SpikeGroups...')
-% end
+
+%%
     
 binScootS = 1 ./ samplingFrequency;
 binScootSamps = round(Fs*binScootS); % must be integer, or error on line 190
@@ -184,9 +148,9 @@ else
         end
     end
 
-    % check for good/bad shanks and update here
-    % spkgrpstouse = unique(cat(1,spkgrpstouse,specialshanks)); % this is redundant with taking all shanks.
-
+    % okay, lets limit usableshankchannels with spkgrpstouse. Thus, empty shanks will be excluded. 
+    usableshankchannels = usableshankchannels(spkgrpstouse);
+    
     % get list of channels (1 from each good spike group)
     xcorr_chs = [];
     for gidx=1:length(usableshankchannels)

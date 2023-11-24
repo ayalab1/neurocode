@@ -1,5 +1,12 @@
 function multiSaveFig(filename)
 %multiSaveFig - saves figure as fig, png, and svg
+%
+% Copyright (C) 2018 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 set(gcf,'renderer','painters'); % otherwise svg can be saved as png if figure too big (uses OpenGL instead of painters)
 [folder,name] = fileparts(filename);

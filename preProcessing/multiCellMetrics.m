@@ -1,4 +1,4 @@
-function multiCellMetrics(basepath, ifSave)
+function cell_metrics = multiCellMetrics(basepath, ifSave)
 
 % [multiCellMetrics- to visualize multiple sessions in cellExplorer GUI]
 %
@@ -50,7 +50,7 @@ elseif nargin < 2
     ifSave = 0;
 end
 
-if isstring(basepath)
+if isstring(basepath)||ischar(basepath)
     if contains(basepath,'.csv')
         useSess = readtable(basepath);
         for i = 1:size(useSess,1)

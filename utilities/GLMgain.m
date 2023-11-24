@@ -107,7 +107,7 @@ for i = 1:2:length(varargin),
     end
 end
 
-notempty = sum(target>0)>minEvents; % at least 10 events
+notempty = sum(target~=0)>minEvents; % at least 10 events
 target(:,~notempty) = [];
 [nEvents,nUnits] = size(target);
 state = warning;
@@ -122,19 +122,24 @@ warning('off');
 gain = nan(nUnits,1);
 shGain = nan(nUnits,nIterations);
 er = nan(nUnits,1);
-sh = nan(nUnits,1);
+sh = nan(nUnits,nIterations);
 w = nan(nUnits,size(source,2)+1,nSets);
 predictions = nan(size(target));
 for unit = 1:nUnits,
     %% Split data into nSets balanced sets
     setID = nan(nEvents,1);
     zero = target(:,unit)==0;
-    % initialise (number sets sequentially)
-    setID(zero) = ceil(linspace(1/sum(zero),1,sum(zero))*nSets); % we keep zero and non-zero sets separately for balance
-    setID(~zero) = ceil(linspace(1/sum(~zero),1,sum(~zero))*nSets);
-    % scramble respective sets sets
-    setID(zero) = Scramble(setID(zero));
-    setID(~zero) = Scramble(setID(~zero));
+    ok = false; tic; tictoc = toc;
+    while ~ok && ((toc - tictoc) <5) % timeout in 5 seconds to prevent an infinite loop
+        % initialise (number sets sequentially)
+        setID(zero) = ceil(linspace(1/sum(zero),1,sum(zero))*nSets); % we keep zero and non-zero sets separately for balance
+        setID(~zero) = ceil(linspace(1/sum(~zero),1,sum(~zero))*nSets);
+        % scramble respective sets sets
+        setID(zero) = Scramble(setID(zero));
+        setID(~zero) = Scramble(setID(~zero));
+        % Make sure there is some variance for each of the sources in each set. Otherwises, re-initialize
+        ok = true; for set = 1:nSets, if any(~(max(source(setID~=set,:))>min(source(setID~=set,:)))), ok = false; end; end 
+    end
     shuffled = nan(nSets,nIterations);
     errors = nan(nSets,1);
     for set = 1:nSets,
@@ -154,7 +159,7 @@ for unit = 1:nUnits,
         end
     end
     er(unit,1) = average(errors(:));
-    sh(unit,1) = average(shuffled(:));
+    sh(unit,:) = average(shuffled);
     gain(unit,1) = average(shuffled(:))./average(errors(:));
     shGain(unit,:) = bsxfun(@rdivide,average(shuffled(:)),average(shuffled));
 end
@@ -167,9 +172,9 @@ if sum(~notempty)>0,
     sh0 = sh;
     w0 = w;
     gain = nan(numel(notempty),1);er = nan(numel(notempty),1);
-    sh = nan(numel(notempty),1); shGain = nan(numel(notempty),nIterations);
+    sh = nan(numel(notempty),nIterations); shGain = nan(numel(notempty),nIterations);
     w = nan(numel(notempty),size(source,2)+1,nSets);
-    gain(notempty) = gain0;er(notempty) = er0;sh(notempty) = sh0;
+    gain(notempty) = gain0;er(notempty) = er0;sh(notempty,:) = sh0;
     shGain(notempty,:) = shGain0;
     w(notempty,:,:) = w0;
 end

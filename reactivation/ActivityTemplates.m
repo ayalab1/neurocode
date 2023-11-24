@@ -56,6 +56,7 @@ binSize = [];
 step = [];
 mode = 'ica';
 tracyWidom = false;
+controlBins = [];
 
 % Check number of parameters
 if nargin < 1,
@@ -89,7 +90,7 @@ for i = 1:2:length(varargin),
 			end
 		case 'mode',
 			mode = varargin{i+1};
-			if ~isastring(mode,'pca','ica'),
+			if ~isastring(mode,'pca','ica','varimax'),
 				error('Incorrect value for property ''bins'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
             end
         case 'tracywidom',
@@ -101,9 +102,14 @@ for i = 1:2:length(varargin),
             else
                 error('Incorrect value for property ''bins'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
             end
-		otherwise,
-			error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).']);
-	end
+        case 'controlbins',
+            controlBins = varargin{i+1};
+            if ~isdmatrix(bins,'@2'),
+                error('Incorrect value for property ''controlBins'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
+            end
+        otherwise,
+            error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).']);
+    end
 end
 
 % Options binSize and bins are incompatible
@@ -143,9 +149,22 @@ for unit = 1:nUnits,
 	n(:,unit) = CountInIntervals(spikes(id==unit,1),bins);
 end
 
+% Crate a control spike count matrix constructing correlations to ignore:
+if ~isempty(controlBins)
+    n0 = zeros(size(controlBins,1),nUnits);
+    for unit = 1:nUnits,
+    	n0(:,unit) = CountInIntervals(spikes(id==unit,1),controlBins);
+    end
+    controlCorrelations = (1/(nBins-1))*n0'*n0;
+end
+
 %% Create correlation matrix
 n = zscore(n);
 correlations = (1/(nBins-1))*n'*n;
+
+if ~isempty(controlBins)
+    correlations = correlations - controlCorrelations;
+end
 
 % Compute eigenvalues/vectors and sort in descending order
 [eigenvectors,eigenvalues] = eig(correlations);
@@ -166,6 +185,7 @@ if tracyWidom
     lambdaMax =  lambdaMax + nUnits^(-2/3); % Tracy-Widom correction
 end
 significant = eigenvalues>lambdaMax;
+
 if sum(significant)==0,
 	templates = zeros(nUnits,nUnits,0); weights = zeros(nUnits,0); return;
 end
@@ -181,6 +201,25 @@ if strcmp(mode,'pca'),
     end
     variance = eigenvalues(significant)/nUnits;
 	return
+end
+
+if strcmp(mode,'varimax'),
+    try
+    [weights,~] = rotatefactors(eigenvectors(:,significant),'method','varimax');
+    catch
+        warning('Varimax did not work. Returning eigevectors straight out of PCA.');
+        weights = eigenvectors(:,significant);
+    end
+%     The sign of the weights in a component is arbitrary (+component and -component are equivalent)
+%     Flip weights so that the most deviating weight of a component is positive (it is more convenient for visualisation that the assembly has positive weights)
+    flip = max(weights)<-min(weights);
+    weights(:,flip) = -weights(:,flip);
+    for i = 1:size(weights,2),
+        templates(:,:,i) = weights(:,i)*weights(:,i)';
+        templates(:,:,i) = templates(:,:,i) - diag(diag(templates(:,:,i))); % remove the diagonal
+    end
+    variance = var(n*weights)/nUnits;
+    return
 end
 
 projection = (eigenvectors * eigenvectors') * n';

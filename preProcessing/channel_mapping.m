@@ -287,7 +287,7 @@ session.brainRegions = [];
 
 for region = regions'
     session.brainRegions.(region{1}).channels =...
-        channel_map_vec(contains(anatomical_map_vec,region))';
+        channel_map_vec(ismember(anatomical_map_vec,region))';
     % add electrode groups
     [~,c]=find(ismember(channel_map,session.brainRegions.(region{1}).channels));
     session.brainRegions.(region{1}).electrodeGroups = unique(c)';
@@ -323,7 +323,7 @@ if isfield(session.extracellular,'chanCoords')
 end
 
 % if channel coords are empty, try to create them here
-if isempty(chanCoords.x)
+if ~exist('chanCoords','var') || isempty(chanCoords.x)
     try
        chanMap = generateChannelMap(session,'reorder',false);
     catch

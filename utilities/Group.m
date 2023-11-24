@@ -15,9 +15,9 @@ function grouped = Group(varargin)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-grouped = []; doSort = true;
+grouped = []; doSort = false;
 % Are we dealing with vectors?
-if all(cellfun(@(x) min(size(x)), varargin)==1),
+if all(cellfun(@(x) min(size(x)), varargin)<=1),
     vectors = true; else vectors = false;
 end
 for i=1:length(varargin),

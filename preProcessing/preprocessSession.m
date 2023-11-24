@@ -15,7 +15,9 @@ function  preprocessSession(varargin)
 %  -------------------------------------------------------------------------
 % [basepath]             [Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd]
-% [analogCh]             [List of analog channels with pulses to be detected (it
+% [analogChannels]       [List of analog channels with pulses to be detected (it
+%                         supports Intan Buzsaki Edition)]
+% [digitalChannels]      [List of digital channels with pulses to be detected (it
 %                         supports Intan Buzsaki Edition)]
 % [forceSum]             [Force make folder summary (overwrite, if necessary). 
 %                         Default false]
@@ -75,7 +77,7 @@ addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
-addParameter(p,'nKilosortRuns',1,@isnumeric);  %needs to be changed from shanks to probes HLR 01/05/23
+addParameter(p,'nKilosortRuns',1,@isnumeric);  
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -168,7 +170,7 @@ end
 if digitalInputs
     if ~isempty(digitalChannels)
         % need to change to only include specified channels
-        digitalInp = getDigitalIn('all','fs',session.extracellular.sr);
+        digitalInp = getDigitalIn('all','fs',session.extracellular.sr,'digUse',digitalChannels);
     else
         digitalInp = getDigitalIn('all','fs',session.extracellular.sr);
     end
@@ -236,12 +238,18 @@ if spikeSort
         kilosortGroup = ceil(((1:length(shanks))/nKilosortRuns));
         for i=1:nKilosortRuns
             channels = cat(2,shanks{kilosortGroup==i});
+            excludeChannels = [];
             excludeChannels = find(~ismember((1:session.extracellular.nChannels),channels));
             excludeChannels = cat(2,excludeChannels,session.channelTags.Bad.channels);
-            kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels);
-            if cleanRez
-                load(fullfile(kilosortFolder,'rez.mat'),'rez');
-                CleanRez(rez,'savepath',kilosortFolder);
+            excludeChannels = unique(excludeChannels);
+            if (length(excludeChannels)==session.extracellular.nChannels)
+                warning(['Run number ' num2str(i) ' excluded, moving on']);
+            else
+                kilosortFolder = KiloSortWrapper('SSD_path',SSD_path,'rejectchannels',excludeChannels);
+                if cleanRez
+                    load(fullfile(kilosortFolder,'rez.mat'),'rez');
+                    CleanRez(rez,'savepath',kilosortFolder);
+                end
             end
         end
     else

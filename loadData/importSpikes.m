@@ -1,173 +1,146 @@
-function [spikeT] = importSpikes(varargin)
-% [spikes] = importSpikes(varargin)
-% Import into the workspace spiketimes for selected units taking as input a
-% pre-computed buzcode spikes.cellinfo structure
-
-%    =========================================================================
-%  USAGE
+function [spikes, varargout] = importSpikes(varargin)
+% importSpikes: loads spikes and metadata from cell metrics
+% note: this is the successor to importSpikes.m
 %
-% INPUTS
-%    basepath        -path to recording where spikes.cellinfo is. Default: pwd
-%    UID             -vector subset of UID's to load. Default: all.
-%    channel         -specific channels (neuroscope indexing) to use. Default: all
+% Inputs:
+%   basepath: optional, path to recording session
+%   brainRegion: optional, string, char, or cell array
+%   cellType: optional, string, char, or cell array
+%   UID: optional, numeric array
+%   state: optional, string or char, sleep state to restrict to
+%
+% Outputs:
+%   spikes
+%       times: spike times for each neuron
+%       UID: unique unit ID
+%       brainRegion: brain region of neuron
+%       cellType: cell type of neuron
+%       n_spikes: number of spikes for each neuron
+%       support: time support of spikes
+%  varargout:
+%   spikeArray: SpikeArray object, optional output
+%
+%
+% Examples:
+% spikes = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'brainRegion', 'CA1', 'cellType', 'Pyr')
+%
+% spikes = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', 'Pyr')
+%
+% spikes = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', {'Pyr', 'Int'})
+%
+% spikes = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'brainRegion', {'CA1', 'CA3'}, 'cellType', {'Pyr', 'Int'}, ...
+%     'state', 'NREMstate')
+%
+% spikes = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'UID', [1, 2, 3])
+%
+% [spikes, spike_array] = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%     'brainRegion', 'CA1', 'cellType', 'Pyr')
+% spike_array
+% <SpikeArray: 15 units> of length 06:23:07.270 hours
+%
+% Ryan H
 
-% These inputs require CellExplorer cell_metrics pre calculated. 
-%    brainRegion     -string region ID to load neurons from specific region
-%    cellType        -cell type to load
-%    sleepState      -string sleep state to keep spikes falling within the
-%                       specified sleep state.
-% *** If inputting multiple regions, types, or states, ensure the input
-%     follows the format: ["State1","State2"] ***
-
-%    =========================================================================
-% OUTPUT
-%    spikeT - cellinfo struct with the following fields
-%          .UID            -unique identifier for each neuron in a recording
-%          .times          -cell array of timestamps (seconds) for each neuron
-%          .basepath       
-
-%    =========================================================================
-% TODO:
-% Do we want more output fields?
-
-% AntonioFR, 8/20; Lindsay K, 11/21
-
-% This program is free software; you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
-
-%% Parse inputs
-
+% parse inputs
 p = inputParser;
-addParameter(p,'basepath',pwd,@isfolder);
-addParameter(p,'brainRegion','',@(x) ischar(x) || isstring(x) || iscell(x));
-addParameter(p,'cellType','',@(x) ischar(x) || isstring(x));
-addParameter(p,'sleepState','',@(x) ischar(x) || isstring(x));
-addParameter(p,'UID',[],@isvector);
-addParameter(p,'channel',[],@isnumeric);
+addParameter(p, 'basepath', pwd, @isfolder);
+addParameter(p, 'brainRegion', '', @(x) ischar(x) || isstring(x) || iscell(x));
+addParameter(p, 'cellType', '', @(x) ischar(x) || isstring(x) || iscell(x));
+addParameter(p, 'UID', [], @(x) isnumeric(x));
+addParameter(p, 'state', '', @(x) ischar(x) || isstring(x));
 
-parse(p,varargin{:})
+parse(p, varargin{:})
 basepath = p.Results.basepath;
-region = p.Results.brainRegion;
-type = p.Results.cellType;
-state = p.Results.sleepState;
+brainRegion = p.Results.brainRegion;
+cellType = p.Results.cellType;
 UID = p.Results.UID;
-channel = p.Results.channel;
+state = p.Results.state;
 
-%% Load spikes
+% load cell metrics
 basename = basenameFromBasepath(basepath);
+if ~exist([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'file')
+    warning('no cell_metrics file')
+    return
+end
+load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'cell_metrics');
 
-load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'],'cell_metrics');
-
+% create spikes struct
 spikes = cell_metrics.spikes;
-spikes.UID = 1:length(spikes.times);
+spikes.UID = cell_metrics.UID;
+spikes.brainRegion = cell_metrics.brainRegion;
+spikes.cellType = cell_metrics.putativeCellType;
 
-spikeT.UID = [];
-spikeT.times = {};
-spikeT.basepath = basepath;
+% add time support by getting the min and max times
+spikes.support = [min(cellfun(@min, spikes.times)), max(cellfun(@max, spikes.times))];
 
-%% Remove bad cells before we start
+% restrict to brainRegion
+if ~isempty(brainRegion)
+    valid_uid = spikes.UID(contains(spikes.brainRegion, brainRegion));
+    keep_idx = ismember(spikes.UID, valid_uid);
+    spikes = restrict_cells(spikes, keep_idx);
+end
 
+% restrict to cellType
+if ~isempty(cellType)
+    valid_uid = spikes.UID(contains(spikes.cellType, cellType));
+    keep_idx = ismember(spikes.UID, valid_uid);
+    spikes = restrict_cells(spikes, keep_idx);
+end
+
+% restrict to UID
+if ~isempty(UID)
+    keep_idx = ismember(spikes.UID, UID);
+    spikes = restrict_cells(spikes, keep_idx);
+end
+
+% remove cells labeled bad
 if isfield(cell_metrics, 'tags')
     if isfield(cell_metrics.tags, 'Bad')
-        ct = 1;
-        for i = 1:length(spikes.UID)
-            if isempty(find(cell_metrics.tags.Bad==spikes.UID(i),1))
-                spikeT.UID(ct) = spikes.UID(i);
-                spikeT.times{ct} = spikes.times{i};
-                ct = ct+1;
-            end
-        end
-        clear ct
-    else
-        spikeT.UID = spikes.UID;
-        spikeT.times = spikes.times;
+        keep_idx = ~ismember(spikes.UID, cell_metrics.tags.Bad);
+        spikes = restrict_cells(spikes, keep_idx);
     end
-else
-    spikeT.UID = spikes.UID;
-    spikeT.times = spikes.times;
 end
 
-%% Output structure
-if ~isempty(UID)
-    spikeT.UID = spikes.UID(UID);
-    spikeT.times = spikes.times(UID);
-elseif ~isempty(channel)
-    setUn = [];
-    for i = 1:length(channel)
-        setUn = [setUn find(spikes.maxWaveformCh == channel(i))];
-    end
-    setUn = sort(setUn);
-    spikeT.UID = spikes.UID(setUn);
-    spikeT.times = spikes.times(setUn);
-end
-
-% only one region will be assigned to each cell
-if ~isempty(region)
-    keepUID = [];
-    for i = 1:length(region)
-        tempUID = []; tempTimes = [];
-        tempUID = spikes.UID(contains(cell_metrics.brainRegion, region(i)));
-        [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
-        keepUID = cat(2, keepUID, spikeT.UID(useInd));
-    end
-    spikeT.UID = sort(keepUID);
-end
-
-% only one type will be assigned to each cell
-if ~isempty(type)
-    keepUID = [];
-    for i = 1:length(type)
-        tempUID = []; tempTimes = [];
-        tempUID = spikes.UID(contains(cell_metrics.putativeCellType, type(i)));
-        tempTimes = spikes.times(contains(cell_metrics.putativeCellType, type(i)));
-        [~,useIndTemp,useInd] = intersect(tempUID, spikeT.UID);
-        keepUID = [keepUID spikeT.UID(useInd)];
-    end
-    spikeT.UID = sort(keepUID);
-end
-
-%update times struct before moving on
-for i = 1:length(spikeT.UID)
-    idx = find(spikes.UID==spikeT.UID(i));
-    spikeT.times(spikeT.UID(i)) = spikes.times(idx);
-end
-
-% multiple states may be assigned to each cell's firing
+% restrict to state
 if ~isempty(state)
-    load(fullfile(basepath,[basename,'.SleepState.states.mat']));
-    tempUID = spikeT.UID; tempTimes = spikeT.times; keepCt = 1;
-    spikeT.UID = []; spikeT.times = [];
-    for i = 1:length(tempUID)
-        keepUn = false;
-        for j = 1:length(state)
-            if isfield(SleepState.ints, state(j))
-                intervals = eval(strcat('SleepState.ints.',state(j)));
-                tempSpk{i,j} = Restrict(tempTimes{tempUID(i)},intervals);
-                if ~isempty(tempSpk{i,j})
-                    keepUn = true;
-                end
-            else
-                disp(fieldnames(SleepState.ints));
-                error('Incorrect sleep state entered. Please choose from the above instead');
-            end
-        end
-        if keepUn
-            spikeT.UID(keepCt) = tempUID(i);
-            spikeT.times{keepCt} = cat(1,tempSpk{i,:});
-            spikeT.times{keepCt} = sort(spikeT.times{keepCt});
-            keepCt = keepCt+1;
-        end
+    load(fullfile(basepath, [basename, '.SleepState.states.mat']), 'SleepState');
+    if any(contains(state, fields(SleepState.ints)))
+        spikes.times = cellfun(@(x) Restrict(x, SleepState.ints.(state)), ...
+            spikes.times, 'UniformOutput', false);
+    else
+        disp(fieldnames(SleepState.ints));
+        error('Incorrect sleep state entered. Please choose from the above instead');
     end
 end
 
-% Might need to condense spikeT
-if length(spikeT.times)>length(spikeT.UID)
-    for i = 1:length(spikeT.UID)
-        keepT{i} = spikeT.times{spikeT.UID(i)};
+% number of spikes per cell
+spikes.n_spikes = cellfun(@length, spikes.times);
+
+% verify outputs lengths
+n_cells = length(spikes.times);
+assert(length(spikes.UID) == n_cells)
+assert(length(spikes.brainRegion) == n_cells)
+assert(length(spikes.cellType) == n_cells)
+assert(length(spikes.n_spikes) == n_cells)
+
+% output SpikeArray if requested, otherwise just return spikes struct
+if nargout == 2
+    if isempty(spikes.times)
+        varargout{1} = SpikeArray();
+    else
+        varargout{1} = SpikeArray(spikes.times);
     end
-    spikeT.times = []; spikeT.times = keepT;
+end
 end
 
+function spikes = restrict_cells(spikes, keep_idx)
+% restricts spikes struct to keep_idx
+spikes.times = spikes.times(keep_idx);
+spikes.UID = spikes.UID(keep_idx);
+spikes.brainRegion = spikes.brainRegion(keep_idx);
+spikes.cellType = spikes.cellType(keep_idx);
 end

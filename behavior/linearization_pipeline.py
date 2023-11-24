@@ -170,7 +170,7 @@ class NodePicker:
 
         print("saving to disk...")
         behave_df.loc[cur_epoch, "linearized"] = position_df.linear_position.values
-        behave_df.loc[cur_epoch, "track_segment_id"] = position_df.track_segment_id.values
+        behave_df.loc[cur_epoch, "states"] = position_df.track_segment_id.values
         behave_df.loc[cur_epoch, "projected_x_position"] = position_df.projected_x_position.values
         behave_df.loc[cur_epoch, "projected_y_position"] = position_df.projected_y_position.values
 
@@ -178,9 +178,12 @@ class NodePicker:
         data = loadmat(filename, simplify_cells=True)
 
         data["behavior"]["position"]["linearized"] = behave_df.linearized.values
-        data["behavior"]["states"] = behave_df.track_segment_id.values
+        data["behavior"]["states"] = behave_df.states.values
         data["behavior"]["position"]["projected_x"] = behave_df.projected_x_position.values
         data["behavior"]["position"]["projected_y"] = behave_df.projected_y_position.values
+
+        # store nodes and edges within behavior file
+        data = self.save_nodes_edges_to_behavior(data, behave_df)
 
         savemat(filename, data, long_field_names=True)
 
@@ -194,12 +197,41 @@ class NodePicker:
         with open(save_file, "wb") as f:
             pickle.dump(results, f)
 
+    def save_nodes_edges_to_behavior(self, data, behave_df):
+        """
+        Store nodes and edges into behavior file
+        Searches to find epochs with valid linearized coords
+        Nodes and edges are stored within behavior.epochs{n}.{node_positions and edges}
+        """ 
+        if self.epoch is None:
 
+            # load epochs
+            epochs = load_epoch(self.basepath)
+            # iter over each epoch
+            for epoch_i, ep in enumerate(epochs.itertuples()):
+                # locate index for given epoch
+                idx = behave_df.time.between(ep.startTime, ep.stopTime)
+                # if linearized is not all nan, add nodes and edges
+                if not all(np.isnan(behave_df[idx].linearized)) & (behave_df[idx].shape[0] != 0):
+                    # adding nodes and edges
+                    data["behavior"]["epochs"][epoch_i]["node_positions"] = self.node_positions
+                    data["behavior"]["epochs"][epoch_i]["edges"] = self.edges
+        else:
+            # if epoch was used, add nodes and edges just that that epoch
+            data["behavior"]["epochs"][self.epoch]["node_positions"] = self.node_positions
+            data["behavior"]["epochs"][self.epoch]["edges"] = self.edges
+
+        return data
+        
 def load_animal_behavior(basepath):
     filename = glob.glob(os.path.join(basepath, "*.animal.behavior.mat"))[0]
     data = loadmat(filename, simplify_cells=True)
     df = pd.DataFrame()
     df["time"] = data["behavior"]["timestamps"]
+    try:
+        df["states"] = data["behavior"]["states"]
+    except:
+        pass
     for key in data["behavior"]["position"].keys():
         try:
             df[key] = data["behavior"]["position"][key]

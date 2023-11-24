@@ -57,6 +57,9 @@ elseif isnumeric(lfp)
     data_temp = lfp;
     clear lfp
     lfp.data = data_temp;
+    warning('Assuming LFP sampling rate is 1250');
+    samplingRate = 1250;
+    lfp.samplingRate = 1250;
     lfp.timestamps = [1:length(lfp.data)]'./samplingRate;
 end
 

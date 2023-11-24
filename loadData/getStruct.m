@@ -38,6 +38,7 @@ ismat = cellfun(@(x) ~isempty(strfind(x,'.mat')),filenames);
 ok = cellfun(@(x) ~isempty(strfind(x,extension)),filenames) & ismat;
 indices = find(ok); 
 if isempty(indices)
+    disp(['No ''' extension ''' file found in ' basepath]);
     error(['No ''' extension ''' file found in ' basepath]);
     return
 end

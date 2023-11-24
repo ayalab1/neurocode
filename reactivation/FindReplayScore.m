@@ -1,4 +1,4 @@
-function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled,quadrantScore] = FindReplayScore(matrix,varargin)
+function [r,p,st,sp,rShuffled,aShuffled,bShuffled,c,cShuffled,jump,jumpShuffled,maxJump,maxJumpShuffled,quadrantScore,qShuffled] = FindReplayScore(matrix,varargin)
 
 % FindReplayScore
 %
@@ -229,22 +229,26 @@ maxJumpShuffled = nan(1,nShuffles);
 jumpShuffled = nan(1,nShuffles);
 aShuffled = nan(1,nShuffles);
 bShuffled = nan(1,nShuffles);
+qShuffled = nan(1,nShuffles);
 if strcmp(shuffle,'column')
     for i=1:nShuffles,
         shift = round(rand(1,nBinsX)*(nBinsY-1));
         mockSums = CircularShift(sums,shift);
         [rShuffled(i),ind] = max(mean(mockSums(indices),2));
         aShuffled(i) = a(ind); bShuffled(i) = b(ind);
-        if strcmp(wcorr,'on') || strcmp(jumps,'ok')
+        if strcmp(wcorr,'on') || strcmp(jumps,'on') || strcmp(quandrant,'on')
             mockMatrix = CircularShift(matrix,shift);
-            if strcmp(wcorr,'on')
+            if strcmp(wcorr,'on') || strcmp(quandrant,'on')
                 if strcmp(circular,'on'),
                     cShuffled(i) = WeightedCorrCirc(mockMatrix);
                 else
                     cShuffled(i) = WeightedCorr(mockMatrix);
                 end
+                score = nanmean(nanmean(mockMatrix(Qok)));
+                score(2) = nanmean(nanmean(mockMatrix(Qcontrol)));
+                qShuffled(i) = (score(1)-score(2))./sum(score,2);
             end
-            if strcmp(jumps,'ok')
+            if strcmp(jumps,'on')
                 [~,wherePmax] = max(mockMatrix(:,goodWindows));
                 d = diff(wherePmax);
                 if strcmp(circular,'on'),
@@ -263,7 +267,7 @@ else % temporal shuffle
         [~,order] = sort(rand(1,nBinsX));
         mockSums = sums(:,order);
         [rShuffled(i),ind] = max(mean(mockSums(indices),2));
-        aShuffled(i) = a(ind); bShuffled(i,1) = b(ind);
+        aShuffled(i) = a(ind); bShuffled(i) = b(ind);
         if strcmp(wcorr,'on') || strcmp(jumps,'ok')
             mockMatrix = matrix(:,order);
             if strcmp(wcorr,'on')
@@ -289,7 +293,7 @@ else % temporal shuffle
     end
 end
 
-p = sum(rShuffled>r)/nShuffles;
+p = sum(rShuffled>=r)/nShuffles;
 
 % ------------------------------- Helper function -------------------------------
 

@@ -16,7 +16,7 @@ function auto_theta_cycles(varargin)
 %    -------------------------------------------------------------------------
 %    <options>      optional list of property-value pairs (see table below)
 %     'basepath'  basepath to session (can be cell array of many) (default = pwd)
-%     'passband'  frequency of theta band (default = [6,12])
+%     'passband'  frequency of theta band (default = [4,12])
 %     'maximize_theta_power' whether to find the channel that maximizes theta power (default=true)
 %     'run_parallel'  to run multiple in parallel (default = false)
 %     'overwrite'  to run overwrite existing file (default = false)
@@ -107,31 +107,100 @@ end
 function [lfp,channel] = get_deep_ca1_lfp(basepath,passband,maximize_theta_power)
 % get_deep_ca1_lfp: locates a deep ca1 channel that maximizes theta power
 
+lfp = [];
+channel=[];
+
 basename = basenameFromBasepath(basepath);
 
 load(fullfile(basepath,[basename,'.session.mat']))
 
 if ~exist(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']),'file')
-    classification_DeepSuperficial(session);
+    classification_DeepSuperficial(session,'basepath',basepath);
 end
 load(fullfile(basepath,[basename,'.deepSuperficialfromRipple.channelinfo.mat']))
 
 % find deep ca1 channels to check
 try
     deep_channels = deepSuperficialfromRipple.channel(contains(deepSuperficialfromRipple.channelClass,'Deep'));
-catch
+catch % different spelling
     deep_channels = deepSuperficialfromRipple.channels(contains(deepSuperficialfromRipple.channelClass,'Deep'));
 end
 if isempty(deep_channels)
-    lfp = [];
     return
 end
 
+% check for CA1 channels
+deep_channels_temp = identify_good_deep_hpc_channel(session,deep_channels,'CA1');
+
+% if no CA1, check CA2
+if isempty(deep_channels_temp)
+    deep_channels_temp = identify_good_deep_hpc_channel(session,deep_channels,'CA2');
+end
+% if no CA1 or CA2, return
+if isempty(deep_channels_temp)
+    return
+else
+    deep_channels = deep_channels_temp;
+end
+
+% load deep channels
+[r,c] = size(deep_channels);
+if r>c
+    deep_channels = deep_channels';
+end
+
+if maximize_theta_power
+    % try to load downsampled to same time
+    try
+        lfp = getLFP(deep_channels,'basepath',basepath,'downsample',10,...
+            'basename',basename);
+
+        % if sample rate cannot be factored by 10, load entire file
+    catch
+        lfp = getLFP(deep_channels,'basepath',basepath,...
+            'basename',basename);
+    end
+
+    % get theta power to choose channel
+    try
+        pBand = bandpower(single(lfp.data),...
+            lfp.samplingRate,passband);
+
+        pTot = bandpower(single(lfp.data),...
+            lfp.samplingRate,...
+            [1,(lfp.samplingRate/2)-1]);
+    catch
+        for c = 1:size(lfp,2)
+            pBand(c) = bandpower(single(lfp.data(:,c)),...
+                lfp.samplingRate,passband);
+
+            pTot(c) = bandpower(single(lfp.data(:,c)),...
+                lfp.samplingRate,...
+                [1,(lfp.samplingRate/2)-1]);
+        end
+    end
+    % find max theta power, normalized by wide band
+    [~,c_idx] = max(pBand./pTot);
+
+    % only leave theta channel
+    lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
+        'basename',basename);
+
+else
+    lfp = getLFP(randsample(deep_channels,1),'basepath',basepath,...
+        'basename',basename);
+end
+channel = lfp.channels;
+end
+
+function deep_channels = identify_good_deep_hpc_channel(session,deep_channels,region)
+
 % search for ca1 channels
 brainRegions = fields(session.brainRegions);
-ca1_layers = brainRegions(contains(brainRegions,'CA1'));
+ca1_layers = brainRegions(contains(brainRegions,region));
+
 if isempty(ca1_layers)
-    lfp = [];
+    deep_channels = [];
     return
 end
 ca1_channels = [];
@@ -150,56 +219,7 @@ catch
 end
 
 if isempty(deep_channels)
-    lfp = [];
+    deep_channels = [];
     return
 end
-
-% load deep channels
-[r,c] = size(deep_channels);
-if r>c
-    deep_channels = deep_channels';
-end
-
-if maximize_theta_power
-    % try to load downsampled to same time
-    try
-        lfp = getLFP(deep_channels,'basepath',basepath,'downsample',10,...
-            'basename',basename);
-        
-        % if sample rate cannot be factored by 10, load entire file
-    catch
-        lfp = getLFP(deep_channels,'basepath',basepath,...
-            'basename',basename);
-    end
-    
-    % get theta power to choose channel
-    try
-        pBand = bandpower(single(lfp.data),...
-            lfp.samplingRate,passband);
-        
-        pTot = bandpower(single(lfp.data),...
-            lfp.samplingRate,...
-            [1,(lfp.samplingRate/2)-1]);
-    catch
-        for c = 1:size(lfp,2)
-            pBand(c) = bandpower(single(lfp.data(:,c)),...
-                lfp.samplingRate,passband);
-            
-            pTot(c) = bandpower(single(lfp.data(:,c)),...
-                lfp.samplingRate,...
-                [1,(lfp.samplingRate/2)-1]);
-        end
-    end
-    % find max theta power, normalized by wide band
-    [~,c_idx] = max(pBand./pTot);
-    
-    % only leave theta channel
-    lfp = getLFP(lfp.channels(:,c_idx),'basepath',basepath,...
-        'basename',basename);
-    
-else
-    lfp = getLFP(randsample(deep_channels,1),'basepath',basepath,...
-        'basename',basename);
-end
-channel = lfp.channels;
 end

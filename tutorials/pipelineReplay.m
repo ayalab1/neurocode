@@ -132,13 +132,6 @@ for i=2:size(bursts,1)
     % If you are impatient, you would be glad to see the progress of the scoring every 1000 events:
     if rem(i,1000)==0, disp([datestr(clock) ': ' num2str(i) '/' num2str(size(bursts,1)) ' done...']);  end 
 end
-% Fix the concatenation of nested structures:
-jump.mean = cat(1,sequences.jump.mean);
-jump.max = cat(1,sequences.jump.max);
-sequences.jump = jump;
-jump.mean = cat(1,shuffled.jump.mean);
-jump.max = cat(1,shuffled.jump.max);
-shuffled.jump = jump;
 
 %% Look at some example replay events
 

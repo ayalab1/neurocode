@@ -23,7 +23,7 @@ function [comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,varargin)
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %     phaseCh      channel to compute phase. If empty take first channel
-%     ampChans     channels to compute amplitude. If empty take first channel
+%     ampCh     channels to compute amplitude. If empty take first channel
 %     method       ['wavelet'(default)|'hilbert']. Method to extract power
 %        of specific bands, using wavelet (default) or hilbert
 %

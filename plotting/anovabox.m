@@ -32,6 +32,8 @@ function varargout = anovabox(data,groups,varargin)
 %    'parametric'   either 'on' (to perform t-tests / anova) or 'off' (to 
 %                   perform non-parametric Wilcoxon signed-rank and ranksum 
 %                   tests / friedman).
+%    'tail'         tail ('left', 'right', or 'both') for comparing each
+%                   group to zero (default = 'both');
 %    'correction'   type of statistical correction to use to control for
 %                   multiple comparisons, i.e. between all pairs of multiple
 %                   groups (default = tukey-kramer)
@@ -117,6 +119,7 @@ precedence = 1;
 paired = true;
 lock = false; % lock y axis
 boxwidth = 0.3;
+tail = 'both'; % tail for "test0" where each group is compared to zero
 ns = false;
 
 for i = 1:2:length(varargin),
@@ -128,6 +131,11 @@ for i = 1:2:length(varargin),
             alpha = varargin{i+1};
             if ~isdvector(alpha) || length(alpha)>2
                 error('Incorrect value for property ''alpha'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
+            end
+        case 'tail',
+            tail = varargin{i+1};
+            if ~isastring(lower(tail),'left','right','both')
+                error('Incorrect value for property ''tail'' (type ''help <a href="matlab:help anovabox">anovabox</a>'' for details).');
             end
         case 'parametric',
             parametric = varargin{i+1};
@@ -184,11 +192,11 @@ end
 % if a single value for alpha is provided, use that value for both kinds of comparisons (to zero and between groups):
 if length(alpha)==1, alpha = [alpha alpha]; end
 if parametric
-    test0 = @(x) out2(@ttest,x);
+    test0 = @(x) out2(@ttest,x,[],'tail',tail);
     testbetween =  @anova1;
     if paired, testpaired = @(x) anova2(x,1,'off'); else testpaired = @(x) testbetween(x,[],'off'); end
 else
-    test0 = @(x) signrank(x);
+    test0 = @(x) signrank(x,[],'tail',tail);
     testbetween = @kruskalwallis;
     if paired,
         if size(data,2)==2, testpaired = @helper_signrank; else, testpaired = @(x) friedman(x,1,'off'); end
@@ -211,6 +219,9 @@ else
     groups = groups(ok);
     groups = double(groups);
 end
+
+% ignore NaNs:
+nans = any(isnan(data),2); data(nans,:) = []; if grouped, groups(nans) = []; end;
 
 nGroups = numel(unique(groups));
 if ~isempty(groups)
@@ -337,19 +348,23 @@ else
     if alpha(2)>0 % If alpha(2)=0, skip this
         if precedence==1, maxj = length(u); else, maxj = size(data,2); end
         for j=1:maxj
-            if precedence==1, [~,~,stats] = testpaired(data(groups==u(j),:));
+            if precedence==1, [~,pTest,stats] = testpaired(data(groups==u(j),:));
             else, [~,~,stats] = testbetween(data(:,j), groups,'off');
             end
-            try
-        		comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction);
-            catch
-                continue % if a whole column of data is missing, then comparisons are impossible
+            if ischar(stats) && strcmp(stats,'signrank') % signrank test doesn't give a "stats" output compatible with multcompare
+                comparison = [1 2 (pTest<alpha(2)) + (pTest<alpha(2)/5) (pTest<alpha(2)/50)];
+            else
+                try
+                    comparison = multcompare(stats,'display', 'off','alpha',alpha(2),'ctype',correction);
+                    comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
+                    comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction);
+                    comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
+                    comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction);
+                    comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
+                catch
+                    continue % if a whole column of data is missing, then comparisons are impossible
+                end
             end
-            comparison = [comparison(:,1:2) double(comparison(:,3).*comparison(:,5)>0)]; %if the upper and lower bound have the same sign
-            comparison2 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/5,'ctype',correction);
-            comparison(:,3) = comparison(:,3) + double(comparison2(:,3).*comparison2(:,5)>0); % third column shows the number of stars to be included. 1 for 0.05, 1 more for 0.01, and another one for 0.001       if sum(double(comparison2(:,3).*comparison2(:,5)>0)),
-            comparison3 = multcompare(stats,'display', 'off', 'alpha', alpha(2)/50,'ctype',correction);
-            comparison(:,3) = comparison(:,3) + double(comparison3(:,3).*comparison3(:,5)>0);
             sigFor2Groups(j,1) = comparison(1,3);
             for i=1:size(comparison,1)
                 smallnumber = 0.1*diff(ylim); %for display purposes, so things don't overlap

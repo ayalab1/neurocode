@@ -22,10 +22,8 @@ function [ EventDetectionReview ] = EventExplorer(basePath,events,varargin )
 %   EventDetectionReview    results of DetectionReview - if called with an
 %                           output, automatically runs detection review
 %
-%DLevenstein 2017
-%% (For development)
-% events = 'SlowWaves';
-% basePath = '/Users/dlevenstein/Dropbox/Research/Datasets/20140526_277um';
+% DLevenstein 2017; AntonioFR 2023
+
 %%
 p = inputParser;
 addParameter(p,'useSpikes',false);
@@ -35,18 +33,16 @@ parse(p,varargin{:})
 noPrompts = p.Results.noPrompts;
 useSpikes = p.Results.useSpikes;
 
-
-
 %%
 if ~exist('basePath','var')
     basePath = pwd;
 end
-baseName = bz_BasenameFromBasepath(basePath);
+baseName = basenameFromBasepath(basePath);
 
 %% Select the Events (this should go into an internal function: LoadEvents
 %Get the events structure, given the events input
 if ~exist('events','var') %for no input - choose events
-    [events,FO.eventsfilename] = bz_LoadEvents(basePath);
+    [events,FO.eventsfilename] = bz_LoadEvents(basePath); %  this function needs to be updated for neurocode 
     if isempty(events) %Needed: way to get to eventstype - none...
         eventstype = 'none';
         eventsname = 'browse';
@@ -156,7 +152,7 @@ catch
 end
    
 %Load the LFP and spikes
-FO.data.lfp = bz_GetLFP(FO.lookatchannel,'basepath',FO.basePath,'noPrompts',true);
+FO.data.lfp = getLFP(FO.lookatchannel,'basepath',FO.basePath,'noPrompts',true);
 switch useSpikes
     case true
         FO.data.spikes = bz_GetSpikes('basepath',FO.basePath);

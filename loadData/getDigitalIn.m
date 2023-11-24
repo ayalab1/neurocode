@@ -85,13 +85,10 @@ clear m
 Nchan = 16;
 Nchan2 = 17;
 for k = 1:Nchan
-    tester(:,Nchan2-k) = (digital_word2 - 2^(Nchan-k))>=0;
-    digital_word2 = digital_word2 - tester(:,Nchan2-k)*2^(Nchan-k);
-    test = tester(:,Nchan2-k) == 1;
-    test2 = diff(test);
-    pulses{Nchan2-k} = find(test2 == 1);
-    pulses2{Nchan2-k} = find(test2 == -1);
-    data(k,:) = test;
+    tester = (digital_word2 - 2^(Nchan-k))>=0;
+    digital_word2 = digital_word2 - tester*2^(Nchan-k);
+    pulses{Nchan2-k} = strfind(tester',[0 1])';
+    pulses2{Nchan2-k} = strfind(tester',[1 0])';
 end
 digital_on = pulses;
 digital_off = pulses2;
@@ -112,7 +109,7 @@ for ii = 1:size(digital_on,2)
         end
         if d(2,end) == 0; d(2,end) = nan; end
         digitalIn.ints{ii} = d;
-        digitalIn.dur{ii} = digitalIn.ints{ii}(2,:) - digitalIn.ints{ii}(1,:); % durantion
+        digitalIn.dur{ii} = digitalIn.ints{ii}(2,:) - digitalIn.ints{ii}(1,:); % duration
         
         clear intsPeriods
         intsPeriods(1,1) = d(1,1); % find stimulation intervals
@@ -127,20 +124,22 @@ for ii = 1:size(digital_on,2)
 end
 
 if exist('digitalIn')==1
-    xt = linspace(0,size(data,2)/fs,size(data,2));
-    data = flip(data);
-    data = data(1:size(digitalIn.intsPeriods,2),:);
-
-    h=figure;
-    imagesc(xt,1:size(data,2),data);
-    xlabel('s'); ylabel('Channels'); colormap gray 
-    mkdir('Pulses');
-    saveas(h,'pulses\digitalIn.png');
-
     try save([sess.FileName '.DigitalIn.events.mat'],'digitalIn');
     catch
         save('digitalIn.events.mat','digitalIn');
     end
+    keyboard
+    
+    clf
+    for i=1:length(digitalIn.timestampsOn)
+        intervals = digitalIn.intsPeriods{i};
+        if ~isempty(intervals)
+        PlotIntervals(intervals,'color','k','ylim',[0 1]+i-1,'alpha',1);
+        end
+    end
+    ylim([0 length(digitalIn.timestampsOn)])
+    mkdir('Pulses');
+    saveas(gcf,'pulses\digitalIn.png')
 else
     digitalIn = [];
 end

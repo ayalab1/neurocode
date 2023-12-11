@@ -75,6 +75,7 @@ minEvents = 10;
 link = 'log';
 dist = 'poisson';
 mode = 'mean';
+fixedSets = false;
 
 for i = 1:2:length(varargin),
     if ~ischar(varargin{i}),
@@ -86,7 +87,10 @@ for i = 1:2:length(varargin),
         case 'dist',
             dist = varargin{i+1};
         case 'mode',
-            mode = varargin{i+1}; 
+            mode = varargin{i+1};
+        case 'setid',
+            setID = varargin{i+1}; nSets = max(setID);
+            fixedSets = true;
         case 'nsets',
             nSets = varargin{i+1};
             if ~isscalar(nSets) || mod(nSets,1)>0
@@ -127,10 +131,10 @@ w = nan(nUnits,size(source,2)+1,nSets);
 predictions = nan(size(target));
 for unit = 1:nUnits,
     %% Split data into nSets balanced sets
-    setID = nan(nEvents,1);
+    if ~fixedSets, setID = nan(nEvents,1); end
     zero = target(:,unit)==0;
     ok = false; tic; tictoc = toc;
-    while ~ok && ((toc - tictoc) <5) % timeout in 5 seconds to prevent an infinite loop
+    while ~ok && ((toc - tictoc) <5) && ~fixedSets % timeout in 5 seconds to prevent an infinite loop
         % initialise (number sets sequentially)
         setID(zero) = ceil(linspace(1/sum(zero),1,sum(zero))*nSets); % we keep zero and non-zero sets separately for balance
         setID(~zero) = ceil(linspace(1/sum(~zero),1,sum(~zero))*nSets);

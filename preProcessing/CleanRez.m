@@ -1,45 +1,47 @@
 function rez = CleanRez(rez,varargin)
 
-% [Remove noisy clusters from the rez file. This is an optional preprocessing
+% Remove noisy clusters from the rez file. This is an optional preprocessing
 % step the user may choose to perform before exporting the Kilosort results to
 % phy. Alternatively, one may provide a path (of the Kilosort folder), where
 % the function would export the "noise" labels for the noisy clusters in
 % phy format. If prior labels exist, "noise" labels will be appended to the %
-% existing cluster_group.tsv file]
+% existing cluster_group.tsv file
 %
 %  USAGE
 %
-%    [[cleanRez] = CleanRez(rez, <options>)]
+%    cleanRez = CleanRez(rez, <options>)
 %
 %  INPUTS
 %  
-%   [rez]      [rez file from kilosort (note post cleaning after sorting]
+%    rez            rez file from kilosort (note post cleaning after sorting
 %
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
-%     Properties    Values
+%     Properties         Values
 %    -------------------------------------------------------------------------
-%  ['savepath']         [folder where phy files have already been exported
-%                       (by default, undefined as you may run CleanRez before
-%                       exporting the clean rez to phy). If provided, cluster
-%                       labels will be saved in a cluster_groups.tsv file for phy]
-%  ['mahalThreshold']   [spikes exceeding this threshold will be considered
-%                       outliers and removed (set to Inf to not impose threshold,
-%                       default = 12)] 
-%  ['minNumberOfSpikes'][clusters with nSpikes<minNumberOfSpikes will be 
-%                       removed (default = 20)]
-%  ['verbose']         [Display progress messages (default = true)]
+%   'savepath'           folder where phy files have already been exported
+%                        (by default, undefined as you may run CleanRez before
+%                        exporting the clean rez to phy). If provided, cluster
+%                        labels will be saved in a cluster_groups.tsv file for phy
+%   'mahalThreshold'     spikes exceeding this threshold will be considered
+%                        outliers and removed (set to Inf to not impose threshold,
+%                        default = 12)
+%   'minNumberOfSpikes'  clusters with nSpikes<minNumberOfSpikes will be 
+%                        removed (default = 20)
+%   'noisePeriods'       intervals from which spikes should be removed (in bins 
+%                        corresponding to the .dat file, NOT seconds)
+%   'verbose'            Display progress messages (default = true)
 %    =========================================================================
 %
 %  OUTPUT
 %
-%    [rez]                [cleaned rez file, without the noisy clusters]
+%    rez                 cleaned rez file, without the noisy clusters
 %
 %
 %  SEE ALSO
 %
-% [Ralitsa Todorova and Ryan Harvey] [2021-2022]
+% Ralitsa Todorova and Ryan Harvey 2021-2023
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -67,6 +69,11 @@ for i = 1:2:length(varargin)
             mahalThreshold = varargin{i+1};
             if ~isnumeric(mahalThreshold)
                 error('Incorrect value for property ''mahalThreshold'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
+            end
+        case 'noisePeriods'
+            badIntervals = varargin{i+1};
+            if ~isdmatrix(badIntervals) || size(badIntervals,2) ~= 2 ||         
+                error('Incorrect value for property ''noisePeriods'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
             end
         case 'verbose'
             verbose = varargin{i+1};
@@ -106,6 +113,27 @@ if mahalThreshold<Inf && exist('savepath','var') && exist(savepath,'dir')
 elseif mahalThreshold<Inf
     warning('You did not provide a phy path. Mahalanobis threshold will not be implemented.');
 end
+
+%% Remove spikes inside noisy periods
+try
+    if exist('noisePeriods','var') && exist('savepath','var') && exist(savepath,'dir') % if the user has already exported to phy and wants added labels to noise clusters
+        if verbose, disp(['Removing spikes taking place inside provided noisy periods']); end
+
+        % Read the .clu file indicating which cluster every spike is associated with
+        clu = double(readNPY(fullfile(savepath, 'spike_clusters.npy')));
+        badCluster = max(clu+1); % select a cluster where we will put all the spikes inside noisy periods
+
+        ok = ~InIntervals(double(rez.st3(:,1)),badIntervals);
+        clu(~ok) = badCluster;
+
+        if verbose, disp(['Removed a total of ' num2str(sum(~ok)) ' bad spikes (inside noisy threshold) to unused cluster ' num2str(badCluster) ' in phy.']); end
+    elseif exist('noisePeriods','var')
+        warning('You did not provide a phy path. Noisy spikes will not be labelled bad.');
+    end
+catch
+    warning('Something went wrong with removing spikes within noisy periods');
+end
+
 
 %% Find noisy clusters
 
@@ -215,6 +243,7 @@ if verbose, disp([num2str(sum(noisy)) '/' num2str(nClusters) ' clusters removed 
 
 % delete noisy clusters to clean the rez file
 rez.cProj(ismember(rez.st3(:,2),find(noisy)),:) = [];
+rez.cProjPC(ismember(rez.st3(:,2),find(noisy)),:) = [];
 rez.st3(ismember(rez.st3(:,2),find(noisy)),:) = [];
 
 % Export labels for phy

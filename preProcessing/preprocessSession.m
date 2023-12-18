@@ -157,9 +157,9 @@ save(fullfile(basepath,[basename, '.session.mat']),'session');
 % check the two different fucntions for delaing with analog inputs and proably rename them
 if analogInputs
     if  ~isempty(analogChannels)
-        analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true,'fs',session.extracellular.sr);
+        analogInp = computeAnalogInputs('analogCh',analogChannels,'saveMat',true);
     else
-        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true,'fs',session.extracellular.sr);
+        analogInp = computeAnalogInputs('analogCh',[],'saveMat',true);
     end
     
     % analog pulses ...

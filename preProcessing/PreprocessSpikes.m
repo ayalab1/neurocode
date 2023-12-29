@@ -191,7 +191,7 @@ else
     catch ME
         fprintf('An error occurred: %s\n', ME.message);
         fprintf('Please check that no mon_res file was created during preprocessing (for instance if you did unsorted spike analysis)');
-
+        rethrow(ME);
     end
 end
 

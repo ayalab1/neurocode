@@ -20,8 +20,8 @@ function [pulses] = getAnalogPulses(varargin)
 %               greater than 1]
 % [samplingRate][Sampling frequency (in Hz), default 20000]
 % [offset]      [Offset subtracted (in seconds), default 0]
-% [periodLag]   [How long a pulse has to be far from other pulses to be 
-%               consider a different stimulation period (in seconds, default 20s)]    
+% [periodLag]   [How long a pulse has to be far from other pulses to be
+%               consider a different stimulation period (in seconds, default 20s)]
 % [filename]    [File to get pulses from. Default, data file with folder
 %               name in current directory]
 % [manualThr]   [Check manually threslhold amplitude (default, false)]
@@ -30,20 +30,23 @@ function [pulses] = getAnalogPulses(varargin)
 % [minDur]      [pulses with shorter duration than this are removed]
 % [showFig]     [Whether or not to show final pulse figure, best to set to
 %               false when manually scoring long sessions. Default, true]
-%[xaxis_adj_ints] [change xaxis for IDing groupPulses[xmin xmax]. Default is [0 xmax]]
+% [xaxis_adj_ints] [change xaxis for IDing groupPulses[xmin xmax]. Default 
+%                  is [0 xmax]]
+% [sessEpochs]  [session epochs during which to detect pulses. Should be 
+%               integer indices for MergePoints. Default [], all epochs].
 %
 %
 %  OUTPUT
 %                 [pulses - events struct with the following fields
-% [timestamps]    C x 2  matrix with pulse times in seconds. First column of C 
-%                 are the beggining of the pulses, second column of C are the end of 
-%                 the pulses] 
+% [timestamps]    C x 2  matrix with pulse times in seconds. First column of C
+%                 are the beggining of the pulses, second column of C are the end of
+%                 the pulses]
 % [amplitude]     [values of the pulses with respect baleline (normalized as 0)]
 % [duration]      [Duration of the pulses. Note that default samplingRate is 20000]
 % [eventID]       [Numeric ID for classifying various event types (C X 1)]
-% [eventIDlabels] [label for classifying various event types defined in eventID (cell array C X 1)]  
+% [eventIDlabels] [label for classifying various event types defined in eventID (cell array C X 1)]
 % [intsPeriods]   [Stimulation periods, as defined by perioLag]
-% 
+%
 % [concatenate_
 % SEE ALSO
 %
@@ -70,7 +73,8 @@ addParameter(p,'useGPU',true,@islogical);
 addParameter(p,'minDur',[],@isnumeric);
 addParameter(p,'showFig',true,@islogical);
 addParameter(p,'forceDetect',false,@islogical);
-addParameter(p,'xaxis_adj_ints', [], @isnumeric)
+addParameter(p,'xaxis_adj_ints', [], @isnumeric);
+addParameter(p,'sessEpochs',[],@isnumeric);
 
 
 parse(p, varargin{:});
@@ -88,6 +92,7 @@ minDur = p.Results.minDur;
 showFig = p.Results.showFig;
 forceDetect = p.Results.forceDetect;
 xaxis_adj_ints = p.Results.xaxis_adj_ints;
+sessEpochs = p.Results.sessEpochs;
 
 
 prevPath = pwd;
@@ -125,7 +130,7 @@ if isempty(f) || f.bytes == 0                                              % if 
     
     if isempty(analogCh)
         error('No posible to run getAnalogPulses from Intan Buzsaki Ed with no analogCh inputs!');
-    else 
+    else
         analogCh = analogCh+1; % 0 to 1 index
     end
     parameters = LoadParameters(pwd); % read xml
@@ -134,10 +139,10 @@ if isempty(f) || f.bytes == 0                                              % if 
     IntanBuzEd = 1;
 else
     disp('Using analogin.dat...');
-    analogFile = 'analogin.dat';  
-    try [amplifier_channels, notes, aux_input_channels, spike_triggers,...         
-        board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
-        read_Intan_RHD2000_file_bz;
+    analogFile = 'analogin.dat';
+    try [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+            board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
+            read_Intan_RHD2000_file_bz;
     catch
         disp('File ''info.rhd'' not found. (Type ''help <a href="matlab:help loadAnalog">loadAnalog</a>'' for details) ');
     end
@@ -146,9 +151,9 @@ else
         filetarget = split(filetarget,'_'); filetarget = filetarget{1};
         localPaths = dir([filetarget, '*']);
         cd(localPaths(1).folder);
-        [amplifier_channels, notes, aux_input_channels, spike_triggers,...         
-        board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
-        read_Intan_RHD2000_file_bz;
+        [amplifier_channels, notes, aux_input_channels, spike_triggers,...
+            board_dig_in_channels, supply_voltage_channels, frequency_parameters, board_adc_channels ] =...
+            read_Intan_RHD2000_file_bz;
         cd ..
     end
     samplingRate = frequency_parameters.board_adc_sample_rate;
@@ -173,7 +178,7 @@ for jj = 1 : length(analogCh)
         d = bz_LoadBinary(analogFile, 'frequency', samplingRate, 'nChannels', nChannels,'channels', analogCh(jj));
     else
         d = dataAnalogIn(analogCh(jj)-(min(analogCh)-1),:);
-    end    
+    end
     xt = linspace(1,length(d)/samplingRate,length(d));
     
     try % correct for different baselines in different subsessions (different rooms)
@@ -187,7 +192,7 @@ for jj = 1 : length(analogCh)
     catch
         warning('error in attempting to remove subsession baseline: tell Raly');
     end
-
+    
     % estimate if there are ANY pulses in the signal:
     % if there are pulses, we expect good separation between high signal (during pulse) and low signal (outside of pulse)
     % if there are no pulses, we expect more uniform / gaussian noise signal with poor separation (not bimodal)
@@ -206,10 +211,9 @@ for jj = 1 : length(analogCh)
         warning('error in attempting to remove subsession baseline: tell Raly');
     end
     if max(em)<emThreshold, % if ANY subsession has good pulses, that's enough for this condition to pass
-        warning('Signal didn''t pass Raly''s threshold for detecting pulses. Aborting... Talk to Raly if you think this is a mistake and pulses are actually in the signal.'); 
+        warning('Signal didn''t pass Raly''s threshold for detecting pulses. Aborting... Talk to Raly if you think this is a mistake and pulses are actually in the signal.');
         d(:) = 0; % set signal to zero to avoid tedious steps to find pulses
     end
-
     
     if any(d<0) % if signal go negative, rectify
         d = d - min(d);
@@ -224,6 +228,13 @@ for jj = 1 : length(analogCh)
     else
         h2 = figure;
         plot(xt(1:100:end), d(1:100:end));
+        if ~isempty(sessEpochs)
+            for sess_it = 1:size(sessEpochs,1)
+                start = MergePoints.timestamps(sessEpochs(sess_it),1); stop = MergePoints.timestamps(sessEpochs(sess_it),2);
+                hold on
+                xline(start,'--g','LineWidth',2); xline(stop,'--r','LineWidth',2);
+            end
+        end
         xlabel('s'); ylabel('amp');
         title('Select threshold with the mouse and press left click...');
         [~,thr] = ginput(1);
@@ -238,7 +249,7 @@ for jj = 1 : length(analogCh)
         h = figure;
         plot(xt(1:100:end), d(1:100:end));
         hold on
-        [a, aa] = size(xaxis_adj_ints); %#ok<ASGLU> 
+        [a, aa] = size(xaxis_adj_ints); %#ok<ASGLU>
         if aa ~=2
             error('Incorrect inputs for xlim! Change to [xmin xmax]')
         else
@@ -260,7 +271,7 @@ for jj = 1 : length(analogCh)
             else
                 selecting = 0;
             end
-        end        
+        end
     end
     
     disp('    Thresholding signal and finding pulses...');
@@ -276,10 +287,10 @@ for jj = 1 : length(analogCh)
     if size(temp,1) > size(temp,2)
         temp = temp';
     end
-
+    
     temp2 = temp;
     temp(2,:) = 0;
-
+    
     try
         [~,temp(2,:)] = FindClosest(locsB,temp2,'higher'); % Raly: this is much faster in FindClosest is in the path
     catch
@@ -348,7 +359,14 @@ for jj = 1 : length(analogCh)
                 plot([eventGroup(kk,1) eventGroup(kk,2)],[thr+100 thr+100],'LineWidth',10);
             end
         end
-        xlabel('s'); ylabel(['Ch', num2str(analogCh(jj)),' (au)']); 
+        xlabel('s'); ylabel(['Ch', num2str(analogCh(jj)),' (au)']);
+        if ~isempty(sessEpochs)
+            for sess_it = 1:size(sessEpochs,1)
+                start = MergePoints.timestamps(sessEpochs(sess_it),1); stop = MergePoints.timestamps(sessEpochs(sess_it),2);
+                hold on
+                xline(start,'--g','LineWidth',2); xline(stop,'--r','LineWidth',2);
+            end
+        end
     end
 end
 mkdir('Pulses');
@@ -357,7 +375,7 @@ saveas(gca,['pulses\analogPulsesDetection.png']);
 
 
 filetarget = split(pwd,filesep); filetarget = filetarget{end};
-if ~isempty(pul) % if no pulses, not save anything... 
+if ~isempty(pul) % if no pulses, not save anything...
     pulses.timestamps = stackCell(pul);
     pulses.amplitude = stackCell(val);
     pulses.duration = stackCell(dur);
@@ -392,20 +410,35 @@ if ~isempty(pul) % if no pulses, not save anything...
         % need to deal with intsPeriods
     end
     
+    % remove pulses that are outside selected epochs
+    if ~isempty(sessEpochs)
+        ind = [];
+        for i = 1:size(sessEpochs,1)
+            ind1 = find((pulses.timestamps(:,1) >= MergePoints.timestamps(sessEpochs(i),1))&pulses.timestamps(:,2) <= MergePoints.timestamps(sessEpochs(i),2));
+            ind = unique([ind; ind1]);
+        end
+        ind = sort(ind);
+        pulses.timestamps = pulses.timestamps(ind,:);
+        pulses.amplitude = pulses.amplitude(ind,:);
+        pulses.duration = pulses.duration(ind,:);
+        pulses.eventGroupID = pulses.eventGroupID(ind,:);
+        pulses.analogChannel = pulses.analogChannel(ind,:);
+    end
+    
     disp('Saving locally...');
     save([filetarget '.pulses.events.mat'],'pulses');
 else
     pulses = [];
 end
- 
+
 cd(prevPath);
 end
 
 function [outMat] = stackCell(inCell)
-    outMat = [];
-    for ii = 1:length(inCell)
-        outMat = [outMat; inCell{ii}'];
-    end
+outMat = [];
+for ii = 1:length(inCell)
+    outMat = [outMat; inCell{ii}'];
+end
 end
 
 

@@ -50,10 +50,10 @@ offset = p.Results.offset;
 filename = p.Results.filename;
 lag = p.Results.periodLag;
 
-if ~isempty(dir('*.xml'))
-    %sess = bz_getSessionInfo(pwd,'noPrompts',true);
-    sess = getSession;
-end
+% if ~isempty(dir('*.xml'))
+%     %sess = bz_getSessionInfo(pwd,'noPrompts',true);
+%     sess = getSession;
+% end
 if ~isempty(dir('*DigitalIn.events.mat'))
     disp('Pulses already detected! Loading file.');
     file = dir('*DigitalIn.events.mat');
@@ -124,11 +124,11 @@ for ii = 1:size(digital_on,2)
 end
 
 if exist('digitalIn')==1
-    try save([sess.FileName '.DigitalIn.events.mat'],'digitalIn');
-    catch
+    %try save([sess.FileName '.DigitalIn.events.mat'],'digitalIn');
+    %catch
         save('digitalIn.events.mat','digitalIn');
-    end
-    keyboard
+    %end
+    %keyboard
     
     clf
     for i=1:length(digitalIn.timestampsOn)

@@ -69,7 +69,7 @@ addParameter(p,'waveDb',false,@islogical);
 addParameter(p,'frange',[50 250],@isnumeric);
 addParameter(p,'nfreqs',100,@isnumeric);
 addParameter(p,'ncyc',5,@isnumeric);
-addParameter(p,'space','log');
+addParameter(p,'space','log'); %space param doesn't propogate to plotting - needs to added HLR 01/2024
 addParameter(p,'roundfreqs',false,@islogical);
 addParameter(p,'fvector',[]);
 

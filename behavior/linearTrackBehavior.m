@@ -207,7 +207,6 @@ speed = LinearVelocity([behavior.timestamps', behavior.position.x', behavior.pos
 behavior.speed = speed(:,2)';
 
 if isempty(maze_sizes)
-    warning('data is not in cm, it is highly recommended to convert to cm')
     if isempty(speedTh)
         speedTh = 100;%prctile(behavior.speed(~isoutlier(behavior.speed)),10);
     end

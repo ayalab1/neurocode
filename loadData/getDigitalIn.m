@@ -128,7 +128,7 @@ if exist('digitalIn')==1
     catch
         save('digitalIn.events.mat','digitalIn');
     end
-    keyboard
+    %keyboard
     
     clf
     for i=1:length(digitalIn.timestampsOn)

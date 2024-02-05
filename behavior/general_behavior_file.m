@@ -42,7 +42,7 @@ addParameter(p, 'likelihood_dlc', .95); % deeplabcut likelihood threshold
 addParameter(p, 'force_format', 'none'); % force loading type (options: 'optitrack','dlc')
 addParameter(p, 'clean_tracker_jumps', true); % option to manually clean tracker jumps
 addParameter(p, 'convert_xy_to_cm', true); % option to convert xy to cm (best if used with clean_tracker_jumps)
-addParameter(p, 'maze_sizes', []); % list of maze sizes (x-dim) per non-sleep epoch (if same maze & cam pos over epochs use single number)
+addParameter(p, 'maze_sizes', []); % list of maze sizes (x-dim, in cm) per non-sleep epoch (if same maze & cam pos over epochs use single number)
 
 parse(p, varargin{:});
 basepaths = p.Results.basepath;

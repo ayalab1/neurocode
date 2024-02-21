@@ -1,5 +1,13 @@
 function [TW, K, T] = calculateOptimalTWandK(data, Fs)
-    % Calculate the duration of the data
+
+%this is code to find optimal timebandiwdth and tapers for use with Chronux
+
+
+% GNU Liscense 2024-2025 HLarsson
+
+
+
+% Calculate the duration of the data
     numTimePoints = size(data, 2); % Assuming columns represent time points
     T = numTimePoints / Fs; % Duration in seconds
     

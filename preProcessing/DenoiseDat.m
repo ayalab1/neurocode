@@ -143,7 +143,7 @@ chunkSize = ceil(samplingRate*secondsPerChunk);
 indicesChunk1 = (1:chunkSize*nChannels)'; % these are the .dat file indices for the first chunk
 nChunks = ceil(nSamples/chunkSize);
 for chunk = 1:nChunks
-    indicesChunk = indicesChunk1+(chunkSize*nChannels)*(chunk-1);
+    indicesChunk = indicesChunk1+(chunkSize*nChannels)*(chunk-1); if indicesChunk(end)>nSamples*nChannels, indicesChunk(indicesChunk>nSamples*nChannels) = []; end
     dataChunk = double(reshape(m.Data(indicesChunk),nChannels,[])); % Consider adding a constant if you're re-running denoising!
     noise = zeros(size(dataChunk),'int16');
     for i=1:nShanks

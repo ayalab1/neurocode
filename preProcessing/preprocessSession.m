@@ -73,7 +73,7 @@ addParameter(p,'stateScore',true,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',false,@islogical);
-addParameter(p,'removeNoise',false,@islogical); % raly: noise removal is bad, it removes periods 20ms after (because of the filter shifting) a peak in high gamma. See ayadata1\home\raly\Documents\notes\script_NoiseRemoval_bad.m for details.
+addParameter(p,'removeNoise',true,@islogical); % raly: new denoising method removing the first PCA component
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
@@ -212,11 +212,6 @@ if cleanArtifacts && analogInputs
     cleanPulses(pulses.ints{1}(:));
 end
 
-% remove noise from data for cleaner spike sorting
-if removeNoise
-    NoiseRemoval(basepath); % not very well tested yet
-end
-
 %% Get brain states
 % an automatic way of flaging bad channels is needed
 if stateScore
@@ -230,6 +225,19 @@ if stateScore
         warning('Problem with SleepScore scoring... unable to calculate');
     end
 end
+
+
+% remove noise from data for cleaner spike sorting
+if removeNoise
+    try EMGFromLFP = getStruct(pwd,'EMGFromLFP');
+    catch
+        EMGFromLFP = getEMGFromLFP(basepath,'noPrompts',true,'saveMat',true);
+    end
+
+    baseline = EMGFromLFP.timestamps(FindInterval(EMGFromLFP.data>quantile(EMGFromLFP.data,0.99)));  % select the period of top 1% EMG activity as the denoising baseline
+    DenoiseDat(fullfile(basepath,[basename '.dat']),session,'baseline',baseline);
+end
+
 
 %% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
 if spikeSort

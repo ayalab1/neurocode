@@ -7,7 +7,7 @@ function [PhaseLockingData] = phaseModulation(spikes,lfp,passband,varargin)
 %
 % INPUTS
 %
-% [spikes]       [spike time cellinfo struct]
+% [spikes]       [spike cellinfo struct]
 % [lfp]          [lfp data with a single channel from getLFP(). 
 %                 Note this data should be the struct from direct
 %                 LFP loading]

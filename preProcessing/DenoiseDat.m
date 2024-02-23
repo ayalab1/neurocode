@@ -112,6 +112,7 @@ nSamples = size(data,2);
 % Select timestamp indices that will be taken as baseline to compute PCA:
 if isempty(baseline), baseline = [0 nSamples/samplingRate]; end % use the whole recording as a "baseline"
 baselineSamples = round(baseline*samplingRate);
+baselineSamples(diff(baselineSamples,[],2)<=0,:) = [];
 if sum(diff(baselineSamples,[],2))>samplingRate*sampleDuration % baseline is larger than the required number of indices
     % select a random sample of indices within the baseline period
     idx = sort(randperm(round(sum(diff(baselineSamples,[],2))),round(samplingRate*sampleDuration)))'; % select random indices among all possible indices

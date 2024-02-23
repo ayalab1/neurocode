@@ -229,7 +229,7 @@ end
 
 % remove noise from data for cleaner spike sorting
 if removeNoise
-    try EMGFromLFP = getStruct(pwd,'EMGFromLFP');
+    try EMGFromLFP = getStruct(basepath,'EMGFromLFP');
     catch
         EMGFromLFP = getEMGFromLFP(basepath,'noPrompts',true,'saveMat',true);
     end

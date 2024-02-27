@@ -104,6 +104,11 @@ classdef IntervalArray < handle
             end
         end
 
+        function intervals = data(obj)
+            % can access intervals via .data
+            intervals = obj.intervals;
+        end
+
         function disp(obj)
 
             % pull out intervals and remove inf

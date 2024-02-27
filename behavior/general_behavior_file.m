@@ -948,7 +948,13 @@ end
 
 if isempty(filename)
     filename = dir(fullfile(folder, 'digitalIn.dat'));
-    filename = filename.name;
+    if isempty(filename)
+        disp('No digitalIn file indicated...');
+        digitalIn = [];
+        return
+    else
+        filename = filename.name;
+    end
 elseif exist('filename', 'var')
     disp(['Using input: ', filename])
 else

@@ -60,11 +60,9 @@ disp('Running Kilosort spike sorting with the Buzsaki lab wrapper')
 
 %% Parsing inputs
 p = inputParser;
-basepath = cd;
-[~,basename] = fileparts(basepath);
 
-addParameter(p,'basepath',basepath,@isfolder)       % path to the folder containing the data
-addParameter(p,'basename',basename,@ischar)         % file basenames (of the dat and xml files)
+addParameter(p,'basepath',pwd,@isfolder)       % path to the folder containing the data
+addParameter(p,'basename',"",@ischar)         % file basenames (of the dat and xml files)
 addParameter(p,'GPU_id',1,@isnumeric)               % Specify the GPU_id
 addParameter(p,'rejectchannels',[],@isnumeric)      % Specify list of channels to ignore while spike sorting (base 1, add 1 to neuroscope numbering)
 addParameter(p,'SSD_path','D:\KiloSort',@isfolder)    % Path to SSD disk. Make it empty to disable SSD
@@ -77,6 +75,9 @@ parse(p,varargin{:})
 
 basepath = p.Results.basepath;
 basename = p.Results.basename;
+if basename == ""
+    basename = basenameFromBasepath(basepath);
+end
 GPU_id = p.Results.GPU_id;
 SSD_path = p.Results.SSD_path;
 CreateSubdirectory = p.Results.CreateSubdirectory;

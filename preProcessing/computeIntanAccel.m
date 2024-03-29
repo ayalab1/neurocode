@@ -212,10 +212,30 @@ accel.behaviorinfo.processingfunction = 'getIntanAccel.m';
 
 % Save struct if prompted by user
 if saveMat
-    save(accel_output_path, 'accel')
+    s = whos('accel');
+    scale = floor(log(s.bytes)/log(1024));
+    if scale < 3
+        bigSave = false;
+    elseif scale == 3
+        if (s.bytes/(1024^3))>2
+            bigSave = true;
+        else
+            bigSave = false;
+        end
+    elseif scale >3
+        bigSave = true;
+    else
+        bigSave = false;
+    end
+    if (s.bytes/1024)<=1
+        error('accel.mat not filled, check aux');
+    end
+    if ~bigSave
+        save(accel_output_path, 'accel');
+    else
+        save(accel_output_path, 'accel', '-v7.3');
+    end
 end
-
-
 end
 
 

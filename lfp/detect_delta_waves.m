@@ -28,6 +28,9 @@ function detect_delta_waves(varargin)
 %   - 'showfig' (logical): option to show delta/firing psth
 %   - 'verify_firing' (logical): verify that firing rate is suppressed in
 %       delta wave
+%   - 'ignore_intervals' (numeric): set of intervals to ignore. Use case:
+%       opto stim intervals to ignore
+%
 % Example:
 %   detect_delta_waves('basepath', '/path/to/data', 'brainRegion', 'PFC');
 %
@@ -49,6 +52,7 @@ addParameter(p, 'manual_pick_channel', false, @islogical);
 addParameter(p, 'use_sleep_score_delta_channel', false, @islogical);
 addParameter(p, 'showfig', false, @islogical);
 addParameter(p, 'verify_firing', true, @islogical);
+addParameter(p, 'ignore_intervals', [], @isnumeric);
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
@@ -77,6 +81,7 @@ manual_pick_channel = p.Results.manual_pick_channel;
 use_sleep_score_delta_channel = p.Results.use_sleep_score_delta_channel;
 showfig = p.Results.showfig;
 verify_firing = p.Results.verify_firing;
+ignore_intervals = p.Results.ignore_intervals;
 
 disp(basepath)
 
@@ -236,6 +241,12 @@ deltas0 = Restrict(deltas0, immobility);
 
 % restict to deltas that are above peak_to_trough_ratio
 deltas = deltas0(deltas0(:, 5)-deltas0(:, 6) > peak_to_trough_ratio, :);
+
+% remove deltas that intersect with ignore intervals
+if ~isempty(ignore_intervals)
+    keep_intervals = ~IntervalsIntersect(deltas(:, [1, 3]), ignore_intervals);
+    deltas = deltas(keep_intervals, :);
+end
 
 % Verify that spiking decreases at the peak of the delta
 [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);

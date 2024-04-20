@@ -18,9 +18,14 @@ xmli = strfind(fbasename,'.xml');
 if isempty(xmli)
    fbasename = [fbasename '.xml'];
 end
-rxml = xmltools(fbasename);
 
-rxml = rxml.child(2);
+rxml = xmltools(fbasename);
+try
+    rxml = rxml.child(2); %error raised - 8shank Buzsaki probe cannot be loaded during Kilosort due to error here HLarsson 3/12/24
+
+catch
+    rxml = rxml.child;
+end
 
 % from this level all children are the different parameters fields
 xml.FileName = fbasename;

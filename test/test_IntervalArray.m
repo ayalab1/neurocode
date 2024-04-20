@@ -83,4 +83,8 @@ function test_IntervalArray()
     point = 9;
     contain = myIntervalArray.in(point);
     assert(isequal(contain,true),'Error: in not working');
+
+    % Test empty interval
+    myIntervalArray = IntervalArray([]);
+    assert(isequal(myIntervalArray.isempty,true),'Error: empty intervals not working');
 end

@@ -11,7 +11,9 @@ function [behavior] = linearTrackBehavior(varargin)
 %
 %  behavior = AYA lab standard behavior structure from general_behavior_file.m
 %  tracking
-%  manipulation = true if some type of manipulation (e.g. opto stimulation) was conducted
+%  manipulation = true if some type of manipulation (e.g. opto stimulation)
+%  was conducted  - (Needs better explanation, the way it is written makes
+%  confusing how to implement- HLR 2/24)
 %  lapStart = start/end of lap, in % of track length
 %  speedTh = speed threshold (times below it will be excluded)
 %  savemat = save .mat varaibles to basepath

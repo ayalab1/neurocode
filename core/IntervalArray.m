@@ -37,6 +37,7 @@ classdef IntervalArray < handle
     %
     % Examples:
     %   myIntervalArray = IntervalArray([0,5;10,15])
+    %   myIntervalArray = IntervalArray([])
     %   myIntervalArray.validate_intervals()
     %   myIntervalArray.sort()
     %   myIntervalArray(1)
@@ -74,6 +75,10 @@ classdef IntervalArray < handle
                 intervals_in = [-inf, inf];
             end
             obj.intervals = intervals_in;
+            % making empty interval
+            if obj.isempty()
+                obj.intervals = double.empty(0,2);
+            end
             obj.validate_intervals();
             obj.sort();
         end
@@ -102,6 +107,11 @@ classdef IntervalArray < handle
             else
                 interval = builtin('subsref', obj, S);
             end
+        end
+
+        function intervals = data(obj)
+            % can access intervals via .data
+            intervals = obj.intervals;
         end
 
         function disp(obj)

@@ -80,7 +80,8 @@ for i = 1:length(basepaths)
         force_format, ...
         clean_tracker_jumps, ...
         convert_xy_to_cm, ...
-        maze_sizes);
+        maze_sizes, ...
+        p);
 end
 end
 
@@ -94,7 +95,8 @@ function behavior = main(basepath, ...
     force_format, ...
     clean_tracker_jumps, ...
     convert_xy_to_cm, ...
-    maze_sizes)
+    maze_sizes, ...
+    p)
 
 if exist([basepath, filesep, [basename, '.animal.behavior.mat']], 'file') && ...
         ~force_overwrite
@@ -127,6 +129,7 @@ behavior.epochs = session.epochs;
 behavior.processinginfo.date = datetime("today");
 behavior.processinginfo.function = 'general_behavioral_file.mat';
 behavior.processinginfo.source = source;
+behavior.processinginfo.varargin = p.Results;
 
 % deeplabcut will often have many tracking points, add them here
 if ~isempty(extra_points)
@@ -948,7 +951,13 @@ end
 
 if isempty(filename)
     filename = dir(fullfile(folder, 'digitalIn.dat'));
-    filename = filename.name;
+    if isempty(filename)
+        disp('No digitalIn file indicated...');
+        digitalIn = [];
+        return
+    else
+        filename = filename.name;
+    end
 elseif exist('filename', 'var')
     disp(['Using input: ', filename])
 else

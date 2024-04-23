@@ -1,4 +1,4 @@
-function [mean_psth, sem_psth, psth_window, raster] = computePSTH_perevent(event, spikes, varargin)
+function [mean_psth, sem_psth, psth_window, raster] = computePSTH_perevent(event_matrix, spikes, varargin)
     p = inputParser;
 
     % Define input parameters
@@ -16,15 +16,18 @@ function [mean_psth, sem_psth, psth_window, raster] = computePSTH_perevent(event
     eventName = p.Results.eventName;
 
     % Calculate PSTH for each event
-    event_count = size(event.timestamps, 1);
+    event_count = size(event_matrix, 1);
     psth_matrix = zeros(event_count, binCount);
     raster = cell(event_count, 1);
 
+    % Define the PSTH time window
+    psth_window = linspace(-duration/2, duration/2, binCount);
+
     for event_idx = 1:event_count
-        event_time = event.timestamps(event_idx, :);
+        event_time = event_matrix(event_idx, :);
         spikes_in_event = spikes.times{1}(spikes.times{1} >= event_time(1) & spikes.times{1} <= event_time(2));
-        [psth, ~, psth_window] = computePSTH('binCount', binCount, 'duration', duration, 'plots', false, 'eventName', eventName, 'alignment', 'center', 'spikes', {spikes_in_event}, 'event', struct('timestamps', [event_time]));
-        psth_matrix(event_idx, :) = psth.responsecurve;
+        spike_counts = histcounts(spikes_in_event, binCount, 'BinLimits', [-duration/2, duration/2]);
+        psth_matrix(event_idx, :) = spike_counts / (duration / binCount);
         raster{event_idx} = spikes_in_event;
     end
 
@@ -38,7 +41,7 @@ function [mean_psth, sem_psth, psth_window, raster] = computePSTH_perevent(event
         subplot(2, 1, 1);
         plot(psth_window, mean_psth, 'LineWidth', 2);
         hold on;
-        shadedErrorBar(psth_window, mean_psth, sem_psth, 'lineProps', '-b', 'transparent', true);
+        shadedErrorBar(psth_window, mean_psth, sem_psth, '-b');
         xlabel('Time (s)');
         ylabel('Firing Rate (spikes/s)');
         title(['Mean PSTH for ' eventName]);

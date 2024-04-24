@@ -1,76 +1,42 @@
 function [PSTH, index_abs] = computePSTH_perevent(event, spikes, varargin)
+% COMPUTEPSTH_PEREVENT Calculate PSTH per event
 %
-% [computePSTH_perevent] - [Calculates the PSTH per event for spikes given events]
+%   [PSTH, index_abs] = COMPUTEPSTH_PEREVENT(event, spikes, varargin) calculates
+%   the PSTH for each event using the given spikes and event data.
 %
-% [Computes PSTH from spikes given events, in alignment with CellExplorer
-% style. PSTH with multiple differing paramaters to change (see
-% documentation)]
+%   Required input arguments:
+%   - event: struct containing event timestamps
+%   - spikes: struct containing spike timestamps
 %
-%  USAGE
+%   Optional input arguments (specified as parameter-value pairs):
+%   - binCount: number of bins for the PSTH (default: 100)
+%   - alignment: alignment of time ('onset', 'center', 'peaks', 'offset') (default: 'onset')
+%   - binDistribution: distribution of bins around events (default: [0.4, 0.2, 0.4])
+%   - duration: duration of PSTH (default: 0.15 seconds)
+%   - smoothing: Gaussian smoothing window size (default: 5)
+%   - percentile: percentile of event duration distribution (default: 99)
+%   - plots: flag to show plots (default: true)
+%   - eventName: title used for plots
+%   - maxWindow: maximum window size in seconds (default: 10)
+%   - zscorePlot: flag to plot z-scored response (default: true)
 %
-%   [PSTH,index_abs] = computePSTH_perevent(event,spikes,varargin)
-%
-%  INPUT
-%
-%    [event]         [event times formatted according to the CellExplorer's
-%                     convention]
-%    [spikes]        [spikes formatted according to the CellExplorer's
-%                     convention]
-%
-%    <options>      [optional list of property-value pairs (see table below)]
-%
-%    =========================================================================
-%     Properties    Values
-%    -------------------------------------------------------------------------
-%    ['binCount']         [how many bins (for half the window, default 100)]
-%    ['alignment']        [alignment of time['onset','center','peaks','offset']
-%                          (default 'onset')]
-%    ['binDistribution']  [How the bins should be distributed around the
-%                          events, pre, during, post. Must sum to 1]
-%    ['duration']         [Duration of PSTH (for half the window -
-%                          used in CCG [in seconds]. Default is 0.15]
-%    ['smoothing']        [Any gaussian smoothing to apply? units of bins.
-%                          Default is 5.]
-%    ['percentile']       [If events does not have the same length, the
-%                          event duration can be determined from percentile
-%                          of the distribution of events. Default is 99]
-%    ['plots']            [Show plots. Default is 'true']
-%    ['eventName']        [Title used for plots]
-%    ['maxWindow']        [Maximum window size in seconds. Default is 10]
-%    ['zscorePlot']       [Plot z-scored response. Default is 'true']
-%
-%  OUTPUT
-%
-%    [PSTH]           [structure containing PSTH data]
-%    [index_abs]      [index of units sorted by peak response time]
-%
-%  EXAMPLE
-%
-%  SEE
-%
-%   [Dependencies] - [CCG]
-%
-% [AntonioFR. Based on Peter Petersen's calc_PSTH] [2021-2022]
-%
-% This program is free software; you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
+%   Output:
+%   - PSTH: struct containing PSTH data
+%   - index_abs: absolute indices of units for plotting
 
+% Parse input arguments
 p = inputParser;
-
-addParameter(p, 'binCount', 100, @isnumeric);        % how many bins (for half the window)
-addParameter(p, 'alignment', 'onset', @ischar);       % alignment of time ['onset','center','peaks','offset']
-addParameter(p, 'binDistribution', [0.4, 0.2, 0.4], @isnumeric);  % How the bins should be distributed around the events, pre, during, post. Must sum to 1
-addParameter(p, 'duration', 0.15, @isnumeric);        % duration of PSTH (for half the window - used in CCG) [in seconds]
-addParameter(p, 'smoothing', 5, @isnumeric);          % any gaussian smoothing to apply? units of bins.
-addParameter(p, 'percentile', 99, @isnumeric);        % if events does not have the same length, the event duration can be determined from percentile of the distribution of events
-addParameter(p, 'plots', true, @islogical);           % Show plots?
-addParameter(p, 'eventName', '', @ischar);            % Title used for plots
-addParameter(p, 'maxWindow', 10, @isnumeric);         % Maximum window size in seconds
-addParameter(p, 'zscorePlot', true, @islogical);      % plot z-scored response
-
-parse(p, varargin{:})
+addParameter(p, 'binCount', 100, @isnumeric);
+addParameter(p, 'alignment', 'onset', @ischar);
+addParameter(p, 'binDistribution', [0.4, 0.2, 0.4], @isnumeric);
+addParameter(p, 'duration', 0.15, @isnumeric);
+addParameter(p, 'smoothing', 5, @isnumeric);
+addParameter(p, 'percentile', 99, @isnumeric);
+addParameter(p, 'plots', true, @islogical);
+addParameter(p, 'eventName', '', @ischar);
+addParameter(p, 'maxWindow', 10, @isnumeric);
+addParameter(p, 'zscorePlot', true, @islogical);
+parse(p, varargin{:});
 
 binCount = p.Results.binCount;
 alignment = p.Results.alignment;
@@ -78,8 +44,8 @@ binDistribution = p.Results.binDistribution;
 duration = p.Results.duration;
 smoothing = p.Results.smoothing;
 percentile = p.Results.percentile;
-eventName = p.Results.eventName;
 plots = p.Results.plots;
+eventName = p.Results.eventName;
 maxWindow = p.Results.maxWindow;
 zscorePlot = p.Results.zscorePlot;
 
@@ -90,7 +56,7 @@ if duration == 0
     duration = min(max(round(stim_duration * 1000), 50) / 1000, maxWindow);
 end
 
-binSize = max(round(duration / binCount * 1000), 1) / 1000; % minimum binsize is 0.5ms.
+binSize = max(round(duration / binCount * 1000), 1) / 1000;
 
 % Determine event alignment
 switch alignment
@@ -112,100 +78,58 @@ switch alignment
         binsToKeep = 1:duration * 2 / binSize;
 end
 
-disp(['  ', num2str(length(event_times)), '  events, duration set to: ', num2str(duration), ' sec, aligned to ', alignment, ', with binsize: ' num2str(binSize)])
+disp(['  ', num2str(length(event_times)), '  events, duration set to: ', num2str(duration), ' sec, aligned to ', alignment, ', with binsize: ', num2str(binSize)])
 
 % Determining the bins interval for metrics
 binsPre = 1:floor(binDistribution(1) * length(binsToKeep));
 binsEvents = floor(binDistribution(1) * length(binsToKeep)) + 1:floor((binDistribution(1) + binDistribution(2)) * length(binsToKeep));
 binsPost = floor((binDistribution(1) + binDistribution(2)) * length(binsToKeep)) + 1:length(binsToKeep);
 
+% Initialize PSTH_out to store the results
+PSTH_out = zeros(length(binsToKeep), numel(event_times));
 
-% Flatten spikes.times into a single cell array
-spike_cell = spikes.times;
-
-% Convert the flattened cell array to a matrix
-spike_matrix = cell2mat(cellfun(@(x) x(:), spike_cell, 'UniformOutput', false));
-
-% Initialize PSTH_out matrix
-num_events = length(event_times);
-PSTH_out = zeros(length(binsToKeep), num_events);
-
-% Calculate PSTH per event
-binSize = max(round(duration / binCount * 1000), 1) / 1000;
-halfBins = round(duration / binSize / 2);
-nBins = 2 * halfBins + 1;
-t = (-halfBins:halfBins)' * binSize;
-
-PSTH_out = zeros(nBins, size(event.timestamps, 1), numel(spikes.times));
-
-for i = 1:size(event.timestamps, 1) % Iterate over each event
-    event_time = event.timestamps(i, :); % Get the start and end times of the current event
-    for j = 1:numel(spikes.times) % Iterate over each spike
-        spike_times = [spikes.times{j}, repmat(event_time, size(spikes.times{j}, 1), 1)];
-        % Determine the size of spikes.times{j}
-        spike_count = numel(spikes.times{j});
-        % Create spike_cluster_index to represent each spike's association with an event
-        spike_cluster_index = [ones(size(spikes.times{j})); 2 * ones(size(event_time))];
-        [ccg, time] = CCG(spike_times, spike_cluster_index, 'binSize', binSize, 'duration', (duration + padding) * 2);
-        PSTH_out(:, i, j) = ccg(binsToKeep + 1, 2, 1) ./ numel(event_time) / binSize; % Use only the current event time
-    end
+% Iterate over each event
+for i = 1:numel(event_times)
+    % Concatenate spike times with the current event time
+    spike_times = [vertcat(spikes.times{:}); event_times(i)];
+    % Assign cluster indices to spikes and events
+    spike_cluster_index = [ones(size(vertcat(spikes.times{:}))); 2 * ones(size(event_times))];
+    % Compute CCG for the concatenated spike times
+    [ccg, time] = CCG(spike_times, spike_cluster_index, 'binSize', binSize, 'duration', (duration + padding) * 2);
+    % Store the normalized PSTH for the current event
+    PSTH_out(:, i) = ccg(binsToKeep + 1, 2, 1) ./ numel(event_times) / binSize;
 end
 
-% Calculate modulation index based on response to events
-modulationIndex = mean(PSTH_out(binsEvents, :)) ./ mean(PSTH_out(binsPre, :));
+% Extract the time vector
+time = time(binsToKeep + 1);
 
-% Calculate modulation significance level
-modulationSignificanceLevel = zeros(1, num_events);
-if ~isempty(binsEvents) && ~isempty(binsPre) && ~isempty(PSTH_out) && size(PSTH_out, 1) >= max(binsEvents) && size(PSTH_out, 1) >= max(binsPre)
-    for i = 1:num_events
-        % Check if the indices are valid
-        if numel(binsEvents) > 1 && numel(binsPre) > 1 && size(PSTH_out, 2) >= i
-            [~, p_kstest2] = kstest2(PSTH_out(binsEvents, i), PSTH_out(binsPre, i));
-            modulationSignificanceLevel(i) = p_kstest2;
-        else
-            modulationSignificanceLevel(i) = NaN; % Set to NaN if bins are invalid
-        end
-    end
-else
-    modulationSignificanceLevel = NaN(1, num_events); % Set to NaN if inputs are empty or invalid
+% Compute mean and SEM of PSTH_out
+mean_PSTH = mean(PSTH_out, 2);
+SEM_PSTH = std(PSTH_out, 0, 2) / sqrt(size(PSTH_out, 2));
+
+% Plot PSTH with shaded error bars
+figure;
+shadedErrorBar(time, mean_PSTH, SEM_PSTH, {'-b'});
+xlabel('Time (s)');
+ylabel('Mean PSTH');
+title('Population PSTH');
+
+% Plot raster of each event stacked on top of each other
+figure;
+for i = 1:size(PSTH_out, 2)
+    spikes_in_event = PSTH_out(:, i);
+    event_time = event_times(i);
+    raster_y = ones(size(spikes_in_event)) * event_time;
+    scatter(time(spikes_in_event > 0), raster_y(spikes_in_event > 0), 'k', 'filled');
+    hold on;
 end
+xlabel('Time (s)');
+ylabel('Event Index');
+title('Raster Plot of Events');
 
-if smoothing > 0
-    PSTH_out = nanconv(PSTH_out, ce_gausswin(smoothing) / sum(ce_gausswin(smoothing)), 'edge');
-end
-
-[~, modulationPeakResponseTime] = max(PSTH_out);
-modulationPeakResponseTime = time(modulationPeakResponseTime);
-
-% Construct PSTH structure
-PSTH.responsecurve = PSTH_out;
+% Assign PSTH_out to output variable PSTH
+PSTH.mean_PSTH = mean_PSTH;
+PSTH.SEM_PSTH = SEM_PSTH;
 PSTH.time = time;
-PSTH.alignment = alignment;
-PSTH.modulationIndex = modulationIndex;
-PSTH.modulationPeakResponseTime = modulationPeakResponseTime';
-PSTH.modulationSignificanceLevel = modulationSignificanceLevel;
-
-% Index to sort out units in plot (relative to specific spikes entered)
-[~, index3] = sort(modulationPeakResponseTime);
-
-% Index converted to absolute UID to track units from plot
-index_abs = spikes.UID(index3);
-
-if plots
-    figure,
-    subplot(2, 1, 1);
-    plot(time, mean(PSTH_out')', 'LineWidth', 2); hold on;
-    plot(time, mean(PSTH_out')' + std(PSTH_out'), '--b'); hold on;
-    plot(time, mean(PSTH_out')' - std(PSTH_out'), '--b'); hold on;
-    xline(0, '--k'); hold on; ylabel('mod. index');
-    title(eventName)
-    subplot(2, 1, 2)
-    if zscorePlot
-        imagesc(time, [1:num_events], zscore(PSTH_out(:, index3))', [-3 3]), xlabel('time'), ylabel('units'); hold on;
-    else
-        imagesc(time, [1:num_events], (PSTH_out(:, index3))'), xlabel('time'), ylabel('units'); hold on;
-    end
-    xline(0, '--k'); hold on;
 end
 
-end

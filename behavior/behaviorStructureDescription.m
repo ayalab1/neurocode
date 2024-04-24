@@ -1,3 +1,5 @@
+% Instruction file guiding you through the expected structure of behavoir files
+
 %% AYA lab standard behavior structure 
 
 % Here is a description the of the basic behavior structure(animal.behavior.mat)

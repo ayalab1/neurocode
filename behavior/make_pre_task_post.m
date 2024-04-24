@@ -1,10 +1,10 @@
 function [intstimestamps_samples,intstimestamps] = make_pre_task_post(basePath,session_sequence)
-% Generate pre/task/post structure
+% Generate pre/task/post structure.
 
 % session_sequence: type of sub-sessions in order of recording. 1=
 % preSleep, 2= task, 3=postSleep
 
-% Farnaz
+% Copyright (C) 2021-2022 Farnaz, AntonioFR, Ryan Harvey, Can Liu
 
 % Example :
 % basePath ='F:\OML\OML18\day1';

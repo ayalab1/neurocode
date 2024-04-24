@@ -1,6 +1,6 @@
 function [periods,quiescence] = QuietPeriods(v,velocity,duration,brief)
 
-%QuietPeriods - Find periods of immobility.
+%Find periods of immobility.
 %
 %  Find periods of immobility, i.e. periods of sufficient duration
 %  where instantaneous linear velocity remains low. Brief movements
@@ -24,7 +24,7 @@ function [periods,quiescence] = QuietPeriods(v,velocity,duration,brief)
 %  SEE
 %
 %    See also BrainStates, PlotIntervals.
-
+%
 % Copyright (C) 2008-2011 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify

@@ -1,32 +1,26 @@
 function simulated = GeneratePoissonSpikes(spikes,maxTime)
 
-% [Simulate poisson spikes with the same firing rate at the provided
-% spikes]
-% [spikes should be provided in [timestamp id] format]
-%
+% Simulate poisson spikes with the same firing rate at the provided spikes.
+% Note: spikes should be provided in [timestamp id] format
 %
 %  INPUTS
-%    [spikes]      [firing rate of spikes to be simulated]
-%    [maxTime]     [max time to simulate spikes over]
+%    spikes      firing rate of spikes to be simulated
+%    maxTime     max time to simulate spikes over
 %
 %
 % 
 %  OUTPUTS
-%    [simulated]     [simulated poission spikes]
+%    simulated    simulated poission spikes
 %  SEE ALSO
 %
 %
 %
-% [Ralitsa Todorova] [2022]
+% Copyright (C) 2022 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
-
-
-
-
 
 simulated = [];
 for i=1:max(spikes(:,2))

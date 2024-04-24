@@ -1,5 +1,5 @@
 function good_idx = manual_trackerjumps(ts,x,y,StartofRec,EndofRec,basepath,varargin)
-%
+
 % Manually cut out xy coordinates that are outside the bounds of your maze.
 %
 % These can be caused by unplugs or if the rat jumps out.
@@ -12,8 +12,7 @@ function good_idx = manual_trackerjumps(ts,x,y,StartofRec,EndofRec,basepath,vara
 %       StartofRec: ts indicating the start points of your event
 %       EndofRec: ts indicating the end points of your event
 %
-%
-% Ryan E Harvey (2018)
+% Copyright (C) 2018 Ryan E Harvey
 
 % 1 for elminating the points outside drawn shape & 0 for inside
 p = inputParser;

@@ -1,6 +1,6 @@
 function df = load_dlc_csv(file_path)
-% 
-% General function to load dlc csv files
+
+% General function to load dlc csv files.
 %
 % works by iterating over headers until x,y,likelihood are found, then
 % makes sure all columns are type double. 
@@ -14,8 +14,7 @@ function df = load_dlc_csv(file_path)
 %       df: table containing tracking results [x,y,likelihood] for each
 %       tracking point. 
 %
-%
-% Ryan H 2022
+% Ryan Harvey 2022
 
 unique_fields = {};
 header_i = 1;

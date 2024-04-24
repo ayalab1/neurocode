@@ -42,7 +42,7 @@ function PlotColorMap(data,dimm,varargin)
 %  SEE
 %
 %    See also FiringMap, PhaseMap, MTSpectrogram, PlotShortTimeCCG.
-
+%
 % Copyright (C) 2004-2012 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify

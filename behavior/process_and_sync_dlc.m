@@ -1,5 +1,6 @@
 function [tracking,field_names] = process_and_sync_dlc(varargin)
-% Unpacks DLC CSV within subfolders
+
+% Unpack DLC CSV within subfolders.
 %
 % Run this after you have exported deeplabcut csv results
 %
@@ -11,7 +12,7 @@ function [tracking,field_names] = process_and_sync_dlc(varargin)
 %       -make compatible with multi-animal tracking
 %
 %
-% Ryan H 2022
+% Ryan Harvey 2022
 
 p = inputParser;
 p.addParameter('basepath',pwd,@isfolder);

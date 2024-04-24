@@ -20,9 +20,10 @@ function positions_out = detectLED(fbasename,thresh,varargin)
 % DEPENDENCIES:
 %
 %   Computer vision toolbox
-
-
-% Copyright (C) 2015 Adrien Peyrache, some inspiration from John D Long II
+%
+%
+% Copyright (C) 2015 Adrien Peyrache, some inspiration from John D Long II,
+% 2017-2021 Azahara Oliva
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

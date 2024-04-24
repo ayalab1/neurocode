@@ -1,5 +1,6 @@
 function [dat] = bz_scrubTracking(dat)
-% USAGE  
+% Preprocessing function for behavioral data. Unclear application.
+%
 %  [dat] = bz_scrubTracking(dat)
 % 
 % INPUTS

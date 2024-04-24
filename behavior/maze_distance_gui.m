@@ -10,7 +10,7 @@ function pixel_distance = maze_distance_gui(video_path)
 % Output:
 %   pixel_distance: distance between clicked points in pixels
 %
-% Ryan H
+% Copyright (C) 2022 Ryan Harvey
 
 % check if video exists
 if ~exist(video_path,'file')

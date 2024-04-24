@@ -1,10 +1,10 @@
 function [behavior] = linearTrackBehavior(varargin)
-% 
-% Behavior code for general linear track.
+
+% Generate behavioral file for linear track sessions.
 % 
 % [behavior] = linearTrackBehavior(varargin)
 % Gets raw tracking data and generates behavior structure
-% based on the standards described in cellexplorer
+% based on the standards described in CellExplorer
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 
 %  INPUTS  (Name-value paired inputs):
@@ -21,8 +21,8 @@ function [behavior] = linearTrackBehavior(varargin)
 %  OUTPUTS
 %
 %  behavior = AYA lab standard behavior structure
-
-% Can, Ryan, Antonio; 02/22
+%
+% % Copyright (C) 2022 Can Liu, Ryan Harvey, Antonio FR
 %
 % TODO:
 %       -Current implementation does not conform to cell explorer:

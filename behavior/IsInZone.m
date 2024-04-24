@@ -1,6 +1,6 @@
 function status = IsInZone(positions,zone)
 
-%IsInZone - Test when the animal is in a given zone.
+%Test whether the animal is in a given zone.
 %
 % Test when the animal is in a given zone of the experimental setup (typically the
 % firing field of a place cell).
@@ -25,8 +25,8 @@ function status = IsInZone(positions,zone)
 %  SEE
 %
 %    See also FiringMap, MapStats, DefineZone.
-
-
+%
+%
 % Copyright (C) 2004-2011 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
@@ -40,7 +40,7 @@ if nargin < 2,
 end
 
 if isempty(positions),
-	status = logical(zeros(size(positions,1),1));
+	status = false(size(positions,1),1);
 	return;
 end
 

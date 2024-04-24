@@ -97,6 +97,15 @@ if isempty(templates)
     strength = zeros(0,1); dN = zeros(0,1); return
 end
 
+if size(templates,2)~=size(templates,1) && size(templates,3)==1 % templates were not provided, just the weights
+    weights = templates; templates = zeros(size(weights,1),size(weights,1),size(weights,2));
+    for i = 1:size(weights,2)
+    	templates(:,:,i) = weights(:,i)*weights(:,i)';
+    	templates(:,:,i) = templates(:,:,i) - diag(diag(templates(:,:,i))); % remove the diagonal
+    end
+end
+
+
 % Shift spikes to start at 0 and bin them
 nUnits = size(templates,2);
 spikes = spikes(spikes(:,2)<=nUnits,:);

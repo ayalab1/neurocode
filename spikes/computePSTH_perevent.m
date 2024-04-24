@@ -1,4 +1,4 @@
-function [PSTH, index_abs] = computePSTH_perevent(event, spikes, varargin)
+function [PSTH] = computePSTH_perevent(event, spikes, varargin)
 % COMPUTEPSTH_PEREVENT Calculate PSTH per event
 %
 %   [PSTH, index_abs] = COMPUTEPSTH_PEREVENT(event, spikes, varargin) calculates
@@ -85,11 +85,12 @@ binsPre = 1:floor(binDistribution(1) * length(binsToKeep));
 binsEvents = floor(binDistribution(1) * length(binsToKeep)) + 1:floor((binDistribution(1) + binDistribution(2)) * length(binsToKeep));
 binsPost = floor((binDistribution(1) + binDistribution(2)) * length(binsToKeep)) + 1:length(binsToKeep);
 
-% Initialize PSTH_out to store the results
-PSTH_out = zeros(length(binsToKeep), numel(event_times));
+% Initialize PSTH_out to store PSTH for each event
+PSTH_out = nan(numel(binsToKeep), numel(event_times));
 
 % Iterate over each event
 for i = 1:numel(event_times)
+    disp(['Processing event ', num2str(i), ' out of ', num2str(numel(event_times))]);
     % Concatenate spike times with the current event time
     spike_times = [vertcat(spikes.times{:}); event_times(i)];
     % Assign cluster indices to spikes and events
@@ -103,33 +104,35 @@ end
 % Extract the time vector
 time = time(binsToKeep + 1);
 
-% Compute mean and SEM of PSTH_out
-mean_PSTH = mean(PSTH_out, 2);
-SEM_PSTH = std(PSTH_out, 0, 2) / sqrt(size(PSTH_out, 2));
+% Plot the PSTH
+if plots
+    figure;
+    plot(time, mean(PSTH_out, 2), 'LineWidth', 2);
+    xlabel('Time (s)');
+    ylabel('Mean PSTH');
+    title('Population PSTH');
+end
+% Initialize cell array to store spike times for each event
+spike_times_in_event = cell(numel(event.timestamps), 1);
 
-% Plot PSTH with shaded error bars
-figure;
-shadedErrorBar(time, mean_PSTH, SEM_PSTH, {'-b'});
-xlabel('Time (s)');
-ylabel('Mean PSTH');
-title('Population PSTH');
+% Extract spike times for each event
+for i = 1:numel(event.timestamps)
+    % Extract spike times for the i-th event
+    spike_times_in_event{i} = spikes.times{i};
+end
 
-% Plot raster of each event stacked on top of each other
+% Plot the raster
 figure;
-for i = 1:size(PSTH_out, 2)
-    spikes_in_event = PSTH_out(:, i);
-    event_time = event_times(i);
-    raster_y = ones(size(spikes_in_event)) * event_time;
-    scatter(time(spikes_in_event > 0), raster_y(spikes_in_event > 0), 'k', 'filled');
-    hold on;
+hold on;
+for i = 1:numel(spike_times_in_event)
+    plot(spike_times_in_event{i}, i * ones(size(spike_times_in_event{i})), '.', 'MarkerSize', 10);
 end
 xlabel('Time (s)');
-ylabel('Event Index');
-title('Raster Plot of Events');
-
+ylabel('Event Number');
+title('Raster Plot');
 % Assign PSTH_out to output variable PSTH
-PSTH.mean_PSTH = mean_PSTH;
-PSTH.SEM_PSTH = SEM_PSTH;
+PSTH.PSTH_out = PSTH_out;
 PSTH.time = time;
+
 end
 

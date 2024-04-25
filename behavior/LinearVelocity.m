@@ -1,6 +1,6 @@
 function V = LinearVelocity(X,smooth)
 
-%LinearVelocity - Compute instantaneous linear velocity.
+%Compute instantaneous linear velocity.
 %
 % Compute linear velocity for a time-varying vector X.
 %
@@ -16,7 +16,7 @@ function V = LinearVelocity(X,smooth)
 %  SEE
 %
 %    See also AngularVelocity.
-
+%
 % Copyright (C) 2004-2022 by Michaël Zugaro, Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

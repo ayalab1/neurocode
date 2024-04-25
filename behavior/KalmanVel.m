@@ -1,5 +1,5 @@
 function [t,x,y,vx,vy,ax,ay] = KalmanVel(posx,posy,post,order,Q,R)
-% 
+
 % Velocity estimation using the Kalman Filter on recorded position.
 % 
 % root.KalmanVel(x, y, t, order);
@@ -71,8 +71,7 @@ function [t,x,y,vx,vy,ax,ay] = KalmanVel(posx,posy,post,order,Q,R)
 % Copyright (C) 2004 Sturla Molden
 % Centre for the Biology of Memory
 % Norwegian University of Science and Technology
-%
-%
+
 
 % Default values. These are manually tuned for good performance
 if (nargin < 5)

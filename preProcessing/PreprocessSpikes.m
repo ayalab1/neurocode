@@ -71,7 +71,9 @@ if ~isempty(datFolder), session.extracellular.fileName = fullfile(datFolder, [ba
 
 f = dir('Kilosort*');
 if (size(f, 1) ~= 1) && (~multiKilosort)
-    error('Too many kiloSort folders - should multiKilosort=1?');
+    multiKilosort = true;
+    warning('Too many kiloSort folders - assuming multiKilosort=1!');
+    display('Too many kiloSort folders - assuming multiKilosort=1!');
 elseif (size(f, 1) ~= 1) && (multiKilosort)
     warning('Make sure all spike groups in neuroscope are reactivated (yellow tab, groups should be assigned to a numbered group');
 end

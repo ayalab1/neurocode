@@ -1,6 +1,6 @@
 function zone = DefineZone(s,shape,points)
 
-%DefineZone - Define a restricted zone to which analyses can be circumscribed.
+% Define a restricted zone to which analyses can be circumscribed.
 %
 % Define a restricted zone in the environment, to which analyses can subsequently be
 % circumscribed using <a href="matlab:help IsInZone">IsInZone</a>. Multiple zones can easily be combined (see example).

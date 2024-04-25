@@ -1,14 +1,13 @@
-
 function [tracking] = LED2Tracking(aviFile,varargin)
-% Get LED tracking
+
+% Get LED tracking from .avi and digitalin.dat files
 %
 % USAGE
 %
-%   [behavior] = LED2Tracking(varagin)
+%   behavior = LED2Tracking(varagin)
 %
 % INPUTS
-%   aviFile     Avi format video. If not provided, look for it in the
-%   basepath f
+%   aviFile     Avi format video. If not provided, look for it in the basepath folder
 %   It requires an avi format video and a digitalin.dat file in the
 %   basepath folder.
 % 

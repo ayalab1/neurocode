@@ -1,11 +1,10 @@
 function general_behavior_file(varargin)
-% converts multiple tracking data types to the standard described in cellexplorer
+% Converts multiple tracking data types to the format of CellExplorer.
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %
-% This was writed to standardize xy coordinates and trials in several older data sets
+% This was written to standardize xy coordinates and trials in several older data sets
 %
-% check extract_tracking below to preview methods. Can be further
-% customized.
+% check extract_tracking below to preview methods. Can be further customized.
 %
 % Currently compatible with the following sources:
 %   .whl
@@ -21,7 +20,6 @@ function general_behavior_file(varargin)
 %   optitrack .csv file
 %   *_Behavior*.mat file from crcns_pfc-2_data
 %
-%
 % TODO:
 %       -make so you can choose (w/ varargin) which method to use (some sessions meet several)
 %           This will require making each method into a sub/local function
@@ -29,7 +27,7 @@ function general_behavior_file(varargin)
 %       -Needs refactored as many functions are redundant.
 %           ex. kilosort dir skipper is written twice, .whl files in subdirs
 %
-% Ryan H 2021
+% Ryan Harvey 2021
 
 p = inputParser;
 addParameter(p, 'basepath', pwd); % single or many basepaths in cell array or uses pwd

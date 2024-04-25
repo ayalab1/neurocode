@@ -5,7 +5,6 @@
 %   AngularVelocity              - Compute instantaneous angular velocity.
 %   behavioral_ROI_locator       - Locate behavioral regions of interest (ROIs) in a video for a given session.
 %   behaviorStructureDescription - Instruction file guiding you through the expected structure of behavoir files
-%   bz_scrubTracking             - Preprocessing function for behavioral data. Unclear application.
 %   check_for_dlc                - Folder checker for dlc files
 %   DefineZone                   - Define a restricted zone to which analyses can be circumscribed.
 %   detectLED                    - Detect red and blue LEDs position in a video file and creates a 'led' file

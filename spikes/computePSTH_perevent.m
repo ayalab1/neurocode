@@ -104,35 +104,51 @@ end
 % Extract the time vector
 time = time(binsToKeep + 1);
 
+% Initialize variables to store spike times and event numbers
+spike_times_all = [];
+event_numbers = [];
+
+% Iterate over each event
+for i = 1:numel(spikes)
+    % Get spike times for the i-th event
+    spike_times_in_event = spikes(i).times;
+    % Iterate over each spike time in the event
+    for j = 1:numel(spike_times_in_event)
+        % Concatenate spike time and corresponding event number
+        spike_times_all = [spike_times_all; spike_times_in_event(j)];
+        event_numbers = [event_numbers; i];
+    end
+end
+
+
+hold on
 % Plot the PSTH
 if plots
     figure;
+    subplot(2,1,1);
     plot(time, mean(PSTH_out, 2), 'LineWidth', 2);
     xlabel('Time (s)');
     ylabel('Mean PSTH');
     title('Population PSTH');
-end
-% Initialize cell array to store spike times for each event
-spike_times_in_event = cell(numel(event.timestamps), 1);
 
-% Extract spike times for each event
-for i = 1:numel(event.timestamps)
-    % Extract spike times for the i-th event
-    spike_times_in_event{i} = spikes.times{i};
 end
 
-% Plot the raster
-figure;
-hold on;
-for i = 1:numel(spike_times_in_event)
-    plot(spike_times_in_event{i}, i * ones(size(spike_times_in_event{i})), '.', 'MarkerSize', 10);
+% Plot raster for each event PSTH column
+
+for i = 1:size(PSTH_out, 2)
+    spike_times_in_event = PSTH_out(:,i); % Spike times for the i-th event
+    y_coords = i * ones(size(spike_times_in_event)); % Y-coordinates for raster
 end
+subplot(2,1,2)
+plot(spike_times_in_event, y_coords, '.', 'MarkerSize', 10); % Plot raster
+
 xlabel('Time (s)');
 ylabel('Event Number');
 title('Raster Plot');
-% Assign PSTH_out to output variable PSTH
-PSTH.PSTH_out = PSTH_out;
-PSTH.time = time;
 
+
+% % Assign PSTH_out to output variable PSTH
+PSTH.response = PSTH_out;
+PSTH.time = time;
 end
 

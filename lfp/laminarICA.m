@@ -90,8 +90,8 @@ addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',true,@islogical);
 addParameter(p,'passband',[30 200],@isnumeric)
 addParameter(p,'nICs',8,@isnumeric)
-addParameter(p,'plotWeights',true,@islogical)
-addParameter(p,'plotCFC',true,@islogical)
+addParameter(p,'plotWeights',false,@islogical)
+addParameter(p,'plotCFC',false,@islogical)
 addParameter(p,'regionChan',[],@isnumeric) % possibly depreciated
 addParameter(p,'chanRange',[], @isnumeric) % maybe we should not use this and instead use regions (i.e. CA1 for all CA1 channels). Cause channel range could change from day to day or subject to subject.
 addParameter(p,'thetaChannel',[],@isnumeric) % This is not used. Reason for this input? -LB 10/21/2022
@@ -300,7 +300,7 @@ parse(p,varargin{:});
 lrate = p.Results.lrate;
 
 % Perform ICA
-[weights,sphere,meanvar,~,~,~,data,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
+[weights,sphere,meanvar,~,~,~,~,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
 
 % Normalize sphere
 sphere = sphere./norm(sphere);
@@ -313,11 +313,8 @@ else
     mixing = pinv(unmixing);
 end
 
-activations = unmixing * lfp.data';
-
 % Populate output structure
-ica.activations = activations;
-ica.data = data';
+% ica.activations = unmixing * lfp.data';
 ica.timestamps = lfp.timestamps;
 ica.sphere = sphere;
 ica.weights = weights;
@@ -337,9 +334,9 @@ basename = basenameFromBasepath(basepath);
 
     disp('Saving results...');
     if ~isempty(brain_state) | ~isempty(region_tag)
-        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.channelInfo.mat'],'ica');
+        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat'],'ica','-v7.3');
     else
-        save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica');
+        save([basepath,filesep,basename '.ica.analysis.mat'],'ica','-v7');
     end
 
 end
@@ -496,16 +493,12 @@ parse(p,varargin{:});
 phaserange = p.Results.phaserange;
 amprange = p.Results.amprange;
 
-basename = basenameFromBasepath(basepath);
-
-% Load sleep state to pull interval with theta epoch
-load(fullfile(basepath,[basename,'.SleepState.states.mat']))
-interval = SleepState.ints.REMstate;
-
 % [lfpTheta,lfpICA] = getLFP(pyrCh,'basepath',basepath,'interval',interval); % Only take 1000 seconds worth of data to keep the computation quick
 % load lfp (all lfp)
-lfp = load_lfp(basepath,pyrCh);
+lfp = load_lfp(basepath,ica.channels);
 
+% create activations 
+activations = lfp.data'*ica.unmixing;
 % choose the biggest epoch
 interval = findIntervals(ica.in_idx);
 [~,idx] = max(interval(:,2) - interval(:,1));
@@ -522,7 +515,7 @@ in = find(ica.timestamps >= min(lfp.timestamps) & ica.timestamps <= max(lfp.time
 
 % Make lfp structure, with first channel as the Pyr lfp, and remaining
 % channels as the activations for each ICA components.
-lfp.data(:,2:size(ica.weights,1)+1) = ica.activations(:,in')';
+lfp.data(:,2:size(ica.weights,1)+1) = activations(:,in')';
 lfp.channels = 1:size(lfp.data,2);
 
 % Create the plot

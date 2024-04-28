@@ -19,7 +19,7 @@ if strcmp(width, 'thesis')
     width_pt = 426.79135;
 elseif strcmp(width, 'beamer')
     width_pt = 307.28987;
-elseif strcmp(width, 'paper'):
+elseif strcmp(width, 'paper')
     width_pt = 595.276;
 else
     width_pt = width;

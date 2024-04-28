@@ -20,8 +20,8 @@ function pre_task_post = find_multitask_pre_post(env, varargin)
 
 p = inputParser;
 addParameter(p, 'task_tag', {'open_field', 'linear_track'}, @iscell);
-addParameter(p, 'post_sleep_flank', false, @isnumeric);
-addParameter(p, 'pre_sleep_common', true, @isbool);
+addParameter(p, 'post_sleep_flank', false, @islogical);
+addParameter(p, 'pre_sleep_common', true, @islogical);
 
 parse(p, varargin{:});
 task_tag = p.Results.task_tag;
@@ -42,7 +42,8 @@ task_idx(task_idx == 1) = [];
 sleep_idx = find(sleep_bool);
 
 pre_task_post = [];
-for task = task_idx
+for i = 1:length(task_idx)
+    task = task_idx(i);
     temp = sleep_idx - task;
     pre_task = sleep_idx(temp < 0);
     post_task = sleep_idx(temp > 0);

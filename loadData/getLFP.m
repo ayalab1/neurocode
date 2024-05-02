@@ -24,8 +24,8 @@ function lfp = getLFP(varargin)
 %                           the LFP file (default is [0 inf])
 %    'downsample'         -factor to downsample the LFP (i.e. 'downsample',5
 %                           will load a 1250Hz .lfp file at 250Hz)
-%    'noPrompts'          -logical (default) to supress any user prompts
 %    'fromDat'            -option to load directly from .dat file (default:false)
+%    'verbose'            -option to display message that the LFP is being loaded (default:true)
 %
 %  OUTPUT
 %
@@ -83,16 +83,16 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'downsample',1,@isnumeric);
 addParameter(p,'saveMat',false,@islogical);
 addParameter(p,'forceReload',false,@islogical);
-addParameter(p,'noPrompts',false,@islogical);
 addParameter(p,'fromDat',false,@islogical);
+addParameter(p,'verbose',true,@islogical);
 
 parse(p,varargin{:})
 channels = p.Results.channels;
 downsamplefactor = p.Results.downsample;
 basepath = p.Results.basepath;
 basename = p.Results.basename; if isempty(basename), basename = basenameFromBasepath(basepath); end
-noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
+verbose = p.Results.verbose;
 
 % doing this so you can use either 'intervals' or 'restrict' as parameters to do the same thing
 intervals = p.Results.intervals;
@@ -175,11 +175,11 @@ if strcmp(channels,'all')
     channels = chInfo.one.channels;
 else
     %Put in something here to collapse into X-Y for consecutive channels...
-    disp(['Loading Channels ',num2str(channels),' (1-indexing)'])
+    if verbose, disp(['Loading Channels ',num2str(channels),' (1-indexing)']); end
 end
 
 %% get the data
-disp('loading LFP file...')
+if verbose, disp('loading LFP file...'); end
 nIntervals = size(intervals,1);
 % returns lfp/bz format
 for i = 1:nIntervals
@@ -220,7 +220,7 @@ for i = 1:nIntervals
         [anatomical_map,~] = get_anatomical_map_csv(basepath,anatomical_map);
         lfp(i).region = get_region(channels, anatomical_map,channel_map);
     else
-        disp('No brain regions associated with channels found. Saving ''Unkown''')
+        if verbose, disp('No brain regions associated with channels found. Saving ''Unknown'''); end
         [anatomical_map,channel_map] = get_maps(session);
         lfp(i).region = get_region(channels, anatomical_map,channel_map);
     end

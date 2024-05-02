@@ -1,4 +1,4 @@
-function truncated = TruncateIntervals(intervals, duration)
+function truncated = TruncateIntervals(intervals, duration, flip)
 
 %TruncateIntervals
 % 
@@ -14,6 +14,7 @@ function truncated = TruncateIntervals(intervals, duration)
 %
 %    intervals      list of (start,stop) pairs
 %    duration       duration of the truncated intervals
+%    flip           boolean (default = false). Set to true to start from the end and go backwards.
 %
 %  NOTE
 %
@@ -25,22 +26,29 @@ function truncated = TruncateIntervals(intervals, duration)
 %
 %    postSleep = Restrict(SleepStateEpisodes.ints.NREMepisode, [trials(end) Inf]); % get all SWS periods which follow the task
 %    postSleep = TruncateIntervals(postSleep, 3600); % truncate the intervals to only the first hour of continuous SWS
+%    postSleep = TruncateIntervals(postSleep, 3600, true); % truncate the intervals to only the last hour of continuous SWS
 %
 %
-% Copyright (C) 2023 by Ralitsa Todorova
+% Copyright (C) 2023-2024 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
+if nargin<3, flip = false; end
+
 if sum(diff(intervals,[],2))<duration % if the intervals are already shorter than the desired duration
     truncated = intervals; % there is nothing to truncate
     return
 end
+
+if flip, intervals = sortrows(-intervals(:,[2 1])); end
 
 limit = Unshift(duration,intervals); % transform the limit in absolute time
 truncated = intervals(intervals(:,1)<limit,:); % take only intervals that start before the limit is reached
 if truncated(end,2)>limit, % if the end of the last interval goes over the limit
     truncated(end,2) = limit; % cut it short  
 end
+
+if flip, truncated = sortrows(-truncated(:,[2 1])); end

@@ -384,7 +384,7 @@ classdef IntervalArray < handle
             if isempty(varargin)
                 [new.intervals, ~] = ConsolidateIntervals(obj.intervals);
             else
-                [new.intervals, ~] = ConsolidateIntervals(obj.intervals, varargin);
+                [new.intervals, ~] = ConsolidateIntervals(obj.intervals, varargin{:});
             end
         end
 

@@ -176,11 +176,19 @@ end
 switch fromDat
     case false
         lfp = LoadBinary(lfpFile ,'nChannels',nChannels,'channels',xcorr_chs,...
-            'start',restrict(1),'duration',diff(restrict),'frequency',Fs); %read and convert to mV    
+            'start',restrict(1),'duration',diff(restrict),'frequency',Fs); %read and convert to mV 
+
+        if isempty(lfp)
+           error('LFP file empty. Must have valid binary file to compute EMG.')
+        end
+        
     case true
         lfp = LoadBinary(datFile ,'nChannels',nChannels,'channels',xcorr_chs,...
             'start',restrict(1),'duration',diff(restrict),'frequency',datFs,...
             'downsample',datFs./Fs); %read and convert to mV  
+        if isempty(lfp)
+           error('DAT file empty. Must have valid binary file to compute EMG.')
+        end
 end
 
 % Filter first in high frequency band to remove low-freq physiologically

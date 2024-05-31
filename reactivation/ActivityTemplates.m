@@ -104,7 +104,7 @@ for i = 1:2:length(varargin),
             end
         case 'controlbins',
             controlBins = varargin{i+1};
-            if ~isdmatrix(bins,'@2'),
+            if ~isdmatrix(controlBins,'@2'),
                 error('Incorrect value for property ''controlBins'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
             end
         otherwise,
@@ -191,9 +191,9 @@ if sum(significant)==0,
 end
 
 eigenvectors = eigenvectors(:,significant);
-templates = zeros(nUnits,nUnits,sum(significant));
 
 if strcmp(mode,'pca'),
+    templates = zeros(nUnits,nUnits,sum(significant));
 	weights = eigenvectors;
 	for i = 1:sum(significant),
 		templates(:,:,i) = weights(:,i)*weights(:,i)';
@@ -210,6 +210,7 @@ if strcmp(mode,'varimax'),
         warning('Varimax did not work. Returning eigevectors straight out of PCA.');
         weights = eigenvectors(:,significant);
     end
+    templates = zeros(nUnits,nUnits,sum(significant));
 %     The sign of the weights in a component is arbitrary (+component and -component are equivalent)
 %     Flip weights so that the most deviating weight of a component is positive (it is more convenient for visualisation that the assembly has positive weights)
     flip = max(weights)<-min(weights);
@@ -225,7 +226,6 @@ end
 projection = (eigenvectors * eigenvectors') * n';
 
 %% Run the ICA on the new spike matrix
-
 [weights,~] = fastica(projection,'pcaE',eigenvectors,'pcaD',diag(eigenvalues(significant)));
 
 if isempty(weights),
@@ -246,6 +246,7 @@ variance = var(n*weights)/nUnits; % the total variance of the activity matrix "n
 % Order them by the amount of variance they explain (for consistency's sake):
 [~,order] = sort(-variance); % from highest to lowest
 weights = weights(:,order);
+templates = zeros(nUnits,nUnits,size(weights,2));
 for i = 1:size(weights,2)
 	templates(:,:,i) = weights(:,i)*weights(:,i)';
 	templates(:,:,i) = templates(:,:,i) - diag(diag(templates(:,:,i))); % remove the diagonal

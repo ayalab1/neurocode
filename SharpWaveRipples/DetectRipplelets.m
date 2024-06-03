@@ -1,7 +1,7 @@
 function ripplelets = DetectRipplelets(varargin)
-    % DetectRipple Process ripple events and merge them based on inter-ripple interval.
+    % DetectRipple Process ripplelet events and merge them based on inter-ripple interval.
     %   This function loads ripple events, merges ripples with inter-ripple interval
-    %   less than the specified threshold, and saves the processed ripple data.
+    %   less than the specified threshold, and saves the resulting ripplelet data.
     %
     %   Parameters:
     %       'basepath' - Basepath of session file (default: pwd)
@@ -16,22 +16,18 @@ function ripplelets = DetectRipplelets(varargin)
     %
     
 
-    % Suppress the warning about missing name-value pairs
-    warning('off', 'MATLAB:inputParser:ParamMustBeValuePair');
 
     % Input parser
     p = inputParser;
     addParameter(p, 'basepath', pwd, @ischar);
     addParameter(p, 'single_iri', 0.2, @isnumeric);
-    addParameter(p, 'savedata', 1, @isnumeric);
+    addParameter(p, 'savedata', false, @islogical);
     addParameter(p, 'plot_wavelet', false, @islogical);
     addParameter(p, 'lfp_channel', [], @(x) isnumeric(x) && isscalar(x));
 
     % Parse inputs
     parse(p, varargin{:});
 
-    % Turn the warning back on
-    warning('on', 'MATLAB:inputParser:ParamMustBeValuePair');
 
     % Assign parsed input to variables, using defaults where necessary
     basepath = p.Results.basepath;
@@ -93,22 +89,24 @@ function ripplelets = DetectRipplelets(varargin)
     end
     ripplelets.detectorinfo = ripples.detectorinfo;
 
-    % Save the processed data if required
-    if savedata
-        save(fullfile(basepath, 'ripplelets.events.mat'), 'ripplelets');
+    % Create the directory if it does not exist
+    if ~exist(basepath, 'dir')
+        mkdir(basepath);
     end
 
-    % Plotting wavelet if requested
+    % Save the processed data if required
+    if savedata
+        save(fullfile(basepath, [basename, '.ripplelets.events.mat']), 'ripplelets');
+    end
+
+    % Plotting wavelet if true
     if plot_wavelet
-        if ~exist(fullfile(basepath, 'Ripple_Profile'), 'dir')
-            mkdir(fullfile(basepath, 'Ripple_Profile'));
+        plot_dir = fullfile(basepath, 'Ripplelet_Profile');
+        if ~exist(plot_dir, 'dir')
+            mkdir(plot_dir);
         end
         lfpRip = getLFP(lfp_channel, 'basepath', basepath);
-        try 
-            [wavAvg, lfpAvg] = eventWavelet(lfpRip, ripples.peaks(1:500), 'twin', [0.1 0.1]);
-        catch
-            [wavAvg, lfpAvg] = eventWavelet(lfpRip, ripples.peaks, 'twin', [0.1 0.1]);
-        end
-        saveas(gcf, fullfile(basepath, 'Ripple_Profile', 'swrWaveletSample.png'));
+        [wavAvg, lfpAvg] = eventWavelet(lfpRip, ripples.peaks, 'twin', [0.1 0.1]);
+        saveas(gcf, fullfile(plot_dir, 'swrWaveletSample.png'));
     end
 end

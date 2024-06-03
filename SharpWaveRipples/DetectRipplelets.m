@@ -15,6 +15,10 @@ function ripplelets = DetectRipplelets(varargin)
     %   Code adapted from Yamamoto and Tonegawa, 2017 Neuron
     %
     
+
+    % Suppress the warning about missing name-value pairs
+    warning('off', 'MATLAB:inputParser:ParamMustBeValuePair');
+
     % Input parser
     p = inputParser;
     addParameter(p, 'basepath', pwd, @ischar);
@@ -23,7 +27,11 @@ function ripplelets = DetectRipplelets(varargin)
     addParameter(p, 'plot_wavelet', false, @islogical);
     addParameter(p, 'lfp_channel', [], @(x) isnumeric(x) && isscalar(x));
 
+    % Parse inputs
     parse(p, varargin{:});
+
+    % Turn the warning back on
+    warning('on', 'MATLAB:inputParser:ParamMustBeValuePair');
 
     % Assign parsed input to variables, using defaults where necessary
     basepath = p.Results.basepath;
@@ -38,17 +46,18 @@ function ripplelets = DetectRipplelets(varargin)
 
     % Load ripples
     basename = basenameFromBasepath(basepath);
-    load([basename, '.ripples.events.mat']); % Load ripple events
+    rippleFile = fullfile(basepath, [basename, '.ripples.events.mat']);
+    load(rippleFile, 'ripples'); % Load ripple events
     start = ripples.timestamps(:, 1);
     stop = ripples.timestamps(:, 1) + ripples.duration;
 
-    % Merge the ripples with inter-ripple interval < single_iri
-    while true
-        single_idx = find(start(2:end) - start(1:end-1) < single_iri);
-        if isempty(single_idx), break; end
-        start(single_idx + 1) = [];
-        stop(single_idx) = [];
+    % Check for ripples with inter-ripple interval < single_iri
+    single_idx = find(start(2:end) - start(1:end-1) < single_iri);
+    if isempty(single_idx)
+        error('No SWRs found');
     end
+    start(single_idx + 1) = [];
+    stop(single_idx) = [];
 
     % Process merged ripples
     ripcount = zeros(length(stop), 1);

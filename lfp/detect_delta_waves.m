@@ -41,7 +41,7 @@ function detect_delta_waves(varargin)
 
 % parse inputs
 p = inputParser;
-addParameter(p, 'basepath', pwd, @(x) any(isfolder(x), iscell(x)));
+addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
 addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL','Cortex'}, @(x) any(iscell(x), iscchar(x)));
 addParameter(p, 'EMG_thres', 0.6, @isdouble);
 addParameter(p, 'peak_to_trough_ratio', 3, @isdouble);
@@ -248,40 +248,50 @@ if ~isempty(ignore_intervals)
     deltas = deltas(keep_intervals, :);
 end
 
-% Verify that spiking decreases at the peak of the delta
-[~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
-if ~st.isempty
-    if verify_firing
-        [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
-        delta_psth_avg = mean(delta_psth);
-        if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
-            warning("Firing rate does not dip around delta, change paramaters")
-            figure;
-            subplot(2, 1, 1)
-            plot(ts, delta_psth_avg)
-            subplot(2, 1, 2)
-            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-            colormap("parula")
-            keyboard
-        end
+if verify_firing
+    % Verify that spiking decreases at the peak of the delta
+    try
+        [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
+        if ~st.isempty
+            [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
+            z = delta_psth; z = nanzscore(Smooth(z,[0 1]),[],2);
+            response = mean(z(:,InIntervals(ts,[-1 1]*0.05)),2);
+            ordered = sortrows([deltas(:,5)-deltas(:,6) response],-1);
+            peak_to_trough_ratio = ordered(find(Smooth(ordered(:,2),100)<=-0.5,1,'last'),1);
+            deltas = deltas(deltas(:,5)-deltas(:,6) > peak_to_trough_ratio, :);
 
-        % Optionally, view the firing around the detected events
-        if showfig
-            figure;
-            subplot(2, 1, 1)
-            plot(ts, delta_psth_avg)
-            subplot(2, 1, 2)
-            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-            colormap("parula")
+            delta_psth_avg = mean(delta_psth);
+            if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
+                warning("Firing rate does not dip around delta, change paramaters")
+                figure;
+                subplot(2, 1, 1)
+                plot(ts, delta_psth_avg)
+                subplot(2, 1, 2)
+                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+                colormap("parula")
+                keyboard
+            end
+            % Optionally, view the firing around the detected events
+            if showfig
+                figure;
+                subplot(2, 1, 1)
+                plot(ts, delta_psth_avg)
+                subplot(2, 1, 2)
+                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+                colormap("parula")
+            end
+        else
+            warning("no cortical cells, impossible to verify firing")
         end
+    catch
+        warning("no cortical cells, impossible to verify firing")
     end
-else
-    warning("no cortical cells, impossible to verify firing")
 end
+
 % store to cell explorer event file
 deltaWaves.timestamps = deltas(:, [1, 3]);
 deltaWaves.peaks = deltas(:, 2);
-deltaWaves.amplitude = deltas(:, 5);
+deltaWaves.amplitude = deltas(:, 5)-deltas(:, 6);
 deltaWaves.amplitudeUnits = 'zscore';
 deltaWaves.eventID = [];
 deltaWaves.eventIDlabels = [];
@@ -294,6 +304,7 @@ deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)
 deltaWaves.detectorinfo.detectionparms = p.Results;
 deltaWaves.detectorinfo.detectionchannel = channel - 1;
 deltaWaves.detectorinfo.detectionchannel1 = channel;
+deltaWaves.detectorinfo.peak_to_trough_ratio = peak_to_trough_ratio;
 
 save(event_file, 'deltaWaves');
 end

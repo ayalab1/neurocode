@@ -57,6 +57,7 @@ step = [];
 mode = 'ica';
 tracyWidom = false;
 controlBins = [];
+group = [];
 
 % Check number of parameters
 if nargin < 1,
@@ -107,6 +108,11 @@ for i = 1:2:length(varargin),
             if ~isdmatrix(controlBins,'@2'),
                 error('Incorrect value for property ''controlBins'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
             end
+        case 'cross',
+            group = varargin{i+1};
+            if ~isdvector(group) && ~isempty(group)
+                error('Incorrect value for property ''group'' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).');
+            end
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help ActivityTemplates">ActivityTemplates</a>'' for details).']);
     end
@@ -121,6 +127,8 @@ if isempty(binSize) && isempty(bins),
 end
 if isempty(step), step = binSize; end
 nUnits = max(spikes(:,2));
+if ~isempty(group) && length(group) > nUnits, nUnits = length(group); end
+
 templates = nan(nUnits,nUnits,0);
 correlations = nan(nUnits,nUnits);
 weights = nan(nUnits,0);
@@ -164,6 +172,14 @@ correlations = (1/(nBins-1))*n'*n;
 
 if ~isempty(controlBins)
     correlations = correlations - controlCorrelations;
+end
+
+if ~isempty(group) % Cross-correlation between two groups
+    % In this case, ignore within-group correlations
+    [x,y]=  ndgrid(group,group');
+    sameGroup = x==y;
+    correlations(sameGroup) = 0;
+    correlations(eye(size(correlations))==1) =1;
 end
 
 % Compute eigenvalues/vectors and sort in descending order

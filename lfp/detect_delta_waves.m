@@ -42,9 +42,8 @@ function detect_delta_waves(varargin)
 % parse inputs
 p = inputParser;
 addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
-addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL','Cortex'}, @(x) any(iscell(x), iscchar(x)));
+addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL', 'Cortex'}, @(x) any(iscell(x), iscchar(x)));
 addParameter(p, 'EMG_thres', 0.6, @isdouble);
-addParameter(p, 'peak_to_trough_ratio', 3, @isdouble);
 addParameter(p, 'passband', [1, 6], @isnumeric);
 addParameter(p, 'channel', [], @isnumeric);
 addParameter(p, 'NREM_restrict', true, @islogical);
@@ -73,7 +72,6 @@ function run(basepath, p)
 
 brainRegion = p.Results.brainRegion;
 EMG_thres = p.Results.EMG_thres;
-peak_to_trough_ratio = p.Results.peak_to_trough_ratio;
 passband = p.Results.passband;
 channel = p.Results.channel;
 NREM_restrict = p.Results.NREM_restrict;
@@ -237,10 +235,7 @@ deltas0 = FindDeltaWaves(clean_lfp);
 EMG = getStruct(basepath, 'EMG');
 immobility = EMG.timestamps(FindInterval(EMG.data < EMG_thres));
 immobility(diff(immobility, [], 2) < 1, :) = [];
-deltas0 = Restrict(deltas0, immobility);
-
-% restict to deltas that are above peak_to_trough_ratio
-deltas = deltas0(deltas0(:, 5)-deltas0(:, 6) > peak_to_trough_ratio, :);
+deltas = Restrict(deltas0, immobility);
 
 % remove deltas that intersect with ignore intervals
 if ~isempty(ignore_intervals)
@@ -250,40 +245,42 @@ end
 
 if verify_firing
     % Verify that spiking decreases at the peak of the delta
-    try
-        [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
-        if ~st.isempty
-            [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
-            z = delta_psth; z = nanzscore(Smooth(z,[0 1]),[],2);
-            response = mean(z(:,InIntervals(ts,[-1 1]*0.05)),2);
-            ordered = sortrows([deltas(:,5)-deltas(:,6) response],-1);
-            peak_to_trough_ratio = ordered(find(Smooth(ordered(:,2),100)<=-0.5,1,'last'),1);
-            deltas = deltas(deltas(:,5)-deltas(:,6) > peak_to_trough_ratio, :);
-
-            delta_psth_avg = mean(delta_psth);
-            if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
-                warning("Firing rate does not dip around delta, change paramaters")
-                figure;
-                subplot(2, 1, 1)
-                plot(ts, delta_psth_avg)
-                subplot(2, 1, 2)
-                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-                colormap("parula")
-                keyboard
-            end
-            % Optionally, view the firing around the detected events
-            if showfig
-                figure;
-                subplot(2, 1, 1)
-                plot(ts, delta_psth_avg)
-                subplot(2, 1, 2)
-                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-                colormap("parula")
-            end
-        else
-            warning("no cortical cells, impossible to verify firing")
+    [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
+    if ~st.isempty
+        [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
+        % smooth delta psth
+        delta_psth_smooth = delta_psth;
+        delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
+        % extract delta response 
+        response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
+        % sort responses and locate when value passes threshold
+        ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
+        peak_to_trough_ratio = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
+        % only keep deltas with sufficient response
+        deltas = deltas(deltas(:, 5)-deltas(:, 6) > peak_to_trough_ratio, :);
+        
+        % verify that the dip in firing around delta
+        delta_psth_avg = mean(delta_psth);
+        if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
+            warning("Firing rate does not dip around delta, change paramaters")
+            figure;
+            subplot(2, 1, 1)
+            plot(ts, delta_psth_avg)
+            subplot(2, 1, 2)
+            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+            colormap("parula")
+            keyboard
         end
-    catch
+        % Optionally, view the firing around the detected events
+        if showfig
+            figure;
+            subplot(2, 1, 1)
+            plot(ts, delta_psth_avg)
+            subplot(2, 1, 2)
+            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+            colormap("parula")
+        end
+    else
         warning("no cortical cells, impossible to verify firing")
     end
 end
@@ -291,7 +288,7 @@ end
 % store to cell explorer event file
 deltaWaves.timestamps = deltas(:, [1, 3]);
 deltaWaves.peaks = deltas(:, 2);
-deltaWaves.amplitude = deltas(:, 5)-deltas(:, 6);
+deltaWaves.amplitude = deltas(:, 5) - deltas(:, 6);
 deltaWaves.amplitudeUnits = 'zscore';
 deltaWaves.eventID = [];
 deltaWaves.eventIDlabels = [];
@@ -304,8 +301,9 @@ deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)
 deltaWaves.detectorinfo.detectionparms = p.Results;
 deltaWaves.detectorinfo.detectionchannel = channel - 1;
 deltaWaves.detectorinfo.detectionchannel1 = channel;
-deltaWaves.detectorinfo.peak_to_trough_ratio = peak_to_trough_ratio;
-
+if exist("peak_to_trough_ratio","var")
+    deltaWaves.detectorinfo.peak_to_trough_ratio = peak_to_trough_ratio;
+end
 save(event_file, 'deltaWaves');
 end
 

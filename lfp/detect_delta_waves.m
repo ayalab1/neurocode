@@ -237,6 +237,9 @@ immobility = EMG.timestamps(FindInterval(EMG.data < EMG_thres));
 immobility(diff(immobility, [], 2) < 1, :) = [];
 deltas = Restrict(deltas0, immobility);
 
+% restict to deltas that are above difference of 3sd
+deltas = deltas(deltas(:, 5)-deltas(:, 6) > 3, :);
+
 % remove deltas that intersect with ignore intervals
 if ~isempty(ignore_intervals)
     keep_intervals = ~IntervalsIntersect(deltas(:, [1, 3]), ignore_intervals);
@@ -251,14 +254,14 @@ if verify_firing
         % smooth delta psth
         delta_psth_smooth = delta_psth;
         delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
-        % extract delta response 
+        % extract delta response
         response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
         % sort responses and locate when value passes threshold
         ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
         peak_to_trough_ratio = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
         % only keep deltas with sufficient response
         deltas = deltas(deltas(:, 5)-deltas(:, 6) > peak_to_trough_ratio, :);
-        
+
         % verify that the dip in firing around delta
         delta_psth_avg = mean(delta_psth);
         if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
@@ -301,7 +304,7 @@ deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)
 deltaWaves.detectorinfo.detectionparms = p.Results;
 deltaWaves.detectorinfo.detectionchannel = channel - 1;
 deltaWaves.detectorinfo.detectionchannel1 = channel;
-if exist("peak_to_trough_ratio","var")
+if exist("peak_to_trough_ratio", "var")
     deltaWaves.detectorinfo.peak_to_trough_ratio = peak_to_trough_ratio;
 end
 save(event_file, 'deltaWaves');

@@ -6,49 +6,84 @@ function detect_delta_waves(varargin)
 % the LFP data, selects an appropriate channel based on delta power, and
 % performs delta wave detection on the clean LFP data.
 %
-% Usage:
-%   detect_delta_waves('ParameterName', ParameterValue, ...)
+%  USAGE
 %
-% Parameters:
-%   - 'basepath' (string): The base directory path for the data. Default is
-%       the current working directory.
-%   - 'brainRegion' (string): The brain region to analyze (e.g., 'PFC').
-%       Default is 'PFC', 'MEC', 'EC'.
-%   - 'EMG_thres' (double): The threshold for EMG (Electromyography) data to
-%       identify immobility periods. Default is 0.6.
-%   - 'peak_to_trough_ratio' (double): The minimum peak-to-trough ratio
-%       required for a delta wave to be considered. Default is 3.
-%   - 'passband' (numeric array): The frequency passband for delta power
-%       calculation. Default is [1, 6].
-%   - 'channel' (int): The delta channel. Default is empty
-%   - 'NREM_restrict' (logical): restrict to detected NREM epochs
-%   - 'manual_pick_channel' (logical): will open neuroscope for you to pick channel
-%   - 'use_sleep_score_delta_channel' (logical): use detected delta channel
-%       from sleep score. Note/warning, may not be cortical channel.
-%   - 'showfig' (logical): option to show delta/firing psth
-%   - 'verify_firing' (logical): verify that firing rate is suppressed in
-%       delta wave
-%   - 'ignore_intervals' (numeric): set of intervals to ignore. Use case:
-%       opto stim intervals to ignore
+%    detect_delta_waves('ParameterName', ParameterValue, ...)
 %
+%    =========================================================================
+%     ParameterName    ParameterValue
+%    -------------------------------------------------------------------------
+%     'basepath'       a string specifying the directory path for the session
+%                      data (default = current directory)
+%     'channel'        a channel or a list of channels specifying the channel 
+%                      to use to detect delta waves (1-indexing expected)
+%     'threshold'      a number specifying the minimum peak-to-trough amplitude
+%                      (default = 3) in z-units.
+%     'brainRegion'    a string or a cell of multiple strings specifying the
+%                      brain region labels to analyze (default = {'PFC', 'IL',
+%                      'PL','Cortex','MEC', 'EC'}. This will only be used to 
+%                      select a channel if no channel is provided by the user.
+%                      In addition, if 'verify_firing' is true, spiking data
+%                      from the selected regions will be used do detect the
+%                      cortical firing rate suppression during delta waves
+%                      to adjust the delta wave amplitude threshold.
+%     'manual_pick_channel'    a boolean specifying whether to open Neuroscope2
+%                      for the user to select a channel manually if no
+%                      channel if no channel is provided by the user (default = false)
+%     'use_sleep_score_delta_channel'   a boolean specifying whether to use
+%                      the channel previously used for sleep scoring if no 
+%                      channel is provided by the user (default = false). Note
+%                      that this may not be a cortical channel.
+%     'EMG_threshold'  a number specifying the threshold for EMG (Electromyography)
+%                      data. Periods below this threshold immobility periods
+%                      will be used to detect delta waves (default = 0.6). 
+%                      Note: prividing "Inf" will waive the immobility requirement
+%     'NREM_restrict'  a boolean specifying whether to restrict to previously
+%                      detected NREM periods (default = true)
+%     'passband'       the frequency passband to filter the signal when detecting
+%                      delta waves (default = [1 6]) Hz.
+%     'showfig'        a boolean specifying whether to show delta/firing 
+%                      psth (default = false)
+%     'verify_firing'  a boolean specifying whether to increase the threshold
+%                      to make sure cortical firing rate is suppressed 
+%                      during the detected events (default = false). This will
+%                      load spiking data from the brain regions privided in
+%                      'brainRegion'
+%     'ignore_intervals'  set of intervals to ignore (e.g opto stim intervals)
+%                      (default = empty)
+%    =========================================================================
+%
+%  EXAMPLE
+%   detect_delta_waves('basepath', 'Y:\OJRproject\OJR57\day12', 'brainRegion', 'PFC');
+%
+%  SEE
+%
+%    Requires the toolbox "neurocode"
 % Example:
 %   detect_delta_waves('basepath', '/path/to/data', 'brainRegion', 'PFC');
 %
 % Depends on: neurocode
 %
-% Author: Ryan H
-% Date: 2023
+% Copyright (C) 2023-2024 by Ryan Harvey, Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 % parse inputs
 p = inputParser;
+p.PartialMatching = true; % allows the use of abbreviations (e.g. "EMG_thres" instead of "EMG_threshold"
 addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
-addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL', 'Cortex'}, @(x) any(iscell(x), iscchar(x)));
-addParameter(p, 'EMG_thres', 0.6, @isdouble);
-addParameter(p, 'passband', [1, 6], @isnumeric);
 addParameter(p, 'channel', [], @isnumeric);
-addParameter(p, 'NREM_restrict', true, @islogical);
+addParameter(p, 'peak_to_trough_ratio', 3, @isnumeric); % legacy name for "threshold"
+addParameter(p, 'threshold', 3, @isnumeric);
+addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL','Cortex'}, @(x) any(iscell(x), iscchar(x)));
 addParameter(p, 'manual_pick_channel', false, @islogical);
 addParameter(p, 'use_sleep_score_delta_channel', false, @islogical);
+addParameter(p, 'EMG_threshold', 0.6, @isnumeric);
+addParameter(p, 'NREM_restrict', true, @islogical);
+addParameter(p, 'passband', [1, 6], @isnumeric);
 addParameter(p, 'showfig', false, @islogical);
 addParameter(p, 'verify_firing', true, @islogical);
 addParameter(p, 'ignore_intervals', [], @isnumeric);
@@ -71,7 +106,9 @@ function run(basepath, p)
 % local function to carry out detection
 
 brainRegion = p.Results.brainRegion;
-EMG_thres = p.Results.EMG_thres;
+EMG_threshold = p.Results.EMG_threshold;
+threshold = p.Results.peak_to_trough_ratio; % legacy name for "threshold"
+threshold = p.Results.threshold;
 passband = p.Results.passband;
 channel = p.Results.channel;
 NREM_restrict = p.Results.NREM_restrict;
@@ -162,30 +199,35 @@ if use_sleep_score_delta_channel
     channel = SleepState.detectorinfo.detectionparms.SleepScoreMetrics.SWchanID + 1;
 end
 
-if isempty(channel)
+if isempty(channel) || length(channel)>1
 
-    % find nearest region name
-    regions = fields(session.brainRegions);
-    region_idx = contains(regions, brainRegion);
-    if isempty(region_idx)
-        warning("no channels for brainRegion")
-        return
+    if isempty(channel)
+        % find nearest region name
+        regions = fields(session.brainRegions);
+        region_idx = contains(regions, brainRegion);
+        if isempty(region_idx)
+            warning("no channels for brainRegion")
+            return
+        end
+        region_name = regions(region_idx);
+
+        % find channels for this brain region
+        channels = [];
+        for region_i = 1:length(region_name)
+            channels = [channels, session.brainRegions.(region_name{region_i}).channels];
+        end
+
+        % find and remove bad channels
+        channels = channels(~ismember(channels, session.channelTags.Bad.channels));
+
+        if isempty(channels)
+            warning("no channels for brainRegion")
+            return
+        end
+    else
+        channels = channel;
     end
-    region_name = regions(region_idx);
 
-    % find channels for this brain region
-    channels = [];
-    for region_i = 1:length(region_name)
-        channels = [channels, session.brainRegions.(region_name{region_i}).channels];
-    end
-
-    % find and remove bad channels
-    channels = channels(~ismember(channels, session.channelTags.Bad.channels));
-
-    if isempty(channels)
-        warning("no channels for brainRegion")
-        return
-    end
 
     [lfp, timestamps] = load_lfp(basepath, session, channels, lfp_restrict);
 
@@ -228,17 +270,19 @@ end
 % remove lfp struct because we now have clean lfp
 clear lfp
 
+if EMG_threshold<Inf
+    % keep waves during low emg
+    EMG = getStruct(basepath, 'EMG');
+    immobility = EMG.timestamps(FindInterval(EMG.data < EMG_threshold));
+    immobility(diff(immobility, [], 2) < 1, :) = [];
+end
+
 % detect delta waves
-deltas0 = FindDeltaWaves(clean_lfp);
+deltas0 = FindDeltaWaves(Restrict(clean_lfp,immobility)); 
 
-% keep waves during low emg
-EMG = getStruct(basepath, 'EMG');
-immobility = EMG.timestamps(FindInterval(EMG.data < EMG_thres));
-immobility(diff(immobility, [], 2) < 1, :) = [];
-deltas = Restrict(deltas0, immobility);
+% restict to deltas that are above the amplitude threshold
+deltas = deltas0(deltas0(:, 5)-deltas0(:, 6) > threshold, :);
 
-% restict to deltas that are above difference of 3sd
-deltas = deltas(deltas(:, 5)-deltas(:, 6) > 3, :);
 
 % remove deltas that intersect with ignore intervals
 if ~isempty(ignore_intervals)
@@ -248,43 +292,46 @@ end
 
 if verify_firing
     % Verify that spiking decreases at the peak of the delta
-    [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
-    if ~st.isempty
-        [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
-        % smooth delta psth
-        delta_psth_smooth = delta_psth;
-        delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
-        % extract delta response
-        response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
-        % sort responses and locate when value passes threshold
-        ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
-        peak_to_trough_ratio = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
-        % only keep deltas with sufficient response
-        deltas = deltas(deltas(:, 5)-deltas(:, 6) > peak_to_trough_ratio, :);
-
-        % verify that the dip in firing around delta
-        delta_psth_avg = mean(delta_psth);
-        if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
-            warning("Firing rate does not dip around delta, change paramaters")
-            figure;
-            subplot(2, 1, 1)
-            plot(ts, delta_psth_avg)
-            subplot(2, 1, 2)
-            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-            colormap("parula")
-            keyboard
+    try
+        [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
+        if ~st.isempty
+            [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
+            % smooth delta psth
+            delta_psth_smooth = delta_psth;
+            delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
+            % extract delta response
+            response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
+            % sort responses and locate when value passes threshold
+            ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
+            threshold = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
+            % only keep deltas with sufficient response
+            deltas = deltas(deltas(:, 5)-deltas(:, 6) > threshold, :);
+            % verify that the dip in firing around delta
+            delta_psth_avg = mean(delta_psth);
+            if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
+                warning("Firing rate does not dip around delta, change paramaters")
+                figure;
+                subplot(2, 1, 1)
+                plot(ts, delta_psth_avg)
+                subplot(2, 1, 2)
+                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+                colormap("parula")
+                keyboard
+            end
+            % Optionally, view the firing around the detected events
+            if showfig
+                figure;
+                subplot(2, 1, 1)
+                plot(ts, delta_psth_avg)
+                subplot(2, 1, 2)
+                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+                colormap("parula")
+            end
+        else
+            p.Results.verify_firing = false; warning("no cortical cells, impossible to verify firing");
         end
-        % Optionally, view the firing around the detected events
-        if showfig
-            figure;
-            subplot(2, 1, 1)
-            plot(ts, delta_psth_avg)
-            subplot(2, 1, 2)
-            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-            colormap("parula")
-        end
-    else
-        warning("no cortical cells, impossible to verify firing")
+    catch
+        p.Results.verify_firing = false; warning("problem loading cortical cell spiking, impossible to verify firing");
     end
 end
 
@@ -293,6 +340,7 @@ deltaWaves.timestamps = deltas(:, [1, 3]);
 deltaWaves.peaks = deltas(:, 2);
 deltaWaves.amplitude = deltas(:, 5) - deltas(:, 6);
 deltaWaves.amplitudeUnits = 'zscore';
+deltaWaves.values = deltas(:, 4:end); % the signal value of the [start, peak, trough] of each delta wave
 deltaWaves.eventID = [];
 deltaWaves.eventIDlabels = [];
 deltaWaves.eventIDbinary = false;
@@ -304,9 +352,7 @@ deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)
 deltaWaves.detectorinfo.detectionparms = p.Results;
 deltaWaves.detectorinfo.detectionchannel = channel - 1;
 deltaWaves.detectorinfo.detectionchannel1 = channel;
-if exist("peak_to_trough_ratio", "var")
-    deltaWaves.detectorinfo.peak_to_trough_ratio = peak_to_trough_ratio;
-end
+deltaWaves.detectorinfo.threshold = threshold;
 save(event_file, 'deltaWaves');
 end
 

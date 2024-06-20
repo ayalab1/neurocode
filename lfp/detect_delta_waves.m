@@ -15,13 +15,13 @@ function detect_delta_waves(varargin)
 %    -------------------------------------------------------------------------
 %     'basepath'       a string specifying the directory path for the session
 %                      data (default = current directory)
-%     'channel'        a channel or a list of channels specifying the channel 
+%     'channel'        a channel or a list of channels specifying the channel
 %                      to use to detect delta waves (1-indexing expected)
 %     'threshold'      a number specifying the minimum peak-to-trough amplitude
 %                      (default = 3) in z-units.
 %     'brainRegion'    a string or a cell of multiple strings specifying the
 %                      brain region labels to analyze (default = {'PFC', 'IL',
-%                      'PL','Cortex','MEC', 'EC'}. This will only be used to 
+%                      'PL','Cortex','MEC', 'EC'}. This will only be used to
 %                      select a channel if no channel is provided by the user.
 %                      In addition, if 'verify_firing' is true, spiking data
 %                      from the selected regions will be used do detect the
@@ -31,21 +31,21 @@ function detect_delta_waves(varargin)
 %                      for the user to select a channel manually if no
 %                      channel if no channel is provided by the user (default = false)
 %     'use_sleep_score_delta_channel'   a boolean specifying whether to use
-%                      the channel previously used for sleep scoring if no 
+%                      the channel previously used for sleep scoring if no
 %                      channel is provided by the user (default = false). Note
 %                      that this may not be a cortical channel.
 %     'EMG_threshold'  a number specifying the threshold for EMG (Electromyography)
 %                      data. Periods below this threshold immobility periods
-%                      will be used to detect delta waves (default = 0.6). 
+%                      will be used to detect delta waves (default = 0.6).
 %                      Note: prividing "Inf" will waive the immobility requirement
 %     'NREM_restrict'  a boolean specifying whether to restrict to previously
 %                      detected NREM periods (default = true)
 %     'passband'       the frequency passband to filter the signal when detecting
 %                      delta waves (default = [1 6]) Hz.
-%     'showfig'        a boolean specifying whether to show delta/firing 
+%     'showfig'        a boolean specifying whether to show delta/firing
 %                      psth (default = false)
 %     'verify_firing'  a boolean specifying whether to increase the threshold
-%                      to make sure cortical firing rate is suppressed 
+%                      to make sure cortical firing rate is suppressed
 %                      during the detected events (default = false). This will
 %                      load spiking data from the brain regions privided in
 %                      'brainRegion'
@@ -78,7 +78,7 @@ addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
 addParameter(p, 'channel', [], @isnumeric);
 addParameter(p, 'peak_to_trough_ratio', 3, @isnumeric); % legacy name for "threshold"
 addParameter(p, 'threshold', 3, @isnumeric);
-addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL','Cortex'}, @(x) any(iscell(x), iscchar(x)));
+addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL', 'Cortex'}, @(x) any(iscell(x), iscchar(x)));
 addParameter(p, 'manual_pick_channel', false, @islogical);
 addParameter(p, 'use_sleep_score_delta_channel', false, @islogical);
 addParameter(p, 'EMG_threshold', 0.6, @isnumeric);
@@ -199,7 +199,7 @@ if use_sleep_score_delta_channel
     channel = SleepState.detectorinfo.detectionparms.SleepScoreMetrics.SWchanID + 1;
 end
 
-if isempty(channel) || length(channel)>1
+if isempty(channel) || length(channel) > 1
 
     if isempty(channel)
         % find nearest region name
@@ -270,7 +270,7 @@ end
 % remove lfp struct because we now have clean lfp
 clear lfp
 
-if EMG_threshold<Inf
+if EMG_threshold < Inf
     % keep waves during low emg
     EMG = getStruct(basepath, 'EMG');
     immobility = EMG.timestamps(FindInterval(EMG.data < EMG_threshold));
@@ -278,7 +278,7 @@ if EMG_threshold<Inf
 end
 
 % detect delta waves
-deltas0 = FindDeltaWaves(Restrict(clean_lfp,immobility)); 
+deltas0 = FindDeltaWaves(Restrict(clean_lfp, immobility));
 
 % restict to deltas that are above the amplitude threshold
 deltas = deltas0(deltas0(:, 5)-deltas0(:, 6) > threshold, :);
@@ -328,10 +328,12 @@ if verify_firing
                 colormap("parula")
             end
         else
-            p.Results.verify_firing = false; warning("no cortical cells, impossible to verify firing");
+            p.Results.verify_firing = false;
+            warning("no cortical cells, impossible to verify firing");
         end
     catch
-        p.Results.verify_firing = false; warning("problem loading cortical cell spiking, impossible to verify firing");
+        p.Results.verify_firing = false;
+        warning("problem loading cortical cell spiking, impossible to verify firing");
     end
 end
 

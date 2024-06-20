@@ -99,6 +99,11 @@ for i = 1:2:length(varargin)
             if ~islogical(removeGlobal)
                 error('Incorrect value for property ''global'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
             end
+        case 'minnumberofspikes'
+            minNumberOfSpikes = varargin{i+1};
+            if ~isnumeric(minNumberOfSpikes)
+                error('Incorrect value for property ''minNumberOfSpikes'' (type ''help <a href="matlab:help CleanRez">CleanRez</a>'' for details).');
+            end
         case 'verbose'
             verbose = varargin{i+1};
             if ~islogical(verbose)

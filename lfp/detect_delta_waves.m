@@ -275,6 +275,8 @@ if EMG_threshold < Inf
     EMG = getStruct(basepath, 'EMG');
     immobility = EMG.timestamps(FindInterval(EMG.data < EMG_threshold));
     immobility(diff(immobility, [], 2) < 1, :) = [];
+else
+    immobility = [-inf, inf];
 end
 
 % detect delta waves
@@ -292,48 +294,43 @@ end
 
 if verify_firing
     % Verify that spiking decreases at the peak of the delta
-    try
-        [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
-        if ~st.isempty
-            [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
-            % smooth delta psth
-            delta_psth_smooth = delta_psth;
-            delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
-            % extract delta response
-            response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
-            % sort responses and locate when value passes threshold
-            ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
-            threshold = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
-            % only keep deltas with sufficient response
-            deltas = deltas(deltas(:, 5)-deltas(:, 6) > threshold, :);
-            % verify that the dip in firing around delta
-            delta_psth_avg = mean(delta_psth);
-            if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
-                warning("Firing rate does not dip around delta, change paramaters")
-                figure;
-                subplot(2, 1, 1)
-                plot(ts, delta_psth_avg)
-                subplot(2, 1, 2)
-                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-                colormap("parula")
-                keyboard
-            end
-            % Optionally, view the firing around the detected events
-            if showfig
-                figure;
-                subplot(2, 1, 1)
-                plot(ts, delta_psth_avg)
-                subplot(2, 1, 2)
-                PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
-                colormap("parula")
-            end
-        else
-            p.Results.verify_firing = false;
-            warning("no cortical cells, impossible to verify firing");
+    [~, st] = importSpikes('basepath', basepath, 'brainRegion', brainRegion);
+    if ~st.isempty
+        [delta_psth, ts] = PETH(st.spikes, deltas(:, 2));
+        % smooth delta psth
+        delta_psth_smooth = delta_psth;
+        delta_psth_smooth = nanzscore(Smooth(delta_psth_smooth, [0, 1]), [], 2);
+        % extract delta response
+        response = mean(delta_psth_smooth(:, InIntervals(ts, [-1, 1]*0.05)), 2);
+        % sort responses and locate when value passes threshold
+        ordered = sortrows([deltas(:, 5) - deltas(:, 6), response], -1);
+        threshold = ordered(find(Smooth(ordered(:, 2), 100) <= -0.5, 1, 'last'), 1);
+        % only keep deltas with sufficient response
+        deltas = deltas(deltas(:, 5)-deltas(:, 6) > threshold, :);
+        % verify that the dip in firing around delta
+        delta_psth_avg = mean(delta_psth);
+        if mean(delta_psth_avg) < mean(delta_psth_avg(ts > -0.1 & ts < 0.1))
+            warning("Firing rate does not dip around delta, change paramaters")
+            figure;
+            subplot(2, 1, 1)
+            plot(ts, delta_psth_avg)
+            subplot(2, 1, 2)
+            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+            colormap("parula")
+            keyboard
         end
-    catch
-        p.Results.verify_firing = false;
-        warning("problem loading cortical cell spiking, impossible to verify firing");
+        % Optionally, view the firing around the detected events
+        if showfig
+            figure;
+            subplot(2, 1, 1)
+            plot(ts, delta_psth_avg)
+            subplot(2, 1, 2)
+            PlotColorMap(Shrink(sortby(delta_psth, -(deltas(:, 5) - deltas(:, 6))), 72, 1), 'x', ts);
+            colormap("parula")
+        end
+    else
+        verify_firing = false;
+        warning("no cortical cells, impossible to verify firing");
     end
 end
 
@@ -352,6 +349,7 @@ deltaWaves.detectorinfo.detectorname = 'detect_delta_waves.m';
 deltaWaves.detectorinfo.detectiondate = datetime("today");
 deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)];
 deltaWaves.detectorinfo.detectionparms = p.Results;
+deltaWaves.detectorinfo.detectionparms.verify_firing = verify_firing;
 deltaWaves.detectorinfo.detectionchannel = channel - 1;
 deltaWaves.detectorinfo.detectionchannel1 = channel;
 deltaWaves.detectorinfo.threshold = threshold;

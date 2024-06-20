@@ -75,6 +75,9 @@ addParameter(p,'showFig',true,@islogical);
 addParameter(p,'forceDetect',false,@islogical);
 addParameter(p,'xaxis_adj_ints', [], @isnumeric);
 addParameter(p,'sessEpochs',[],@isnumeric);
+addParameter(p,'smooth',0,@isnumeric);
+addParameter(p,'maxValue',[],@isnumeric);
+
 
 
 parse(p, varargin{:});
@@ -93,13 +96,15 @@ showFig = p.Results.showFig;
 forceDetect = p.Results.forceDetect;
 xaxis_adj_ints = p.Results.xaxis_adj_ints;
 sessEpochs = p.Results.sessEpochs;
+smooth = p.Results.smooth;
+maxValue = p.Results.maxValue;
 
 
 prevPath = pwd;
 cd(basepath);
 
 %%
-filetarget = split(pwd,filesep); filetarget = filetarget{end};
+filetarget = split(basepath,filesep); filetarget = filetarget{end};
 if exist([filetarget '.pulses.events.mat'],'file') && ~forceDetect
     disp('Pulses already detected! Loading file.');
     load([filetarget '.pulses.events.mat']);
@@ -122,7 +127,7 @@ if isempty(f) || f.bytes == 0                                              % if 
     
     f = dir('*amplifier*.dat');                                        % is exist amplifier
     if isempty(f)
-        analogFile = split(pwd,'\'); analogFile = analogFile{end};
+        analogFile = split(basepath,'\'); analogFile = analogFile{end};
         analogFile = strcat(analogFile,'.dat');
     else
         analogFile = f.name;
@@ -133,7 +138,7 @@ if isempty(f) || f.bytes == 0                                              % if 
     else
         analogCh = analogCh+1; % 0 to 1 index
     end
-    parameters = LoadParameters(pwd); % read xml
+    parameters = LoadParameters(basepath); % read xml
     samplingRate = parameters.rates.wideband;
     nChannels = parameters.nChannels;
     IntanBuzEd = 1;
@@ -179,7 +184,12 @@ for jj = 1 : length(analogCh)
     else
         d = dataAnalogIn(analogCh(jj)-(min(analogCh)-1),:);
     end
-    xt = linspace(1,length(d)/samplingRate,length(d));
+    keyboard
+    if ~isempty(maxValue), d(d>maxValue) = maxValue; end
+    if smooth~=0, d = Smooth(double(d),smooth); end
+    
+
+    xt = linspace(0,length(d)/samplingRate,length(d));
     
     try % correct for different baselines in different subsessions (different rooms)
         MergePoints = getStruct(basepath,'MergePoints');
@@ -202,7 +212,7 @@ for jj = 1 : length(analogCh)
         for subsession = 1:size(MergePoints.timestamps,1)
             start = MergePoints.timestamps(subsession,1); stop = MergePoints.timestamps(subsession,2);
             in = xt>start & xt<stop;
-            dd = double(d(in)); midpoint = mean([min(dd) max(dd)]);
+            dd = Smooth(double(d(in)),smooth); midpoint = mean([min(dd) max(dd)]);
             em(subsession,1) = 1-(mean(dd>=midpoint)*var(dd(dd>=midpoint),1)+ mean(dd<midpoint)*var(dd(dd<midpoint),1)) / var(dd);
         end
     catch % no subsessions detected, use whole session:
@@ -210,6 +220,7 @@ for jj = 1 : length(analogCh)
         em = 1-(mean(dd>=midpoint)*var(dd(dd>=midpoint),1)+ mean(dd<midpoint)*var(dd(dd<midpoint),1)) / var(dd);
         warning('error in attempting to remove subsession baseline: tell Raly');
     end
+    
     if max(em)<emThreshold, % if ANY subsession has good pulses, that's enough for this condition to pass
         warning('Signal didn''t pass Raly''s threshold for detecting pulses. Aborting... Talk to Raly if you think this is a mistake and pulses are actually in the signal.');
         d(:) = 0; % set signal to zero to avoid tedious steps to find pulses
@@ -237,6 +248,7 @@ for jj = 1 : length(analogCh)
         end
         xlabel('s'); ylabel('amp');
         title('Select threshold with the mouse and press left click...');
+        drawnow
         [~,thr] = ginput(1);
         hold on
         plot([xt(1) xt(end)],[thr thr],'-r');
@@ -304,6 +316,7 @@ for jj = 1 : length(analogCh)
     end
     temp(:,find(temp(1,:) == 0)) = [];
     
+    keyboard
     pul{jj} = gather(temp);
     clear temp temp2
     
@@ -374,7 +387,7 @@ saveas(gca,['pulses\analogPulsesDetection.png']);
 % close all
 
 
-filetarget = split(pwd,filesep); filetarget = filetarget{end};
+filetarget = split(basepath,filesep); filetarget = filetarget{end};
 if ~isempty(pul) % if no pulses, not save anything...
     pulses.timestamps = stackCell(pul);
     pulses.amplitude = stackCell(val);
@@ -432,14 +445,14 @@ else
 end
 
 cd(prevPath);
-end
+
 
 function [outMat] = stackCell(inCell)
 outMat = [];
 for ii = 1:length(inCell)
     outMat = [outMat; inCell{ii}'];
 end
-end
+
 
 
 

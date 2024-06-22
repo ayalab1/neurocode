@@ -38,6 +38,9 @@ function  preprocessSession(varargin)
 % [nKilosortRuns]        [number of desired Kilosort runs (default = 1). The
 %                         function will break down the shanks into "nKilosortRuns" 
 %                         groups for each run]
+%
+%  *the new cleaning param needs to be add to description -HLR 6/22/24
+%
 %  OUTPUTS
 %    N/A
 %

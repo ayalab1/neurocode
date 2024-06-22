@@ -64,12 +64,15 @@ state = p.Results.state;
 basename = basenameFromBasepath(basepath);
 if ~exist([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'file')
     warning('no cell_metrics file')
+    varargout{1} = SpikeArray();
+    spikes.times = {[]};
     return
 end
 load([basepath, filesep, basename, '.cell_metrics.cellinfo.mat'], 'cell_metrics');
 
 % create spikes struct
 spikes = cell_metrics.spikes;
+
 spikes.UID = cell_metrics.UID;
 spikes.brainRegion = cell_metrics.brainRegion;
 spikes.cellType = cell_metrics.putativeCellType;

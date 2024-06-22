@@ -67,8 +67,6 @@ end
 
 nIterations = 1000;
 average = @nanmean; % change to nanmedian for testing if the group medians are different
-means = nan(nIterations,2);
-
 
 % Parse parameters
 for i = 1:2:length(varargin),
@@ -96,6 +94,7 @@ for k=2:size(data,2)-1
     [~,~,data(:,k)] = unique(data(:,k));
 end
 
+means = nan(nIterations,2);
 for k=1:nIterations,
     resampled = data;
     level=size(data,2)-1;

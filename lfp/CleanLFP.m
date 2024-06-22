@@ -86,24 +86,10 @@ bad = false(size(values));
 
 if manual
     figure;
-    clf;
-    plot(t, z);
-    hold all;
-    plot(xlim, ones(1, 2)*threshold1, 'r--');
-    plot(xlim, -ones(1, 2)*threshold1, 'r--');
-    ylabel('lfp signal (z-units');
-    legend('signal', 'threshold1');
-    disp('Feel free to change "threshold1" and type "dbcont" to continue.')
+    clf; plot(t, z); hold all; plot(xlim, ones(1, 2)*threshold1, 'r--'); plot(xlim, -ones(1, 2)*threshold1, 'r--'); ylabel('lfp signal (z-units'); legend('signal', 'threshold1'); disp('Feel free to change "threshold1" and type "dbcont" to continue.')
     keyboard;
     if false % Optionally, take a look at the threshold for the derivative
-        clf;
-        plot(t, d);
-        hold all;
-        plot(xlim, ones(1, 2)*threshold2, 'r--');
-        plot(xlim, -ones(1, 2)*threshold2, 'r--');
-        ylabel('lfp derivative (z-units');
-        legend('derivative', 'threshold2');
-        disp('Change "threshold2" manually.')
+        clf; plot(t, d); hold all; plot(xlim, ones(1, 2)*threshold2, 'r--'); plot(xlim, -ones(1, 2)*threshold2, 'r--'); ylabel('lfp derivative (z-units'); legend('derivative', 'threshold2'); disp('Change "threshold2" manually.')
     end
 end
 % Detect large global artefacts (1)

@@ -77,7 +77,7 @@ classdef IntervalArray < handle
             obj.intervals = intervals_in;
             % making empty interval
             if obj.isempty()
-                obj.intervals = double.empty(0,2);
+                obj.intervals = double.empty(0, 2);
             end
             obj.validate_intervals();
             obj.sort();
@@ -115,14 +115,16 @@ classdef IntervalArray < handle
         end
 
         function disp(obj)
+            if obj.isempty()
+                obj_duration = seconds(0);
+            else
+                % pull out intervals and remove inf
+                intervals_ = obj.intervals;
+                intervals_(any(isinf(intervals_), 2), :) = [];
 
-            % pull out intervals and remove inf
-            intervals_ = obj.intervals;
-            intervals_(any(isinf(intervals_), 2), :) = [];
-
-            % calc total duration
-            obj_duration = seconds(sum(intervals_(:, 2)-intervals_(:, 1)));
-
+                % calc total duration
+                obj_duration = seconds(sum(intervals_(:, 2)-intervals_(:, 1)));
+            end
             if obj_duration < seconds(1)
                 duration_str = datestr(obj_duration, 'FFF');
                 units = 'ms';
@@ -254,7 +256,7 @@ classdef IntervalArray < handle
             if ~isempty(obj.intervals)
                 duration_ = sum(obj.lengths);
             else
-                duration_ = [];
+                duration_ = 0;
             end
         end
 

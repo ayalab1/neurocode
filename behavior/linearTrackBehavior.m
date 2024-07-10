@@ -3,7 +3,7 @@ function [behavior] = linearTrackBehavior(varargin)
 % Generate behavioral file for linear track sessions.
 %
 % [behavior] = linearTrackBehavior(varargin)
-% Gets raw tracking data and generates behavior structure
+% Gets tracking data and adds to behavior structure
 % based on the standards described in CellExplorer
 % https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 
@@ -20,12 +20,12 @@ function [behavior] = linearTrackBehavior(varargin)
 %
 %  OUTPUTS
 %
-%  behavior = AYA lab standard behavior structure
+%  behavior = cellexplorer standard behavior structure
 %
 % % Copyright (C) 2022 Can Liu, Ryan Harvey, Antonio FR
 %
 % TODO:
-%       -Current implementation does not conform to cell explorer:
+%       -Current implementation does not entirely conform to cell explorer:
 %           https://cellexplorer.org/datastructure/data-structure-and-format/#behavior
 %       -Improve output figure
 %       -add option to get laps from tracking or from sensors
@@ -70,14 +70,14 @@ basename = basenameFromBasepath(basepath);
 if isempty(behavior)
     if exist([basepath, filesep, [basename, '.animal.behavior.mat']], 'file')
         disp('detected animal.behavior.mat')
-        load([basepath, filesep, [basename, '.animal.behavior.mat']]);
+        load([basepath, filesep, [basename, '.animal.behavior.mat']], 'behavior');
     else
         error('run general_behavior_file first')
     end
 end
 
 %% Pull in basename.session to epoch data
-load([basepath, filesep, [basename, '.session.mat']]);
+load([basepath, filesep, [basename, '.session.mat']], 'session');
 if ~isfield(session.epochs{1}, 'environment')
     warning('environment not labeled')
     warning('label environment and save before moving on')
@@ -183,27 +183,54 @@ end
 
 %% Get laps
 % add option to get laps from tracking or from sensors
-laps = FindLapsNSMAadapted(behavior.timestamps, behavior.position.linearized, lapStart);
+if ~split_linearize
+    laps = FindLapsNSMAadapted(behavior.timestamps, behavior.position.linearized, lapStart);
 
-outbound_start = [];
-outbound_stop = [];
-inbound_start = [];
-inbound_stop = [];
-for i = 1:length([laps.start_ts]) - 1
-    if laps(i).direction == 1
-        outbound_start = cat(1, outbound_start, laps(i).start_ts);
-        outbound_stop = cat(1, outbound_stop, laps(i+1).start_ts);
-    elseif laps(i).direction == -1
-        inbound_start = cat(1, inbound_start, laps(i).start_ts);
-        inbound_stop = cat(1, inbound_stop, laps(i+1).start_ts);
+    outbound_start = [];
+    outbound_stop = [];
+    inbound_start = [];
+    inbound_stop = [];
+    for i = 1:length([laps.start_ts]) - 1
+        if laps(i).direction == 1
+            outbound_start = cat(1, outbound_start, laps(i).start_ts);
+            outbound_stop = cat(1, outbound_stop, laps(i+1).start_ts);
+        elseif laps(i).direction == -1
+            inbound_start = cat(1, inbound_start, laps(i).start_ts);
+            inbound_stop = cat(1, inbound_stop, laps(i+1).start_ts);
+        end
+    end
+    inbound_intervals = [inbound_start, inbound_stop];
+    outbound_intervals = [outbound_start, outbound_stop];
+else
+    inbound_intervals = [];
+    outbound_intervals = [];
+    for ep = 1:size(linear_epochs, 1)
+        % find intervals in epoch
+        [idx, ~, ~] = InIntervals(behavior.timestamps, linear_epochs(ep, :));
+        laps = FindLapsNSMAadapted(behavior.timestamps(idx), behavior.position.linearized(idx), lapStart);
+
+        outbound_start = [];
+        outbound_stop = [];
+        inbound_start = [];
+        inbound_stop = [];
+        for i = 1:length([laps.start_ts]) - 1
+            if laps(i).direction == 1
+                outbound_start = cat(1, outbound_start, laps(i).start_ts);
+                outbound_stop = cat(1, outbound_stop, laps(i+1).start_ts);
+            elseif laps(i).direction == -1
+                inbound_start = cat(1, inbound_start, laps(i).start_ts);
+                inbound_stop = cat(1, inbound_stop, laps(i+1).start_ts);
+            end
+        end
+        inbound_intervals = [inbound_intervals; [inbound_start, inbound_stop]];
+        outbound_intervals = [outbound_intervals; [outbound_start, outbound_stop]];
     end
 end
 
 % save lap information
-behavior.trials = [];
-behavior.trials = [[inbound_start; outbound_start], [inbound_stop; outbound_stop]];
-behavior.trials(1:length(inbound_start), 3) = 1;
-behavior.trials(length(inbound_start)+1:length(inbound_start)+length(outbound_start), 3) = 2;
+behavior.trials = [inbound_intervals; outbound_intervals];
+behavior.trials(1:size(inbound_intervals, 1), 3) = 1;
+behavior.trials(size(inbound_intervals, 1)+1:size(inbound_intervals, 1)+size(outbound_intervals, 1), 3) = 2;
 behavior.trials = sortrows(behavior.trials);
 behavior.trialID = behavior.trials(:, 3);
 behavior.trials = behavior.trials(:, 1:2);
@@ -243,9 +270,9 @@ behavior.run = run;
 % this is the input that subsequent functions will use (e.g. findPlaceFieldsAvg1D)
 
 % probably we don't need this
-trials{1}.timestamps = [inbound_start, inbound_stop];
+trials{1}.timestamps = inbound_intervals;
 %trials{1}.timestamps = trials{1}.timestamps(trials{1}.timestamps(:,2)-trials{1}.timestamps(:,1)<100,:); % excluding too long trials (need an input param)
-trials{2}.timestamps = [outbound_start, outbound_stop];
+trials{2}.timestamps = outbound_intervals;
 %trials{2}.timestamps = trials{2}.timestamps(trials{2}.timestamps(:,2)-trials{2}.timestamps(:,1)<100,:);
 
 for i = 1:2
@@ -257,7 +284,7 @@ end
 
 %% Manipulations
 if ~isempty(manipulation) && exist([basepath, filesep, [basename, '.pulses.events.mat']], 'file')
-    load([basepath, filesep, [basename, '.pulses.events.mat']])
+    load([basepath, filesep, [basename, '.pulses.events.mat']], 'pulses')
     behavior.manipulation = manipulation;
     behavior.stimON = pulses.intsPeriods;
     % we need something more general because manipualtions can be stored in

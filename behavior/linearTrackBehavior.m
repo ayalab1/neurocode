@@ -45,6 +45,7 @@ addParameter(p,'maze_sizes',[],@isnumeric); % width of mazes in cm (must corresp
 addParameter(p,'split_linearize',false,@islogical); % make linear epoch by epoch
 addParameter(p,'remove_extra_fields',false,@islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
 addParameter(p,'just_save_animal_behavior',false,@islogical); % true will only save animal behav file
+addParameter(p,'clean_tracker_jumps',false,@islogical);
 
 parse(p,varargin{:});
 basepath = p.Results.basepath;
@@ -59,6 +60,7 @@ maze_sizes = p.Results.maze_sizes;
 split_linearize = p.Results.split_linearize;
 remove_extra_fields = p.Results.remove_extra_fields;
 just_save_animal_behavior = p.Results.just_save_animal_behavior;
+clean_tracker_jumps = p.Results.clean_tracker_jumps; 
 
 basename = basenameFromBasepath(basepath);
 
@@ -168,13 +170,14 @@ else % if want to linearize tracking epoch by epoch
 end
 
 % Clean:
-xy = ([behavior.position.x(:) behavior.position.y(:)]);
-smoothed = nansmooth(xy,[10 0]);
-d = sqrt(sum((xy-smoothed).^2,2));
-[~,~,threshold] = isoutlier(d,'quartiles','ThresholdFactor', 5); 
-bad = isnan(xy(:,1)) | (d>threshold);
-behavior.position.x(bad) = nan; behavior.position.y(bad) = nan; behavior.position.linearized(bad) = nan;
-
+if clean_tracker_jumps
+    xy = ([behavior.position.x(:) behavior.position.y(:)]);
+    smoothed = nansmooth(xy,[10 0]);
+    d = sqrt(sum((xy-smoothed).^2,2));
+    [~,~,threshold] = isoutlier(d,'quartiles','ThresholdFactor', 5); 
+    bad = isnan(xy(:,1)) | (d>threshold);
+    behavior.position.x(bad) = nan; behavior.position.y(bad) = nan; behavior.position.linearized(bad) = nan;
+end
 %% Get laps
 % add option to get laps from tracking or from sensors
 laps=FindLapsNSMAadapted(behavior.timestamps,behavior.position.linearized,lapStart);

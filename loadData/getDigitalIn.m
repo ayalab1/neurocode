@@ -49,10 +49,10 @@ offset = p.Results.offset;
 filename = p.Results.filename;
 lag = p.Results.periodLag;
 
-if ~isempty(dir('*.xml'))
-    %sess = bz_getSessionInfo(pwd,'noPrompts',true);
-    sess = getSession;
-end
+% if ~isempty(dir('*.xml'))
+%     %sess = bz_getSessionInfo(pwd,'noPrompts',true);
+%     sess = getSession;
+% end
 if ~isempty(dir('*DigitalIn.events.mat'))
     disp('Pulses already detected! Loading file.');
     file = dir('*DigitalIn.events.mat');

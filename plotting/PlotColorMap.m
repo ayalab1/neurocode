@@ -139,6 +139,7 @@ for i = 1:2:length(varargin),
 	end
 end
 
+data = double(data);
 % Special defaults
 x = x(:);
 y = y(:);

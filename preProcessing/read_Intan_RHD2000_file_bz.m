@@ -447,7 +447,8 @@ if (data_present)
     end
 
     % Scale voltage levels appropriately.
-    amplifier_data = 0.195 * (amplifier_data - 32768); % units = microvolts
+    amplifier_data = amplifier_data - 32768;
+%     amplifier_data = 0.195 * (amplifier_data - 32768); % converting units into microvolts. Raly: commented this out because want the raw units as this is what is recorded when .dat file outputs are used directly
     aux_input_data = 37.4e-6 * aux_input_data; % units = volts
     supply_voltage_data = 74.8e-6 * supply_voltage_data; % units = volts
     if (eval_board_mode == 1)

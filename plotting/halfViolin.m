@@ -27,6 +27,8 @@ for i = 1:2:length(varargin),
             colors = varargin{i+1};
         case 'x'
             xdata = varargin{i+1};
+        case 'maxwidth'
+            maxWidth = varargin{i+1};
         case 'smooth'
             smooth = varargin{i+1};
         case 'grouped'

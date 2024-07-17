@@ -58,7 +58,7 @@ plot(ht(m),1:length(m),'w','linewidth',2);
 PlotHVLines(0,'v','k--','linewidth',2);
 xlabel(['time from ' triggerEventName ' (s)']); ylabel([triggerEventName ' ID ordered by ' sortingEventName ' proximity']);
 set(gca,'box','off','TickDir','out','fontsize',15);
-title(strrep([projectName '-' basename],'_','-'));
+title([strrep([projectName '-' basename],'_','-') ': ' strjoin(regionNames(okRegion),', ')]);
 drawnow
 
 

@@ -121,6 +121,14 @@ end
 nBinsY = size(matrix,1); nBinsX = size(matrix,2); 
 [rShuffled, aShuffled, bShuffled, cShuffled, maxJumpShuffled, jumpShuffled] = deal(nan(1,nShuffles));
 
+rShuffled = nan(1,nShuffles);
+cShuffled = nan(1,nShuffles);
+maxJumpShuffled = nan(1,nShuffles);
+jumpShuffled = nan(1,nShuffles);
+aShuffled = nan(1,nShuffles);
+bShuffled = nan(1,nShuffles);
+qShuffled = nan(1,nShuffles);
+
 if isempty(matrix)
     return
 end
@@ -223,13 +231,7 @@ quadrantScore = (score(1)-score(2))./sum(score,2);
 if nShuffles==0
     return
 end
-rShuffled = nan(1,nShuffles);
-cShuffled = nan(1,nShuffles);
-maxJumpShuffled = nan(1,nShuffles);
-jumpShuffled = nan(1,nShuffles);
-aShuffled = nan(1,nShuffles);
-bShuffled = nan(1,nShuffles);
-qShuffled = nan(1,nShuffles);
+
 if strcmp(shuffle,'column')
     for i=1:nShuffles,
         shift = round(rand(1,nBinsX)*(nBinsY-1));
@@ -257,7 +259,10 @@ if strcmp(shuffle,'column')
                 else
                     delta = d;
                 end
-                maxJumpShuffled(i) = max(abs(delta));
+                if ~isempty(delta)
+                    maxJumpShuffled(i) = max(abs(delta));
+                else, maxJumpShuffled(i) = nan;
+                end
                 jumpShuffled(i) = sum(abs(delta))/length(delta);
             end
         end

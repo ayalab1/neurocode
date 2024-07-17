@@ -22,6 +22,9 @@ function [templates,correlations,weights,variance] = ActivityTemplates(spikes,va
 %     'binSize'     bin size in s (default = 0.050)
 %     'step'		step size in s (default = same as binSize)
 %     'mode'		algorithm to perform ('pca' or 'ica'; default = 'ica')
+%     'cross'		a vector indicating brain region for each unit. If provided,
+%                   the function will strictly detect cross-structural assemblies
+%                   (correlations within the same brain region will be ignored).
 %     'tracyWidom'  whether the Tracy Widom correction should be used when
 %                   selecting for significant PCs (default = false)
 %    =========================================================================

@@ -39,6 +39,8 @@ end
 
 if isvector(y),
     handles = plot(x,Smooth(y,smooth),'color',color);
+    if nargout>0, varargout{1} = handles; end
+    hold on;
     return
 end
 
@@ -61,6 +63,4 @@ end
 hold on;
 plot(x,y,'color',color,'linewidth',2);
 
-if nargout>0,
-    varargout{1} = handles;
-end
+if nargout>0, varargout{1} = handles; end

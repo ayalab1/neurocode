@@ -32,8 +32,8 @@ function results = compress_repeated_epochs(epoch_df, epoch_name)
 % _______________________________________    _________    ________    _______________    __________________    _______________    ____________    _____________________    ________________________________________________
 %
 % {'test_DC_pulse_1V_20mA_240506_105224'}          0       954.44     {'homecage'   }       {0×0 double}       {0×0 cell     }    {0×0 double}    {0×0 double         }    {'U:\data\hpc_ctx_project\HP04\day_36_20240506'}
-% {'cheeseboard_240506_133325'          }     9096.1        11457     {'cheeseboard'}       {'25'      }       {'pfc_silence'}    {0×0 double}    {'square_wave_pulse'}    {'U:\data\hpc_ctx_project\HP04\day_36_20240506'}
 % {'presleep_240506_111315'             }     954.44       9096.1     {'sleep'      }       {0×0 double}       {0×0 cell     }    {0×0 double}    {0×0 double         }    {'U:\data\hpc_ctx_project\HP04\day_36_20240506'}
+% {'cheeseboard_240506_133325'          }     9096.1        11457     {'cheeseboard'}       {'25'      }       {'pfc_silence'}    {0×0 double}    {'square_wave_pulse'}    {'U:\data\hpc_ctx_project\HP04\day_36_20240506'}
 % {'postsleep_240506_141807'            }      11457        20683     {'sleep'      }       {0×0 double}       {0×0 cell     }    {0×0 double}    {0×0 double         }    {'U:\data\hpc_ctx_project\HP04\day_36_20240506'}
 %
 %
@@ -97,7 +97,7 @@ match(isnan(match)) = (1:length(match(isnan(match))))' * 2000;
 % Initialize results table
 results = table();
 no_nan_match = match(~isnan(match));
-unique_matches = unique(no_nan_match);
+unique_matches = unique(no_nan_match, 'stable'); % Ensure stable sorting
 
 % Combine epochs based on matches
 for m = 1:length(unique_matches)

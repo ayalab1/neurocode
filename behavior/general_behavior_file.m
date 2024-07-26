@@ -30,17 +30,17 @@ function general_behavior_file(varargin)
 % Ryan Harvey 2021
 
 p = inputParser;
-addParameter(p, 'basepath', pwd); % single or many basepaths in cell array or uses pwd
-addParameter(p, 'fs', 39.0625); % behavioral tracking sample rate (will detect fs for newer datasets)
-addParameter(p, 'force_overwrite', false); % overwrite previously saved data (will remove custom fields)
-addParameter(p, 'force_run', false); % run even if animal.behavior already exists
-addParameter(p, 'save_mat', true); % save animal.behavior.mat
+addParameter(p, 'basepath', pwd, @isfolder); % single or many basepaths in cell array or uses pwd
+addParameter(p, 'fs', 39.0625, @isnumeric); % behavioral tracking sample rate (will detect fs for newer datasets)
+addParameter(p, 'force_overwrite', false, @islogical); % overwrite previously saved data (will remove custom fields)
+addParameter(p, 'force_run', false, @islogical); % run even if animal.behavior already exists
+addParameter(p, 'save_mat', true, @islogical); % save animal.behavior.mat
 addParameter(p, 'primary_coords_dlc', 1); % deeplabcut tracking point to extract (extracts all, but main x and y will be this)
-addParameter(p, 'likelihood_dlc', .95); % deeplabcut likelihood threshold
-addParameter(p, 'force_format', 'none'); % force loading type (options: 'optitrack','dlc')
-addParameter(p, 'clean_tracker_jumps', true); % option to manually clean tracker jumps
-addParameter(p, 'convert_xy_to_cm', true); % option to convert xy to cm (best if used with clean_tracker_jumps)
-addParameter(p, 'maze_sizes', []); % list of maze sizes (x-dim, in cm) per non-sleep epoch (if same maze & cam pos over epochs use single number)
+addParameter(p, 'likelihood_dlc', .95, @isnumeric); % deeplabcut likelihood threshold
+addParameter(p, 'force_format', 'none', @(x) any(strcmpi(x,{'none','optotrack','dlc'}))); % force loading type (options: 'optitrack','dlc')
+addParameter(p, 'clean_tracker_jumps', true, @islogical); % option to manually clean tracker jumps
+addParameter(p, 'convert_xy_to_cm', true, @islogical); % option to convert xy to cm (best if used with clean_tracker_jumps)
+addParameter(p, 'maze_sizes', [], @isvector); % list of maze sizes (x-dim, in cm) per non-sleep epoch (if same maze & cam pos over epochs use single number)
 
 parse(p, varargin{:});
 basepaths = p.Results.basepath;
@@ -54,6 +54,11 @@ force_format = p.Results.force_format;
 clean_tracker_jumps = p.Results.clean_tracker_jumps;
 convert_xy_to_cm = p.Results.convert_xy_to_cm;
 maze_sizes = p.Results.maze_sizes;
+
+if convert_xy_to_cm && isempty(maze_sizes)
+    error('Cannot run with "convert_xy_to_cm" option without providing maze_sizes.');
+end
+
 
 if ~iscell(basepaths)
     basepaths = {basepaths};
@@ -162,10 +167,6 @@ end
 
 % option to convert to cm from pixels
 if convert_xy_to_cm
-    if isempty(maze_sizes)
-        error('you must provide maze sizes')
-    end
-
     % locate tracker points to scale
     pos_fields = fields(behavior.position);
     pos_fields = pos_fields(structfun(@numel, behavior.position) == length(behavior.position.x));
@@ -175,7 +176,6 @@ if convert_xy_to_cm
         maze_sizes_i = 1;
         for ep = 1:length(session.epochs)
             if ~contains(session.epochs{ep}.environment, 'sleep')
-
                 [idx, ~, ~] = InIntervals(behavior.timestamps, ...
                     [session.epochs{ep}.startTime, session.epochs{ep}.stopTime]);
 
@@ -185,7 +185,7 @@ if convert_xy_to_cm
                     warning('using range of x tracking point')
                     pos_range = max(behavior.position.x(idx)) - min(behavior.position.x(idx));
                 else
-                    pos_range = maze_distance_gui(fullfile(files.folder, files.name));
+                    pos_range = maze_distance_gui(fullfile(files.folder, files.name),maze_sizes(maze_sizes_i));
                 end
                 convert_pix_to_cm_ratio = (pos_range / maze_sizes(maze_sizes_i));
                 maze_sizes_i = maze_sizes_i + 1;
@@ -219,7 +219,7 @@ if convert_xy_to_cm
             warning('using range of x tracking point')
             pos_range = max(behavior.position.x) - min(behavior.position.x);
         else
-            pos_range = maze_distance_gui(fullfile(files.folder, files.name));
+            pos_range = maze_distance_gui(fullfile(files.folder, files.name),maze_sizes);
         end
         convert_pix_to_cm_ratio = (pos_range / maze_sizes);
 

@@ -148,7 +148,7 @@ if fillMissingDatFiles
 end
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats(basepath,1);
+concatenateDats(basepath,0);
 
 %% run again to add epochs from basename.MergePoints.m
 session = sessionTemplate(basepath,'showGUI',false);

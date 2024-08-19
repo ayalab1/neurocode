@@ -1,45 +1,47 @@
 function  preprocessSession(varargin)
 
-% [preprocessSession(varargin)]
+% preprocessSession(varargin)
 
-%   [Master function to run the basic pre-processing pipeline for an
+%   Master function to run the basic pre-processing pipeline for an
 %   individual sessions. Is based on sessionsPipeline.m but in this case
-%   works on an individual session basis no in a folfer with multiple ones]
+%   works on an individual session basis no in a folfer with multiple ones
 %
 %
 % INPUTS
-%   [input parser]  [inputs as opiton list of values - see below]
+%   input parser  inputs as opiton list of values - see below
 %   <options>       optional list of property-value pairs (see table below)
 %  =========================================================================
 %   Properties    Values
 %  -------------------------------------------------------------------------
-% [basepath]             [Basepath for experiment. It contains all session
-%                         folders. If not provided takes pwd]
-% [analogChannels]       [List of analog channels with pulses to be detected (it
-%                         supports Intan Buzsaki Edition)]
-% [digitalChannels]      [List of digital channels with pulses to be detected (it
-%                         supports Intan Buzsaki Edition)]
-% [forceSum]             [Force make folder summary (overwrite, if necessary). 
-%                         Default false]
-% [cleanArtifacts]       [Remove artifacts from dat file. By default, if there is 
-%                         analogEv in folder, is true]
-% [stateScore]           [Run automatic brain state detection with SleepScoreMaster. 
-%                         Default true]
-% [spikeSort]            [Run automatic spike sorting using Kilosort. Default true]
-% [cleanRez]             [Run automatic noise detection of the Kilosort results
-%                        (these will be pre-labelled as noise in phy). Default true]
-% [getPos]               [get tracking positions. Default false]
-% [runSummary            [run summary analysis using AnalysisBatchScript.
-%                         Defualt false]
-% [pullData]             [Path for raw data. Look for not analized session to
-%                         copy to the main folder basepath. To do...]
-% [path_to_dlc_bat_file] [path to your dlc bat file to analyze your videos
-%                         (see neurocode\behavior\dlc for example files)]
-% [nKilosortRuns]        [number of desired Kilosort runs (default = 1). The
+% basepath                Basepath for experiment. It contains all session
+%                         folders. If not provided takes pwd
+% analogChannels          List of analog channels with pulses to be detected (it
+%                         supports Intan Buzsaki Edition)
+% digitalChannels         List of digital channels with pulses to be detected (it
+%                         supports Intan Buzsaki Edition)
+% forceSum                Force make folder summary (overwrite, if necessary). 
+%                         Default false
+% cleanArtifacts          Remove artifacts from dat file. By default, if there is 
+%                         analogEv in folder, is true
+% stateScore              Run automatic brain state detection with SleepScoreMaster. 
+%                         Default true
+% spikeSort               Run automatic spike sorting using Kilosort. Default true
+% sortFiles               Sort subsessions with the date and timestamp in the end 
+%                         of the folder name (ignore alphabetical order)
+% removeNoise             Remove first (noise) ICA component from .dat file before 
+%                         spike sorting
+% cleanRez                Run automatic noise detection of the Kilosort results
+%                        (these will be pre-labelled as noise in phy). Default true
+% getPos                  get tracking positions. Default false
+% runSummary              run summary analysis using AnalysisBatchScript.
+%                         Defualt false
+% pullData                Path for raw data. Look for not analized session to
+%                         copy to the main folder basepath. To do...
+% path_to_dlc_bat_file    path to your dlc bat file to analyze your videos
+%                         (see neurocode\behavior\dlc for example files)
+% nKilosortRuns           number of desired Kilosort runs (default = 1). The
 %                         function will break down the shanks into "nKilosortRuns" 
-%                         groups for each run]
-%
-%  *the new cleaning param needs to be add to description -HLR 6/22/24
+%                         groups for each run
 %
 %  OUTPUTS
 %    N/A
@@ -50,7 +52,9 @@ function  preprocessSession(varargin)
 %   - Test cleaning and removing artifacts routines
 %  SEE ALSO
 %
-% [AntonioFR] [2020 - 2022]
+% Copyright (C) 2020-2023 by AntonioFR, 2021 Azahara Oliva,
+%               2022-2023 Lindsay Karaba, 2022-2024 Heath Larson, 
+%               2022-2024 Ryan Harvey, 2022-2024 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -76,11 +80,13 @@ addParameter(p,'stateScore',true,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',false,@islogical);
-addParameter(p,'removeNoise',true,@islogical); % raly: new denoising method removing the first PCA component
+addParameter(p,'removeNoise',true,@islogical); % denoising method removing the first PCA component
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
 addParameter(p,'nKilosortRuns',1,@isnumeric);  
+addParameter(p,'sortFiles',true,@islogical);  
+
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -148,7 +154,7 @@ if fillMissingDatFiles
 end
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats(basepath,1);
+concatenateDats(basepath,sortFiles);
 
 %% run again to add epochs from basename.MergePoints.m
 session = sessionTemplate(basepath,'showGUI',false);
@@ -292,4 +298,4 @@ if runSummary
         sessionSummary;
     end
 end
-end
+% end

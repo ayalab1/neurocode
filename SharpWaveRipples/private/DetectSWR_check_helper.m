@@ -7,6 +7,8 @@ bad = false(size(t));
 try % optionally, remove periods of noisy LFP (large deflections)
     [clean,~,badIntervals] = CleanLFP([tl,double(lfp(:,1))],'thresholds',[8 5],'manual',true);
     bad = bad | InIntervals(t,badIntervals);
+catch
+    keyboard
 end
 if false % optional steps (not recommended for the general case)
     try % optionally, remove periods when your channels are diverging abnormally for a long time (a channel went dead for some time)
@@ -33,14 +35,15 @@ z = bsxfun(@rdivide,bsxfun(@minus,matrix,mean(matrix(~bad,:))),std(matrix(~bad,:
 
 scores = nan(size(ripPowerAll,1),1);
 done = false;
+colors = Bright(1000);
+t = featureTs/1250;
+tl = (1:length(lfp))'/1250;
 while ~done
     figure(1);
-    colors = Bright(1000);
+
     [x,y,button] = ginput(1);
     [~,i] = min(abs(x-swDiffAll.*(1-bad))+abs(y-ripPowerAll.*(1-bad)));
 
-    t = featureTs/1250;
-    tl = (1:length(lfp))'/1250;
     figure(2);
     clf; interval = t(i) + [-1 1]*0.5; in = tl>interval(1) & tl<interval(end);
     subplot(3,1,1);
@@ -68,7 +71,7 @@ while ~done
     scores(i) = score; % save scores to optionally save
 
     figure(1);
-    xlims = xlim; ylims = ylim; clf
+    xlims = xlim; ylims = ylim; 
     % extrapolate the score of each ripple based on the score of the nearest scored ripple
     scored = find(~isnan(scores));
     distances = sqrt(bsxfun(@minus,z(:,1),z(scored,1)').^2 + bsxfun(@minus,z(:,2),z(~isnan(scores),2)').^2);
@@ -78,7 +81,7 @@ while ~done
     idx1 = selected & ~bad; % final ripples
     idx2 = ~selected & ~bad; % non-ripples (yet free from noise as well)
 
-    scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); set(gca,'CLim',[0 1])
+    clf; scatter(matrix(~bad,1),matrix(~bad,2),1,estimated(~bad),'filled'); colormap(Bright); set(gca,'CLim',[0 1])
     xlim(xlims); ylim(ylims);
     hold on;
     scatter(swDiffAll(scored),ripPowerAll(scored),20,scores(scored)); scatter(swDiffAll(scored),ripPowerAll(scored),15,scores(scored));

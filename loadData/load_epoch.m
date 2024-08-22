@@ -28,13 +28,13 @@ for ep = 1:length(session.epochs)
     if isfield(session.epochs{ep}, 'environment')
         environment{ep, 1} = session.epochs{ep}.environment;
     else
-        environment{ep, 1} = [];
+        environment{ep, 1} = '';
     end
 
     if isfield(session.epochs{ep}, 'behavioralParadigm')
         behavioralParadigm{ep, 1} = session.epochs{ep}.behavioralParadigm;
     else
-        behavioralParadigm{ep, 1} = [];
+        behavioralParadigm{ep, 1} = '';
     end
     if isfield(session.epochs{ep}, 'manipulation')
         manipulation{ep, 1} = session.epochs{ep}.manipulation;
@@ -45,13 +45,13 @@ for ep = 1:length(session.epochs)
     if isfield(session.epochs{ep}, 'stimuli')
         stimuli{ep, 1} = session.epochs{ep}.stimuli;
     else
-        stimuli{ep, 1} = [];
+        stimuli{ep, 1} = '';
     end
 
     if isfield(session.epochs{ep}, 'notes')
         notes{ep, 1} = session.epochs{ep}.notes;
     else
-        notes{ep, 1} = [];
+        notes{ep, 1} = '';
     end
 
     basepath{ep, 1} = basepath_;

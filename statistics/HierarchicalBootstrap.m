@@ -69,6 +69,7 @@ end
 
 nIterations = 1000;
 average = @nanmean; % change to nanmedian for testing if the group medians are different
+nColumns = 1;
 
 % Parse parameters
 for i = 1:2:length(varargin),

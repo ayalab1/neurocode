@@ -357,8 +357,10 @@ deltaWaves.detectorinfo.detectiondate = datetime("today");
 deltaWaves.detectorinfo.detectionintervals = [clean_lfp(1, 1), clean_lfp(end, 1)];
 deltaWaves.detectorinfo.detectionparms = p.Results;
 deltaWaves.detectorinfo.detectionparms.verify_firing = verify_firing;
-deltaWaves.detectorinfo.detectionchannel = channel - 1;
-deltaWaves.detectorinfo.detectionchannel1 = channel;
+try
+    deltaWaves.detectorinfo.detectionchannel1 = channel;
+    deltaWaves.detectorinfo.detectionchannel = channel - 1;
+end
 deltaWaves.detectorinfo.threshold = threshold;
 save(event_file, 'deltaWaves');
 end

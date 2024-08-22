@@ -39,7 +39,7 @@ for ep = 1:length(session.epochs)
     if isfield(session.epochs{ep}, 'manipulation')
         manipulation{ep, 1} = session.epochs{ep}.manipulation;
     else
-        manipulation{ep, 1} = {};
+        manipulation{ep, 1} = '';
     end
 
     if isfield(session.epochs{ep}, 'stimuli')

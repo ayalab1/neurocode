@@ -109,6 +109,7 @@ runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
+sortFiles = p.Results.sortFiles;
 
 if ~exist(basepath,'dir')
     error('path provided does not exist')

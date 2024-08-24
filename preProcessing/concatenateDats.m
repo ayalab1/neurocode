@@ -158,6 +158,7 @@ end
 try
     load(fullfile(basepath,[basename '.session.mat'])); % Peter's sessionInfo
 catch
+    warning('No session file detecting, creating session from template. Check defaults to verify they match recording parameters.')
     session = sessionTemplate(basepath,'showGUI',false);
 end
 

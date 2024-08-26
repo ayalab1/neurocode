@@ -158,7 +158,12 @@ end
 try
     load(fullfile(basepath,[basename '.session.mat'])); % Peter's sessionInfo
 catch
-    warning('No session file detecting, creating session from template. Check defaults to verify they match recording parameters.')
+    % Get xml file in order
+    xmlFile = checkFile('fileType','.xml','searchSubdirs',true);
+    xmlFile = xmlFile(1);
+    if ~(strcmp(xmlFile.folder,basepath)&&strcmp(xmlFile.name(1:end-4),basename))
+        copyfile([xmlFile.folder,filesep,xmlFile.name],[basepath,filesep,basename,'.xml'])
+    end
     session = sessionTemplate(basepath,'showGUI',false);
 end
 

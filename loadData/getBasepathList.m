@@ -3,6 +3,15 @@ function basepathList = getBasepathList(parentDirectory)
 %Load a list of basepaths within the queried directory which
 % have been previously saved with "updateBasepathList".
 %
+% EXAMPLES:
+% % get a list of basepaths within a project folder:
+% basepathList = getBasepathList('Y:\OJRproject'); 
+% % get a list of basepaths within the whole ayadata3:
+% basepathList = getBasepathList('X:\'); 
+% % get a list of basepaths within any of the current servers 
+% % (aleph, aleph2, ayadata1-4, ayadataB1-B4)
+% basepathList = {'K:\','L:\','T:\','U:\','V:\','W:\','X:\','Y:\','Z:\'});
+%
 % Copyright (C) 2024 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify

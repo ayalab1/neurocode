@@ -4,6 +4,12 @@ function basepathList = updateBasepathList(parentDirectory,varargin)
 % directory. Folders which contain a 'session.mat' file will be returned
 % in a cell and saved in a 'basepathList.mat' file for later loading.
 %
+% EXAMPLE:
+% create or update the list of basepaths within 'X:\' (ayadata3):
+% basepathList = updateBasepathList('X:\');
+% get list of basepaths within 'X:\' (ayadata3) without saving any files:
+% basepathList =  getBasepathList('Y:\OJRproject','saveDir',[]); 
+%
 % Copyright (C) 2024 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
@@ -30,8 +36,6 @@ if iscell(parentDirectory) % Call the function separately for each cell
 end
 
 list = dir(parentDirectory);
-
-
 % Is this a basepath?
 % If a "session" file exists, this is a basepath. Don't go into subfolders
 basename = basenameFromBasepath(parentDirectory);
@@ -43,7 +47,7 @@ end
 % If no "session" file exists, this is not a basepath, and to look for basepaths,
 % we need to look into deeper subfolders.
 
-list = list(~cellfun(@(x) ismember(x(1),{'.','#'}),{list.name})); % remove subfolders that start with a dot ('.'). This includes the '.phy' folder
+list = list(~cellfun(@(x) ismember(x(1),{'.','#','@','~'}),{list.name})); % remove subfolders that start with a symbol (e.g. '.'). This includes the '.phy' folder
 subdirectories = list([list.isdir]);
 subdirectories = cellfun(@(x,y) fullfile(x,y),{subdirectories.folder}',{subdirectories.name}','UniformOutput',false);
 for i=1:length(subdirectories)

@@ -1,4 +1,4 @@
-function bursts = FindBursts(spikes,varargin)
+function [bursts,z] = FindBursts(spikes,varargin)
 
 % FindBursts - Find bursts of action potentials in a spike train
 % This function implements the method used by Wierzynski 2009. I.e. smooths
@@ -112,6 +112,7 @@ bursts(:,[1 3]) = t(ToIntervals(z>thresholds(1)));
 % Find maximal z value within putative bursts
 [in,id] = InIntervals(t,bursts(:,[1 3]));
 [peak,idx] = Accumulate(id(in),z(in),'mode','max');
+z = [t z];
 t = t(in);
 bursts(:,2) = t(idx);
 bursts(:,4) = peak;

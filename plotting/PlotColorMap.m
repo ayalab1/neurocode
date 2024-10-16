@@ -42,7 +42,7 @@ function PlotColorMap(data,dimm,varargin)
 %  SEE
 %
 %    See also FiringMap, PhaseMap, MTSpectrogram, PlotShortTimeCCG.
-
+%
 % Copyright (C) 2004-2012 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
@@ -139,6 +139,7 @@ for i = 1:2:length(varargin),
 	end
 end
 
+data = double(data);
 % Special defaults
 x = x(:);
 y = y(:);
@@ -173,7 +174,7 @@ end
 set(a,'ydir',ydir,'tickdir','out','box','off');
 
 % Color map and bar
-colormap(Bright(100,'hgamma',hgamma,'type',type));
+colormap(gca,Bright(100,'hgamma',hgamma,'type',type));
 if strcmp(drawBar,'on'),
 	b = colorbar('vert');
 	set(b,'xtick',[],'tickdir','out','box','off','ycolor','k');

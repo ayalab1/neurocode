@@ -1,6 +1,6 @@
 function [periods,in] = Threshold(x,criterion,threshold,varargin)
 
-%Threshold - Find periods above/below threshold.
+% Find periods where samples lay above or below a given threshold
 %
 %  Find periods where samples lay above or below a given threshold. Optionally,
 %  keep only periods of sufficient duration and ignore brief interruptions.
@@ -30,7 +30,7 @@ function [periods,in] = Threshold(x,criterion,threshold,varargin)
 %  SEE
 %
 %    See also QuietPeriods.
-
+%
 % Copyright (C) 2008-2011 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
@@ -102,7 +102,7 @@ stop(discard) = [];
 
 % Outputs
 periods = [x(start,1) x(stop,1)];
-in = logical(zeros(size(x,1),1));
+in = false(size(x,1),1);
 for i = 1:length(start),
 	in(start(i):stop(i)) = 1;
 end

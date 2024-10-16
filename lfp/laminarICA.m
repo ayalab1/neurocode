@@ -89,9 +89,9 @@ addParameter(p,'shankNum',1,@isnumeric)
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',true,@islogical);
 addParameter(p,'passband',[30 200],@isnumeric)
-addParameter(p,'nICs',15,@isnumeric)
-addParameter(p,'plotWeights',true,@islogical)
-addParameter(p,'plotCFC',true,@islogical)
+addParameter(p,'nICs',8,@isnumeric)
+addParameter(p,'plotWeights',false,@islogical)
+addParameter(p,'plotCFC',false,@islogical)
 addParameter(p,'regionChan',[],@isnumeric) % possibly depreciated
 addParameter(p,'chanRange',[], @isnumeric) % maybe we should not use this and instead use regions (i.e. CA1 for all CA1 channels). Cause channel range could change from day to day or subject to subject.
 addParameter(p,'thetaChannel',[],@isnumeric) % This is not used. Reason for this input? -LB 10/21/2022
@@ -166,8 +166,8 @@ if plotCFC
     if exist('hippocampalLayers','var')
         channel = hippocampalLayers.pyramidal;
         % search for region of interest in session.
-    elseif any(contains(ica.region,'CA1slm'))
-        channel = ica.channels(contains(ica.region,'CA1slm'));
+    elseif any(contains(ica.region,'CA1sp'))
+        channel = ica.channels(contains(ica.region,'CA1sp'));
         channel = channel(floor(length(channel)/2)); % choose middle channel
         % Else search for tag in anatomical_map
     else
@@ -176,7 +176,7 @@ if plotCFC
     end
     
     % creates plot and saves
-    plot_CFC(ica,channel,ica.channels,basepath)
+    plot_CFC(ica,channel,basepath)
     
 end
 
@@ -300,7 +300,7 @@ parse(p,varargin{:});
 lrate = p.Results.lrate;
 
 % Perform ICA
-[weights,sphere,meanvar,~,~,~,data,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
+[weights,sphere,meanvar,~,~,~,~,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
 
 % Normalize sphere
 sphere = sphere./norm(sphere);
@@ -313,11 +313,8 @@ else
     mixing = pinv(unmixing);
 end
 
-activations = unmixing * lfp.data';
-
 % Populate output structure
-ica.activations = activations;
-ica.data = data';
+% ica.activations = unmixing * lfp.data';
 ica.timestamps = lfp.timestamps;
 ica.sphere = sphere;
 ica.weights = weights;
@@ -337,9 +334,9 @@ basename = basenameFromBasepath(basepath);
 
     disp('Saving results...');
     if ~isempty(brain_state) | ~isempty(region_tag)
-        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.channelInfo.mat'],'ica');
+        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat'],'ica','-v7.3');
     else
-        save([basepath,filesep,basename '.ica.channelInfo.mat'],'ica');
+        save([basepath,filesep,basename '.ica.analysis.mat'],'ica','-v7');
     end
 
 end
@@ -467,7 +464,7 @@ saveas(gcf,[basepath,filesep,'ICA\Weights.png']);
 
 end
 
-function plot_CFC(ica,pyrCh,channelOrder,basepath,varargin)
+function plot_CFC(ica,pyrCh,basepath,varargin)
 % Plot the comodulagram for theta from CA1pyr and IC
 %
 % Currently chooses theta from REMstate as epochs tend to be shorter and theta is clean. 
@@ -496,45 +493,29 @@ parse(p,varargin{:});
 phaserange = p.Results.phaserange;
 amprange = p.Results.amprange;
 
-basename = basenameFromBasepath(basepath);
-
-% Load sleep state to pull interval with theta epoch
-load(fullfile(basepath,[basename,'.SleepState.states.mat']))
-interval = SleepState.ints.THETA;
-
 % [lfpTheta,lfpICA] = getLFP(pyrCh,'basepath',basepath,'interval',interval); % Only take 1000 seconds worth of data to keep the computation quick
 % load lfp (all lfp)
-lfp = load_lfp(basepath,channelOrder);
+lfp = load_lfp(basepath,ica.channels);
 
-% Keep pyramidal channel only and index same index as ica
-lfp.data = lfp.data(ica.in_idx,find(lfp.channels == pyrCh));
-lfp.timestamps = lfp.timestamps(ica.in_idx');
-lfp.channels = pyrCh; 
-
-% choose the biggest THETA epoch
-[~,idx] = max(SleepState.ints.THETA(:,2) - SleepState.ints.THETA(:,1));
+% create activations 
+activations = lfp.data'*ica.unmixing;
+% choose the biggest epoch
+interval = findIntervals(ica.in_idx);
+[~,idx] = max(interval(:,2) - interval(:,1));
 interval = interval(idx,:);
 
-% limit LFP to epoch and find index for data in interval for ICA 
-[status,~,~] = InIntervals(lfp.timestamps,interval);
-lfp.data =  lfp.data(status,:);
-lfp.timestamps =  lfp.timestamps(status');
-in = find(ica.timestamps >= interval(1) & ica.timestamps <= interval(2));
+% Keep pyramidal channel only and index same index as 
+lfp.data = lfp.data(interval(1):interval(2),:);
+lfp.timestamps = lfp.timestamps(interval(1):interval(2));
+lfp.channels = pyrCh; 
 
-% if interval is greater than 10 seconds, limit to 10 seconds 
-% if size(lfp.data,1) > lfp.samplingRate*10 
-%     %limit lfp 
-%     lfp.data =  lfp.data(1:lfp.samplingRate*10,:);
-%     lfp.timestamps =  lfp.timestamps(1:lfp.samplingRate*10);
-%     %limit to first second of interval
-%     in = in(1:lfp.samplingRate*10);
-% end
+in = find(ica.timestamps >= min(lfp.timestamps) & ica.timestamps <= max(lfp.timestamps));
 
 %% For each ICA, run CFC
 
 % Make lfp structure, with first channel as the Pyr lfp, and remaining
 % channels as the activations for each ICA components.
-lfp.data(:,2:size(ica.weights,1)+1) = ica.activations(:,in')';
+lfp.data(:,2:size(ica.weights,1)+1) = activations(:,in')';
 lfp.channels = 1:size(lfp.data,2);
 
 % Create the plot

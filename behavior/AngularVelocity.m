@@ -1,6 +1,6 @@
 function W = AngularVelocity(X,smooth)
 
-%AngularVelocity - Compute instantaneous angular velocity.
+%Compute instantaneous angular velocity.
 %
 % Compute angular velocity for a time-varying vector X. This is computed as
 % the vector product of X and its derivative DX: W(t) = X(t) ^ DX(t)
@@ -21,7 +21,7 @@ function W = AngularVelocity(X,smooth)
 %  SEE
 %
 %    See also LinearVelocity.
-
+%
 % Copyright (C) 2004-2011 by Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify

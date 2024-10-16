@@ -27,8 +27,17 @@ for i = 1:2:length(varargin),
             colors = varargin{i+1};
         case 'x'
             xdata = varargin{i+1};
+        case 'maxwidth'
+            maxWidth = varargin{i+1};
         case 'smooth'
             smooth = varargin{i+1};
+        case 'grouped'
+            data0 = data;
+            for j=1:max(data0(:,end)),
+                dataCell{j,1} = nan(sum(data0(:,end)==j),max(data0(:,end))); 
+                dataCell{j,1}(:,j) = data0(data0(:,end)==j,1:end-1);
+            end
+            data = cell2mat(dataCell); nColumns = size(data,2); xdata = 1:nColumns;
         otherwise,
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help halfViolin">halfViolin</a>'' for details).']);
     end

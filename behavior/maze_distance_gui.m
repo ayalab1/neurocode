@@ -1,4 +1,4 @@
-function pixel_distance = maze_distance_gui(video_path)
+function pixel_distance = maze_distance_gui(video_path,maze_sizes)
 % maze_distance_gui: manually get distance between points in pixels
 %
 % This fuction was made in order to get the ratio to convert tracking
@@ -10,7 +10,7 @@ function pixel_distance = maze_distance_gui(video_path)
 % Output:
 %   pixel_distance: distance between clicked points in pixels
 %
-% Ryan H
+% Copyright (C) 2022 Ryan Harvey
 
 % check if video exists
 if ~exist(video_path,'file')
@@ -21,7 +21,7 @@ end
 vid_obj = VideoReader(video_path);
 
 % read first 10 seconds of video frames
-frames = read(vid_obj, [1, round(vid_obj.FrameRate*10)]);
+    frames = read(vid_obj, [1, round(vid_obj.FrameRate*1)]);
 % init matrix to store flattened frames
 grey_frames = zeros(vid_obj.Height, vid_obj.Width, size(frames,4));
 for i = 1:size(frames, 4)
@@ -36,7 +36,15 @@ imagesc(grey_frames_avg)
 hold on;
 colormap('gray');
 axis('image')
-title('click on 2 key points and hit "enter" ')
+if nargin>1
+    try
+        title(['click on 2 key points approximately ' num2str(maze_sizes) 'cm apart and hit "enter" '])
+    catch
+        title(['click on 2 key points approximately ' num2str(maze_sizes) 'cm apart and hit "enter" '])
+    end
+else
+    title('click on 2 key points and hit "enter" ')
+end
 
 % let the user click around the coordinates
 corners = [];

@@ -1,44 +1,44 @@
 function varargout = PETH(samples, events, varargin)
 
-%[PETH - Compute a peri-event time histogram relative to synchronizing events]
-% [[mat,t,m] = PETH(data,events,<options>)]
-% ['mat' is a matrix where each row is a peri-event time histogram (PETH)
-% centered on a single event]
+% PETH - Compute a peri-event time histogram relative to synchronizing events
+% [mat,t,m] = PETH(data,events,<options>)
+% 'mat' is a matrix where each row is a peri-event time histogram (PETH)
+% centered on a single event
 %
-% [Select samples that fall around synchronizing events, and make their
+% Select samples that fall around synchronizing events, and make their
 % timestamps relative to the synchronizing events. This can be used to
-% build e.g. spike raster plots or successive evoked potentials]
+% build e.g. spike raster plots or successive evoked potentials
 %
 %  USAGE
 %
-%    [[matrix,t,mean] = PETH(samples,events,<options>)]
+%    [matrix,t,mean] = PETH(samples,events,<options>)
 %
 %  INPUT
 %
-%    [samples]      [either a list of timestamps (e.g. a spike train) or, in
+%    samples        either a list of timestamps (e.g. a spike train) or, in
 %                   the case of a continuous signal (e.g. reactivation strength,
 %                   local field potential, etc), a matrix of [timestamps
-%                   values]]
-%    [events]       [timestamps to synchronize on (e.g., brain
-%                   stimulations)]
+%                   values]
+%    events         timestamps to synchronize on (e.g., brain
+%                   stimulations)
 %    <options>      optional list of property-value pairs (see table below)
 %
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
-%     ['durations'] [durations before and after synchronizing events for each
-%                   trial (in s) (default = [-1 1])]
-%     ['nBins']     [number of time bins around the events (default = 101)]
-%     ['mode']      [whether the sample data is linear ('l') or circular ('c')
+%     'durations'   durations before and after synchronizing events for each
+%                   trial (in s) (default = [-1 1])
+%     'nBins'       number of time bins around the events (default = 101)
+%     'mode'        whether the sample data is linear ('l') or circular ('c')
 %                   (for example, in the case 'samples' is the phase of an
-%                   oscillation)]
-%     ['show']      [display the mean PETH (default = 'on' when no outputs are
-%                   requested and 'off' otherwise)]
-%     ['smooth']    [standard deviation for Gaussian kernel (default = 1 bin)
+%                   oscillation)
+%     'show'        display the mean PETH (default = 'on' when no outputs are
+%                   requested and 'off' otherwise)
+%     'smooth'      standard deviation for Gaussian kernel (default = 1 bin)
 %                   applied to the mean peri-event activity 'm' (note, no
-%                   smoothing will be applied to the output 'matrix')]
-%     ['title']     [if the results are displayed ('show' = 'on'), specify a
-%                   desired title (default is deduced by variable names)]
+%                   smoothing will be applied to the output 'matrix')
+%     'title'       if the results are displayed ('show' = 'on'), specify a
+%                   desired title (default is deduced by variable names)
 %     <plot options> any other property (and all the properties that follow)
 %                   will be passed down to "plot" (e.g. 'r', 'linewidth', etc)
 %                   Because all the following inputs are passed down to "plot",
@@ -47,42 +47,39 @@ function varargout = PETH(samples, events, varargin)
 %
 %  OUTPUT
 %
-%    [matrix]       [a matrix containing the counts of a point process (for 
+%    matrix         a matrix containing the counts of a point process (for 
 %                   timestamp data) or the avarage activity (for a continous
 %                   signal) around the synchronizing events. Each column
 %                   corresponds to a particular delay around the event (delay
 %                   value indicated in timeBins), and each row corresponds to
-%                   a particular instance of "events"]
-%    [timeBins]     [a vector of time bin delay values corresponding the columns
-%                   of] 
-%    [mean]         [average activity across all events]
+%                   a particular instance of "events"
+%    timeBins       a vector of time bin delay values corresponding the columns
+%                   of the matrix
+%    mean           average activity across all events
 %
 %  EXAMPLE
+%    % show mean spiking activity around the stimuli:
+%    PETH(spikes(:,1),stimuli); 
 %
-%    [PETH(spikes(:,1),stimuli); % show mean spiking activity around the
-%    stimuli]
+%    % compute the mean lfp around delta wave peaks:
+%    [matrix,timeBins,m] = PETH([lfp.timestamps double(lfp.data(:,1))],deltaWaves.peaks); 
 %
-%    [[matrix,timeBins,m] = PETH([lfp.timestamps
-%    double(lfp.data(:,1))],deltaWaves.peaks); % compute the mean lfp around delta wave peaks]
-%
-%    [[~,order] = sort(deltaWaves.peakNormedPower); % get the order of delta wave power
-%    PlotColorMap(matrix(order,:),'x',timeBins); % plot the mean lfp around
-%    delta waves as ordered according to delta wave power]
+%    % get the order of delta wave power:
+%    [~,order] = sort(deltaWaves.peakNormedPower); 
+%    plot the mean lfp around delta waves as ordered according to delta wave power
+%    PlotColorMap(matrix(order,:),'x',timeBins);
 %
 %  SEE
 %
 %    See also Sync, SyncHist, SyncMap, PlotSync, PETHTransition.
 %
-% [Ralitsa Todorova, Michaël Zugaro] [2018-2022]
+% Copyright (C) 2018-2022 by Ralitsa Todorova & Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 %
-%
-%-------------------------------------------------------------------------
-
 
 % default values
 duration = [-1 1];

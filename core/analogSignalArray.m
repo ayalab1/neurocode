@@ -126,6 +126,10 @@ classdef analogSignalArray < handle
             end
         end
 
+        function out = fs(self)
+            out = self.sampling_rate;
+        end
+
         function asa = restrict(self, intervals, varargin)
             asa = analogSignalArray();
             if isempty(varargin)

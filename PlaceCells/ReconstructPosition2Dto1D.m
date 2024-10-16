@@ -1,8 +1,5 @@
-function [errors] = ReconstructPosition2Dto1D(positions,spikes,windows,varargin)
+function [errors,average] = ReconstructPosition2Dto1D(positions,spikes,windows,varargin)
 
-% This is a 2D version of the "ReconstructPosition" function. It will convert your
-% positions to 1D.
-%
 % Bayesian reconstruction of positions from spike trains.
 %
 % Instantaneous positions are reconstructed using a Bayesian algorithm.
@@ -318,18 +315,22 @@ future = interp1(positions(:,1),positions(:,2:3),windowCenters+0.1); %position 1
 past = interp1(positions(:,1),positions(:,2:3),windowCenters-0.1); %position 100 ms from now, used to estimate heading
 d = future - past;
 headingDegrees = atan2(d(:,1),d(:,2))/pi*180;
-bad = isnan(headingDegrees);
+bad = isnan(headingDegrees) | any(isnan(actual),2);
 errors = nan(size(estimations,2:3));
 for i=1:size(actual,1)
     if bad(i), continue; end
+try
     q = imtranslate(estimations(:,:,i),-actual(i,[2 1]).*nBinsPerDim + ceil(nBinsPerDim/2)); q(q==0) = nan;
+catch
+    keyboard
+end
     q = imrotate(q,headingDegrees(i),'nearest','crop'); q(q==0) = nan;
     q(isnan(q(:))) = (1-nansum(q(:)))./sum(isnan(q(:)));
     errors(:,i) = nansum(q);
 end
 
 
-if nargout<4,
+if nargout<2,
     return
 end
 
@@ -339,9 +340,9 @@ if isempty(intervalID),
 end
 
 for i=1:max(intervalID),
-    average{i,1} = eval(['nanmean(errors(' repmat(':,',1,nDimensions) 'intervalID==i),nDimensions+1)']);
+    average{i,1} = nanmean(errors(:,intervalID==i),2);
 end
-average = cat(nDimensions+1,average{:});
+average = cat(2,average{:});
 
 end
 

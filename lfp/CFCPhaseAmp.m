@@ -206,7 +206,7 @@ fig.Color = [1 1 1];
 
     for ch = 1:length(ampChans)
         subplot(1,length(ampChans),ch);
-        contourf(comodulogram.phase_bincenters,comodulogram.amp_bincenters,abs(comodulogram.comod(:,:,ch)),20,'LineColor','none');
+        contourf(comodulogram.phase_bincenters,comodulogram.amp_bincenters,abs(comodulogram.comod(:,:,ch)),50,'LineColor','none');
         y = colorbar('SouthOutside');
         set(get(y,'title'));
         xlabel(y,'CFC strength','Rotation',-45)

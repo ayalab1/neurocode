@@ -40,6 +40,14 @@ function lfp = GetAyaLFP(channels,varargin)
 % (at your option) any later version.
 
 lfpstruct = getLFP(channels+1,varargin{:});
+if length(lfpstruct)>1
+    q = lfpstruct(1);
+    for i=2:length(lfpstruct)
+        q = MergeStructures(q,lfpstruct(i));
+    end
+    lfpstruct = q;
+end
+
 try lfp = [lfpstruct.timestamps]; 
     lfp(:,(1:size(lfpstruct.data,2))+1) = lfpstruct.data;
 catch

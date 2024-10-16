@@ -48,6 +48,7 @@ verbose = false;
 shift = 'off';
 sep = false;
 transpose = false;
+samples(isnan(samples(:,1)),:) = [];
 
 % Check number of parameters
 if nargin < 2 | mod(length(varargin),2) ~= 0,

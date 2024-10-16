@@ -1,6 +1,6 @@
 function [periods,movement] = MovementPeriods(v,velocity,duration,brief)
 
-%QuietPeriods - Find periods of immobility.
+% Find periods of movement (opposite of QuietPeriods)
 %
 %  Find periods of movement, i.e. periods of sufficient duration
 %  where instantaneous linear velocity is above threshold. Brief movements
@@ -18,12 +18,16 @@ function [periods,movement] = MovementPeriods(v,velocity,duration,brief)
 %  OUTPUT
 %
 %    periods        list of [start stop] pairs
-%    movement     list of [t s] pairs, where s is 1 if the animal
-%                   is quiet at time t (and 0 otherwise)
+%    movement       list of [t s] pairs, where s is 1 if the animal
+%                   is moving at time t (and 0 otherwise)
 %
+% Copyright (C) 2019 by AntonioFR, modified from QuietPeriods
 %
-%    Modified from QuietPeriods.m
-%    AntonioFR, 03/2019
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
+
 
 
 if nargin < 3,

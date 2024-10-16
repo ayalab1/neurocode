@@ -17,7 +17,7 @@ function find_and_move_videos(basepath,local_drive_path)
 % if python not detected, give your python path like so:
 %                   run pyversion('C:\Users\Cornell\anaconda3\python.exe')
 % 
-% Ryan H 2022
+% Ryan Harvey 2022
 
 disp(pyversion)
 pathToCode = fileparts(which('find_and_move_videos.py'));

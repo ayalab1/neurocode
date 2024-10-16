@@ -1,5 +1,7 @@
 function [objScore] = preferenceScore(basepath, timeTh, runDigIn, digChans)
 
+%Score object task behavior.
+
 if ~exist('basepath','var')
     basepath = pwd;
 end

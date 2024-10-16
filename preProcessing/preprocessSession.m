@@ -38,6 +38,10 @@ function  preprocessSession(varargin)
 % [nKilosortRuns]        [number of desired Kilosort runs (default = 1). The
 %                         function will break down the shanks into "nKilosortRuns" 
 %                         groups for each run]
+% [timeSort]             [Concatenate .dat files based on intan time or
+%                         alphabetically (default = true, based on time).
+%                         Alternatively, enter false for alphabetical sort.]
+%
 %  OUTPUTS
 %    N/A
 %
@@ -78,6 +82,7 @@ addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
 addParameter(p,'nKilosortRuns',1,@isnumeric);  
+addParameter(p,'timeSort',true,@islogical);
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p,varargin{:});
@@ -100,6 +105,7 @@ runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
+timeSort = p.Results.timeSort;
 
 if ~exist(basepath,'dir')
     error('path provided does not exist')
@@ -145,7 +151,7 @@ if fillMissingDatFiles
 end
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats(basepath,1);
+concatenateDats(basepath,timeSort);
 
 %% run again to add epochs from basename.MergePoints.m
 session = sessionTemplate(basepath,'showGUI',false);

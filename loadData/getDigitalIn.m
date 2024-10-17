@@ -61,8 +61,12 @@ if ~isempty(dir('*DigitalIn.events.mat'))
 end
 
 if isempty(filename)
-    filename = dir('digitalIn.dat');
-    filename = filename.name;
+    try
+        filename=dir('digitalIn.dat');
+        filename = filename.name;
+    catch
+        disp('No digitalIn file indicated...');
+    end
 elseif exist('filename', 'var')
     disp(['Using input: ', filename])
 else

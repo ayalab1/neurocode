@@ -63,6 +63,17 @@ file = [ls(fullfile(path,'*.rhd'))];
 
 if (file == 0)
     return;
+elseif size(file,1) > 1
+    basename = basenameFromBasepath(path);
+    i=1;
+    while i<=size(file,1)
+        tempFile = file(i,:);
+        if contains(tempFile, basename)
+           file = [];
+           file = tempFile;
+        end
+        i=i+1;
+    end
 end
 
 % Read most recent file automatically.

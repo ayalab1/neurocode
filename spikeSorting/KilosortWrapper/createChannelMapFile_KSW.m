@@ -14,24 +14,26 @@ if ~exist('rejectChannels','var')
 end
 
 [par,rxml] = LoadXml(fullfile(basepath,[basename,'.xml']));
-xml_electrode_type = rxml.child(1).child(4).value;
-switch(xml_electrode_type)
-    case 'NeuroPixel'
-        electrode_type = 'NeuroPixel';
-    case 'staggered'
-        electrode_type = 'staggered';
-    case 'neurogrid'
-        electrode_type = 'neurogrid';
-    case 'grid'
-        electrode_type = 'neurogrid';
-    case 'poly3'
-        electrode_type = 'poly3';
-    case 'poly5'
-        electrode_type = 'poly5';
-end
-if ~exist('electrode_type')
+try %this "rxml.child(1).child(4)" doesn't always exist
+    xml_electrode_type = rxml.child(1).child(4).value;
+    switch(xml_electrode_type)
+        case 'NeuroPixel'
+            electrode_type = 'NeuroPixel';
+        case 'staggered'
+            electrode_type = 'staggered';
+        case 'neurogrid'
+            electrode_type = 'neurogrid';
+        case 'grid'
+            electrode_type = 'neurogrid';
+        case 'poly3'
+            electrode_type = 'poly3';
+        case 'poly5'
+            electrode_type = 'poly5';
+    end
+catch
     electrode_type = 'staggered';
 end
+
 xcoords = [];
 ycoords = [];
 

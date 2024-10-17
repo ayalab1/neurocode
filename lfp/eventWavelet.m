@@ -58,7 +58,7 @@ function [ wavAvg, lfpAvg ] = eventWavelet (lfp, events, varargin)
 %% Parse inputs
 
 p = inputParser;
-addParameter(p,'channels',1:size(lfp.data,2),@isvector);
+addParameter(p,'channels',1:size(lfp,2),@isvector);
 addParameter(p,'samplingRate',1250,@isnumeric);
 addParameter(p,'twin',[0.1 0.1],@isnumeric);
 addParameter(p,'plotWave',true,@islogical);
@@ -69,7 +69,7 @@ addParameter(p,'waveDb',false,@islogical);
 addParameter(p,'frange',[50 250],@isnumeric);
 addParameter(p,'nfreqs',100,@isnumeric);
 addParameter(p,'ncyc',5,@isnumeric);
-addParameter(p,'space','log'); %space param doesn't propogate to plotting - needs to added HLR 01/2024
+addParameter(p,'space','log');
 addParameter(p,'roundfreqs',false,@islogical);
 addParameter(p,'fvector',[]);
 
@@ -125,7 +125,11 @@ if whitening
     %     temp = WhitenSignal( lfp.data', [], 0 )'; %  NEED TO MAKE BUZCODE FUNCTION
     %     lfp.data = int16(temp'); clear temp;
     lfpwhiten = whitenLFP(lfp);
-    lfp.data = lfpwhiten.data; clear temp;
+    if isstruct(lfp)
+        lfp.data = lfpwhiten.data; %clear temp;
+    else
+        lfp = lfpwhiten.data;
+    end
 end
 
 %% temporal smoothing
@@ -201,12 +205,14 @@ lfpAvg.channels = channels;
 %% Plot
 if plotWave
     figure;
-    contourf(wavAvg.timestamps*1000,wavAvg.freqs,wavAvg.data',30,'LineColor','none');
+    contourf(wavAvg.timestamps*1000,wavAvg.freqs,wavAvg.data'*(1 / 2^16 * 8 * 1e3 / 1e3),30,'LineColor','none');
     hold on;
-    set(gca,'YScale','log');
+    set(gca,'YScale',space);
     ylim([wavespec.freqs(1) wavespec.freqs(end)]);
     colormap parula;
-    xlabel('time (ms)'); ylabel('frequency (Hz)');
+    xlabel('time (ms)'); ylabel('frequency (Hz)'); 
+    cb = colorbar();
+    cb.Label.String = 'mV2';
 end
 
 if plotLFP

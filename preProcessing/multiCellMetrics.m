@@ -1,4 +1,4 @@
-function cell_metrics = multiCellMetrics(basepath, ifSave)
+function cell_metrics = multiCellMetrics(basepath, ifSave, ifOpen)
 
 % [multiCellMetrics- to visualize multiple sessions in cellExplorer GUI]
 %
@@ -48,6 +48,9 @@ if nargin < 1
     error('Please input session basepaths or a parent folder path');
 elseif nargin < 2
     ifSave = 0;
+    ifOpen = 1;
+elseif nargin < 3
+    ifOpen = 1;
 end
 
 if isstring(basepath)||ischar(basepath)
@@ -93,5 +96,7 @@ end
 cell_metrics = loadCellMetricsBatch('basepaths',basepath_use,'basenames',basename_use);
 
 % pull up gui to inspect all units in your project
-cell_metrics = CellExplorer('metrics',cell_metrics);
+if ifOpen
+    cell_metrics = CellExplorer('metrics',cell_metrics);
+end
 end

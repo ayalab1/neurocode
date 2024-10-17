@@ -1,4 +1,4 @@
-function [synchronized,indices] = Sync(samples,sync,varargin)
+function [synchronized,indices,og_times] = Sync(samples,sync,varargin)
 
 %Sync - Make sample timestamps relative to synchronizing events.
 %
@@ -61,7 +61,7 @@ if isempty(sync) || isempty(samples),
 	synchronized = [];
 	indices = [];
 end
-
+og_times = [];
 % Parse parameter list
 for i = 1:2:length(varargin),
 	if ~ischar(varargin{i}),
@@ -126,6 +126,7 @@ for i = 1:nSync,
                 synchronized(k,:) = samples(j,1)-sync(i);
             end
 			indices(k:k+nj-1,1) = i*ones(size(j));
+            og_times = [og_times sync(i)];
 		end
 		k = k + nj;
 	end

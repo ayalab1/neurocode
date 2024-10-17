@@ -1,4 +1,4 @@
-function varargout = read_Intan_Info_Wrapper(filename, varargin)
+function varargout = read_Intan_Info_Wrapper(varargin)
 %
 %
 % [varargout] = [read_Intan_Info_Wrapper(filename, varargin)]

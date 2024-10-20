@@ -61,18 +61,35 @@ function [ica] = laminarICA(varargin)
 % .weights      ICA weight matrix (comps,chans)
 % .meanvar      Explained variance.
 %
+%
+%  Dependencies: Assumes data is stored following CellExplorer standards,
+%   * For region analysis, session.brainRegion must be populated. Use 
+%       neurocode/preProcessing/channel_mapping.m 
+%
+%     Github repos: 
+%       Neurocode (from lfp addpath bz_filter/runica), 
+%       CellExplorer (loadSession), 
+%
+%Example: 
+%   
+%   laminarICA('basepath',basepath,'shank',4,'plotCFC',true,'plotWeights',true)
+%
+%   saves (basename).ica_THETA_CA1.analysis.mat to basepath as well as
+%   makes a folder called ICA with CFC.png, individual_weights.png,
+%   Weights.png 
+%
+%
 % Copyright (C) 2021 by Antonio FR. (using previous code from Manu V, Ipshita Z)
 % This functions is a  wrapper for the EEGLAB function 'runica.mat' from Scott
 % Makeig (CNL/The Salk Institute, La Jolla, 1996-). Copyright (C) 2004-2011
 %
-% Updated 10/2022 by Laura Berkowitz
+% Updated 10/2024 by Laura Berkowitz
 %
 % To do:
 %       - Add option for applying ICA for each shank if desired.
-%       - Remove potentially depreceiated aspects of code see comments for
-%         details.
 %       - Add option to combine epochs e.g. Theta states during Wake states
 %         etc.
+%       - remove depricated variable handling
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -83,8 +100,8 @@ function [ica] = laminarICA(varargin)
 p = inputParser;
 addParameter(p,'basepath',pwd,@ischar);
 addParameter(p,'lfp',[],@isstruct);
-addParameter(p,'region_tag',[],@iscell);
-addParameter(p,'brain_state',[],@ischar);
+addParameter(p,'region_tag','CA1',@iscell);
+addParameter(p,'brain_state','THETA',@ischar); % requires CellExplorer sleep state detection in basepath
 addParameter(p,'shankNum',1,@isnumeric)
 addParameter(p,'saveMat',true,@islogical);
 addParameter(p,'force',true,@islogical);
@@ -110,77 +127,84 @@ regionChan = p.Results.regionChan;
 plotWeights = p.Results.plotWeights;
 plotCFC = p.Results.plotCFC;
 chanRange = p.Results.chanRange;
-thetaChannel = p.Results.thetaChannel;
 
 
-cd(basepath); % will change this once I figure out which downstream functions require PWD
+    cd(basepath); % will change this once I figure out which downstream functions require PWD
+    basename = basenameFromBasepath(basepath);
+    
+    % check if file already created
+    if ~isempty(brain_state) & ~isempty(region_tag)
+        if iscell(region_tag)
+            targetFile = dir([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat']);
+        elseif ischar(region_tag)
+            targetFile = dir([basepath,filesep,basename '.ica_',brain_state,'_',region_tag,'.analysis.mat']);
+        end
+    else
+        targetFile = dir([basepath,filesep,'*.ica.analysis.mat']);
+    end
+    
+    % Check if created
+    if ~isempty(targetFile) && ~force
+        disp('ICA already computed! Loading file.');
+        load(targetFile.name);
+    end
 
-% check if file already created
-if ~isempty(brain_state)
-    % check if there exists an ICA file for the indicated brain state
-    targetFile = dir([basepath,filesep,'*.ica*',brain_state,'.channelInfo.mat']);
-else
-    targetFile = dir([basepath,filesep,'*.ica.channelInfo.mat']);
-end
 
-% Check if created
-if ~isempty(targetFile) && ~force
-    disp('ICA already computed! Loading file.');
-    load(targetFile.name);
-    return
-end
+    %% Get the channels and regions desired for the ICA.
+    [channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum);
 
-% get basename from basepath, and load session
-basename = basenameFromBasepath(basepath);
+    %% preprocess lfp for ica (load lfp and filter with passband)
 
-%% Get the channels and regions desired for the ICA.
-[channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum);
-
-%% preprocess lfp for ica (load lfp and filter with passband)
-lfp =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp);
-lfp.region = region;
-lfp.timestamps = lfp.timestamps';
-
-% Run runica (saves file to basepath)
-ica =  main(lfp,nICs);
-clear lfp
-
-if saveMat
-    save_ica(ica,basepath,brain_state,region_tag);
-end
+    if isempty(lfp) & ~exist('ica','var')
+        % use local function to import lfp in structure format
+        lfp =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp);
+        lfp.region = region;
+        lfp.timestamps = lfp.timestamps';
+        
+        % Run runica (saves file to basepath)
+        ica =  main(lfp,nICs);
+        clear lfp
+    end 
+    
+    if saveMat
+        save_ica(ica,basepath,brain_state,region_tag);
+    end
 
 
 %% Plotting below
-% Plot the components
-if plotWeights
-    % legacy plot
-    plot_weights(ica,regionChan,basepath,nICs)
-    
-    % plots individual weights
-    plot_weights_individual(ica,basepath,nICs)
-    
-end
-
-%% cross frequency coupling
-if plotCFC
-    if exist('hippocampalLayers','var')
-        channel = hippocampalLayers.pyramidal;
-        % search for region of interest in session.
-    elseif any(contains(ica.region,'CA1sp'))
-        channel = ica.channels(contains(ica.region,'CA1sp'));
-        channel = channel(floor(length(channel)/2)); % choose middle channel
-        % Else search for tag in anatomical_map
-    else
-        %Pick the middle channel from the shank for LFP
-        channel = channelOrder(floor(length(channelOrder)/2));
+    % Plot the components
+    if plotWeights
+        % legacy plot
+        plot_weights(ica,regionChan,basepath,nICs)
+        
+        % plots individual weights
+        plot_weights_individual(ica,basepath,nICs)
+        
     end
+
+    %% cross frequency coupling
+    if plotCFC
+        if exist('hippocampalLayers','var')
     
-    % creates plot and saves
-    plot_CFC(ica,channel,basepath)
+            channel = hippocampalLayers.pyramidal;
+            % search for region of interest in session.
     
-end
+        elseif any(contains(ica.region,'CA1sp'))
+            channel = ica.channels(contains(ica.region,'CA1sp'));
+            channel = channel(floor(length(channel)/2)); % choose middle channel
+            % Else search for tag in anatomical_map
+        else
+            %Pick the middle channel from the shank for LFP
+            channel = channelOrder(floor(length(channelOrder)/2));
+        end
+        
+        % creates plot and saves
+        plot_CFC(ica,channel,basepath)
+    end
 
 end
+
+%% LOCAL FUNCTIONS BELOW %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % main functions
 function lfp =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp)
@@ -215,10 +239,10 @@ end
 
 function [channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum)
 % select_channels handles input arguments to 1) select desired
-% channels (chanRange, regionChan, shankNum,
+% channels (chanRange, regionChan, shankNum) 
 
 % get basename from basepath, and load session
-basename = basenameFromBasepath(basepath);
+basename = basenameFromBasepath(basepath); % load basename from session file
 session = loadSession(basepath,basename);
 
 % Get channel map and regions from session
@@ -330,11 +354,19 @@ end
 
 % helper functions
 function save_ica(ica,basepath,brain_state,region_tag)
+% Saves the ICA structure back to the basepath - if region tag and
+% brain_state provided, will save with these tags in the filename. 
+
 basename = basenameFromBasepath(basepath);
 
     disp('Saving results...');
     if ~isempty(brain_state) | ~isempty(region_tag)
-        save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat'],'ica','-v7.3');
+        if iscell(region_tag)
+            save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat'],'ica','-v7');
+        elseif ischar(region_tag)
+            save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag,'.analysis.mat'],'ica','-v7');
+        end
+
     else
         save([basepath,filesep,basename '.ica.analysis.mat'],'ica','-v7');
     end
@@ -342,6 +374,8 @@ basename = basenameFromBasepath(basepath);
 end
 
 function lfp = load_lfp(basepath,channelOrder)
+% Loads the lfp according to the channelOrder provided. Saves as structure
+% to work with neurocode lfp functions
 
 basename = basenameFromBasepath(basepath);
 session = loadSession(basepath,basename);
@@ -369,6 +403,9 @@ lfp.channels = channelOrder;
 end
 
 function [channelOrder, region] = get_channels(session)
+% Get the mapped channelOrder and assocaited region for entire probe,
+% requires session file to have mapped channels from xml, and brainRegions
+% populated. 
 
 % use get maps to find brainRegion and channel_map
 [anatomical_map,channel_map] = get_maps(session);
@@ -391,6 +428,8 @@ end
 end
 
 function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
+% Within session.brainRegions, loads the anatomical map per region 
+
 if isfield(session,'brainRegions')
     regions = fields(session.brainRegions);
     for i = 1:length(regions)
@@ -403,6 +442,9 @@ end
 end
 
 function [anatomical_map,channel_map] = get_maps(session)
+% Wtihin session.extracellular.electrodeGroups, load the anatomical map for
+% entire probe 
+
 max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
 anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
 channel_map = nan(size(anatomical_map));
@@ -415,7 +457,6 @@ end
 end
 
 % plotting functions
-
 function plot_weights_individual(ica,basepath,nICs)
 fig = figure;
 fig.Position = [1638,-107,1505,695];
@@ -497,8 +538,6 @@ amprange = p.Results.amprange;
 % load lfp (all lfp)
 lfp = load_lfp(basepath,ica.channels);
 
-% create activations 
-activations = lfp.data'*ica.unmixing;
 % choose the biggest epoch
 interval = findIntervals(ica.in_idx);
 [~,idx] = max(interval(:,2) - interval(:,1));
@@ -512,10 +551,11 @@ lfp.channels = pyrCh;
 in = find(ica.timestamps >= min(lfp.timestamps) & ica.timestamps <= max(lfp.timestamps));
 
 %% For each ICA, run CFC
-
+% create activations 
+activations = double(lfp.data)*ica.unmixing';
 % Make lfp structure, with first channel as the Pyr lfp, and remaining
 % channels as the activations for each ICA components.
-lfp.data(:,2:size(ica.weights,1)+1) = activations(:,in')';
+lfp.data(:,2:size(ica.weights,1)+1) = activations;
 lfp.channels = 1:size(lfp.data,2);
 
 % Create the plot

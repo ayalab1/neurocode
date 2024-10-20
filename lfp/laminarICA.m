@@ -63,20 +63,20 @@ function [ica] = laminarICA(varargin)
 %
 %
 %  Dependencies: Assumes data is stored following CellExplorer standards,
-%   * For region analysis, session.brainRegion must be populated. Use 
-%       neurocode/preProcessing/channel_mapping.m 
+%   * For region analysis, session.brainRegion must be populated. Use
+%       neurocode/preProcessing/channel_mapping.m
 %
-%     Github repos: 
-%       Neurocode (from lfp addpath bz_filter/runica), 
-%       CellExplorer (loadSession), 
+%     Github repos:
+%       Neurocode (from lfp addpath bz_filter/runica),
+%       CellExplorer (loadSession),
 %
-%Example: 
-%   
+%Example:
+%
 %   laminarICA('basepath',basepath,'shank',4,'plotCFC',true,'plotWeights',true)
 %
 %   saves (basename).ica_THETA_CA1.analysis.mat to basepath as well as
 %   makes a folder called ICA with CFC.png, individual_weights.png,
-%   Weights.png 
+%   Weights.png
 %
 %
 % Copyright (C) 2021 by Antonio FR. (using previous code from Manu V, Ipshita Z)
@@ -98,22 +98,22 @@ function [ica] = laminarICA(varargin)
 
 %% Parse inputs
 p = inputParser;
-addParameter(p,'basepath',pwd,@ischar);
-addParameter(p,'lfp',[],@isstruct);
-addParameter(p,'region_tag','CA1',@iscell);
-addParameter(p,'brain_state','THETA',@ischar); % requires CellExplorer sleep state detection in basepath
-addParameter(p,'shankNum',1,@isnumeric)
-addParameter(p,'saveMat',true,@islogical);
-addParameter(p,'force',true,@islogical);
-addParameter(p,'passband',[30 200],@isnumeric)
-addParameter(p,'nICs',8,@isnumeric)
-addParameter(p,'plotWeights',false,@islogical)
-addParameter(p,'plotCFC',false,@islogical)
-addParameter(p,'regionChan',[],@isnumeric) % possibly depreciated
-addParameter(p,'chanRange',[], @isnumeric) % maybe we should not use this and instead use regions (i.e. CA1 for all CA1 channels). Cause channel range could change from day to day or subject to subject.
-addParameter(p,'thetaChannel',[],@isnumeric) % This is not used. Reason for this input? -LB 10/21/2022
+addParameter(p, 'basepath', pwd, @ischar);
+addParameter(p, 'lfp', [], @isstruct);
+addParameter(p, 'region_tag', 'CA1', @iscell);
+addParameter(p, 'brain_state', 'THETA', @ischar); % requires CellExplorer sleep state detection in basepath
+addParameter(p, 'shankNum', 1, @isnumeric)
+addParameter(p, 'saveMat', true, @islogical);
+addParameter(p, 'force', true, @islogical);
+addParameter(p, 'passband', [30, 200], @isnumeric)
+addParameter(p, 'nICs', 8, @isnumeric)
+addParameter(p, 'plotWeights', false, @islogical)
+addParameter(p, 'plotCFC', false, @islogical)
+addParameter(p, 'regionChan', [], @isnumeric) % possibly depreciated
+addParameter(p, 'chanRange', [], @isnumeric) % maybe we should not use this and instead use regions (i.e. CA1 for all CA1 channels). Cause channel range could change from day to day or subject to subject.
+addParameter(p, 'thetaChannel', [], @isnumeric) % This is not used. Reason for this input? -LB 10/21/2022
 
-parse(p,varargin{:});
+parse(p, varargin{:});
 basepath = p.Results.basepath;
 lfp = p.Results.lfp;
 region_tag = p.Results.region_tag;
@@ -129,104 +129,102 @@ plotCFC = p.Results.plotCFC;
 chanRange = p.Results.chanRange;
 
 
-    cd(basepath); % will change this once I figure out which downstream functions require PWD
-    basename = basenameFromBasepath(basepath);
-    
-    % check if file already created
-    if ~isempty(brain_state) & ~isempty(region_tag)
-        if iscell(region_tag)
-            targetFile = dir([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat']);
-        elseif ischar(region_tag)
-            targetFile = dir([basepath,filesep,basename '.ica_',brain_state,'_',region_tag,'.analysis.mat']);
-        end
-    else
-        targetFile = dir([basepath,filesep,'*.ica.analysis.mat']);
+cd(basepath); % will change this once I figure out which downstream functions require PWD
+basename = basenameFromBasepath(basepath);
+
+% check if file already created
+if ~isempty(brain_state) && ~isempty(region_tag)
+    if iscell(region_tag)
+        targetFile = dir([basepath, filesep, basename, '.ica_', brain_state, '_', region_tag{:}, '.analysis.mat']);
+    elseif ischar(region_tag)
+        targetFile = dir([basepath, filesep, basename, '.ica_', brain_state, '_', region_tag, '.analysis.mat']);
     end
-    
-    % Check if created
-    if ~isempty(targetFile) && ~force
-        disp('ICA already computed! Loading file.');
-        load(targetFile.name);
-    end
+else
+    targetFile = dir([basepath, filesep, '*.ica.analysis.mat']);
+end
 
+% Check if created
+if ~isempty(targetFile) && ~force
+    disp('ICA already computed! Loading file.');
+    load(targetFile.name);
+end
 
-    %% Get the channels and regions desired for the ICA.
-    [channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum);
+%% Get the channels and regions desired for the ICA.
+[channelOrder, region, regionChan] = select_channels(basepath, chanRange, regionChan, region_tag, shankNum);
 
-    %% preprocess lfp for ica (load lfp and filter with passband)
+%% preprocess lfp for ica (load lfp and filter with passband)
 
-    if isempty(lfp) & ~exist('ica','var')
-        % use local function to import lfp in structure format
-        lfp =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp);
-        lfp.region = region;
-        lfp.timestamps = lfp.timestamps';
-        
-        % Run runica (saves file to basepath)
-        ica =  main(lfp,nICs);
-        clear lfp
-    end 
-    
-    if saveMat
-        save_ica(ica,basepath,brain_state,region_tag);
-    end
+if isempty(lfp) && ~exist('ica', 'var')
+    % use local function to import lfp in structure format
+    lfp = preprocess_lfp(channelOrder, basepath, passband, brain_state, lfp);
+    lfp.region = region;
+    lfp.timestamps = lfp.timestamps';
 
+    % Run runica (saves file to basepath)
+    ica = main(lfp, nICs);
+    clear lfp
+end
+
+if saveMat
+    save_ica(ica, basepath, brain_state, region_tag);
+end
 
 %% Plotting below
-    % Plot the components
-    if plotWeights
-        % legacy plot
-        plot_weights(ica,regionChan,basepath,nICs)
-        
-        % plots individual weights
-        plot_weights_individual(ica,basepath,nICs)
-        
+% Plot the components
+if plotWeights
+    % legacy plot
+    plot_weights(ica, regionChan, basepath, nICs)
+
+    % plots individual weights
+    plot_weights_individual(ica, basepath, nICs)
+
+end
+
+%% cross frequency coupling
+if plotCFC
+    if exist('hippocampalLayers', 'var')
+
+        channel = hippocampalLayers.pyramidal;
+        % search for region of interest in session.
+
+    elseif any(contains(ica.region, 'CA1sp'))
+        channel = ica.channels(contains(ica.region, 'CA1sp'));
+        channel = channel(floor(length(channel)/2)); % choose middle channel
+        % Else search for tag in anatomical_map
+    else
+        %Pick the middle channel from the shank for LFP
+        channel = channelOrder(floor(length(channelOrder)/2));
     end
 
-    %% cross frequency coupling
-    if plotCFC
-        if exist('hippocampalLayers','var')
-    
-            channel = hippocampalLayers.pyramidal;
-            % search for region of interest in session.
-    
-        elseif any(contains(ica.region,'CA1sp'))
-            channel = ica.channels(contains(ica.region,'CA1sp'));
-            channel = channel(floor(length(channel)/2)); % choose middle channel
-            % Else search for tag in anatomical_map
-        else
-            %Pick the middle channel from the shank for LFP
-            channel = channelOrder(floor(length(channelOrder)/2));
-        end
-        
-        % creates plot and saves
-        plot_CFC(ica,channel,basepath)
-    end
+    % creates plot and saves
+    plot_CFC(ica, channel, basepath)
+end
 
 end
 
 %% LOCAL FUNCTIONS BELOW %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % main functions
-function lfp =  preprocess_lfp(channelOrder,basepath,passband,brain_state,lfp)
+function lfp = preprocess_lfp(channelOrder, basepath, passband, brain_state, lfp)
 basename = basenameFromBasepath(basepath);
 
 % grab interval for epoching if indicated
 if ~isempty(brain_state)
     % load brain states
-    load(fullfile(basepath,[basename,'.SleepState.states.mat']))
+    load(fullfile(basepath, [basename, '.SleepState.states.mat']),'SleepState')
     % get intervals of when target states occur
     intervals = SleepState.ints.(brain_state);
 else
-    intervals = [0 Inf]; % default for getLFP
+    intervals = [0, Inf]; % default for getLFP
 end
 
 % Load lfp
 if isempty(lfp)
-    lfp = load_lfp(basepath,channelOrder);
+    lfp = load_lfp(basepath, channelOrder);
     % index epochs of interest
-    [in_idx,~,~] = InIntervals(lfp.timestamps,intervals);
-    lfp.data =  lfp.data(in_idx,:);
-    lfp.timestamps =  lfp.timestamps(in_idx');
+    [in_idx, ~, ~] = InIntervals(lfp.timestamps, intervals);
+    lfp.data = lfp.data(in_idx, :);
+    lfp.timestamps = lfp.timestamps(in_idx');
     lfp.in_idx = in_idx; % save this so plotting examples can be indexed using this reference
     lfp.intervals = intervals;
     lfp.channels = channelOrder;
@@ -234,16 +232,16 @@ end
 
 % It is recommmend to filter LFPs in the band of interest (e.g. gamma)
 disp('Filtering...');
-lfp.data = bz_Filter(lfp.data,'passband',passband,'order',4,'filter','butter');
+lfp.data = bz_Filter(lfp.data, 'passband', passband, 'order', 4, 'filter', 'butter');
 end
 
-function [channelOrder,region,regionChan] =  select_channels(basepath,chanRange,regionChan,region_tag,shankNum)
+function [channelOrder, region, regionChan] = select_channels(basepath, chanRange, regionChan, region_tag, shankNum)
 % select_channels handles input arguments to 1) select desired
-% channels (chanRange, regionChan, shankNum) 
+% channels (chanRange, regionChan, shankNum)
 
 % get basename from basepath, and load session
 basename = basenameFromBasepath(basepath); % load basename from session file
-session = loadSession(basepath,basename);
+session = loadSession(basepath, basename);
 
 % Get channel map and regions from session
 [channelOrder, region] = get_channels(session);
@@ -259,7 +257,7 @@ end
 if ~isempty(chanRange)
     % if its multiple shanks, channelOrder will be a cell array of channels
     if iscell(channelOrder)
-        
+
         for shank = 1:length(channelOrder)
             if isempty(channelOrder{shank})
                 continue
@@ -267,35 +265,35 @@ if ~isempty(chanRange)
             channelOrder{shank} = channelOrder{shank}(chanRange);
             region{shank} = region{shank}(chanRange);
         end
-        
+
     else
         % extract from double
         channelOrder = channelOrder(chanRange);
-        region= region(chanRange);
+        region = region(chanRange);
     end
-    
+
 elseif ~isempty(region_tag)
     if iscell(channelOrder)
-        
+
         for shank = 1:length(channelOrder)
             if isempty(channelOrder{shank})
                 continue
             end
-            channelOrder{shank} = channelOrder{shank}(contains(region{shank},region_tag));
-            region{shank} = region{shank}(contains(region{shank},region_tag));
+            channelOrder{shank} = channelOrder{shank}(contains(region{shank}, region_tag));
+            region{shank} = region{shank}(contains(region{shank}, region_tag));
         end
-        
+
     else
         % extract from double
-        channelOrder = channelOrder(contains(region,region_tag));
-        region= region(contains(region,region_tag));
+        channelOrder = channelOrder(contains(region, region_tag));
+        region = region(contains(region, region_tag));
     end
 end
 
 
 % find region info (Seems depreceiated? We use anatomical_map from channel_mapping.m to update session.brainRegion. Consider removing LB 10/22)
 if ~isempty(regionChan)
-    regFile = dir([basepath,filesep,'*.hippocampalLayers.channelinfo.mat']);
+    regFile = dir([basepath, filesep, '*.hippocampalLayers.channelinfo.mat']);
     if ~isempty(regFile)
         load(regFile.name);
         regionChan = hippocampalLayers.all;
@@ -304,7 +302,7 @@ end
 
 end
 
-function ica =  main(lfp,nICs,varargin)
+function ica = main(lfp, nICs, varargin)
 % performs ica on filtered lfp using runica and saves output as structure
 % to basepath;
 %
@@ -318,20 +316,20 @@ function ica =  main(lfp,nICs,varargin)
 % structure containig outputs of ICA
 
 p = inputParser;
-addParameter(p,'lrate',1.0000e-03,@isnumeric);
+addParameter(p, 'lrate', 1.0000e-03, @isnumeric);
 
-parse(p,varargin{:});
+parse(p, varargin{:});
 lrate = p.Results.lrate;
 
 % Perform ICA
-[weights,sphere,meanvar,~,~,~,~,~] = runica(lfp.data','lrate',lrate,'pca',nICs);
+[weights, sphere, meanvar, ~, ~, ~, ~, ~] = runica(lfp.data', 'lrate', lrate, 'pca', nICs);
 
 % Normalize sphere
-sphere = sphere./norm(sphere);
+sphere = sphere ./ norm(sphere);
 
 % Generate mixing and unmixing matrix
-unmixing = weights*sphere;
-if (size(unmixing,1)==size(unmixing,2)) && rank(unmixing)==size(unmixing,1)
+unmixing = weights * sphere;
+if (size(unmixing, 1) == size(unmixing, 2)) && rank(unmixing) == size(unmixing, 1)
     mixing = inv(unmixing);
 else
     mixing = pinv(unmixing);
@@ -353,71 +351,71 @@ ica.in_idx = lfp.in_idx;
 end
 
 % helper functions
-function save_ica(ica,basepath,brain_state,region_tag)
+function save_ica(ica, basepath, brain_state, region_tag)
 % Saves the ICA structure back to the basepath - if region tag and
-% brain_state provided, will save with these tags in the filename. 
+% brain_state provided, will save with these tags in the filename.
 
 basename = basenameFromBasepath(basepath);
 
-    disp('Saving results...');
-    if ~isempty(brain_state) | ~isempty(region_tag)
-        if iscell(region_tag)
-            save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag{:},'.analysis.mat'],'ica','-v7');
-        elseif ischar(region_tag)
-            save([basepath,filesep,basename '.ica_',brain_state,'_',region_tag,'.analysis.mat'],'ica','-v7');
-        end
-
-    else
-        save([basepath,filesep,basename '.ica.analysis.mat'],'ica','-v7');
+disp('Saving results...');
+if ~isempty(brain_state) || ~isempty(region_tag)
+    if iscell(region_tag)
+        save([basepath, filesep, basename, '.ica_', brain_state, '_', region_tag{:}, '.analysis.mat'], 'ica', '-v7');
+    elseif ischar(region_tag)
+        save([basepath, filesep, basename, '.ica_', brain_state, '_', region_tag, '.analysis.mat'], 'ica', '-v7');
     end
+
+else
+    save([basepath, filesep, basename, '.ica.analysis.mat'], 'ica', '-v7');
+end
 
 end
 
-function lfp = load_lfp(basepath,channelOrder)
+function lfp = load_lfp(basepath, channelOrder)
 % Loads the lfp according to the channelOrder provided. Saves as structure
 % to work with neurocode lfp functions
 
 basename = basenameFromBasepath(basepath);
-session = loadSession(basepath,basename);
+session = loadSession(basepath, basename);
 
 % find lfp file
-lfp_path = dir(fullfile(basepath,'*.lfp'));
-lfp_path = fullfile(lfp_path.folder,lfp_path.name);
+lfp_path = dir(fullfile(basepath, '*.lfp'));
+lfp_path = fullfile(lfp_path.folder, lfp_path.name);
 
 % Load lfp
-lfp.data = loadBinary(lfp_path,...
-    'frequency',session.extracellular.srLfp,...
-    'nchannels',session.extracellular.nChannels,...
-    'start',0,...
-    'duration',Inf,...
-    'channels',channelOrder);
+lfp.data = loadBinary(lfp_path, ...
+    'frequency', session.extracellular.srLfp, ...
+    'nchannels', session.extracellular.nChannels, ...
+    'start', 0, ...
+    'duration', Inf, ...
+    'channels', channelOrder);
 
 % lfp sample rate
 Fs = session.extracellular.srLfp;
 
 % prepare structure for below fuctions
 lfp.samplingRate = Fs;
-lfp.timestamps = (0:length(lfp.data)-1)/Fs;
-lfp.channels = channelOrder; 
+lfp.timestamps = (0:length(lfp.data) - 1) / Fs;
+lfp.channels = channelOrder;
 
 end
 
 function [channelOrder, region] = get_channels(session)
 % Get the mapped channelOrder and assocaited region for entire probe,
 % requires session file to have mapped channels from xml, and brainRegions
-% populated. 
+% populated.
 
 % use get maps to find brainRegion and channel_map
-[anatomical_map,channel_map] = get_maps(session);
-anatomical_map = get_map_from_session(session,anatomical_map,channel_map); % updates regions from session and is same dims as channel_map
+[anatomical_map, channel_map] = get_maps(session);
+anatomical_map = get_map_from_session(session, anatomical_map, channel_map); % updates regions from session and is same dims as channel_map
 
 % loop through shanks and get regions and channels
-for shankNum = 1:size(channel_map,2)
+for shankNum = 1:size(channel_map, 2)
     % get channels from session and region from anatomical_map per
     % shank
-    temp_channels  =  session.extracellular.electrodeGroups.channels{1,shankNum};
-    bad_idx = ismember(temp_channels,session.channelTags.Bad.channels(:));
-    temp_region = anatomical_map(find(~bad_idx),shankNum);
+    temp_channels = session.extracellular.electrodeGroups.channels{1, shankNum};
+    bad_idx = ismember(temp_channels, session.channelTags.Bad.channels(:));
+    temp_region = anatomical_map(~bad_idx, shankNum);
     % remove bad channels
     temp_channels(bad_idx) = [];
     % save
@@ -427,90 +425,90 @@ end
 
 end
 
-function anatomical_map = get_map_from_session(session,anatomical_map,channel_map)
-% Within session.brainRegions, loads the anatomical map per region 
+function anatomical_map = get_map_from_session(session, anatomical_map, channel_map)
+% Within session.brainRegions, loads the anatomical map per region
 
-if isfield(session,'brainRegions')
+if isfield(session, 'brainRegions')
     regions = fields(session.brainRegions);
     for i = 1:length(regions)
-        region_idx = ismember(channel_map,...
+        region_idx = ismember(channel_map, ...
             session.brainRegions.(regions{i}).channels);
         anatomical_map(region_idx) = {regions{i}};
-        
+
     end
 end
 end
 
-function [anatomical_map,channel_map] = get_maps(session)
+function [anatomical_map, channel_map] = get_maps(session)
 % Wtihin session.extracellular.electrodeGroups, load the anatomical map for
-% entire probe 
+% entire probe
 
-max_channels = max(cellfun('length',session.extracellular.electrodeGroups.channels));
-anatomical_map = cell(max_channels,session.extracellular.nElectrodeGroups);
+max_channels = max(cellfun('length', session.extracellular.electrodeGroups.channels));
+anatomical_map = cell(max_channels, session.extracellular.nElectrodeGroups);
 channel_map = nan(size(anatomical_map));
 
 for i = 1:session.extracellular.nElectrodeGroups
     n_ch = length(session.extracellular.electrodeGroups.channels{i});
-    anatomical_map(1:n_ch,i) = repmat({'Unknown'},1,n_ch);
-    channel_map(1:n_ch,i) = session.extracellular.electrodeGroups.channels{i};
+    anatomical_map(1:n_ch, i) = repmat({'Unknown'}, 1, n_ch);
+    channel_map(1:n_ch, i) = session.extracellular.electrodeGroups.channels{i};
 end
 end
 
 % plotting functions
-function plot_weights_individual(ica,basepath,nICs)
+function plot_weights_individual(ica, basepath, nICs)
 fig = figure;
-fig.Position = [1638,-107,1505,695];
-fig.Color = [1 1 1];
+fig.Position = [1638, -107, 1505, 695];
+fig.Color = [1, 1, 1];
 for i = 1:nICs
-    subplot(1,nICs,i)
-    plot(ica.topo(:,i),repmat([1:numel(ica.channels)]'',1,1),'LineWidth',2);
+    subplot(1, nICs, i)
+    plot(ica.topo(:, i), repmat((1:numel(ica.channels))'', 1, 1), 'LineWidth', 2);
     hold on;
-    plot(ones(numel(ica.channels)),repmat([1:numel(ica.channels)]',1,1),'Color','r')
+    plot(ones(numel(ica.channels)), repmat((1:numel(ica.channels))', 1, 1), 'Color', 'r')
     if i == 1
-        set(gca,'YDir','reverse','ytick',repmat([1:numel(ica.channels)]',1,1),'yticklabel',ica.region)
+        set(gca, 'YDir', 'reverse', 'ytick', repmat((1:numel(ica.channels))', 1, 1), 'yticklabel', ica.region)
     else
-        set(gca,'YDir','reverse')
+        set(gca, 'YDir', 'reverse')
     end
     hold on
-    ylim([1 size(ica.weights,2)])
+    ylim([1, size(ica.weights, 2)])
 end
 
 if ~isfolder('ICA')
     mkdir('ICA')
 end
-saveas(gcf,[basepath,filesep,'ICA\individual_weights.png']);
+saveas(gcf, [basepath, filesep, 'ICA\individual_weights.png']);
 end
 
-function plot_weights(ica,regionChan,basepath,nICs)
+function plot_weights(ica, regionChan, basepath, nICs)
 
 fig = figure;
-fig.Color = [1 1 1];
-plot(ica.topo,repmat([1:numel(ica.channels)]',1,nICs),'LineWidth',2);
-set(gca,'YDir','reverse')
+fig.Color = [1, 1, 1];
+plot(ica.topo, repmat((1:numel(ica.channels))', 1, nICs), 'LineWidth', 2);
+set(gca, 'YDir', 'reverse')
 hold on
 legend({num2str(ica.channels)})
-ylim([1 size(ica.weights,2)])
+ylim([1, size(ica.weights, 2)])
 if ~isempty(regionChan)
     for ii = 1:length(regionChan)
         idx = find(ica.channels == regionChan(ii));
         if ~isempty(idx)
-            line([-300 300],[idx idx],'Color',[0.5 0.5 0.5],'LineStyle','--');
+            line([-300, 300], [idx, idx], 'Color', [0.5, 0.5, 0.5], 'LineStyle', '--');
         end
     end
 end
 if ~isfolder('ICA')
     mkdir('ICA')
 end
-saveas(gcf,[basepath,filesep,'ICA\Weights.png']);
+saveas(gcf, [basepath, filesep, 'ICA\Weights.png']);
 
 end
 
-function plot_CFC(ica,pyrCh,basepath,varargin)
+function plot_CFC(ica, pyrCh, basepath, varargin)
 % Plot the comodulagram for theta from CA1pyr and IC
 %
-% Currently chooses theta from REMstate as epochs tend to be shorter and theta is clean. 
+% Currently chooses theta from REMstate as epochs tend to be shorter and theta is clean.
 %
-% To-do: 
+% To-do:
 %   - create input to choose awake Theta state LB 10/2022
 %
 % inputs:
@@ -527,42 +525,42 @@ function plot_CFC(ica,pyrCh,basepath,varargin)
 %       saves figure of coupling across ICA components
 
 p = inputParser;
-addParameter(p,'phaserange',5:0.5:12,@isnumeric);
-addParameter(p,'amprange', 30:5:200,@isnumeric);
+addParameter(p, 'phaserange', 5:0.5:12, @isnumeric);
+addParameter(p, 'amprange', 30:5:200, @isnumeric);
 
-parse(p,varargin{:});
+parse(p, varargin{:});
 phaserange = p.Results.phaserange;
 amprange = p.Results.amprange;
 
 % [lfpTheta,lfpICA] = getLFP(pyrCh,'basepath',basepath,'interval',interval); % Only take 1000 seconds worth of data to keep the computation quick
 % load lfp (all lfp)
-lfp = load_lfp(basepath,ica.channels);
+lfp = load_lfp(basepath, ica.channels);
 
 % choose the biggest epoch
 interval = findIntervals(ica.in_idx);
-[~,idx] = max(interval(:,2) - interval(:,1));
-interval = interval(idx,:);
+[~, idx] = max(interval(:, 2)-interval(:, 1));
+interval = interval(idx, :);
 
-% Keep pyramidal channel only and index same index as 
-lfp.data = lfp.data(interval(1):interval(2),:);
+% Keep pyramidal channel only and index same index as
+lfp.data = lfp.data(interval(1):interval(2), :);
 lfp.timestamps = lfp.timestamps(interval(1):interval(2));
-lfp.channels = pyrCh; 
+lfp.channels = pyrCh;
 
-in = find(ica.timestamps >= min(lfp.timestamps) & ica.timestamps <= max(lfp.timestamps));
+% in = find(ica.timestamps >= min(lfp.timestamps) & ica.timestamps <= max(lfp.timestamps));
 
 %% For each ICA, run CFC
-% create activations 
-activations = double(lfp.data)*ica.unmixing';
+% create activations
+activations = double(lfp.data) * ica.unmixing';
 % Make lfp structure, with first channel as the Pyr lfp, and remaining
 % channels as the activations for each ICA components.
-lfp.data(:,2:size(ica.weights,1)+1) = activations;
-lfp.channels = 1:size(lfp.data,2);
+lfp.data(:, 2:size(ica.weights, 1)+1) = activations;
+lfp.channels = 1:size(lfp.data, 2);
 
 % Create the plot
-[comodulogram] = CFCPhaseAmp(lfp,phaserange,amprange,'phaseCh',1,'ampCh',2:(size(ica.weights,1)+1));
+CFCPhaseAmp(lfp, phaserange, amprange, 'phaseCh', 1, 'ampCh', 2:(size(ica.weights, 1) + 1));
 
 % save to basepath
-set(gcf,'Position',[100 100 1400 300])
-saveas(gcf,[basepath,filesep,'ICA\CFC.png']);
+set(gcf, 'Position', [100, 100, 1400, 300])
+saveas(gcf, [basepath, filesep, 'ICA\CFC.png']);
 
 end

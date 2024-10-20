@@ -1,0 +1,24 @@
+name: MATLAB CI
+
+on:
+  push:
+    branches:
+      - add-CI
+  pull_request:
+    branches:
+      - add-CI
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up MATLAB
+        uses: matlab-actions/setup-matlab@v1
+
+      - name: Run MATLAB tests
+        run: |
+          matlab -batch "results = runtests('test', 'IncludeSubfolders', true); assertSuccess(results);"

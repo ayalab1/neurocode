@@ -315,53 +315,49 @@ classdef IntervalArray < handle
 
 
         function new = union(obj, other)
-            if isa(other, 'IntervalArray')
-                intervals_ = obj.intervals;
-                other_intervals = other.intervals;
-                % check if intervals and other_intervals are not empty
-                if ~isempty(intervals_) && ~isempty(other_intervals)
-                    i = 1;
-                    j = 1;
-                    while (i <= size(intervals_, 1) && j <= size(other_intervals, 1))
-                        if (intervals_(i, 1) < other_intervals(j, 1))
-                            if (intervals_(i, 2) < other_intervals(j, 1))
-                                i = i + 1;
-                            else
-                                if (intervals_(i, 2) < other_intervals(j, 2))
-                                    intervals_(i, 2) = other_intervals(j, 2);
-                                    j = j + 1;
-                                else
-                                    j = j + 1;
-                                end
-                            end
-                        else
-                            if (other_intervals(j, 2) < intervals_(i, 1))
-                                j = j + 1;
-                            else
-                                if (other_intervals(j, 2) < intervals_(i, 2))
-                                    intervals_ = [intervals_(1:i-1, :); ...
-                                        other_intervals(j, :); intervals_(i:end, :)];
-                                    i = i + 1;
-                                    j = j + 1;
-                                else
-                                    intervals_(i, 1) = other_intervals(j, 1);
-                                    j = j + 1;
-                                end
-                            end
-                        end
-                    end
-                    if (j <= size(other_intervals, 1))
-                        intervals_ = [intervals_; other_intervals(j:end, :)];
-                    end
-                elseif isempty(intervals_)
-                    intervals_ = other_intervals;
-                end
-                new = IntervalArray(intervals_);
-            else
+            if ~isa(other, 'IntervalArray')
                 error("unsupported operand type(s) for union: %s and %s", ...
                     class(obj), class(other));
             end
+
+            intervals_ = obj.intervals;
+            other_intervals = other.intervals;
+
+            % Check if intervals and other_intervals are not empty
+            if isempty(intervals_) && isempty(other_intervals)
+                new = IntervalArray([]);
+                return;
+            elseif isempty(intervals_)
+                new = IntervalArray(other_intervals);
+                return;
+            elseif isempty(other_intervals)
+                new = IntervalArray(intervals_);
+                return;
+            end
+
+            % Combine and sort intervals
+            combined_intervals = [intervals_; other_intervals];
+            combined_intervals = sortrows(combined_intervals, 1); % Sort by start time
+
+            % Initialize merged intervals
+            merged_intervals = combined_intervals(1, :); % Start with the first interval
+
+            for i = 2:size(combined_intervals, 1)
+                current_interval = combined_intervals(i, :);
+                last_merged_interval = merged_intervals(end, :);
+
+                if current_interval(1) <= last_merged_interval(2) % Overlapping or adjacent intervals
+                    % Merge intervals
+                    merged_intervals(end, 2) = max(last_merged_interval(2), current_interval(2));
+                else
+                    % No overlap, just add the current interval
+                    merged_intervals = [merged_intervals; current_interval];
+                end
+            end
+
+            new = IntervalArray(merged_intervals);
         end
+
 
         function new = complement(obj)
             new = IntervalArray();
@@ -390,66 +386,85 @@ classdef IntervalArray < handle
             end
         end
 
+
         function new = plus(obj, other)
             if isa(other, 'IntervalArray')
-                new = IntervalArray();
+                % Combine the current intervals with the other intervals
                 intervals_ = obj.intervals;
                 other_intervals = other.intervals;
-                % check if intervals and other_intervals are not empty
-                if ~isempty(intervals_) && ~isempty(other_intervals)
-                    new_intervals = [intervals_; other_intervals];
-                    new_intervals = sortrows(new_intervals);
-                    new.intervals = new_intervals;
-                elseif isempty(intervals_)
-                    new = other;
+        
+                % Concatenate intervals from both arrays
+                all_intervals = [intervals_; other_intervals];
+        
+                % Sort intervals by the start time
+                all_intervals = sortrows(all_intervals);
+        
+                % Initialize the merged intervals
+                merged_intervals = [];
+        
+                % Merge overlapping intervals
+                for i = 1:size(all_intervals, 1)
+                    if isempty(merged_intervals) || merged_intervals(end, 2) < all_intervals(i, 1)
+                        % No overlap, add the interval
+                        merged_intervals = [merged_intervals; all_intervals(i, :)];
+                    else
+                        % Overlap, merge intervals
+                        merged_intervals(end, 2) = max(merged_intervals(end, 2), all_intervals(i, 2));
+                    end
                 end
+        
+                new = IntervalArray(merged_intervals);
             else
-                error("unsupported operand type(s) for +: %s and %s", ...
+                error("unsupported operand type(s) for plus: %s and %s", ...
                     class(obj), class(other));
             end
         end
 
+
+
+
+
         function new = setdiff(obj, other)
-            if isa(other, 'IntervalArray')
-                new = IntervalArray();
-                other_intervals = other.intervals;
-                intervals_ = obj.intervals;
-                % loop through the intervals of other
-                for i = 1:size(other_intervals, 1)
-                    % loop through the intervals of the object
-                    j = 1;
-                    for jj = 1:size(intervals_, 1)
-                        if (intervals_(j, 1) >= other_intervals(i, 1) && ...
-                                intervals_(j, 2) <= other_intervals(i, 2))
-                            % interval is completely inside the other interval
-                            intervals_(j, :) = [];
-                            continue
-                        elseif (intervals_(j, 1) < other_intervals(i, 1) && ...
-                                intervals_(j, 2) > other_intervals(i, 1) && ...
-                                intervals_(j, 2) <= other_intervals(i, 2))
-                            % interval starts before and ends inside the other interval
-                            intervals_(j, 2) = other_intervals(i, 1);
-                        elseif (intervals_(j, 1) >= other_intervals(i, 1) && ...
-                                intervals_(j, 1) < other_intervals(i, 2) && ...
-                                intervals_(j, 2) > other_intervals(i, 2))
-                            % interval starts inside and ends after the other interval
-                            intervals_(j, 1) = other_intervals(i, 2);
-                        elseif (intervals_(j, 1) < other_intervals(i, 1) && ...
-                                intervals_(j, 2) > other_intervals(i, 2))
-                            % interval starts before and ends after the other interval
-                            new_interval = [other_intervals(i, 2), intervals_(j, 2)];
-                            intervals_(j, 2) = other_intervals(i, 1);
-                            intervals_ = [intervals_; new_interval];
-                        end
-                        j = j + 1;
-                    end
-                end
-                new.intervals = intervals_;
-            else
+            if ~isa(other, 'IntervalArray')
                 error("unsupported operand type(s) for setdiff: %s and %s", ...
                     class(obj), class(other));
             end
+
+            intervals_ = obj.intervals;
+            other_intervals = other.intervals;
+
+            if isempty(intervals_)
+                new = IntervalArray([]);
+                return;
+            elseif isempty(other_intervals)
+                new = IntervalArray(intervals_);
+                return;
+            end
+
+            new_intervals = []; % Initialize the result array
+
+            for i = 1:size(intervals_, 1)
+                interval = intervals_(i, :);
+                is_overlapping = false;
+
+                for j = 1:size(other_intervals, 1)
+                    other_interval = other_intervals(j, :);
+
+                    % Check if there is an overlap
+                    if (interval(1) < other_interval(2)) && (other_interval(1) < interval(2))
+                        is_overlapping = true;
+                        break; % No need to check further
+                    end
+                end
+
+                if ~is_overlapping
+                    new_intervals = [new_intervals; interval]; % Keep this interval
+                end
+            end
+
+            new = IntervalArray(new_intervals);
         end
+
 
         function out = plot(obj, varargin)
             if isempty(varargin)

@@ -21,4 +21,5 @@ jobs:
 
       - name: Run MATLAB tests
         run: |
-          matlab -batch "addpath(genpath('neurocode')); results = runtests('test', 'IncludeSubfolders', true); assertSuccess(results);"
+          cd neurocode
+          matlab -batch "addpath(genpath('.')); results = runtests('test', 'IncludeSubfolders', true); assertSuccess(results);"

@@ -26,4 +26,4 @@ jobs:
 
       - name: Run MATLAB tests
         run: |
-          matlab -batch "addpath(genpath('.')); results = runtests('test', 'IncludeSubfolders', true); assertSuccess(results);"
+          matlab -batch "addpath(genpath('.')); suite = TestSuite.fromFolder('test', 'IncludeSubfolders', true); results = run(suite); assertSuccess(results);"

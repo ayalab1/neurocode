@@ -3,10 +3,10 @@ name: MATLAB CI
 on:
   push:
     branches:
-      - add-CI
+      - master
   pull_request:
     branches:
-      - add-CI
+      - master
 
 jobs:
   test:

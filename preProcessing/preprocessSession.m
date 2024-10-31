@@ -83,7 +83,7 @@ addParameter(p,'stateScore',true,@islogical);
 addParameter(p,'spikeSort',true,@islogical);
 addParameter(p,'cleanRez',true,@islogical);
 addParameter(p,'getPos',false,@islogical);
-addParameter(p,'removeNoise',true,@islogical); % denoising method removing the first PCA component
+addParameter(p,'removeNoise',false,@islogical); % denoising method removing the first PCA component
 addParameter(p,'runSummary',false,@islogical);
 addParameter(p,'SSD_path','D:\KiloSort',@ischar)    % Path to SSD disk. Make it empty to disable SSD
 addParameter(p,'path_to_dlc_bat_file','',@isfile)
@@ -197,7 +197,7 @@ end
 %% Make LFP
 try
     try
-        LFPfromDat(basepath,'outFs',1250,'useGPU',true);
+        LFPfromDat(basepath,'outFs',1250,'useGPU',false);
     catch
         if (exist([basepath '\' basename '.lfp'])~=0)
             fclose([basepath '\' basename '.lfp']); %if the above run failed after starting the file

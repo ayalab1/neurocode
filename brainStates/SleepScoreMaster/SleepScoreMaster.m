@@ -95,7 +95,7 @@ if ~exist('basepath','var')
 end
 
 %Separate datasetfolder and recordingname
-[datasetfolder,recordingname,extension] = fileparts(basepath);
+[datasetfolder,~,~] = fileparts(basepath);
 recordingname = basenameFromBasepath(basepath); % fileparts parses '.' into extension
 
 
@@ -108,15 +108,16 @@ end
 
 %If multiple recordings, loop calling SleepScoreMaster with each
 numrecs = length(recordingname);
-if numrecs > 1 & iscell(recordingname)
-    display(['Multiple Recordings (',num2str(numrecs),')'])
-    for rr = 1:numrecs
-        multibasepath = basePaths{rr};
-        SleepScoreMaster(multibasepath,varargin{:})
-        close all
-    end
-    return
-elseif numrecs == 1 & iscell(recordingname)
+if numrecs > 1 && iscell(recordingname)
+    error('multiple recordings not implemented')
+    % disp(['Multiple Recordings (',num2str(numrecs),')'])
+    % for rr = 1:numrecs
+    %     multibasepath = basePaths{rr};
+    %     SleepScoreMaster(multibasepath,varargin{:})
+    %     close all
+    % end
+    % return
+elseif numrecs == 1 && iscell(recordingname)
         recordingname = recordingname{1};
 end
 
@@ -178,9 +179,9 @@ bz_sleepstatepath = fullfile(savefolder,[recordingname,'.SleepState.states.mat']
 if exist(bz_sleepstatepath,'file') && ~overwrite && ~ignoreManual
    SleepState_old = load(bz_sleepstatepath);
    if isfield(SleepState_old.SleepState.detectorinfo,'LastManualUpdate')
-       display(['Manual scoring detected... will update the SleepScoreMetrics and AutoScoreInts, ',...
+       disp(['Manual scoring detected... will update the SleepScoreMetrics and AutoScoreInts, ',...
         'but keep previous (manual) scoring.']) 
-       display(['To overwrite manual scoring use ''ignoreManual'',true ',...
+       disp(['To overwrite manual scoring use ''ignoreManual'',true ',...
            'or ''overwrite'',true to overwrite all metrics.'])
        ManScore.ints = SleepState_old.SleepState.ints;
        ManScore.idx = SleepState_old.SleepState.idx;
@@ -190,7 +191,6 @@ end
 
 %% Get channels not to use
 chInfo = hackInfo('basepath',basepath);
-nChannel = chInfo.nChannel;
 channels = setdiff(chInfo.one.channels,chInfo.one.badChannels);
 badChannels = chInfo.one.badChannels;
 
@@ -215,7 +215,7 @@ end
 rejectChannels = [rejectChannels badChannels]; %get badchannels from the .xml
 
 if isempty(rejectChannels)
-    display('No rejected channels - it''s recommended you identify noisy channels to ignore')
+    disp('No rejected channels - it''s recommended you identify noisy channels to ignore')
 end
 
 %% CALCULATE EMG FROM HIGH-FREQUENCY COHERENCE
@@ -240,7 +240,7 @@ SleepScoreLFP = PickSWTHChannel_km(basepath,...
 %% CLUSTER STATES BASED ON SLOW WAVE, THETA, EMG
 
 %Calculate the scoring metrics: broadbandLFP, theta, EMG
-display('Quantifying metrics for state scoring')
+disp('Quantifying metrics for state scoring')
 [SleepScoreMetrics,StatePlotMaterials] = ClusterStates_GetMetrics(...
                                            basepath,SleepScoreLFP,EMGFromLFP,overwrite,...
                                            'onSticky',stickytrigger,'ignoretime',ignoretime,...
@@ -248,7 +248,7 @@ display('Quantifying metrics for state scoring')
                                            'IRASA',true,'ThIRASA',true);
                                        
 %Use the calculated scoring metrics to divide time into states
-display('Clustering States Based on EMG, SW, and TH LFP channels')
+disp('Clustering States Based on EMG, SW, and TH LFP channels')
 [ints,idx,MinTimeWindowParms] = ClusterStates_DetermineStates(SleepScoreMetrics);
 
 
@@ -265,7 +265,7 @@ SleepState.idx = idx;
 SleepState.detectorinfo.detectorname = 'SleepScoreMaster';
 SleepState.detectorinfo.detectionparms = detectionparms;
 SleepState.detectorinfo.detectionparms.histsandthreshs_orig = detectionparms.SleepScoreMetrics.histsandthreshs;
-SleepState.detectorinfo.detectiondate = datestr(now,'yyyy-mm-dd');
+SleepState.detectorinfo.detectiondate = datetime("now",'Format','yyyy-MM-dd');
 SleepState.detectorinfo.StatePlotMaterials = StatePlotMaterials;
 
 %Put old manual scoring back in
@@ -291,10 +291,10 @@ end
 %% JOIN STATES INTO EPISODES
 
 % Extract states, Episodes, properly organize params etc, prep for final saving
-display('Calculating/Saving Episodes')
+disp('Calculating/Saving Episodes')
 StatesToEpisodes(SleepState,basepath);
 
-display(['Sleep Score ',recordingname,': Complete!']);
+disp(['Sleep Score ',recordingname,': Complete!']);
 
 %% PROMPT USER TO MANUALLY CHECK DETECTION WITH THESTATEEDITOR
 if ~noPrompts
@@ -304,7 +304,7 @@ if ~noPrompts
             TheStateEditor([basepath,filesep,recordingname])
         case {'N','n'}
         otherwise
-            display('Unknown input..... you''ll have to load TheStateEditor on your own')
+            disp('Unknown input..... you''ll have to load TheStateEditor on your own')
     end
 end
 

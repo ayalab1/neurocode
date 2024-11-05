@@ -303,4 +303,13 @@ if runSummary
         sessionSummary;
     end
 end
-% end
+
+%% logging
+% log params used 
+results = p.Results;
+save(fullfile(basepath,'preprocessSession_params.m'),'results')
+
+% log script
+% saves a text file of the current code used
+targetFile = fullfile(basepath,'preprocessSession.log');
+copyfile(which('preprocessSession.m'), targetFile);

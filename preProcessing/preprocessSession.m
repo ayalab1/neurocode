@@ -307,7 +307,7 @@ end
 %% logging
 % log params used 
 results = p.Results;
-save(fullfile(basepath,'preprocessSession_params.m'),'results')
+save(fullfile(basepath,'preprocessSession_params.mat'),'results')
 
 % log script
 % saves a text file of the current code used

@@ -40,7 +40,7 @@ function cut_dat(nChannels, maxTime, varargin)
 
 % parse inputs
 p = inputParser;
-addParameter(p, 'sample_rate', 20000, isnumeric(x));
+addParameter(p, 'sample_rate', 20000, @isnumeric);
 
 parse(p, varargin{:})
 sample_rate = p.Results.sample_rate;

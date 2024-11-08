@@ -184,34 +184,41 @@ end
 if digitalInputs
     if ~isempty(digitalChannels)
         % need to change to only include specified channels
-        digitalInp = getDigitalIn('all', 'fs', session.extracellular.sr, 'digUse', digitalChannels);
+        getDigitalIn('all', 'fs', session.extracellular.sr, 'digUse', digitalChannels);
     else
-        digitalInp = getDigitalIn('all', 'fs', session.extracellular.sr);
+        getDigitalIn('all', 'fs', session.extracellular.sr);
     end
 end
 
 % Auxilary input
 if getAcceleration
-    accel = computeIntanAccel('saveMat', true);
+    computeIntanAccel('saveMat', true);
 end
 
 %% Make LFP
 try
     try
         LFPfromDat(basepath, 'outFs', 1250, 'useGPU', false);
-    catch
-        if (exist([basepath, '\', basename, '.lfp']) ~= 0)
+    catch e
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
+        if (exist([basepath, '\', basename, '.lfp'], "file") ~= 0)
             fclose([basepath, '\', basename, '.lfp']); %if the above run failed after starting the file
             delete([basepath, '\', basename, '.lfp']);
         end
         LFPfromDat(basepath, 'outFs', 1250, 'useGPU', false);
     end
-catch
+catch e
+    fprintf(1, 'The identifier was:\n%s', e.identifier);
+    fprintf(1, 'There was an error! The message was:\n%s', e.message);
     try
         warning('LFPfromDat failed, trying ResampleBinary')
-        ResampleBinary([basepath, '\', basename, '.dat'], [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
-    catch
+        ResampleBinary([basepath, '\', basename, '.dat'],...
+            [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
+    catch e
         warning('LFP file could not be generated, moving on');
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
     end
 end
 
@@ -235,16 +242,22 @@ if stateScore
         else
             SleepScoreMaster(basepath, 'noPrompts', true, 'rejectChannels', session.channelTags.Bad.channels); % takes lfp in base 0
         end
-    catch
+    catch e
         warning('Problem with SleepScore scoring... unable to calculate');
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
     end
 end
 
 
 % remove noise from data for cleaner spike sorting
 if removeNoise
-    try EMGFromLFP = getStruct(basepath, 'EMGFromLFP');
-    catch
+    try
+        EMGFromLFP = getStruct(basepath, 'EMGFromLFP');
+    catch e
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
+
         EMGFromLFP = getEMGFromLFP(basepath, 'noPrompts', true, 'saveMat', true);
     end
 
@@ -259,7 +272,6 @@ if spikeSort
         kilosortGroup = ceil(((1:length(shanks)) / nKilosortRuns));
         for i = 1:nKilosortRuns
             channels = cat(2, shanks{kilosortGroup == i});
-            excludeChannels = [];
             excludeChannels = find(~ismember((1:session.extracellular.nChannels), channels));
             excludeChannels = cat(2, excludeChannels, session.channelTags.Bad.channels);
             excludeChannels = unique(excludeChannels);
@@ -305,11 +317,11 @@ if runSummary
 end
 
 %% logging
-% log params used 
+% log params used
 results = p.Results;
-save(fullfile(basepath,'preprocessSession_params.mat'),'results')
+save(fullfile(basepath, 'preprocessSession_params.mat'), 'results')
 
 % log script
 % saves a text file of the current code used
-targetFile = fullfile(basepath,'preprocessSession.log');
+targetFile = fullfile(basepath, 'preprocessSession.log');
 copyfile(which('preprocessSession.m'), targetFile);

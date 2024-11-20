@@ -88,19 +88,19 @@ end
 %% Check if EMGCorr has already been calculated for this recording
 %If the EMGCorr file already exists, load and return with EMGCorr in hand
 if exist(matfilename, 'file') && ~overwrite
-    display('EMGFromLFP Correlation already calculated - loading from EMGFromLFP.LFP.mat')
+    disp('EMGFromLFP Correlation already calculated - loading from EMGFromLFP.LFP.mat')
     load(matfilename)
     if exist('EMGCorr', 'var') %for backcompatability
         EMGFromLFP = EMGCorr;
     end
     if ~exist('EMGFromLFP', 'var')
-        display([matfilename, ' does not contain a variable called EMGFromLFP'])
+        disp([matfilename, ' does not contain a variable called EMGFromLFP'])
     end
     return
 end
-display('Calculating EMGFromLFP from High Frequency LFP Correlation')
+disp('Calculating EMGFromLFP from High Frequency LFP Correlation')
 
-load(fullfile(basepath, [recordingname, '.session.mat']))
+load(fullfile(basepath, [recordingname, '.session.mat']), 'session')
 nChannels = session.extracellular.nChannels;
 SpkGrps = session.extracellular.spikeGroups.channels;
 Fs = session.extracellular.srLfp;
@@ -138,8 +138,10 @@ else
     % get list of spike groups (aka shanks) that should be used
     usablechannels = [];
     spkgrpstouse = [];
-    if length(SpkGrps) > 1, n = 1;
-    else n = 5;
+    if length(SpkGrps) > 1
+        n = 1;
+    else
+        n = 5;
     end
     for gidx = 1:length(SpkGrps)
         usableshankchannels{gidx} = setdiff(SpkGrps{gidx}, rejectChannels);
@@ -248,7 +250,7 @@ EMGFromLFP.channels = xcorr_chs;
 EMGFromLFP.detectorName = 'getEMGFromLFP';
 EMGFromLFP.samplingFrequency = samplingFrequency;
 
-if ~any(~isnan(EMGFromLFP.data)),
+if ~any(~isnan(EMGFromLFP.data))
     keyboard
 end
 if saveMat

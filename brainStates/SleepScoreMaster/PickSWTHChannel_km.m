@@ -497,6 +497,9 @@ t_spec = t_FFT;
 specdt = mode(diff(t_FFT));
 thFFTspec = (abs(thFFTspec));
 
+% if thFFTspec is zero, log will make inf, so add eps
+thFFTspec(thFFTspec == 0) = eps;
+
 [zFFTspec, mu, sig] = zscore(log10(thFFTspec)');
 
 thfreqs = find(thFFTfreqs >= f_theta(1) & thFFTfreqs <= f_theta(2));

@@ -1,4 +1,4 @@
-function [errors,average] = ReconstructPosition2Dto1D(positions,spikes,windows,varargin)
+function [errors,average,estimations] = ReconstructPosition2Dto1D(positions,spikes,windows,varargin)
 
 % Bayesian reconstruction of positions from spike trains.
 %
@@ -27,11 +27,10 @@ function [errors,average] = ReconstructPosition2Dto1D(positions,spikes,windows,v
 %                   - for 1D data, only one letter is used (default 'll')
 %     'nBins'       firing curve or map resolution (default = 200 for 1D and
 %                   [200 200] for 2D data)
-%     'prior'     taking the map occupancy into account or not (default = 'on')
-%		This is what makes the reconstruction Bayesien, but if
-%		animal occupancy is very skewed, the recustruction would
-%		be good even without informative spikes. For such cases, 
-%		feel free to check the output with 'prior' set to 'off'
+%     'prior'     taking the map occupancy into account or not (default = 'off')
+%		This is what makes the reconstruction Bayesien, but if animal
+%		occupancy is very skewed, the recustruction would be good even
+%		without informative spikes, which is why the default is off.
 %     'interpolate'     When estimating errors, compute the actual position by
 %		interpolating the positions data to the decoding window
 %		(default = 'on'). If positions data is not continuous (i.e.
@@ -63,7 +62,7 @@ training = 1;
 type = 'l';
 nDimensions = 1;
 intervalID = [];
-prior = 'on';
+prior = 'off';
 interpolate = 'on';
 
 % If spikes are provided in cell format, transform them to matrix
@@ -73,73 +72,73 @@ if isstruct(spikes) && isfield(spikes,'times')
 end
 
 % Check number of parameters
-if nargin < 3,
+if nargin < 3
     builtin('error','Incorrect number of parameters (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
 
 % Check parameter sizes
-if ~isempty(positions) && ~isdmatrix(positions),
+if ~isempty(positions) && ~isdmatrix(positions)
     builtin('error','Incorrect positions (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
-if ~isdmatrix(spikes,'@2') && ~isdmatrix(spikes,'@3'),
+if ~isdmatrix(spikes,'@2') && ~isdmatrix(spikes,'@3')
     builtin('error','Incorrect spikes (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
-if size(positions,2) >= 3,
+if size(positions,2) >= 3
     nDimensions = 2; type='lll'; nBins = repmat(nBins,1,2);
 end
-if ~isdmatrix(windows,'@2'),
+if ~isdmatrix(windows,'@2')
     builtin('error','Incorrect value for property ''windows'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
 
 % Parse parameters
-for i = 1:2:length(varargin),
-    if ~ischar(varargin{i}),
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
         builtin('error',['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
     end
-    switch(lower(varargin{i})),
+    switch(lower(varargin{i}))
         case 'training',
             training = varargin{i+1};
-            if ~isdvector(training,'<') && ~isdmatrix([1 2],'@2','>0'),
+            if ~isdvector(training,'<') && ~isdmatrix([1 2],'@2','>0')
                 builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
             end
-        case 'nbins',
-	  nBins = varargin{i+1};
-	  if ~isiscalar(nBins) && ~isdmatrix([100 100],'@2','>0'),
-	      builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-	  end
-        case 'prior',
-	  prior = varargin{i+1};
-	  if ~isastring(prior,'on','off'),
-	      error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
-	  end
-        case 'interpolate',
-	  interpolate = varargin{i+1};
-	  if ~isastring(interpolate,'on','off'),
-	      error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
-	  end
-        case 'id',
-	  intervalID = varargin{i+1};
-	  if ~isivector(intervalID,'>0'),
+        case 'nbins'
+            nBins = varargin{i+1};
+            if ~isiscalar(nBins) && ~isdmatrix([100 100],'@2','>0')
                 builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
             end
-        case 'type',
+        case 'prior'
+            prior = varargin{i+1};
+            if ~isastring(prior,'on','off')
+                error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
+            end
+        case 'interpolate'
+            interpolate = varargin{i+1};
+            if ~isastring(interpolate,'on','off')
+                error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
+            end
+        case 'id'
+            intervalID = varargin{i+1};
+            if ~isivector(intervalID,'>0')
+                builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
+            end
+        case 'type'
             type = lower(varargin{i+1});
-            if (nDimensions == 1 && isastring(type(1),'c','l')),
+            if (nDimensions == 1 && isastring(type(1),'c','l'))
                 type = type(1);
-            elseif nDimensions == 2 && length(type)>1 && isastring(type(1:2),'cl','cc','ll','lc'),
+            elseif nDimensions == 2 && length(type)>1 && isastring(type(1:2),'cl','cc','ll','lc')
                 type = type(1:2);
             else
                 builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
             end
-        case 'window',
+        case 'window'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'mode',
+        case 'mode'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'lambda',
+        case 'lambda'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'px',
+        case 'px'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        otherwise,
+        otherwise
             builtin('error',['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
     end
 end
@@ -150,12 +149,12 @@ ignore = diff(positions(:,1))<=0;
 positions(ignore,:) = [];
 
 % Defaults (training)
-if isdscalar(training), %If 'training' was provided as a portion, convert it to an interval
+if isdscalar(training) %If 'training' was provided as a portion, convert it to an interval
     training = [0 positions(1,1)+training*(positions(end,1)-positions(1,1))];
 end
 
 % Convert from legacy format for backward compatibility with previous versions of the code (spikes)
-if isdmatrix(spikes,'@3'),
+if isdmatrix(spikes,'@3')
     % List units, assign them an ID (number them from 1 to N), and associate these IDs with each spike
     % (IDs will be easier to manipulate than (group,cluster) pairs in subsequent computations)
     [units,~,i] = unique(spikes(:,2:end),'rows');
@@ -174,10 +173,10 @@ trainingSpikes = Restrict(spikes,training,'shift','on');
 
 % Compute average firing probability lambda for each unit (i.e. firing maps)
 lambda = nan(prod(nBins),nUnits);
-for i = 1:nUnits,
+for i = 1:nUnits
     unit = trainingSpikes(:,2) == i;
     s = trainingSpikes(unit,1);
-    if size(trainingPositions,2)<3,
+    if size(trainingPositions,2)<3
         map = Map(trainingPositions,s,'nbins',nBins,'smooth',5,'type',[type 'l']);
         % extra letter for 'type' required as input for 'Map' even though this extra 'l' does not refer to anything in the case of a point process (spikes) provided
     else
@@ -203,7 +202,7 @@ nBins = prod(nBins);
 nWindows = size(windows,1);
 
 spikecount = zeros(nUnits,nWindows);
-for i = 1:nUnits,
+for i = 1:nUnits
     % Population spike count matrix
     spikecount(i,:) = CountInIntervals(spikes(id==i),windows);
 end
@@ -264,7 +263,7 @@ Pn = nansum(PnxPx);
 estimations(:,~uniform) = bsxfun(@rdivide,PnxPx,Pn);
 
 % reshape to original (non-flattened) spatial dimensions
-if nDimensions>1,
+if nDimensions>1
     estimations = reshape(estimations,[nBinsPerDim size(estimations,2)]);
 end
 
@@ -282,8 +281,8 @@ end
 windowCenters = mean(windows,2);
 if strcmp(interpolate,'on')
     interpolated = nan(nWindows,nDimensions);
-    for dim = 1:nDimensions,
-        if strcmp(type(1),'l'),
+    for dim = 1:nDimensions
+        if strcmp(type(1),'l')
       	  x=positions(:,1);
 
     	  y=positions(:,1+dim);
@@ -302,13 +301,6 @@ if strcmp(interpolate,'on')
     actual = interpolated;
 else
     actual = positions(FindClosest(positions(:,1),windowCenters),2:end);
-end
-errors = nan(size(estimations));
-
-% in a 2D matrix, 'x' (first positions columnn) represents the 2nd dimension, while 'y' (second positions column) represents the 1st dimension. Flip them!
-corrected = actual;
-if nDimensions==2,
-    corrected = actual(:,[2 1]);
 end
 
 future = interp1(positions(:,1),positions(:,2:3),windowCenters+0.1); %position 100 ms from now, used to estimate heading
@@ -330,16 +322,16 @@ end
 end
 
 
-if nargout<2,
+if nargout<2
     return
 end
 
-if isempty(intervalID),
+if isempty(intervalID)
     intervalID = ones(nWindows,1);
     warning('No id-s provided. Average error computed for all bins');
 end
 
-for i=1:max(intervalID),
+for i=1:max(intervalID)
     average{i,1} = nanmean(errors(:,intervalID==i),2);
 end
 average = cat(2,average{:});

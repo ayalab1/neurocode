@@ -201,10 +201,10 @@ if removeGlobal
         d(eye(size(d)) == 1) = nan;
         % Difference between range of the electrode closest to the spike with the ranges of all the other electrodes
         % When the spike is clearly visible in one elecrode group, this should be very large.
-        signal(i, 1) = mean(reshape(d(thismax, ~thismax), [], 1),"omitnan");
+        signal(i, 1) = mean(reshape(d(thismax, ~thismax), [], 1), "omitnan");
         % Difference between ranges of all the other electrodes (where no real spike should be visible)
         % This is our estimate of differences to be expected due to noise, rather than a real spike
-        noise(i, 1) = mean(reshape(d(~thismax, ~thismax), [], 1),"omitnan");
+        noise(i, 1) = mean(reshape(d(~thismax, ~thismax), [], 1), "omitnan");
     end
     % signal to noise ratio (snr) below 4 is noisy (imperically defined)
     snr = signal ./ noise;

@@ -7,39 +7,81 @@ function rez = CleanRez(rez, varargin)
 % phy format. If prior labels exist, "noise" labels will be appended to the %
 % existing cluster_group.tsv file
 %
-%  USAGE
+% USAGE
 %
-%    cleanRez = CleanRez(rez, <options>)
+%   cleanRez = CleanRez(rez, <options>)
 %
-%  INPUTS
+% INPUTS
 %
-%    rez            rez file from kilosort (note post cleaning after sorting
+%   rez              Rez file from Kilosort (after sorting, pre-cleaning).
 %
-%    <options>      optional list of property-value pairs (see table below)
+%   <options>        Optional property-value pairs (see below).
 %
-%    =========================================================================
-%     Properties         Values
-%    -------------------------------------------------------------------------
-%   'savepath'           folder where phy files have already been exported
-%                        (by default, undefined as you may run CleanRez before
-%                        exporting the clean rez to phy). If provided, cluster
-%                        labels will be saved in a cluster_groups.tsv file for phy
-%   'mahalThreshold'     spikes exceeding this threshold will be considered
-%                        outliers and removed (set to Inf to not impose threshold,
-%                        default = 12)
-%   'minNumberOfSpikes'  clusters with nSpikes<minNumberOfSpikes will be
-%                        removed (default = 20)
-%   'noisePeriods'       intervals from which spikes should be removed (in bins
-%                        corresponding to the .dat file, NOT seconds)
-%   'verbose'            Display progress messages (default = true)
-%    =========================================================================
+% =========================================================================
+%   Properties              Values
+% -------------------------------------------------------------------------
+% 'savepath'                (string) Path where phy files are located.
+%                           If provided, noise labels will be saved to a 
+%                           `cluster_group.tsv` file. Default: undefined.
 %
-%  OUTPUT
+% 'mahalThreshold'          (numeric) Mahalanobis distance threshold for 
+%                           removing outlier spikes. Set to `Inf` to 
+%                           disable. Default: 12.
 %
-%    rez                 cleaned rez file, without the noisy clusters
+% 'minNumberOfSpikes'       (numeric) Minimum number of spikes required 
+%                           for a cluster. Clusters with fewer spikes 
+%                           will be removed. Default: 20.
 %
+% 'noisePeriods'            (Nx2 matrix) Intervals (in bins) marking 
+%                           noisy periods where spikes should be removed.
+%                           Default: undefined.
 %
-%  SEE ALSO
+% 'multiTrough'             (logical) Flag to remove clusters with 
+%                           multiple troughs/peaks in their waveforms.
+%                           Default: true.
+%
+% 'isi'                     (logical) Flag to remove clusters with a 
+%                           strong peak at zero in their autocorrelogram.
+%                           Default: true.
+%
+% 'singleBin'               (logical) Flag to remove clusters with waveforms
+%                           that deviate in only a single time bin. 
+%                           Default: true.
+%
+% 'global'                  (logical) Flag to remove clusters detected
+%                           on all channels (likely noise). Default: true.
+%
+% 'verbose'                 (logical) Display progress messages.
+%                           Default: true.
+% =========================================================================
+%
+% OUTPUT
+%
+%   rez                   Cleaned rez structure with noisy clusters removed.
+%
+% NOTES
+%
+% - The function modifies the `rez` structure in place, removing identified
+%   noisy clusters and optionally exporting updated cluster labels for phy.
+%
+% - Noise detection is based on several criteria, including Mahalanobis
+%   thresholds, autocorrelograms, waveform characteristics, and user-provided
+%   noise intervals.
+%
+% - If a `savepath` is provided, the function appends noise labels to an
+%   existing `cluster_group.tsv` file or creates a new one if it doesn't exist.
+%
+% EXAMPLES
+%
+%   % Clean rez file with default settings
+%   cleanRez = CleanRez(rez);
+%
+%   % Clean rez file and save noise labels for phy
+%   cleanRez = CleanRez(rez, 'savepath', '/path/to/phy/files');
+%
+%   % Clean rez file with custom Mahalanobis threshold
+%   cleanRez = CleanRez(rez, 'mahalThreshold', 15);
+%
 %
 % Ralitsa Todorova and Ryan Harvey 2021-2023
 %

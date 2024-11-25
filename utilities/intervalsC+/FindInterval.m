@@ -10,9 +10,9 @@ function interval = FindInterval(logical)
 logical = [logical(:)' 0];
 starts = strfind(logical,[0 1])+1;
 stops = strfind(logical,[1 0]);
-if isempty(starts),
-    if isempty(stops),
-        if logical(1),
+if isempty(starts)
+    if isempty(stops)
+        if logical(1)
             interval = [1 length(logical)];
         else
             interval = [];
@@ -23,11 +23,11 @@ if isempty(starts),
     end
 end
 
-if isempty(stops) || starts(end)>stops(end),
+if isempty(stops) || starts(end)>stops(end)
     stops = [stops length(logical)];
 end
 
-if starts(1)>stops(1),
+if starts(1)>stops(1)
     starts = [1 starts];
 end
 

@@ -4,11 +4,9 @@ function grouped = Group(varargin)
 % in the same format as spikes are grouped ([values id])
 % vector1 1
 % vector2 2
-% ... and so on. Useful for creating grouped events.
-% ATTENTION: rows are automatically sorted, unless you call 
-% Group(vector1, vector2, ..., vectorN, 'sort', false);
+% ... and so on. This is useful for creating grouped events.
 %
-% Copyright (C) 2018-2022 by Ralitsa Todorova
+% Copyright (C) 2018-2024 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -17,10 +15,10 @@ function grouped = Group(varargin)
 
 grouped = []; doSort = false;
 % Are we dealing with vectors?
-if all(cellfun(@(x) min(size(x)), varargin)<=1),
+if all(cellfun(@(x) min(size(x)), varargin)<=1)
     vectors = true; else vectors = false;
 end
-for i=1:length(varargin),
+for i=1:length(varargin)
     if ischar(varargin{i}) && strcmpi(varargin{i},'sort'), doSort = varargin{i+1};
         break;
     end
@@ -35,7 +33,6 @@ for i=1:length(varargin),
     end
 end
 
-
-if doSort,
+if doSort
     grouped = sortrows(grouped);
 end

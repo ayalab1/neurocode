@@ -77,36 +77,36 @@ dist = 'poisson';
 mode = 'mean';
 fixedSets = false;
 
-for i = 1:2:length(varargin),
-    if ~ischar(varargin{i}),
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
         error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help GLMgain">GLMgain</a>'' for details).']);
     end
-    switch(lower(varargin{i})),
-        case 'link',
+    switch(lower(varargin{i}))
+        case 'link'
             link = varargin{i+1};
-        case 'dist',
+        case 'dist'
             dist = varargin{i+1};
-        case 'mode',
+        case 'mode'
             mode = varargin{i+1};
-        case 'setid',
+        case 'setid'
             setID = varargin{i+1}; nSets = max(setID);
             fixedSets = true;
-        case 'nsets',
+        case 'nsets'
             nSets = varargin{i+1};
             if ~isscalar(nSets) || mod(nSets,1)>0
                 error('Incorrect value for property ''nSets'' (type ''help <a href="matlab:help GLMgain">GLMgain</a>'' for details).');
             end
-        case 'niterations',
+        case 'niterations'
             nIterations = varargin{i+1};
             if ~isscalar(nIterations) || mod(nIterations,1)>0
                 error('Incorrect value for property ''nIterations'' (type ''help <a href="matlab:help GLMgain">GLMgain</a>'' for details).');
             end
-        case 'minevents',
+        case 'minevents'
             minEvents = varargin{i+1};
             if ~isscalar(minEvents) || mod(minEvents,1)>0
                 error('Incorrect value for property ''minEvents'' (type ''help <a href="matlab:help GLMgain">GLMgain</a>'' for details).');
             end
-        otherwise,
+        otherwise
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help GLMgain">GLMgain</a>'' for details).']);
     end
 end
@@ -129,7 +129,7 @@ er = nan(nUnits,1);
 sh = nan(nUnits,nIterations);
 w = nan(nUnits,size(source,2)+1,nSets);
 predictions = nan(size(target));
-for unit = 1:nUnits,
+for unit = 1:nUnits
     %% Split data into nSets balanced sets
     if ~fixedSets, setID = nan(nEvents,1); end
     zero = target(:,unit)==0;
@@ -146,7 +146,7 @@ for unit = 1:nUnits,
     end
     shuffled = nan(nSets,nIterations);
     errors = nan(nSets,1);
-    for set = 1:nSets,
+    for set = 1:nSets
         lastwarn('');
         weights = glmfit(source(setID~=set,:),target(setID~=set,unit),dist,'link',link);
         if strcmp(lastwarn,'Iteration limit reached.') % if the algorhithm failed to converge
@@ -156,7 +156,7 @@ for unit = 1:nUnits,
         prediction = linkFunction(source(setID==set,:),weights);
         predictions(setID==set,unit) = prediction;
         errors(set,1) = average(abs(target(setID==set,unit) - prediction));
-        for iteration = 1:nIterations,
+        for iteration = 1:nIterations
             % get randomly ordered numbers
             [~,indices] = sort(rand(sum(setID==set),1));
             shuffled(set,iteration) = average(abs(target(setID==set,unit) - prediction(indices)));
@@ -169,7 +169,7 @@ for unit = 1:nUnits,
 end
 warning(state);
 
-if sum(~notempty)>0,
+if sum(~notempty)>0
     gain0 = gain;
     shGain0 = shGain;
     er0 = er;
@@ -197,11 +197,11 @@ function x = Scramble(x, n)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if size(x,1) == 1, %if a row vector is provided
+if size(x,1) == 1 %if a row vector is provided
     x = x(:); %change it to a column vector
 end
 
-if ~exist('n', 'var'),
+if ~exist('n', 'var')
     n = size(x,1);
 end
 

@@ -46,11 +46,11 @@ function [rt,intervalID] = RelativeTimes(t,intervals,values)
 % (at your option) any later version.
 
 
-if nargin<3,
+if nargin<3
     values = 0:size(intervals,2)-1;
 end
 
-rt = nan(length(t),size(intervals,2)-1);
+[rt,intervalID] = deal(nan(length(t),size(intervals,2)-1));
 for i=1:size(intervals,2)-1
     [rt(:,i),intervalID(:,i)] = RelativeTime(t,intervals(:,[i i+1]));
 end
@@ -62,7 +62,7 @@ end
 [~,columnsToKeep] = max(abs(0.5-rt),[],2);
 indicesToKeep = sub2ind(size(rt),(1:length(t))',columnsToKeep);
 
-for i=1:size(intervals,2)-1,
+for i=1:size(intervals,2)-1
     rt(:,i) = rt(:,i)*(values(i+1)-values(i)) + values(i);
 end
 
@@ -84,16 +84,16 @@ end
 
 rt = nan(size(t));
 
-if size(intervals,2)==3,
+if size(intervals,2)==3
     intervalID = zeros(length(t), size(intervals,2)-1);
-    for i=1:size(intervals,2)-1,
+    for i=1:size(intervals,2)-1
         theseIntervals = intervals(:,i:i+1);
         [inIntervals,intervalID(:,i)] = InIntervals(t, theseIntervals);
         rt(inIntervals) = RelativeTime(t(inIntervals), theseIntervals)+i-1;
     end
     return
 end
-[inIntervals intervalID] = InIntervals(t, intervals);
+[inIntervals, intervalID] = InIntervals(t, intervals);
 rt(inIntervals,1) = (t(inIntervals) - intervals(intervalID(inIntervals),1))./...
     (intervals(intervalID(inIntervals),end) - intervals(intervalID(inIntervals),1));
 

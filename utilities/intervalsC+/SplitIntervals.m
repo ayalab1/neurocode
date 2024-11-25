@@ -37,14 +37,21 @@ function [pieces ids] = SplitIntervals(intervals,varargin)
 %    =========================================================================
 % Hint: to get overlapping windows, simply use
 % sortrows([SplitIntervals(intervals, window); SplitIntervals(intervals+window/2, window)])
-% EXAMPLE: 
-% SplitIntervals([0 2.1],'pieceSize',1,'mode','keep') generates [0 1; 1 2; 2 2.1]
+%
+% EXAMPLE 1 (with nPieces): 
+% SplitIntervals([2 5; 6 10], 'nPieces', 2) (i.e. split each of these intervals into 2)
+% gives intervals = [2 3.5; 3.5 5; 6 8; 8 0] and ids = [1; 1; 2; 2]
+%
+% EXAMPLE 2 (with pieceSize): 
+% SplitIntervals([2 5; 6 10], 'pieceSize', 2) (i.e. split these intervals into 2-second pieces)
+% gives intervals = [2 4; 6 8; 8 10] and ids = [1; 2; 2]
 % SplitIntervals([0 2.1],'pieceSize',1,'mode','discard') generates [0 1; 1 2], discarding the
-% additional bin [2 2.1] which is too short.
+% bin [2 2.1] which is too short (desired duration is 1 second).
+% SplitIntervals([0 2.1],'pieceSize',1,'mode','keep') generates [0 1; 1 2; 2 2.1]
 % SplitIntervals([0 2.1],'pieceSize',1,'mode','keep','extend',true) generates [0 1; 1 2; 2 3]
 % extending the last piece so that it is also 1 second long.
 %
-% Copyright (C) 2019-2023 Ralitsa Todorova
+% Copyright (C) 2019-2023 Ralitsa Todorova & (C) 2023 by Federica Lareno Faccini
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -56,29 +63,29 @@ mode = 'discard';
 extend = false;
 nPieces = [];
 
-for i = 1:2:length(varargin),
-    if ~ischar(varargin{i}),
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
         error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).']);
     end
-    switch(lower(varargin{i})),
-        case 'piecesize',
+    switch(lower(varargin{i}))
+        case 'piecesize'
             pieceSize = varargin{i+1};
-            if ~isvector(pieceSize) || length(pieceSize) ~= 1,
+            if ~isvector(pieceSize) || length(pieceSize) ~= 1
                 error('Incorrect value for property ''pieceSize'' (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).');
             end
-        case 'mode',
+        case 'mode'
             mode = lower(varargin{i+1});
-            if ~isastring(lower(mode),'discard','keep','round'),
+            if ~isastring(lower(mode),'discard','keep','round')
                 error('Incorrect value for property ''mode'' (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).');
             end
-        case 'npieces',
+        case 'npieces'
             nPieces = varargin{i+1};
-            if ~isvector(nPieces) || length(nPieces) ~= 1,
+            if ~isvector(nPieces) || length(nPieces) ~= 1
                 error('Incorrect value for property ''nPieces'' (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).');
             end
-        case 'extend',
+        case 'extend'
             extend = varargin{i+1};
-            if isastring(lower(extend),'on','off'),
+            if isastring(lower(extend),'on','off')
                 extend = strcmpi(extend,'on'); % transform to logical
             end
             if length(extend)==1
@@ -86,16 +93,17 @@ for i = 1:2:length(varargin),
             else
                 error('Incorrect value for property ''discard'' (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).');
             end
-        otherwise,
+        otherwise
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help SplitIntervals">SplitIntervals</a>'' for details).']);
     end
 end
 
-%% SPLIT EACH INTERVAL INTO EQUAL PIECES (nPieces)
-if ~isempty(nPieces),
+%% Split each interval into we equal pieces (nPieces)
+
+if ~isempty(nPieces)
     matrix = nan(size(intervals,1),nPieces+1);
     matrix(:,[1 end]) = intervals;
-    for i=2:(nPieces),
+    for i=2:(nPieces)
         matrix(:,i) = matrix(:,1)+(i-1)*(matrix(:,end)-matrix(:,1))/nPieces;
     end
     pieces = [reshape(matrix(:,1:end-1)',[],1) reshape(matrix(:,2:end)',[],1)];
@@ -103,7 +111,8 @@ if ~isempty(nPieces),
     return
 end
 
-%% SPLIT INTERVALS INTO PIECES OF EQUAL ABSULUTE LENGTHS (pieceSize)
+%% Split intervals into pieces of equal durations (pieceSize)
+
 d = diff(intervals,[],2);
 switch mode
     case 'discard'
@@ -134,7 +143,7 @@ end
 try
     ids = indicesNotEmpty(ids);
 catch
-    warning('There is an issue with the indices');
+    warning('There is an issue with the indices. Check results manually');
 end
 
 

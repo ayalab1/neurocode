@@ -118,4 +118,16 @@ ok = CountInIntervals(nottheta, peaktopeak)==0 & ok;
 troughs = troughs(ok);
 peaktopeak = peaktopeak(ok,:);
 amplitude = amplitude(ok,2);
+
+
+% ------------------------------- Helper functions -------------------------------
+function peaks = FindLocalMaxima(signal)
+%FindLocalMaxima - find local peaks
+if isdmatrix(signal,'@2'),
+    iPeaks = FindLocalMaxima(signal(:,2));
+    peaks = signal(iPeaks,1);
+    return
 end
+
+d = [nan;diff(signal(:))>0];
+peaks = strfind(d',[1 0])';

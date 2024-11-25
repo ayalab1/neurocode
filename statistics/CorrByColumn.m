@@ -1,20 +1,21 @@
-function [c,slope,rSquared,SSres,startstop] = CorrByColumn(A,B)
+function [c,slope,rSquared,SSres] = CorrByColumn(A,B,parametric)
 
-%  CorrByColumn - correlate matrices A and B column by column
+% CorrByColumn - correlate each column of matrix A to each column of matrix B
 %
-% i.e. c(i) = corr(A(:,i),B(:,i))
+% This is a faster implementation of the loop: 
+% for i=1:size(A,1), c(i) = corr(A(:,i),B(:,i)); end
 %
 % Input: 
-%   A   i,j matrix
-%   B   i,j matrix
+%   A           matrix
+%   B           matrix
+%   parametric  true/false toggle; parametric = true (default) will compute
+%               the Pearson coefficient, whereas parametric = 
+%               false will compute the Spearman coefficient.
 % Output:
 %   c           correlation (r)
 %   slope       slope of regression
 %   rSquared    coefficient of variation (R2)
 %   SSres       sum of squares residual
-%   startstop   ???
-%
-% TODO: determine what startstop is
 %
 % Copyright (C) 2016 by Ralitsa Todorova
 %
@@ -27,6 +28,13 @@ bad = isnan(A) | isnan(B);
 A(bad) = nan;
 B(bad) = nan;
 nonconclusive = sum(double(~bad))'<3;
+
+if ~exist('parametric','var'), parametric = true; end
+
+if ~parametric % transform the values to ranks
+    A = tiedrank(A);
+    B = tiedrank(B);
+end
 
 An = bsxfun(@minus,A,nanmean(A,1));
 Bn = bsxfun(@minus,B,nanmean(B,1));
@@ -44,6 +52,6 @@ slope = c.*(nanstd(A)./nanstd(B))';
 rSquared = 1 - sum((An-bsxfun(@times,Bn,c')).^2)';
 SSres = (1-rSquared).*(sum(~bad)' - 1).*var(A)';
 
-Afit = bsxfun(@plus,bsxfun(@times,bsxfun(@minus,B,nanmean(B,1)),slope'),nanmean(A,1));
-startstop = Afit([1 end],:)';
+% Afit = bsxfun(@plus,bsxfun(@times,bsxfun(@minus,B,nanmean(B,1)),slope'),nanmean(A,1));
+% startstop = Afit([1 end],:)';
 end

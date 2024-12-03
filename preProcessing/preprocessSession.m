@@ -89,6 +89,15 @@ addParameter(p, 'SSD_path', 'D:\KiloSort', @ischar) % Path to SSD disk. Make it 
 addParameter(p, 'path_to_dlc_bat_file', '', @isfile)
 addParameter(p, 'nKilosortRuns', 1, @isnumeric);
 addParameter(p, 'sortFiles', true, @islogical);
+addParameter(p, 'clean_rez_params', { ...
+    'mahalThreshold', 12, ...
+    'minNumberOfSpikes', 20, ...
+    'multiTrough', true, ...
+    'isi', true, ...
+    'singleBin', true, ...
+    'global', true, ...
+    }, @iscell);
+
 
 % addParameter(p,'pullData',[],@isdir); To do...
 parse(p, varargin{:});
@@ -112,6 +121,7 @@ SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
 sortFiles = p.Results.sortFiles;
+clean_rez_params = p.Results.clean_rez_params;
 
 
 if ~exist(basepath, 'dir')
@@ -213,7 +223,7 @@ catch e
     fprintf(1, 'There was an error! The message was:\n%s', e.message);
     try
         warning('LFPfromDat failed, trying ResampleBinary')
-        ResampleBinary([basepath, '\', basename, '.dat'],...
+        ResampleBinary([basepath, '\', basename, '.dat'], ...
             [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
     catch e
         warning('LFP file could not be generated, moving on');
@@ -281,7 +291,7 @@ if spikeSort
                 kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, 'rejectchannels', excludeChannels);
                 if cleanRez
                     load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
-                    CleanRez(rez, 'savepath', kilosortFolder);
+                    CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
                 end
             end
         end
@@ -292,7 +302,7 @@ if spikeSort
             'rejectchannels', session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
         if cleanRez
             load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
-            CleanRez(rez, 'savepath', kilosortFolder);
+            CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
         end
         %     PhyAutoClustering(kilosortFolder);
     end

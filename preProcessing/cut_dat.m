@@ -30,6 +30,8 @@ function cut_dat(nChannels, maxTime, varargin)
 %     by using batching, proper data types, and handling various file types.
 %   - Ensure the renamed "_original" files are not accidentally deleted until 
 %     you're certain the trimming has been successful.
+%   - See https://ryanharvey1.github.io/neuro_py/reference/neuro_py/raw/preprocessing/#neuro_py.raw.preprocessing.cut_artifacts_intan
+%       for version that can cut out any arbitrary intervals
 %
 % Errors:
 %   - If the script is run multiple times, it will throw an error if 

@@ -78,7 +78,7 @@ addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
 addParameter(p, 'channel', [], @isnumeric);
 addParameter(p, 'peak_to_trough_ratio', 3, @isnumeric); % legacy name for "threshold"
 addParameter(p, 'threshold', 3, @isnumeric);
-addParameter(p, 'brainRegion', {'PFC', 'MEC', 'EC', 'ILA', 'PL', 'Cortex'}, @(x) any(iscell(x), iscchar(x)));
+addParameter(p, 'brainRegion', {'PFC', 'MEC', 'LEC', 'EC', 'ILA', 'PL', 'Cortex'}, @(x) any(iscell(x), iscchar(x)));
 addParameter(p, 'manual_pick_channel', false, @islogical);
 addParameter(p, 'use_sleep_score_delta_channel', false, @islogical);
 addParameter(p, 'EMG_threshold', 0.6, @isnumeric);
@@ -88,6 +88,8 @@ addParameter(p, 'showfig', false, @islogical);
 addParameter(p, 'verify_firing', true, @islogical);
 addParameter(p, 'ignore_intervals', [], @isnumeric);
 addParameter(p, 'forceDetect', false, @islogical);
+addParameter(p, 'save_filename', 'deltaWaves', @ischar);
+
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
@@ -119,13 +121,14 @@ showfig = p.Results.showfig;
 verify_firing = p.Results.verify_firing;
 ignore_intervals = p.Results.ignore_intervals;
 forceDetect = p.Results.forceDetect;
+save_filename = p.Results.save_filename;
 
 disp(basepath)
 
 basename = basenameFromBasepath(basepath);
 
 % check if file aready exists
-event_file = fullfile(basepath, [basename, '.deltaWaves.events.mat']);
+event_file = fullfile(basepath, [basename, '.', save_filename, '.events.mat']);
 if exist(event_file, "file") && ~forceDetect
     % verify file contains minimum fields (timestamps, peaks)
     load(event_file, 'deltaWaves')
@@ -277,6 +280,10 @@ if EMG_threshold < Inf
     EMG = getStruct(basepath, 'EMG');
     immobility = EMG.timestamps(FindInterval(EMG.data < EMG_threshold));
     immobility(diff(immobility, [], 2) < 1, :) = [];
+    % reshape interval if needed
+    if size(immobility,2) == 1
+        immobility = immobility';
+    end
 else
     immobility = [-inf, inf];
 end
@@ -332,11 +339,11 @@ if verify_firing
                 colormap("parula")
             end
         else
-            verify_firing = false; 
+            verify_firing = false;
             warning("no cortical cells, impossible to verify firing");
         end
     catch
-        verify_firing = false; 
+        verify_firing = false;
         warning("problem loading cortical cell spiking, impossible to verify firing");
     end
 end

@@ -1,4 +1,4 @@
-function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
+function [spkEventTimes] = getRipSpikes(spikes, events, varargin)
 
 %getRipSpikes - Saves spike times of all units inside given events in different ways
 %
@@ -73,13 +73,13 @@ function [spkEventTimes] = getRipSpikes(spikes,events,varargin)
 
 % Parse inputs
 p = inputParser;
-addParameter(p,'basepath',pwd,@isstr);
-addParameter(p,'padding',0.05,@isnumeric);
-addParameter(p,'savePath',pwd,@isstring);
-addParameter(p,'saveNum',0,@isnumeric);
-addParameter(p,'saveMat', false, @islogical);
+addParameter(p, 'basepath', pwd, @isstr);
+addParameter(p, 'padding', 0.05, @isnumeric);
+addParameter(p, 'savePath', pwd, @isstring);
+addParameter(p, 'saveNum', 0, @isnumeric);
+addParameter(p, 'saveMat', false, @islogical);
 
-parse(p,varargin{:});
+parse(p, varargin{:});
 basepath = p.Results.basepath;
 padding = p.Results.padding;
 savePath = p.Results.savePath;
@@ -88,12 +88,12 @@ saveMat = p.Results.saveMat;
 
 %double check that there are events in this chunk
 if isempty(events)
-    spkEventTimes=[];
+    spkEventTimes = [];
     return
-elseif isstruct(events) && isfield(events,'timestamps')
+elseif isstruct(events) && isfield(events, 'timestamps')
     %this comes from a work around to Restrict when empty intervals
     if isempty(events.timestamps)
-        spkEventTimes=[];
+        spkEventTimes = [];
         return
     else
         timestamps = events.timestamps;
@@ -106,20 +106,20 @@ end
 
 % Default events, UIDs, and spikes
 if isempty(spikes)
-    spkEventTimes=[];
+    spkEventTimes = [];
     return
 else
-    UIDs=spikes.UID;
+    UIDs = spikes.UID;
 end
 
 % Get session info
 basename = basenameFromBasepath(basepath);
-load([basepath filesep basename '.session.mat']);
+load([basepath, filesep, basename, '.session.mat'], 'session');
 sesEpoch = session.epochs{end};
-if isfield(sesEpoch,'stopTime')
+if isfield(sesEpoch, 'stopTime')
     sesEnd = sesEpoch.stopTime;
 else
-    sesEnd = max(cat(1,spikes.times{:}));
+    sesEnd = max(cat(1, spikes.times{:}));
 end
 
 %% Get spikes for each unit and each ripple
@@ -134,18 +134,18 @@ spkEventTimes.UID = spikes.UID;
 % 1. Absolute and relative time of spikes by unit and by event
 for unit = 1:length(spikes.UID)
     if UIDs(unit)
-        for event = 1:size(timestamps,1)
+        for event = 1:size(timestamps, 1)
             % Start and end of ripple
-            tini(event) = timestamps(event,1) - padding;
-            tend(event) = timestamps(event,2) + padding;
-            spkEventTimes.EventDuration(event,1) = tend(event)-tini(event);
+            tini(event) = timestamps(event, 1) - padding;
+            tend(event) = timestamps(event, 2) + padding;
+            spkEventTimes.EventDuration(event, 1) = tend(event) - tini(event);
             % Spikes of this unit within this ripple interval
             tsUnitEvent = spikes.times{unit};
-            tsUnitEvent = tsUnitEvent(tsUnitEvent>=tini(event) & tsUnitEvent<=tend(event));
+            tsUnitEvent = tsUnitEvent(tsUnitEvent >= tini(event) & tsUnitEvent <= tend(event));
             % Absolute time of spikes by unit and by ripple
-            spkEventTimes.UnitEventAbs{unit,event} = tsUnitEvent';
+            spkEventTimes.UnitEventAbs{unit, event} = tsUnitEvent';
             % Relative time of spikes by unit and by ripple to ripple start
-            spkEventTimes.UnitEventRel{unit,event} = tsUnitEvent' - tini(event);
+            spkEventTimes.UnitEventRel{unit, event} = tsUnitEvent' - tini(event);
         end
     end
 end
@@ -153,23 +153,23 @@ end
 % 2. Absolute and relative time of spikes by unit
 for unit = 1:length(spikes.UID)
     if UIDs(unit)
-        spkEventTimes.UnitAbs{unit} = cell2mat(spkEventTimes.UnitEventAbs(unit,:));
-        spkEventTimes.UnitRel{unit} = cell2mat(spkEventTimes.UnitEventRel(unit,:));
+        spkEventTimes.UnitAbs{unit} = cell2mat(spkEventTimes.UnitEventAbs(unit, :));
+        spkEventTimes.UnitRel{unit} = cell2mat(spkEventTimes.UnitEventRel(unit, :));
     end
 end
 
 % 3. Absolute and relative time of spikes by ripple
-for event = 1:size(timestamps,1)
+for event = 1:size(timestamps, 1)
     spkEventTimes.EventAbs{event} = [];
     spkEventTimes.EventRel{event} = [];
     for unit = 1:length(spikes.UID)
         if UIDs(unit)
-            spkEventTimes.EventAbs{event} = [ spkEventTimes.EventAbs{event}, ...
-                [cell2mat(spkEventTimes.UnitEventAbs(unit,event)); ...
-                cell2mat(spkEventTimes.UnitEventAbs(unit,event))*0+spikes.UID(unit)] ];
-            spkEventTimes.EventRel{event} = [ spkEventTimes.EventRel{event}, ...
-                [cell2mat(spkEventTimes.UnitEventRel(unit,event)); ...
-                cell2mat(spkEventTimes.UnitEventRel(unit,event))*0+spikes.UID(unit)] ];
+            spkEventTimes.EventAbs{event} = [spkEventTimes.EventAbs{event}, ...
+                [cell2mat(spkEventTimes.UnitEventAbs(unit, event)); ...
+                cell2mat(spkEventTimes.UnitEventAbs(unit, event)) * 0 + spikes.UID(unit)]];
+            spkEventTimes.EventRel{event} = [spkEventTimes.EventRel{event}, ...
+                [cell2mat(spkEventTimes.UnitEventRel(unit, event)); ...
+                cell2mat(spkEventTimes.UnitEventRel(unit, event)) * 0 + spikes.UID(unit)]];
         end
     end
     spkEventTimes.EventAbs{event} = sortrows(spkEventTimes.EventAbs{event}')';
@@ -179,10 +179,10 @@ end
 
 % 4. Save
 if saveMat
-    if (saveNum~=0)
-        save(strcat(savePath,'\',basename,'.',num2str(saveNum),'.spkEventTimes.mat'),'spkEventTimes');
+    if (saveNum ~= 0)
+        save(strcat(savePath, '\', basename, '.', num2str(saveNum), '.spkEventTimes.mat'), 'spkEventTimes');
     else
-        save(strcat(savePath,'\',basename,'.spkEventTimes.mat'),'spkEventTimes');
+        save(strcat(savePath, '\', basename, '.spkEventTimes.mat'), 'spkEventTimes');
     end
 end
 

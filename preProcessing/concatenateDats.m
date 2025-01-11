@@ -169,7 +169,8 @@ end
 %% Sort files according to time of recording
 
 if sortFiles
-    names2sort = cellfun(@(X) str2num(X(end-5:end)), recordingnames, 'UniformOutput', false);
+    names2sort = cellfun(@(x) regexpi(x,'(?<=_)\d{6}','match'),recordingnames,'UniformOutput', false);
+    names2sort= cellfun(@(x) str2num(x{end}),names2sort,'uni',0);
     names2sort = cell2mat(names2sort);
     if ~isempty(names2sort)
         disp('Assuming the last 6 digits reflect recording time.')

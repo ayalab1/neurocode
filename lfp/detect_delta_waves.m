@@ -78,7 +78,8 @@ addParameter(p, 'basepath', pwd, @(x) any([isfolder(x), iscell(x)]));
 addParameter(p, 'channel', [], @isnumeric);
 addParameter(p, 'peak_to_trough_ratio', 3, @isnumeric); % legacy name for "threshold"
 addParameter(p, 'threshold', 3, @isnumeric);
-addParameter(p, 'brainRegion', {'PFC', 'MEC', 'LEC', 'EC', 'ILA', 'PL', 'Cortex', 'CTX'}, @(x) any(iscell(x), iscchar(x)));
+addParameter(p, 'brainRegion', {'PFC', 'MEC', 'LEC', 'EC', 'ILA', 'PL', 'Cortex', 'CTX'}, ...
+    @(x) ischar(x) || isstring(x) || (iscell(x) && all(cellfun(@(y) ischar(y) || isstring(y), x))));
 addParameter(p, 'manual_pick_channel', false, @islogical);
 addParameter(p, 'use_sleep_score_delta_channel', false, @islogical);
 addParameter(p, 'EMG_threshold', 0.6, @isnumeric);

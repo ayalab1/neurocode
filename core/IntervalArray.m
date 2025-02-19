@@ -480,7 +480,7 @@ classdef IntervalArray < handle
                 end
                 uistack(out, 'bottom');
             else
-                out = PlotIntervals(obj.intervals, varargin);
+                out = PlotIntervals(obj.intervals, varargin{:});
             end
         end
     end

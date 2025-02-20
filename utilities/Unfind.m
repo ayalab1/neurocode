@@ -17,7 +17,7 @@ function Logical = Unfind(indices, n)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
  
-if nargin<2,
+if nargin<2
     n=max(indices);
 end
  

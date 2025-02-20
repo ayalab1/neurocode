@@ -3,3 +3,10 @@
 *.mexw64
 *.mexmaci64
 behavior/dlc/Run_startdlc.bat
+preProcessing/FilterM/FilterX.exp
+preProcessing/FilterM/FilterX.lib
+preProcessing/FilterM/FilterX.mexw64
+preProcessing/FilterM/FilterX.exp
+preProcessing/FilterM/FilterX.mexw64
+preProcessing/FilterM/FilterX.lib
+preProcessing/FilterM/FilterX.exp

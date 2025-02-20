@@ -38,7 +38,7 @@ end
 X0 = X;
 % timebins should be equally distanced
 t = (X(1,1):mode(diff(X(:,1))):X(end,1))';
-ok = ~any(isnan(X),2);
+ok = ~any(isnan(X),2) & diff([0;X(:,1)])>0;
 X = interp1(X(ok,1),X(ok,:),t);
 X(isnan(X(:,1)),:) = [];
 

@@ -16,7 +16,7 @@ function [spectrogram,t,f] = WaveletSpectrogram(lfp,varargin)
 %    -------------------------------------------------------------------------
 %     'range'       frequency range (in Hz) (default = all)
 %     'resolution'  desired frequency resolution (sub-octaves per octave, default = 0.05)
-%     'step'        desired step between successive windows (default = window/2): 
+%     'step'        desired step between successive windows (default = window/2):
 %                   output will be downsampled to this value
 %     'interpolate' interpolate to create equidistant frequency bins instead
 %                   of bins in power of 2 (default = false)
@@ -167,7 +167,7 @@ wave = wave + i*wave;  % make it complex
 
 % loop through all scales and compute transform
 for a1 = 1:J1+1
-	[daughter,fourier_factor,coi,dofmin]=wave_bases(mother,k,scale(a1),param);	
+	[daughter,fourier_factor,coi,dofmin]=wave_bases(mother,k,scale(a1),param);
 	wave(a1,:) = ifft(f.*daughter);  % wavelet transform[Eqn(4)]
 end
 

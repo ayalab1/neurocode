@@ -14,14 +14,18 @@
 % I recommend using theta cycles during running for (a) and activity bursts
 % during sws for (b), but other solutions are possible.
 
+
+% This script first loads all the data that the tutorial will require. If
+% your data is saved differently, skip the next section, at the end of
+% which there is a list of all the variables the tutorial will need.
+
 %% Load session data:
 
 basepath = 'Z:\Data\Can\OML22\day6'; % we will be using this session for the sake of this tutorial
 basename = basenameFromBasepath(basepath);
 spikeStructure = importSpikes('basepath',basepath,'CellType',"Pyramidal Cell",'brainRegion','CA1'); % load CA1 pyramidal cells
 
-% We will need a spikes matrix, which all the functions making up this 
-% tutorial will expect:
+% We will need a spikes matrix, which all the functions making up this  tutorial will expect:
 try
     spikes = Group(spikeStructure.times{:},'sort',true);
 catch 
@@ -34,8 +38,6 @@ catch
     end
     spikes = sortrows(spikes); % sort spikes accoring to their time
 end
-
-%% Detect key intervals
 
 % As stated in the note above, this tutorial uses theta cycles during running 
 % as the task period defining the patterns. We load them from here:
@@ -66,6 +68,9 @@ postSleep = Restrict(NREM,[task(end) Inf]); % any NREM epoch that took place aft
 % Therefore make sure to define pre-task sleep and post-task sleep in a way
 % that makes sense for your project.
 
+ripples = getStruct(basepath,'ripples'); rippleTimestamps = ripples.timestamps(:,1);
+activePeriods = behavior.run;
+
 % Truncate preSleep and postSleep to one hour:
 preSleep = TruncateIntervals(preSleep,3600);
 postSleep = TruncateIntervals(postSleep,3600);
@@ -76,13 +81,12 @@ postSleep = TruncateIntervals(postSleep,3600);
 % happen to record for longer would appear to have poorer reactivation). 
 
 simple = true;
-
-if simple,
+if simple
     % The simplest possible way to define our intervals would be the following:
     % This is ALTERNATIVE 1:
-    taskIntervals = SplitIntervals(behavior.run,'pieceSize',0.02); % 20 ms bins in behavior
-    preIntervals = SplitIntervals(preSleep,'pieceSize',0.02); % 20 ms bins in pre-task sleep
-    postIntervals = SplitIntervals(postSleep,'pieceSize',0.02); % 20 ms bins in post-task sleep
+    binsActive = SplitIntervals(activePeriods,'pieceSize',0.02); % 20 ms bins in behavior
+    binsPre = SplitIntervals(preSleep,'pieceSize',0.02); % 20 ms bins in pre-task sleep
+    binsPost = SplitIntervals(postSleep,'pieceSize',0.02); % 20 ms bins in post-task sleep
     % In general, I do recommend restricting the task bins to running periods,
     % because if you include immobility, that also will end up including whatever
     % is being reactivated during awake ripples, which may include remote replay
@@ -102,7 +106,7 @@ else
     catch % if they don't exist, compute them
         error(['No "thetacycles" for .' basepath '. Please run auto_theta_cycles']);
     end
-    taskIntervals = Restrict(thetacycles.timestamps,behavior.run);
+    binsActive = Restrict(thetacycles.timestamps,behavior.run);
 
     % Detect bursts of activity in NREM pre-task and post-task
     % If you have already performed replay analysis, these are already detected:
@@ -129,9 +133,33 @@ else
         inRunning = IntervalsIntersect(bursts(:,[1 3]),behavior.run);
         bursts(inRunning,:);
     end
-    preIntervals = Restrict(bursts(:,[1 3]), preSleep);
-    postIntervals = Restrict(bursts(:,[1 3]), postSleep);
+    binsPre = Restrict(bursts(:,[1 3]), preSleep);
+    binsPost = Restrict(bursts(:,[1 3]), postSleep);
 end
+
+
+%% At this stage, you are expected to have the following variables in your workspace:
+%
+% spikes:               a matrix of [timestamp id] pairs, one row for each spike
+% binsPre:              a matrix of [start stop] timestamps of bins within
+%                       pre-task sleep epochs. These can be e.g. 20-ms bins
+%                       within all slow-wave sleep periods, or specifically
+%                       events of interests (e.g. bursts of activity,
+%                       ripples, etc.).
+% binsActive:           a matrix of [start stop] timestamps of bins within
+%                       of active behavior. These can be e.g. 20-ms bins
+%                       within active behavior, or specifically events of
+%                       interest (e.g. exploration of an object, theta
+%                       cycles, etc.)
+% binsPost:             a matrix of [start stop] timestamps of bins within
+%                       post-task sleep epochs. These can be e.g. 20-ms bins
+%                       within all slow-wave sleep periods, or specifically
+%                       events of interests (e.g. bursts of activity,
+%                       ripples, etc.).
+% rippleTimestamps:     a vector of timestamps of detected ripples. Feel free
+%                       to use bursts or any other events of interest
+%
+% Feel free to load them from your own data before executing the rest of the tutorial.
 
 %% Explained Variance (EV)
 
@@ -147,7 +175,7 @@ end
 % are reversed, yielding the Reverse Explained Variance. If we have more
 % task-related activity in post-task sleep than pre-task sleep, we'd expect
 % EV>REV. 
-[EV, REV] = ExplainedVariance(spikes, preIntervals, taskIntervals, postIntervals);
+[EV, REV] = ExplainedVariance(spikes, binsPre, binsActive, binsPost);
 
 % Plot the result:
 figure(1); clf;
@@ -167,14 +195,14 @@ set(gca,'box','off','TickDir','out','fontsize',12);
 %% Cell pair correlations
 
 % First, we compute the correlation matrix in behavior:
-rTask = CorrInIntervals(spikes, taskIntervals);
+rTask = CorrInIntervals(spikes, binsActive);
 
 % We implement this measure as described by Giri et al (2019):
 % The correlation matrices in pre- and post-task sleep are very similar. 
 % We can extract the part of the correlation matrix in post-task sleep 
 % that cannot be explained by the correlation matrix in pre-task sleep
 % (residual correlation):
-residuals = CorrResiduals(spikes, preIntervals, postIntervals);
+residuals = CorrResiduals(spikes, binsPre, binsPost);
 % Note that if the pre- and post- correlations were linearly correlated
 % with slope=1 and intercept=0, the the residuals would simply be 
 % corrPost - corrPre*1 +0. However, in reality, the best fit might not be
@@ -204,7 +232,6 @@ xlabel('task correlation');
 title(['r= ' num2str(r) ', p=' num2str(p)]);
 set(gca,'box','off','TickDir','out','fontsize',12);
 
-
 % Here, we have used firing correlations in the task for the x-axis.
 % Alternative approaches include using overlap between place fields,
 % correlations between firing maps, etc. 
@@ -219,20 +246,18 @@ rng(0); % Because the fastICA algorithm depends on initialization, its results
 % previous run may now be component 6). To make sure we can reproduce our
 % results, we set the random number generator with a value (here, 0), which
 % will result in the same output every time we execute the following line:
-templates = ActivityTemplates(spikes,'bins',taskIntervals,'mode','ica');
+templates = ActivityTemplates(spikes,'bins',binsActive,'mode','ica');
 % Then, detect the (re)activation of each template/component over the whole session
 binSize = 0.02; step = 0.001;
-bins = Bins(0,MergePoints.timestamps(end),binSize,step); 
+bins = Bins(0,postSleep(end),binSize,step); 
 % We don't necessarity need the bins outside of pre-task sleep and post-task sleep
 bins = Restrict(bins,[preSleep; postSleep]); % this saves memory when computing the strength
 strength = ReactivationStrength(spikes,templates,'bins',bins);
 % The first column of "strength" is timestamps and the following columns are the activation strength of each component for that timestamp
 
 % Compute the activation strength around pre-task and post-task ripples:
-% If you have not yet detected bursts, choosing the "simple" option above, detect them now:
-ripples = getStruct(basepath,'ripples');
-preRipples = Restrict(ripples.timestamps(:,1),preSleep);
-postRipples = Restrict(ripples.timestamps(:,1),postSleep);
+preRipples = Restrict(rippleTimestamps,preSleep);
+postRipples = Restrict(rippleTimestamps,postSleep);
 nComponents = size(templates,3);
 nBins = 101; durations = [-1 1]*0.5;
 [mPre,mPost] = deal(nan(nComponents,nBins)); % pre-allocate matrices
@@ -244,6 +269,7 @@ end
 x = linspace(durations(1),durations(2),nBins);
 
 %% Plot the result:
+
 figure(3); clf;
 set(gcf,'position',[300 200 1500 700]);
 matrices = {mPre,mPost,mPost-mPre};

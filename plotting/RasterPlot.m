@@ -13,7 +13,7 @@ function H = RasterPlot(spikes, height, varargin)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if nargin==1,
+if nargin==1
     height = 1;
 end
     

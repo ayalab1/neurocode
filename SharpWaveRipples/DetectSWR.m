@@ -1,4 +1,4 @@
-function [ripples] = DetectSWR(Channels, varargin)
+function ripples = DetectSWR(Channels, varargin)
 
 %DetectSWR - Detect Sharp Wave Ripple in epochs of continuous data.
 %
@@ -1483,6 +1483,7 @@ Y = Y(1+C+D:end-C+D, :);
 
 end
 
+% ------------------------------- Helper functions -------------------------------
 
 function logAnalysisFile(AnalysisFileName, writePath)
 % The purpose of this utility is to provide a record of analyses run by

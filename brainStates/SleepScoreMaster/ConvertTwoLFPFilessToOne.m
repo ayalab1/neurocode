@@ -103,11 +103,7 @@ else
             sf_LFP = sf_LFP./5;
 
             save(scorelfppath,'thLFP','swLFP','THchannum','SWchannum','sf_LFP');
-<<<<<<< HEAD
 %             delete(swlfppath,thetalfppath)
-=======
-            delete(swlfppath,thetalfppath)
->>>>>>> origin/master
         else
             display('LFP was not saved at 1250... bug?')
             keyboard

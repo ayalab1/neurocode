@@ -73,7 +73,7 @@ function varargout = PETH(samples, events, varargin)
 %
 %    See also Sync, SyncHist, SyncMap, PlotSync, PETHTransition.
 %
-% Copyright (C) 2018-2022 by Ralitsa Todorova & Michaël Zugaro
+% Copyright (C) 2018-2024 by Ralitsa Todorova & Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -94,56 +94,47 @@ else
 end
 mode = 'l';
 
-for i = 1:2:length(varargin),
-    switch(lower(varargin{i})),
-        case 'durations',
+for i = 1:2:length(varargin)
+    switch(lower(varargin{i}))
+        case 'durations'
             duration = varargin{i+1};
-            if ~isvector(duration) || length(duration) ~= 2,
+            if ~isvector(duration) || length(duration) ~= 2
                 error('Incorrect value for property ''durations'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'duration',
+        case 'duration'
             duration = varargin{i+1};
-            if ~isvector(duration) || length(duration) ~= 2,
+            if ~isvector(duration) || length(duration) ~= 2
                 error('Incorrect value for property ''durations'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'nbins',
+        case 'nbins'
             nBins = varargin{i+1};
-            if ~isvector(nBins) || length(nBins) ~= 1,
+            if ~isvector(nBins) || length(nBins) ~= 1
                 error('Incorrect value for property ''nBins'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'show',
+        case 'show'
             show = varargin{i+1};
-            if ~isastring(show,'on','off'),
+            if ~isastring(show,'on','off')
                 error('Incorrect value for property ''show'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'mode',
+        case 'mode'
             mode = varargin{i+1};
-            if ~isastring(mode,'l','c'),
+            if ~isastring(mode,'l','c')
                 error('Incorrect value for property ''mode'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'title',
+        case 'title'
             namestring = varargin{i+1};
-            if ~isastring(namestring),
+            if ~isastring(namestring)
                 error('Incorrect value for property ''title'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        case 'smooth',
+        case 'smooth'
             smooth = varargin{i+1};
-            if ~isvector(smooth) || length(smooth) ~= 1,
+            if ~isvector(smooth) || length(smooth) ~= 1
                 error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help PETH">PETH</a>'' for details).');
             end
-        otherwise,
+        otherwise
             pictureoptions = varargin(i:end); break
     end
 end
-
-seconds_around_event = diff(duration)/2;
-% if ~exist('nBins', 'var'),
-%     if seconds_around_event < 1,
-%         nBins = seconds_around_event*300;
-%     else
-%         nBins = seconds_around_event*100;
-%     end
-% end
 
 if size(samples,2)==2 % if the provided data is a signal rather than events
     t = linspace(duration(:,1),duration(2),nBins);
@@ -163,7 +154,7 @@ if size(samples,2)==2 % if the provided data is a signal rather than events
     return
 else % the samples are a point process
     [sync, j] = Sync(samples, events, 'durations', duration);
-    if nargout>0,
+    if nargout>0
         s = Bin(sync(:,1),duration,nBins);
         mat = zeros(size(events,1),nBins);
         if isempty(sync)
@@ -176,13 +167,13 @@ else % the samples are a point process
         varargout{1} = mat;
         varargout{2} = t;
     end
-    if strcmpi(show,'on'), % compute 'm' that we will plot
+    if strcmpi(show,'on') % compute 'm' that we will plot
         [m, ~, t] = SyncHist(sync, j, 'nBins', nBins, 'smooth', smooth, 'mode', 'mean', 'durations', duration);
     end
 end
 
-if strcmpi(show,'on'),
-    if isempty(pictureoptions),
+if strcmpi(show,'on')
+    if isempty(pictureoptions)
         if exist('linetype','var'), PlotXY(t', m, linetype); else, PlotXY(t', m); end
         title([namestring ', ' num2str(numel(j)) ' x ' num2str(numel(unique(j))) ' instances']);
     else
@@ -190,7 +181,7 @@ if strcmpi(show,'on'),
     end
 end
 
-if nargout>0,
+if nargout>0
     varargout{1} = mat;
     varargout{2} = t;
     if nargout>2

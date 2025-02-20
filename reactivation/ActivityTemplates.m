@@ -45,7 +45,7 @@ function [templates,correlations,weights,variance] = ActivityTemplates(spikes,va
 %
 %    See also ReactivationStrength.
 
-% Copyright (C) 2016-2022 by Michaël Zugaro, Ralitsa Todorova
+% Copyright (C) 2016-2024 by Michaël Zugaro, Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

@@ -1,6 +1,5 @@
 function LFPfromDat(basepath, varargin)
-%
-%
+% LFPFROMDAT Extract Local Field Potential (LFP) from wideband .dat file
 %   [perform lowpass (2 X output Fs) sinc filter on wideband data
 %   subsample the filtered data and save as a new flat binary
 %   basename must have basename.dat and basename.xml
@@ -156,7 +155,6 @@ nBytes = fInfo.bytes;
 nbChunks = floor(nBytes/(nbChan * sizeInBytes * chunksize)) - 1;
 
 %% GET LFP FROM DAT
-
 if exist([basepath, '\', basename, '.lfp'], 'file') || exist([basepath, '\', basename, '.eeg'], 'file')
     fprintf('LFP file already exists \n')
     return
@@ -204,16 +202,13 @@ for ibatch = 1:nbChunks
         end
     end
 
-
     DATA = nan(size(dat, 1), chunksize/sampleRatio);
     for ii = 1:size(dat, 1)
-
         d = double(dat(ii, :));
         if useGPU
             d = gpuArray(d);
             tmp = gpuArray(zeros(size(d)));
         end
-
         tmp = iosr.dsp.sincFilter(d, ratio);
         if useGPU
             if ibatch == 1
@@ -221,18 +216,14 @@ for ibatch = 1:nbChunks
             else
                 DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff))));
             end
-
         else
             if ibatch == 1
                 DATA(ii, :) = int16(real(tmp(sampleRatio:sampleRatio:end-ntbuff)));
             else
                 DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff)));
             end
-
         end
-
     end
-
     fwrite(fidout, DATA(:), 'int16');
 end
 
@@ -258,7 +249,6 @@ if ~isempty(remainder)
         tmp = iosr.dsp.sincFilter(d, ratio);
 
         if useGPU
-
             DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end))));
         else
             DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end)));

@@ -11,8 +11,8 @@ function bins = Bins(startpoint,endpoint,window,step)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if nargin<4,
-	if nargin<3,
+if nargin<4
+	if nargin<3
 		window = 1;
 	end
 	step = window;

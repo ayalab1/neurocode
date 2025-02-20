@@ -31,7 +31,7 @@ function filtered = FilterLFP(lfp,varargin)
 %        gamma      [30 80]
 %        ripples    [100 250]
 
-% Copyright (C) 2004-2021 by Michaël Zugaro
+% Copyright (C) 2004-2021 by Michaël Zugaro (C) 2021 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by

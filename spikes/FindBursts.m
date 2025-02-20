@@ -34,7 +34,7 @@ function [bursts,z] = FindBursts(spikes,varargin)
 %                       be discarded (default = [0 Inf]).
 %    =========================================================================
 %
-% Copyright (C) 2016-2023 by Ralitsa Todorova, Michaël Zugaro
+% Copyright (C) 2016-2024 by Ralitsa Todorova, Michaël Zugaro
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -53,34 +53,34 @@ durations = [0 Inf];
 basepath = [];
 save_mat = false;
 
-for i = 1:2:length(varargin),
-    if ~ischar(varargin{i}),
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
         error(['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).']);
     end
-    switch(lower(varargin{i})),
-        case 'thresholds',
+    switch(lower(varargin{i}))
+        case 'thresholds'
             thresholds = varargin{i+1};
-            if ~isdvector(thresholds,'#2','<'),
+            if ~isdvector(thresholds,'#2','<')
                 error('Incorrect value for property ''thresholds'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
         case 'binsize'
             binSize = varargin{i+1};
-            if ~isdvector(binSize,'#1'),
+            if ~isdvector(binSize,'#1')
                 error('Incorrect value for property ''binSize'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
-        case 'smooth',
+        case 'smooth'
             smooth = varargin{i+1};
-            if ~isdvector(smooth,'#1','>0'),
+            if ~isdvector(smooth,'#1','>0')
                 error('Incorrect value for property ''smooth'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
-        case 'intervals',
+        case 'intervals'
             intervals = varargin{i+1};
-            if ~isdmatrix(intervals) || size(intervals,2) ~= 2,
+            if ~isdmatrix(intervals) || size(intervals,2) ~= 2
                 error('Incorrect value for property ''intervals'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
-        case 'durations',
+        case 'durations'
             durations = varargin{i+1};
-            if ~isdmatrix(durations) || size(durations,2) ~= 2,
+            if ~isdmatrix(durations) || size(durations,2) ~= 2
                 error('Incorrect value for property ''durations'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
         case 'basepath'
@@ -93,7 +93,7 @@ for i = 1:2:length(varargin),
             if ~islogical(save_mat)
                 error('Incorrect value for property ''save_mat'' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).');
             end
-        otherwise,
+        otherwise
             error(['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help FindBursts">FindBursts</a>'' for details).']);
     end
 end
@@ -202,13 +202,13 @@ function [dN,t]=binspikes(data,Fs,t)
 % dN     (output binned spike counts as a matrix defined on bins starting with the
 %         earliest spike across all channels and ending with the latest spike)
 % t      (lower limit of each bin)
-if nargin < 2; error('Need at least two input arguments'); end;
+if nargin < 2; error('Need at least two input arguments'); end
 binSize=1/Fs;
 binSizemp='';
-if isstruct(data);
+if isstruct(data)
     C=length(data);
     fnames=fieldnames(data);
-    if nargin <3 || isempty(t);
+    if nargin <3 || isempty(t)
         mintime=zeros(1,C);
         maxtime=zeros(1,C);
         for ch=1:C
@@ -232,14 +232,14 @@ if isstruct(data);
         %        if maxtimech > max(t); t=[t maxtimech+binSize]; end;
     end
     t=linspace(mintime,maxtime,1+(maxtime-mintime)/binSize);
-    for ch=1:C;
+    for ch=1:C
         eval(['binSizemp=data(ch).' fnames{1} ';'])
         x=histc(binSizemp,t);
         dN(:,ch)=x(:);
     end
 else
     binSizemp=data;
-    if nargin < 3;
+    if nargin < 3
         mintime=min(binSizemp);
         maxtime=max(binSizemp);
     else
@@ -253,7 +253,7 @@ else
 end
 end
 
-function timestamps = Unshift(timestamps, intervals),
+function timestamps = Unshift(timestamps, intervals)
 
 % The opposite of the option 'shift' in Restrict
 %

@@ -1,0 +1,7 @@
+Murtaza Khan, "Rainbow Colormap",  June. 2015.
+----------------------------------------------
+
+LaTeX
+
+\bibitem{KhanJune2015}
+Murtaza Khan, \emph{Rainbow Colormap}, June 2015.

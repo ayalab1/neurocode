@@ -1,12 +1,11 @@
 function add_event_psth_cell_explorer(basepath)
-% add_event_psth_cell_explorer: adds event psth after cell_metrics creation 
+% add_event_psth_cell_explorer: adds event psth after cell_metrics creation
 %
-% Here is a function to add the psths for your events to cell_metrics after 
-% you have already created your cell_metrics file. Normally, this is done during 
+% Here is a function to add the psths for your events to cell_metrics after
+% you have already created your cell_metrics file. Normally, this is done during
 % pre processing, but maybe you forgot to detect ripples or maybe you have
 % a new type of event that you want to view in cell explorer
-%
-% 
+
 
 % set default params
 parameters.excludeMetrics = {'none'};
@@ -26,6 +25,10 @@ preferences = preferences_ProcessCellMetrics(session);
 load(fullfile(basepath, [basename, '.cell_metrics.cellinfo.mat']), 'cell_metrics');
 
 load(fullfile(basepath, [basename, '.spikes.cellinfo.mat']), 'spikes');
+
+if ~isfield(spikes, 'sr')
+    spikes.sr = session.extracellular.sr;
+end
 
 % generate psths for existing event files
 if any(contains(parameters.metrics, {'event_metrics', 'all'})) && ~any(contains(parameters.excludeMetrics, {'event_metrics'}))

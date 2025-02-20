@@ -1,12 +1,12 @@
 function [deconvolved,t] = DeconvolvePETH(signal,events,varargin)
 
-% [DeconvolvePETH] - [Compute a deconvolved version of PETH which removes the
-% smoothing effects of the events' autocorrelogram]
+%DeconvolvePETH - Compute a deconvolved version of PETH which removes the
+% smoothing effects of the events' autocorrelogram
 %
 %  INPUTS
-%    [signal]      [signal to find events for]
-%    [events]      [events for PETH]
-%    <options>   optional list of property-value pairs (see table below)
+%    signal         signal to find events for
+%    events         events for PETH
+%    <options>      optional list of property-value pairs (see table below)
 %    =========================================================================
 %     Properties    Values
 %    -------------------------------------------------------------------------
@@ -30,15 +30,15 @@ function [deconvolved,t] = DeconvolvePETH(signal,events,varargin)
 %    =========================================================================
 %
 %  OUTPUTS
-%    [deconvolved]     [deconvolved PETH]
-%    [t]               [times of PETH]
+%    deconvolved    deconvolved PETH
+%    t              times of PETH
 
 %
 % SEE ALSO
 %
-%   [PETH. This is using similar script as PETH with deconvultion]
+%   PETH
 %
-% [Ralitsa Todorova] [2021-2022]
+% Copyright (C) 2021-2024 by Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ function [deconvolved,t] = DeconvolvePETH(signal,events,varargin)
 
 % default values:
 durations = [-1 1];
-nBins = [100];
+nBins = 100;
 
 argsToPassOn = {};
 for i = 1:2:length(varargin)
@@ -85,7 +85,7 @@ end
 [~,t] = PETH(signal,events,'durations',durations,'nBins',nBins,argsToPassOn{:});
 [autoResponse,~] =  PETH(events,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:});
 % make sure the binsize stays the same while you double the duration
-[rawResponse,~] = PETH(signal,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:}); 
+[rawResponse,~] = PETH(signal,events,'durations',durations*2,'nBins',nBins*2-1,argsToPassOn{:});
 
 autocorrelogram = sum(autoResponse);
 rawPeth = sum(rawResponse);
@@ -102,17 +102,3 @@ T = T0(nBins:end, 1:nBins);
 % add the baseline to the final PETH
 deconvolved = T \ rawPeth(round(nBins/2 + 0):round(nBins/2*3 - 1))' + const/length(events);
 end
-
-%% Old code:
-% function deconvolved = DeconvolvePETH(rawPeth,autocorrelogram)
-%
-% Note: "rawPETH" should be of double the duration of the autocorrelogram for this to work/
-
-% Example:
-% [autoResponse,t]=  PETH(events,events,'durations',durations,'nBins',nBins);
-% [rawResponse,~]=  PETH(signal,events,,'durations',durations*2,'nBins',nBins*2-1); % make sure the binsize stays the same while you double the duration
-% deconvolved = DeconvolvePETH(sum(rawResponse),sum(autoResponse));
-% plot(t,deconvolved);
-%
-% T = toeplitz([autocorrelogram(:); zeros(numel(rawPeth)-numel(autocorrelogram), 1)], [autocorrelogram(1), zeros(1, length(autocorrelogram)-1)]);
-% deconvolved = T \ rawPeth(:);

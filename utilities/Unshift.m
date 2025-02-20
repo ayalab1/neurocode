@@ -1,4 +1,4 @@
-function timestamps = Unshift(timestamps, intervals),
+function timestamps = Unshift(timestamps, intervals)
 
 % The opposite of the option 'shift' in Restrict
 %

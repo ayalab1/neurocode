@@ -22,16 +22,16 @@ function [estimations,actual,errors,average] = ReconstructPosition(positions,spi
 %     Properties    Values
 %    -------------------------------------------------------------------------
 %     'training'    time interval over which the model should be trained
+%                   (see NOTE below for defaults)
 %     'type'        two letters (one for X and one for Y) indicating which
 %                   coordinates are linear ('l') and which are circular ('c')
 %                   - for 1D data, only one letter is used (default 'll')
 %     'nBins'       firing curve or map resolution (default = 200 for 1D and
 %                   [200 200] for 2D data)
-%     'prior'     taking the map occupancy into account or not (default = 'on')
-%		This is what makes the reconstruction Bayesien, but if
-%		animal occupancy is very skewed, the recustruction would
-%		be good even without informative spikes. For such cases, 
-%		feel free to check the output with 'prior' set to 'off'
+%     'prior'     taking the map occupancy into account or not (default = 'off')
+%		This is what makes the reconstruction Bayesien, but if animal
+%		occupancy is very skewed, the recustruction would be good even
+%		without informative spikes, which is why the default is off.
 %     'interpolate'     When estimating errors, compute the actual position by
 %		interpolating the positions data to the decoding window
 %		(default = 'on'). If positions data is not continuous (i.e.
@@ -74,73 +74,73 @@ if isstruct(spikes) && isfield(spikes,'times')
 end
 
 % Check number of parameters
-if nargin < 3,
+if nargin < 3
     builtin('error','Incorrect number of parameters (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
 
 % Check parameter sizes
-if ~isempty(positions) && ~isdmatrix(positions),
+if ~isempty(positions) && ~isdmatrix(positions)
     builtin('error','Incorrect positions (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
-if ~isdmatrix(spikes,'@2') && ~isdmatrix(spikes,'@3'),
+if ~isdmatrix(spikes,'@2') && ~isdmatrix(spikes,'@3')
     builtin('error','Incorrect spikes (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
-if size(positions,2) >= 3,
+if size(positions,2) >= 3
     nDimensions = 2; type='lll'; nBins = repmat(nBins,1,2);
 end
-if ~isdmatrix(windows,'@2'),
+if ~isdmatrix(windows,'@2')
     builtin('error','Incorrect value for property ''windows'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 end
 
 % Parse parameters
-for i = 1:2:length(varargin),
-    if ~ischar(varargin{i}),
+for i = 1:2:length(varargin)
+    if ~ischar(varargin{i})
         builtin('error',['Parameter ' num2str(i+2) ' is not a property (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
     end
-    switch(lower(varargin{i})),
-        case 'training',
+    switch(lower(varargin{i}))
+        case 'training'
             training = varargin{i+1};
-            if ~isdvector(training,'<') && ~isdmatrix([1 2],'@2','>0'),
+            if ~isdvector(training,'<') && ~isdmatrix([1 2],'@2','>0')
                 builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
             end
-        case 'nbins',
+        case 'nbins'
 	  nBins = varargin{i+1};
-	  if ~isiscalar(nBins) && ~isdmatrix([100 100],'@2','>0'),
+	  if ~isiscalar(nBins) && ~isdmatrix([100 100],'@2','>0')
 	      builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
 	  end
-        case 'prior',
+        case 'prior'
 	  prior = varargin{i+1};
-	  if ~isastring(prior,'on','off'),
+	  if ~isastring(prior,'on','off')
 	      error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 	  end
-        case 'interpolate',
+        case 'interpolate'
 	  interpolate = varargin{i+1};
-	  if ~isastring(interpolate,'on','off'),
+	  if ~isastring(interpolate,'on','off')
 	      error('Incorrect value for property ''prior'' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).');
 	  end
-        case 'id',
+        case 'id'
 	  intervalID = varargin{i+1};
-	  if ~isivector(intervalID,'>0'),
-                builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-            end
-        case 'type',
+      if ~isivector(intervalID,'>0')
+          builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
+      end
+        case 'type'
             type = lower(varargin{i+1});
-            if (nDimensions == 1 && isastring(type(1),'c','l')),
+            if (nDimensions == 1 && isastring(type(1),'c','l'))
                 type = type(1);
-            elseif nDimensions == 2 && length(type)>1 && isastring(type(1:2),'cl','cc','ll','lc'),
+            elseif nDimensions == 2 && length(type)>1 && isastring(type(1:2),'cl','cc','ll','lc')
                 type = type(1:2);
             else
                 builtin('error',['Incorrect value for property ''' varargin{i} ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
             end
-        case 'window',
+        case 'window'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'mode',
+        case 'mode'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'lambda',
+        case 'lambda'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        case 'px',
+        case 'px'
             builtin('error',['Property ''' varargin{i} ''' no longer supported (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
-        otherwise,
+        otherwise
             builtin('error',['Unknown property ''' num2str(varargin{i}) ''' (type ''help <a href="matlab:help ReconstructPosition">ReconstructPosition</a>'' for details).']);
     end
 end
@@ -151,12 +151,12 @@ ignore = diff(positions(:,1))<=0;
 positions(ignore,:) = [];
 
 % Defaults (training)
-if isdscalar(training), %If 'training' was provided as a portion, convert it to an interval
+if isdscalar(training) %If 'training' was provided as a portion, convert it to an interval
     training = [0 positions(1,1)+training*(positions(end,1)-positions(1,1))];
 end
 
 % Convert from legacy format for backward compatibility with previous versions of the code (spikes)
-if isdmatrix(spikes,'@3'),
+if isdmatrix(spikes,'@3')
     % List units, assign them an ID (number them from 1 to N), and associate these IDs with each spike
     % (IDs will be easier to manipulate than (group,cluster) pairs in subsequent computations)
     [units,~,i] = unique(spikes(:,2:end),'rows');
@@ -170,15 +170,16 @@ else
     nUnits = max(id);
 end
 %% TRAINING
+
 trainingPositions = Restrict(positions,training,'shift','on');
 trainingSpikes = Restrict(spikes,training,'shift','on');
 
 % Compute average firing probability lambda for each unit (i.e. firing maps)
 lambda = nan(prod(nBins),nUnits);
-for i = 1:nUnits,
+for i = 1:nUnits
     unit = trainingSpikes(:,2) == i;
     s = trainingSpikes(unit,1);
-    if size(trainingPositions,2)<3,
+    if size(trainingPositions,2)<3
         map = Map(trainingPositions,s,'nbins',nBins,'smooth',5,'type',[type 'l']);
         % extra letter for 'type' required as input for 'Map' even though this extra 'l' does not refer to anything in the case of a point process (spikes) provided
     else
@@ -204,7 +205,7 @@ nBins = prod(nBins);
 nWindows = size(windows,1);
 
 spikecount = zeros(nUnits,nWindows);
-for i = 1:nUnits,
+for i = 1:nUnits
     % Population spike count matrix
     spikecount(i,:) = CountInIntervals(spikes(id==i),windows);
 end
@@ -265,7 +266,7 @@ Pn = nansum(PnxPx);
 estimations(:,~uniform) = bsxfun(@rdivide,PnxPx,Pn);
 
 % reshape to original (non-flattened) spatial dimensions
-if nDimensions>1,
+if nDimensions>1
     estimations = reshape(estimations,[nBinsPerDim size(estimations,2)]);
 end
 
@@ -279,7 +280,7 @@ if any(isnan(estimations(:)))
     estimations(isnan(estimations)) = nans(isnan(estimations));
 end
 
-if nargout==1,
+if nargout==1
     return
 end
 
@@ -287,8 +288,8 @@ end
 windowCenters = mean(windows,2);
 if strcmp(interpolate,'on')
     interpolated = nan(nWindows,nDimensions);
-    for dim = 1:nDimensions,
-        if strcmp(type(1),'l'),
+    for dim = 1:nDimensions
+        if strcmp(type(1),'l')
 	  x=positions(:,1);
 	  
 	  y=positions(:,1+dim);
@@ -313,13 +314,13 @@ actual = positions;
 
 % in a 2D matrix, 'x' (first positions columnn) represents the 2nd dimension, while 'y' (second positions column) represents the 1st dimension. Flip them!
 corrected = positions;
-if nDimensions==2,
+if nDimensions==2
     corrected = positions(:,[2 1]);
 end
 
 ind = cell(1,nDimensions);
 [ind{:}, timebin] = ind2sub(size(estimations),(1:numel(estimations))');
-for dim = 1:nDimensions,
+for dim = 1:nDimensions
     shift = Bin(corrected(:,dim),[0 1],nBinsPerDim(dim));
     index = (ind{dim} - shift(timebin)) +round(nBinsPerDim(dim)/2);
     if strcmp(type,'c') % if data is circular, wrap estimation around
@@ -342,16 +343,16 @@ if any(isnan(errors(:)))
     errors = reshape(flat,size(errors));
 end
 
-if nargout<4,
+if nargout<4
     return
 end
 
-if isempty(intervalID),
+if isempty(intervalID)
     intervalID = ones(nWindows,1);
     warning('No id-s provided. Average error computed for all bins');
 end
 
-for i=1:max(intervalID),
+for i=1:max(intervalID)
     average{i,1} = eval(['nanmean(errors(' repmat(':,',1,nDimensions) 'intervalID==i),nDimensions+1)']);
 end
 average = cat(nDimensions+1,average{:});
@@ -373,21 +374,48 @@ end
 
 function [indices,values] = FindClosest(reference, query, mode)
 
-% This function looks up a query vector in a reference vector, and for each
-% value in the query vector, returns the index of the closest value in the
-% reference vector. The equivalent non-optimised code is trivial:
+%FindClosest - field the indices of a reference vector closest to a query vector
+% Look up a query vector in a reference vector, and for each value in
+% the query vector, return the index of the closest value in the
+% reference vector.
+%
+% USAGE
+%
+%    [indices,values] = FindClosest(reference, query, mode)
+%
+%    reference      reference signal which will be used as the table look-up
+%    query          query signal. For each value of this signal, the function
+%                   will look for the closest value in the reference signal
+%    mode           a string ('either','higher', or 'lower') indicating
+%                   whether the function should find the closest value in
+%                   reference higher than the query ('higher) or lower than
+%                   the query ('lower') or the closest value regardless of
+%                   the direction of the difference (default = 'either')
+%
+%
+% EXAMPLE
+% indices = FindClosests(spikes(:,1),deltas(:,2)) will return the indices of spikes closest to the delta wave peak
+% d = deltas(:,2) - spikes(indices) will contain all the minimal distances between delta wave peaks and spikes (one distance per each delta wave)
+%
+% NOTE
+% This is an optimized implementation of computing the following trivial code:
 % for i=1:length(reference), indices(i,1) = find(abs(query-reference(i)) == min(abs(query-reference(i))), 1, 'first'); end
-% EXAMPLE 1 (reasoning):
-% FindClosest([0.5; 0.2],[0.3 0.45 0.66]) returns [2;1]
-% as the closest value to 0.5 was 0.45 (index 2), and to 0.2 was 0.3 (index 1)
-% EXAMPLE 2 (usage):
-% indices = FindClosests(spikes1,spikes2) will return the indices of spikes2 closest to spikes1
-% spikes1 - spikes2(indices) will contain all the minimal distances between spikes1 and spikes2 (one distance per each spike in spike1)
+% values = reference(indices);
+%
+% (C) 2019 by Ralitsa Todorova
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 3 of the License, or
+% (at your option) any later version.
 
 if ~exist('mode','var'),mode = 'either'; end
-
 if isempty(reference) || isempty(query), indices = []; values = []; return; end
 if length(reference)==1,indices = 1; values=reference; return; end
+
+nans = isnan(reference);
+nonnans = find(~nans);
+reference(nans) = [];
 
 % Make sure values to be matched are unique
 [u,i] = unique(reference);
@@ -407,4 +435,5 @@ indices(indices>length(i) | query>max(u)) = length(i);
 
 indices = i(indices);
 values = reference(indices);
+indices = nonnans(indices);
 end

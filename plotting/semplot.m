@@ -1,4 +1,4 @@
-function varargout = semplot(x,y,color,smooth)
+function varargout = semplot(x,y,color,smooth,solid)
 
 %semplot - plot mean (line) +/- s.e.m. (shaded area) of a matrix "y"
 % semplot(x,y,color,smooth)
@@ -12,32 +12,34 @@ function varargout = semplot(x,y,color,smooth)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-solid = false; % one day I will make this into an option
+if ~exist('solid','var')
+    solid = false;
+end
 
-if nargin<2 || (nargin==2 && ischar(y)),
-    if nargin==2,
+if nargin<2 || (nargin==2 && ischar(y))
+    if nargin==2
         color = y;
     end
     y = x;
     x = 1:size(y,2);
 end
 
-if ~exist('color','var'),
+if ~exist('color','var')
     color = [0 0 0];
 end
 
-if ~exist('smooth','var'),
+if ~exist('smooth','var')
     smooth = 0;
 end
 
-if size(y,2)~=length(x),
+if size(y,2)~=length(x)
     y = y';
-    if size(y,2)~=length(x),
+    if size(y,2)~=length(x)
         error('Y should have one column for each element in X');
     end
 end
 
-if isvector(y),
+if isvector(y)
     handles = plot(x,Smooth(y,smooth),'color',color);
     if nargout>0, varargout{1} = handles; end
     hold on;
@@ -54,7 +56,7 @@ yy = [Smooth(nanmean(y)'-nansem(y)',smooth); Smooth(flipud(nanmean(y)'+nansem(y)
 y = Smooth(nanmean(y),smooth);
 handles = fill(xx,yy,color);
 
-if solid,
+if solid
     set(handles,'FaceColor',mean([color;1 1 1]),'edgeAlpha',0);
 else % transparent
     set(handles,'FaceAlpha',0.5,'edgeAlpha',0);

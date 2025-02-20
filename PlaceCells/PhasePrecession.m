@@ -135,7 +135,7 @@ for i = 1:2:length(varargin),
 end
 
 % Default values
-data.x = positions;
+data.x = positions; % this might not be [0,1] here
 data.position.t = [];
 data.position.x = [];
 data.position.phase = [];

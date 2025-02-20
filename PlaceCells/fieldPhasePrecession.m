@@ -322,7 +322,7 @@ if ~isempty(positions) && nargout >= 2,
 		end
 	end
 	% Circular regression for average data
-	ok = ~isnan(x) & data.position.lapFire;
+    ok = ~isnan(x) & data.position.lapFire; % take spikes only happening in traversal of place field
 	[beta,r2,p] = CircularRegression(x(ok),data.position.phase(ok),'slope',slope);
 	stats.slope = beta(1);
 	stats.intercept = beta(2) + stats.slope*dx; % Correction for circular/circular regression (see above)

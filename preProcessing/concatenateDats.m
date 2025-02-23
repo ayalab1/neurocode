@@ -219,6 +219,7 @@ end
 % check if amplifier was already created, skip if so
 if ~exist(newdatpath, "file")
     disp('Concatenating Amplifier Dats... be patient')
+    disp(datpaths.amplifier')
     eval(catstring) %execute concatention
 else
     disp("Amplifier Dats already Concatenated")

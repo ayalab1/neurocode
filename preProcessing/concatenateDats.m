@@ -169,8 +169,8 @@ end
 %% Sort files according to time of recording
 
 if sortFiles
-    names2sort = cellfun(@(x) regexpi(x,'(?<=_)\d{6}','match'),recordingnames,'UniformOutput', false);
-    names2sort= cellfun(@(x) str2num(x{end}),names2sort,'uni',0);
+    names2sort = cellfun(@(x) regexpi(x, '(?<=_)\d{6}', 'match'), recordingnames, 'UniformOutput', false);
+    names2sort = cellfun(@(x) str2num(x{end}), names2sort, 'uni', 0);
     names2sort = cell2mat(names2sort);
     if ~isempty(names2sort)
         disp('Assuming the last 6 digits reflect recording time.')
@@ -275,7 +275,7 @@ for odidx = 1:length(otherdattypes)
         disp(['Concatenating ', otherdattypes{odidx}, ' Dats... be patient'])
         eval(catstring) %execute concatenation
     else
-        disp([otherdattypes{odidx},' already concatenated'])
+        disp([otherdattypes{odidx}, ' already concatenated'])
     end
 
     % Check that size of resultant .dat is equal to the sum of the components

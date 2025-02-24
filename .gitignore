@@ -2,6 +2,7 @@
 *.pyc
 *.mexw64
 *.mexmaci64
+._*
 behavior/dlc/Run_startdlc.bat
 preProcessing/FilterM/FilterX.exp
 preProcessing/FilterM/FilterX.lib

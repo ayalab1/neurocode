@@ -138,10 +138,12 @@ end
 [~, basename] = fileparts(basepath);
 
 % Get xml file in order
-xmlFile = checkFile('fileType', '.xml', 'searchSubdirs', true);
-xmlFile = xmlFile(1);
-if ~(strcmp(xmlFile.folder, basepath) && strcmp(xmlFile.name(1:end-4), basename))
-    copyfile([xmlFile.folder, filesep, xmlFile.name], [basepath, filesep, basename, '.xml'])
+if ~exist([basepath '\' basename '.xml'], 'file')
+    xmlFile = checkFile('fileType', '.xml', 'searchSubdirs', true);
+    xmlFile = xmlFile(1);
+    if ~(strcmp(xmlFile.folder, basepath) && strcmp(xmlFile.name(1:end-4), basename))
+        copyfile([xmlFile.folder, filesep, xmlFile.name], [basepath, filesep, basename, '.xml'])
+    end
 end
 
 % Check info.rhd

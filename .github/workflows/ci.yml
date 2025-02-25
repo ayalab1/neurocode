@@ -15,15 +15,23 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+        with:
+          path: neurocode  # Checkout into a folder named 'neurocode'
+
+      - name: Checkout external repository
+        uses: actions/checkout@v2
+        with:
+          repository: ayalab1/CellExplorer
+          path: CellExplorer
 
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v1
 
       - name: Compile MEX files
         run: |
-          matlab -batch "cd utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c"
-          matlab -batch "cd utilities/mapsC+; mex Contiguous.c; mex FindField.c"
+          matlab -batch "cd neurocode/utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c"
+          matlab -batch "cd neurocode/utilities/mapsC+; mex Contiguous.c; mex FindField.c"
 
       - name: Run MATLAB tests
         run: |
-          matlab -batch "addpath(genpath('.')); results = runtests('test'); assertSuccess(results);"
+          matlab -batch "addpath(genpath('neurocode')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('neurocode/test'); assertSuccess(results);"

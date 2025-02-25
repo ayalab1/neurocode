@@ -58,7 +58,8 @@ basepath = testCase.TestData.tempDir;
 
 % Call the function with special channels
 specialChannels = [1, 2, 3];
-EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5], 'specialChannels', specialChannels, 'samplingFrequency', 2);
+EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5],...
+    'specialChannels', specialChannels, 'samplingFrequency', 2);
 
 % Verify that the special channels are included in the output
 verifyTrue(testCase, all(ismember(specialChannels, EMGFromLFP.channels)));
@@ -70,7 +71,8 @@ basepath = testCase.TestData.tempDir;
 
 % Call the function with reject channels
 rejectChannels = [1, 2, 3];
-EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5], 'rejectChannels', rejectChannels, 'samplingFrequency', 2);
+EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5],...
+    'rejectChannels', rejectChannels, 'samplingFrequency', 2);
 
 % Verify that the reject channels are not included in the output
 verifyFalse(testCase, any(ismember(rejectChannels, EMGFromLFP.channels)));
@@ -82,7 +84,8 @@ basepath = testCase.TestData.tempDir;
 
 % Call the function with restrict channels
 restrictChannels = [1, 2, 3];
-EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5], 'restrictChannels', restrictChannels, 'samplingFrequency', 2);
+EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5],...
+    'restrictChannels', restrictChannels, 'samplingFrequency', 2);
 
 % Verify that only the restrict channels are included in the output
 verifyEqual(testCase, EMGFromLFP.channels, restrictChannels);
@@ -102,7 +105,8 @@ fwrite(fid, data', 'int16');
 fclose(fid);
 
 % Call the function with fromDat option
-EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5], 'fromDat', true, 'samplingFrequency', 2);
+EMGFromLFP = getEMGFromLFP(basepath, 'restrict', [0, 5],...
+    'fromDat', true, 'samplingFrequency', 2);
 
 % Verify the output structure
 verifyTrue(testCase, isfield(EMGFromLFP, 'timestamps'));

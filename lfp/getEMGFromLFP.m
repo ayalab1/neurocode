@@ -138,11 +138,7 @@ else
     % get list of spike groups (aka shanks) that should be used
     usablechannels = [];
     spkgrpstouse = [];
-    if length(SpkGrps) > 1
-        n = 1;
-    else
-        n = 5;
-    end
+
     for gidx = 1:length(SpkGrps)
         usableshankchannels{gidx} = setdiff(SpkGrps{gidx}, rejectChannels);
         usablechannels = cat(2, usablechannels, usableshankchannels{gidx});
@@ -154,15 +150,26 @@ else
     % okay, lets limit usableshankchannels with spkgrpstouse. Thus, empty shanks will be excluded.
     usableshankchannels = usableshankchannels(spkgrpstouse);
 
+    % get number of channels per shank. If one valid shank, choose 5 channels
+    if length(usableshankchannels) > 1
+        n = 1;
+    else
+        n = 5;
+    end
+
     % get list of channels (1 from each good spike group)
     xcorr_chs = [];
     for gidx = 1:length(usableshankchannels)
-        %Remove rejectChannels
-        %     usableshankchannels = setdiff(SpkGrps(spkgrpstouse(i)).Channels,rejectChannels);
 
         %grab random channel on each shank
         if ~isempty(usableshankchannels{gidx})
-            randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx}), n, 1));
+            if n == 1
+                % sample with replacement for case of multi-shank
+                randChfromShank = usableshankchannels{gidx}(randi(length(usableshankchannels{gidx}), n, 1));
+            elseif n > 1
+                % sample without replacement for case of 1 shank
+                randChfromShank = usableshankchannels{gidx}(randperm(length(usableshankchannels{gidx}), n));
+            end
             xcorr_chs = [xcorr_chs, randChfromShank];
 
         end

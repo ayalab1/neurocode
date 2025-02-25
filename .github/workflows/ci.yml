@@ -16,6 +16,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      - name: Checkout external repository
+        uses: actions/checkout@v2
+        with:
+          repository: ayalab1/CellExplorer
+          path: CellExplorer  # Local directory name for the external repo
+
       - name: Set up MATLAB
         uses: matlab-actions/setup-matlab@v1
 
@@ -26,4 +32,4 @@ jobs:
 
       - name: Run MATLAB tests
         run: |
-          matlab -batch "addpath(genpath('.')); results = runtests('test'); assertSuccess(results);"
+          matlab -batch "addpath(genpath('.')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('test'); assertSuccess(results);"

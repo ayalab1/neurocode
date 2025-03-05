@@ -305,7 +305,7 @@ multiplier = -sum(lambda, 2) * dt';
 
 Pnx = exp(bsxfun(@minus, numerator+multiplier, denominator));
 PnxPx = bsxfun(@times, Pnx, Px);
-Pn = nansum(PnxPx);
+Pn = sum(PnxPx, 'omitnan');
 estimations(:, ~uniform) = bsxfun(@rdivide, PnxPx, Pn);
 
 % make sure no nans remain
@@ -313,9 +313,9 @@ if any(isnan(estimations(:)))
     nans = double(isnan(estimations));
     nans(nans == 0) = nan;
     % substitute NaNs with uniform probability
-    remainingProbability = 1 - nansum(estimations);
+    remainingProbability = 1 - sum(estimations, 'omitnan');
     remainingProbability(abs(remainingProbability) < 0.0000000001) = 0;
-    nans = remainingProbability ./ nansum(nans) .* nans;
+    nans = remainingProbability ./ sum(nans, 'omitnan') .* nans;
     estimations(isnan(estimations)) = nans(isnan(estimations));
 end
 
@@ -333,16 +333,16 @@ if strcmp(interpolate, 'on')
             x = positions(:, 1);
 
             y = positions(:, 1+dim);
-       	  %         [x, index] = unique(x);
-          %          y=y(index);
-          interpolated(:, dim) = interp1(x, y, windowCenters);
+            %         [x, index] = unique(x);
+            %          y=y(index);
+            interpolated(:, dim) = interp1(x, y, windowCenters);
         else
             unwrapped = unwrap(2*pi*positions(:, 1+dim)/max(positions(:, 1+dim)));
             x = positions(:, 1);
             y = unwrapped;
-       	  %         [x, index] = unique(x);
-          %         y=y(index);
-          interpolated(:, dim) = wrap(interp1(x, y, windowCenters), 2) / (2 * pi);
+            %         [x, index] = unique(x);
+            %         y=y(index);
+            interpolated(:, dim) = wrap(interp1(x, y, windowCenters), 2) / (2 * pi);
         end
     end
     actual = interpolated;
@@ -359,8 +359,11 @@ errors = nan(size(estimations, 2:3));
 errors2D = nan(size(estimations));
 
 mask = abs((1:nBinsPerDim(end))-mean([1, nBinsPerDim(end)])) < distanceThreshold;
-if strcmp(normalize, 'on'), fun = @(x) x ./ sum(x);
-else fun = @(x) x;
+
+if strcmp(normalize, 'on')
+    fun = @(x) x ./ sum(x);
+else
+    fun = @(x) x;
 end
 
 for i = 1:size(actual, 1)
@@ -369,10 +372,10 @@ for i = 1:size(actual, 1)
     q(q == 0) = nan;
     q = rotateMatrix(q, headingAngle(i));
     q(q == 0) = nan;
-    q(isnan(q(:))) = (1 - nansum(q(:))) ./ sum(isnan(q(:)));
+    q(isnan(q(:))) = (1 - sum(q(:), 'omitnan')) ./ sum(isnan(q(:)));
     errors2D(:, :, i) = q;
     q = q(mask, :);
-    errors(:, i) = fun(nansum(q));
+    errors(:, i) = fun(sum(q, 'omitnan'));
 end
 
 if nargout < 2
@@ -386,7 +389,7 @@ end
 
 average = cell(max(intervalID), 1);
 for i = 1:max(intervalID)
-    average{i, 1} = nanmean(errors(:, intervalID == i), 2);
+    average{i, 1} = mean(errors(:, intervalID == i), 2, 'omitnan');
 end
 average = cat(2, average{:});
 
@@ -496,9 +499,11 @@ addParameter(p, 'units', 'radians', @(x)ismember(x, {'radians', 'degrees'}))
 parse(p, varargin{:})
 units = p.Results.units;
 
-if isequal(units, 'degrees');
+% Convert angle to radians if needed
+if isequal(units, 'degrees')
     angle = deg2rad(angle);
-end % Convert angle to radians if needed
+end
+
 [rows, cols] = size(matrix); % Get the size of the input image
 center = [rows, cols] / 2 + 0.5;
 

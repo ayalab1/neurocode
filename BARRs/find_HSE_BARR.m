@@ -247,9 +247,9 @@ end
 HSE.peaks = evtpeak';
 HSE.amplitudes = evtamp;
 HSE.amplitudeUnits = 'spikes';
-HSE.eventID = ones(size(evtpeak));
-HSE.eventIDlabels = repmat({name},length(evtpeak),1);
-HSE.eventIDbinary = false(length(evtpeak),1);
+% HSE.eventID = ones(size(evtpeak)); %not necessary?
+% HSE.eventIDlabels = repmat({name},length(evtpeak),1);
+% HSE.eventIDbinary = false(length(evtpeak),1);
 HSE.duration = evtdur;
 HSE.center = evtstart + evtdur/2;
 

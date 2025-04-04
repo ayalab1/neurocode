@@ -1,4 +1,4 @@
-function pullSpikes(basepath, savePath)
+function pullSpikes(varargin)
 % Create spike structures per region and cell type
 %
 %%%%%%%%%%%%%%
@@ -7,18 +7,59 @@ function pullSpikes(basepath, savePath)
 % basepath:     Full path where session is located. Default: pwd
 % savePath:     Location for spike structures to be saved. For example,
 %               '[basepath '\Barrage_Files']'. Default: pwd
+% force:        Logical option to force redetection of spikes. Default:
+%               false
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Handle inputs
-if nargin < 1
-    basepath = pwd;
-    savePath = basepath;
-elseif nargin <2
-    savePath = basepath;
-end
-original = pwd;
-cd(basepath);
-basename = basenameFromBasepath(pwd);
+p = inputParser;
+addParameter(p,'basepath',pwd,@isfolder);
+addParameter(p,'savePath',pwd,@ischar);
+addParameter(p,'force',false,@islogical);
 
+parse(p,varargin{:})
+
+basepath = p.Results.basepath;
+savePath = p.Results.savePath;
+force = p.Results.force;
+
+original = pwd;
+cd(savePath);
+basename = basenameFromBasepath(basepath);
+
+%% Remove old runs if necessary
+if force
+    getFiles = dir();
+    fun_existsPyr = @(x) (contains(x, 'pyr.cellinfo.mat'));
+    fun_existsInt = @(x) (contains(x, 'int.cellinfo.mat'));
+    toDelete = zeros(size(getFiles,1),1);
+    for j = 1:size(getFiles,1)
+        if fun_existsPyr(getFiles(j).name)||fun_existsInt(getFiles(j).name)
+            disp(['Deleting ' getFiles(j).folder '\' getFiles(j).name]);
+            toDelete(j) = 1;
+        end
+    end
+    if sum(toDelete) > 0
+        disp('Going to delete - okay?: "dbcont" to continue')
+        keyboard
+        for j = 1:size(getFiles,1)
+            if toDelete(j)==1
+                delete([getFiles(j).folder '\' getFiles(j).name]);
+                disp(['Deleted ' getFiles(j).folder '\' getFiles(j).name]);
+            end
+        end
+    end
+else
+    fun_existsPyr = @(x) (contains(x, 'pyr.cellinfo.mat'));
+    fun_existsInt = @(x) (contains(x, 'int.cellinfo.mat'));
+    for j = 1:size(getFiles,1)
+        if fun_existsPyr(getFiles(j).name)||fun_existsInt(getFiles(j).name)
+            disp('Region spike structures detected, returning');
+            return
+        end
+    end
+end
+
+cd(basepath);
 %% Load and prepare cell_metrics
 if exist([basepath '\' basename '.cell_metrics.cellinfo.mat'])
     load([basepath '\' basename '.cell_metrics.cellinfo.mat']);

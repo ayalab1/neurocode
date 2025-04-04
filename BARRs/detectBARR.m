@@ -135,7 +135,7 @@ if ~exist([basepath '\Barrage_Files'])
     mkdir('Barrage_Files');
 end
 
-pullSpikes(basepath, [basepath '\Barrage_Files']); %Get region/cell type spike files
+pullSpikes('basepath', basepath, 'savePath', [basepath '\Barrage_Files'], 'force', true); %Get region/cell type spike files
 
 if ~exist(strcat(basepath,'\Barrage_Files\',basename,'.CA2pyr.cellinfo.mat'))
     disp('No CA2 pyramidal cells detected, exiting');

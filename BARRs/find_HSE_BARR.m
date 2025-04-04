@@ -7,30 +7,61 @@ function HSE = find_HSE_BARR(varargin)
 % above the mean of all 1 ms bins within NREM epochs of both PRE and POST epochs
 % combined (Grosmark 2016)
 %
-% INPUTS
-%   'spikes'    buzcode compatible 'spikes.cellinfo' struct
+%%%%%%%%%%%%%%
+%%% INPUTS %%%
+%%%%%%%%%%%%%%
 %
-%   (optional)
-%	'algorithm'	Currently supported: 'bayes', 'PVcorr', default 'bayes'
+% basepath:      Full path where session is located. Default: pwd
+% name:          Event naming convention. Default: HSE
+% spikes:        Spikes structure for BARR identified pyramidal cells.
+%                Default: []
+% runNum:        Number of current run in case we are tracking run
+%                conditions. Default: 0
+% nSigma:        Number of standard deviations that the subpopulation 
+%                firing rate must pass for detection. For most sessions 
+%                this should be between 2-3. Default: 3
+% tSmooth:       Smoothing time, in s. Default: 0.015
+% binsz:         Size of spk hist bins, in s. Default 0.001
+% tSepMax:       Maximum separation between event times without
+%                concatenation, in s. Default: 0.005
+% mindur:        Minimum duration of first pass events to keep, in s. 
+%                Default: 0
+% maxdur:        Maximum duration of events to keep, in s. Default: 10
+% lastmin:       Minimum duration of final pass events to keep, in s. 
+%                Default: 0.2
+% EMGThresh:     EMG threshold for removing EMG/noisy events. Default: 0.9
+% Notes:         Any run notes accumulated to be saved
+% sstd:          Multiplier for standard deviation to taper detection start 
+%                time. Default: 0
+% estd:          Multiplier for standard deviation to taper detection end 
+%                time. Default: 0
+% remRip:        Logical option to remove BARRs which overlap with ripples.
+%                Default: false
+% loadspkhist:   Logical option to load a previously run spike histogram.
+%                Default: false
+% saveSpkHist:   Logical option to save this run's spike histogram. 
+%                Default: false
+% ifCat:         Logical option to concatenate events within a short enough
+%                window (tSepMax). Default: true
+% save_evts:     Logical option to save events in NeuroScope1 .evt file
+%                format. Default: false
+% recordMetrics: Logical option to save HSE. Default: true
+% futEvt:        Logical option to save this run's HSE information in case
+%                we want to make an event file in the future. Default:
+%                false
+% cleanest:      NOT IMPLEMENTED AT THE MOMENT. Logical option for whether 
+%                or not this is a "clean" run, explicitly excluding SWRs. 
+%                Default: false
 %
-% OUTPUT
-%   Outvar:   	Description
-%
-% EXAMPLE CALLS
-% [] = DefaultTemplateBuzcode(pwd)
-%
-% Thomas Hainmueller, 2020, Buzsakilab
-% Edited by Lindsay Karaba, 2021, AYA Lab
-% 
-% TO DO
-%%%% This is still VERY messy - I'll work on cleaning this up and splitting
-%%%% into functions throughout the next week or so in order to make it more
-%%%% readable.
-%
+% Original HSE script by Thomas Hainmueller, 2020, Buzsakilab
+% BARR adaptation by Lindsay Karaba, 2021, AYA Lab
 % Add intervals/epochs to access easily/specifically HeathLarsson 01/23
 
 %% Input handling
 p = inputParser;
+% Naming information
+addParameter(p,'basepath',pwd,@ischar);
+addParameter(p,'name','HSE',@ischar);
 %loading info
 addParameter(p,'spikes',[],@isstruct);
 addParameter(p,'runNum',0,@isnumeric); %number of the current run (so we can use a parfor)
@@ -39,9 +70,9 @@ addParameter(p,'runNum',0,@isnumeric); %number of the current run (so we can use
 addParameter(p,'nSigma',3,@isnumeric); %originally 3
 addParameter(p,'tSmooth',.015,@isnumeric); % in s
 addParameter(p,'binsz',.001,@isnumeric); % in s, originally 0.001
-addParameter(p,'tSepMax',1,@isnumeric); %max separation between events
+addParameter(p,'tSepMax',0.005,@isnumeric); %max separation between events
 addParameter(p,'mindur',0,@isnumeric); %originally 0.05
-addParameter(p,'maxdur',3.5,@isnumeric); %originally 0.5
+addParameter(p,'maxdur',10,@isnumeric); %originally 0.5
 addParameter(p,'lastmin',0.2,@isnumeric); %last pass for minimum duration
 addParameter(p,'EMGThresh',0.9,@isnumeric); %threshold for removing EMG events
 addParameter(p,'Notes',[],@isstring); %any relevant run notes
@@ -56,13 +87,12 @@ addParameter(p,'save_evts',false,@islogical);
 addParameter(p,'recordMetrics',true,@islogical); %keep track of metrics for measuring fit AND save HSE!
 addParameter(p,'futEVT',false,@islogical); %do we want to save timestamp info for future use?
 addParameter(p,'cleanest',0,@isnumeric); %is this designated as the "cleanest" version of detection, for saving
-%generally not needed file directions/naming conventions
-addParameter(p,'basename',[],@ischar);
-addParameter(p,'basepath',pwd,@ischar);
-addParameter(p,'name',[],@ischar);
+
 
 parse(p,varargin{:})
 
+basepath = p.Results.basepath;
+name = p.Results.name;
 spikes = p.Results.spikes;
 runNum = p.Results.runNum;
 %UIDs = p.Results.UIDs;
@@ -85,18 +115,9 @@ save_evts = p.Results.save_evts;
 recordMetrics = p.Results.recordMetrics;
 futEVT = p.Results.futEVT;
 cleanest = p.Results.cleanest;
-basename = p.Results.basename;
-basepath = p.Results.basepath;
-name = p.Results.name;
 
 %% Set defaults
-if isempty(name)
-    name = 'HSE';
-end
-
-if isempty(basename)
-    basename = basenameFromBasepath(basepath);
-end
+basename = basenameFromBasepath(basepath);
 
 if isempty(spikes)&&(~loadspkhist) %if we don't plan to load spikes but they weren't inputted
     load(strcat(basepath, '\', basename, '.spikes.cellinfo.mat'));
@@ -449,8 +470,7 @@ belowmstop = spkhist<(nSigma-estd); %what threshold to end an event
 for e = 1:length(evtidx)
     %choose last index that is below our threshold, or the first timepoint
     startID(e) = max([1 find(belowmstart(1:evtidx(e)),1,'last')]); %set startID(e) = 1 or the last index below the spike mean
-    %if our starting index is longer than our last stop index, we need to
-    %find an endpoint for this event
+    %if our starting index is longer than our last stop index, we need to find an endpoint for this event
     if startID(e)>max(stopID) %need to find the end
         %find earliest point when we go below our threshold, or pick end
         stopID(e) = min([length(belowmstop) evtidx(e)+find(belowmstop(evtidx(e):end),1,'first')]); %find the earliest point below mean
@@ -465,31 +485,6 @@ for e = 1:length(evtidx)
         evtpeak(e) = peakID*binsz - binsz; %get peak time
     end
 end
-
-% Not sure what this is below, but keeping in case it's useful later
-%for e = length(evtidx):-1:1%length(evtidx)-1000
-%    %if e==length(evtidx) || ~InIntervals(evtidx(e),[evtstart(e+1) evtstop(e+1)])
-%   %singular = evtidx(e) > startID; % Compare to previous start ID to exclude double detection of evts.
-%   startID(e) = max([1 find(belowm(1:evtidx(e)),1,'last')]);
-%   stopID(e) = min([length(evtidx) evtidx(e)+find(belowm(evtidx(e):end),1,'first')]);
-%
-%   if ~isempty(startID) && ~isempty(stopID) %&& singular
-%       if e==length(evtidx) || stopID(e) < max(startID)
-%       evtstart(e) = startID*binsz - binsz;
-%       evtstop(e) = stopID*binsz - binsz;
-%       evtdur(e) = (stopID - startID)*binsz;
-%
-%       % Get amplitude and peak
-%       [evtamp(e), peakID] = max(spkhist(startID:stopID));
-%       peakID = peakID + startID;
-%       evtpeak(e) = peakID*binsz - binsz;
-%   end
-% end
-
-% tempavg = mean(evtdur)
-% tempstd = std(evtdur)
-
-%if an event is filled with 0s, the event was invalid
 %disp([' >>> Number of events after initial pull: ' num2str(length(evtstart))]);
 goodHSE = find((evtdur<maxdur)&(evtdur>mindur)); %keep events within our bounds
 evtstart = evtstart(goodHSE);

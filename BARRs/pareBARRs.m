@@ -1,12 +1,77 @@
 %% Pare events
-function HSE = pareBARRs(HSE, spikes, savePath, numCell, numSpk, pareDur, singleHz, stim, maxCell)
+function HSE = pareBARRs(basepath, HSE, spikes, savePath, numCell, numSpk, pareDur, singleHz, stim, maxCell)
+%% Refine BARR detection
+%
+% This script pares back BARR detections based on restrictions provided as
+% inputs. 
+%
+%%%%%%%%%%%%%%
+%%% INPUTS %%%
+%%%%%%%%%%%%%%
+% 
+%% REQUIRED %%
+% basepath:     Location of HSE structure.
+% HSE:          BARR structure created by find_HSE_BARR.m
+% spikes:       Spikes structure for BARR identified pyramidal cells.
+% savePath:     Prefix for HSE file to be saved, ie. [basepath
+%               '\Barrage_Files\' basename '.'].
+% numCell:      Number of BARR units which must participate in a BARR in
+%               order for it to be kept. For most sessions, 2-3 works.
+% numSpk:       Number of spikes per BARR unit needed in order to be
+%               considered a participant in a particular BARR. For most
+%               sessions, 4-7 spikes works best.
+% pareDur:      Minimum duration of BARRs kept, in seconds. This should
+%               generally be kept at or below 0.2.
+% singleHz:     Firing rate needed for a single BARR unit to be allowed to
+%               drive a BARR. Note that this does not mean it's the only 
+%               cell firing, just that it's the only flagged cell firing.
+%% OPTIONAL %%
+% stim:         Logical option to indicate whether or not the session
+%               includes stimulation (ie ripple generation). If so, 
+%               barrages overlapping with SWRs will be removed. Default:
+%               false   
+% maxCell:      Maximum number of flagged units which are allowed to
+%               participate in a BARR for it to be kept. This may help
+%               prevent misdetection of SWRs. When set to 0, it is ignored.
+%               Default: 0
+%
+%%%%%%%%%%%%%%%
+%%% OUTPUTS %%%
+%%%%%%%%%%%%%%%
+% 
+% HSE:              BARR structure including...
+%   timestamps:     Nx2 timestamps (s) for ALL detections before refinement
+%   peaks:          Nx1 peaks (s) for ALL detections before refinement
+%   amplitudes:     1xN amplitudes for ALL detections before refinement
+%   amplitudeUnits: Unit in which "amplitudes" is stored
+%   duration:       1xN duration (s) for ALL detections before refinement
+%   center:         1xN center timestamp (s) for ALL detections before
+%                   refinement
+%   detectorinfo:   Variables used for detection
+%   keep:           Mx1 IDXs of refined BARRs, regardless of sleepState. 
+%   NREM:           Px1 IDXs of refined BARRs only in NREM sleep
+%   nonRip:         Qx1 IDXs of refined BARRs, excluding BARRs overlapping
+%                   with SWRs
+%   fin:            Qx1 final IDXs related to HSE.timestamps (including
+%                   nonRip, which is not always optimal). 
+% 
+%%% NOTE: 
+%   BARR timestamps should generally be indexed as:
+%        HSE.timestamps(HSE.keep(HSE.NREM),:)
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 8
     stim = 0;
     maxCell = 0;
 elseif nargin <9
     maxCell = 0;
 end
-basepath = pwd;
+
+if ~contains(savePath, basepath)
+    warning('savePath is not within basepath, is this correct?');
+    keyboard
+end
+
 basename = basenameFromBasepath(basepath);
 numEvt = size(HSE.timestamps,1);
 tempInd = zeros(numEvt,1);

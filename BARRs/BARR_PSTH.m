@@ -1,7 +1,6 @@
 %% Multi-PSTH
 % Plot multiple PSTHs for multiple regions, barrage vs ripples
 
-%%
 function BARR_PSTH(savePath,useState)
 % savePath should be char of where you want the plots saved
 % useState should be string of the state you want to look at

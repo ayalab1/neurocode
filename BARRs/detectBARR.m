@@ -1,5 +1,4 @@
 function [HSE] = detectBARR(varargin)
-
 %% Simple BARR detection
 %
 % This script is a simple detector for CA2 Barrages. The detector works by
@@ -16,6 +15,7 @@ function [HSE] = detectBARR(varargin)
 % to run. 
 %
 % Sleep State should also be run and verified ahead of time. 
+%
 %%%%%%%%%%%%%%
 %%% INPUTS %%%
 %%%%%%%%%%%%%%
@@ -135,7 +135,7 @@ if ~exist([basepath '\Barrage_Files'])
     mkdir('Barrage_Files');
 end
 
-pullSpikes([basepath '\Barrage_Files']); %Get region/cell type spike files
+pullSpikes(basepath, [basepath '\Barrage_Files']); %Get region/cell type spike files
 
 if ~exist(strcat(basepath,'\Barrage_Files\',basename,'.CA2pyr.cellinfo.mat'))
     disp('No CA2 pyramidal cells detected, exiting');
@@ -173,7 +173,7 @@ HSE = find_HSE_BARR('spikes',spikes,'nSigma',nSigma,'binSz',0.005,'tSmooth',0.02
                 'Notes',note_all,'sstd',-1*(nSigma-0.5),'estd',(nSigma-0.5),...
                 'recordMetrics',true,'remRip',remRip);
 
-HSE = pareBARRs(HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, stim, unMax);
+HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, stim, unMax);
 
 %% Save NeuroScope2 file
 BARR_N2('basepath',basepath);

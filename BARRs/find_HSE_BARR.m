@@ -53,10 +53,35 @@ function HSE = find_HSE_BARR(varargin)
 %                or not this is a "clean" run, explicitly excluding SWRs. 
 %                Default: false
 %
+%%%%%%%%%%%%%%%
+%%% OUTPUTS %%%
+%%%%%%%%%%%%%%%
+% 
+% HSE:              BARR structure including...
+%   timestamps:     Nx2 timestamps (s) for ALL detections before refinement
+%   peaks:          Nx1 peaks (s) for ALL detections before refinement
+%   amplitudes:     1xN amplitudes for ALL detections before refinement
+%   amplitudeUnits: Unit in which "amplitudes" is stored
+%   duration:       1xN duration (s) for ALL detections before refinement
+%   center:         1xN center timestamp (s) for ALL detections before
+%                   refinement
+%   detectorinfo:   Variables used for detection
+%   keep:           Mx1 IDXs of refined BARRs, regardless of sleepState. 
+%   NREM:           Px1 IDXs of refined BARRs only in NREM sleep
+%   nonRip:         Qx1 IDXs of refined BARRs, excluding BARRs overlapping
+%                   with SWRs
+%   fin:            Qx1 final IDXs related to HSE.timestamps (including
+%                   nonRip, which is not always optimal). 
+% 
+%%% NOTE: 
+%   BARR timestamps should generally be indexed as:
+%        HSE.timestamps(HSE.keep(HSE.NREM),:)
+%%%
+%
 % Original HSE script by Thomas Hainmueller, 2020, Buzsakilab
 % BARR adaptation by Lindsay Karaba, 2021, AYA Lab
 % Add intervals/epochs to access easily/specifically HeathLarsson 01/23
-
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %% Input handling
 p = inputParser;
 % Naming information

@@ -176,7 +176,7 @@ HSE = find_HSE_BARR('spikes',spikes,'nSigma',nSigma,'binSz',0.005,'tSmooth',0.02
 HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, stim, unMax);
 
 %% Save NeuroScope2 file
-BARR_N2('basepath',basepath);
+BARR_N2(basepath);
 
 %% Run analysis script
 BARR_PSTH(savePath,"NREM");

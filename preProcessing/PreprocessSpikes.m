@@ -67,15 +67,21 @@ catch
     save(fullfile(basepath, [basename, '.session.mat']), 'session');
 end
 
-if ~isempty(datFolder), session.extracellular.fileName = fullfile(datFolder, [basename, '.dat']); end
+if ~isempty(datFolder)
+    session.extracellular.fileName = fullfile(datFolder, [basename, '.dat']);
+end
 
-f = dir('Kilosort*');
-if (size(f, 1) ~= 1) && (~multiKilosort)
-    multiKilosort = true;
-    warning('Too many kiloSort folders - assuming multiKilosort=1!');
-    display('Too many kiloSort folders - assuming multiKilosort=1!');
-elseif (size(f, 1) ~= 1) && (multiKilosort)
-    warning('Make sure all spike groups in neuroscope are reactivated (yellow tab, groups should be assigned to a numbered group');
+if isfield(session.spikeSorting{1, 1}, 'relativePath') && exist(session.spikeSorting{1, 1}.relativePath, 'dir')
+    f.name = session.spikeSorting{:}.relativePath;
+else
+    f = dir('Kilosort*');
+    if (size(f, 1) ~= 1) && (~multiKilosort)
+        multiKilosort = true;
+        warning('Too many kiloSort folders - assuming multiKilosort=1!');
+        disp('Too many kiloSort folders - assuming multiKilosort=1!');
+    elseif (size(f, 1) ~= 1) && (multiKilosort)
+        warning('Make sure all spike groups in neuroscope are reactivated (yellow tab, groups should be assigned to a numbered group');
+    end
 end
 % Make sure there is only one KiloSort folder before running, unless you
 % needed to spike sort probes separately (multiKilosort=1).

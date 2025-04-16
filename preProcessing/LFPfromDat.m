@@ -77,6 +77,8 @@ addParameter(p, 'lopass', 450, @isnumeric);
 addParameter(p, 'useGPU', false, @islogical);
 addParameter(p, 'inFs', [], @isnumeric);
 addParameter(p, 'localDir', [], @isfolder);
+addParameter(p, 'session', [], @isstruct);
+
 
 parse(p, varargin{:})
 datFile = p.Results.datFile;
@@ -85,8 +87,11 @@ lopass = p.Results.lopass;
 useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
 localDir = p.Results.localDir;
+session = p.Results.session;
 
-session = getSession('basepath', basepath);
+if isempty(session)
+    session = getSession('basepath', basepath);
+end
 basename = session.general.name;
 
 if isempty(datFile)

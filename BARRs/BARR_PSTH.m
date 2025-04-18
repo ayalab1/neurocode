@@ -1,8 +1,8 @@
 %% Multi-PSTH
 % Plot multiple PSTHs for multiple regions, barrage vs ripples
 
-function BARR_PSTH(savePath,useState)
-% savePath should be char of where you want the plots saved
+function BARR_PSTH(plotSave,useState)
+% plotSave should be char of where you want the plots saved
 % useState should be string of the state you want to look at
 if nargin <2
     useState = "NREM";
@@ -21,7 +21,7 @@ switch useState
         if ~exist([basepath '\Barrage_Files\nonTheta'])
             mkdir([basepath '\Barrage_Files\nonTheta']);
         end
-        if contains(savePath,'clean')
+        if contains(plotSave,'clean')
             plotSave = [basepath '\Barrage_Files\nonTheta\' basename '.clean.'];
         else
             plotSave = [basepath '\Barrage_Files\nonTheta\' basename '.'];
@@ -30,7 +30,7 @@ switch useState
         if ~exist([basepath '\Barrage_Files\imm'])
             mkdir([basepath '\Barrage_Files\imm']);
         end
-        if contains(savePath,'clean')
+        if contains(plotSave,'clean')
             plotSave = [basepath '\Barrage_Files\imm\' basename '.clean.'];
         else
             plotSave = [basepath '\Barrage_Files\imm\' basename '.'];
@@ -39,7 +39,7 @@ switch useState
         if ~exist([basepath '\Barrage_Files\theta'])
             mkdir([basepath '\Barrage_Files\theta']);
         end
-        if contains(savePath,'clean')
+        if contains(plotSave,'clean')
             plotSave = [basepath '\Barrage_Files\theta\' basename '.clean.'];
         else
             plotSave = [basepath '\Barrage_Files\theta\' basename '.'];
@@ -48,13 +48,12 @@ switch useState
         if ~exist([basepath '\Barrage_Files\REM'])
             mkdir([basepath '\Barrage_Files\REM']);
         end
-        if contains(savePath,'clean')
+        if contains(plotSave,'clean')
             plotSave = [basepath '\Barrage_Files\REM\' basename '.clean.'];
         else
             plotSave = [basepath '\Barrage_Files\REM\' basename '.'];
         end
     otherwise
-        plotSave = savePath;
         useState = "NREM";
 end
 
@@ -268,13 +267,13 @@ for i = 1:length(check)
                 PSTHmets.PSTH_barT = PSTH_t;
 
                 if useState == "NREM"
-                    if contains(savePath, 'clean')
+                    if contains(plotSave, 'clean')
                         save([basepath '\Barrage_Files\PSTHmet\' basename '.clean.' br 'PSTHmets.mat'], 'PSTHmets');
                     else
                         save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmets.mat'], 'PSTHmets');
                     end
                 else
-                    if contains(savePath, 'clean')
+                    if contains(plotSave, 'clean')
                         save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.clean.', br, 'PSTHmets.mat'), 'PSTHmets');
                     else
                         save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.', br, 'PSTHmets.mat'), 'PSTHmets');
@@ -351,13 +350,13 @@ for i = 1:length(check)
                 PSTHmetsINT.barT = PSTH_t;
 
                 if useState == "NREM"
-                    if contains(savePath, 'clean')
+                    if contains(plotSave, 'clean')
                         save([basepath '\Barrage_Files\PSTHmet\' basename '.clean.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
                     else
                         save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
                     end
                 else
-                    if contains(savePath, 'clean')
+                    if contains(plotSave, 'clean')
                         save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.clean.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
                     else
                         save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
@@ -439,7 +438,7 @@ shuffled_r = cumsum([shuffled_iri]); %raly had cumsum([0; shuffled_iri]);
     if useState == "NREM"
         CCG_dat.time = t_ripple_barrage; CCG_dat.y = ccg_ripple_barrage(:,2,1); CCG_dat.shuffle = ccg_ripple_barrage_shuf(:,2,1); CCG_dat.jitterT=t_ripple_barrage_shuf;
         CCG_dat.reverse = ccg_ripple_barrage(:,1,2); CCG_dat.shuffle_rev = ccg_ripple_barrage_shuf(:,1,2);
-        save([savePath 'CCG_dat.mat'],'CCG_dat');
+        save([plotSave 'CCG_dat.mat'],'CCG_dat');
     elseif useState == "imm"
         CCG_dat.time = t_ripple_barrage; CCG_dat.y = ccg_ripple_barrage(:,2,1); CCG_dat.shuffle = ccg_ripple_barrage_shuf(:,2,1); CCG_dat.jitterT=t_ripple_barrage_shuf;
         CCG_dat.reverse = ccg_ripple_barrage(:,1,2); CCG_dat.shuffle_rev = ccg_ripple_barrage_shuf(:,1,2);
@@ -491,7 +490,7 @@ if useState == "NREM"
     saveas(gcf,[plotSave 'stateSplit.png']);
     stateCount.theta = num_theta; stateCount.nonTheta = num_nontheta; stateCount.REM = num_REM; stateCount.NREM = num_NREM;
     stateCount.timeTheta = timeTheta; stateCount.timeNonTheta = timeNonTheta; stateCount.timeREM = timeREM; stateCount.timeNREM = timeNREM;
-    save([savePath 'stateCount.mat'],'stateCount');
+    save([plotSave 'stateCount.mat'],'stateCount');
 end
 %% Fraction per task state
 % maybe we could change this to be a stacked bar plot per task portion (so

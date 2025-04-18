@@ -76,7 +76,7 @@ end
 
 if ~isfield(cell_metrics,'tags')
     cell_metrics.tags.Bad = [];
-    save([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+    save([basepath '\' basename '.cell_metrics.cellinfo.mat'], 'cell_metrics');
 end
 
 %% Pull regions

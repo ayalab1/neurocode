@@ -1,4 +1,4 @@
-function [peaktopeak,troughs, amplitude] = FindThetaCycles(lfp,varargin)
+function [peaktopeak, troughs, amplitude] = FindThetaCycles(lfp, varargin)
 
 %FindThetaCycles - Find intervals that qualify as theta cycles from the lfp signal
 
@@ -54,15 +54,15 @@ function [peaktopeak,troughs, amplitude] = FindThetaCycles(lfp,varargin)
 % (at your option) any later version.
 
 %% Parsing parameters
-broadPassband = [1 80]; % we work with broad bandpass filtered (1-80Hz like in Belluscio et al (2012) signal
+broadPassband = [1, 80]; % we work with broad bandpass filtered (1-80Hz like in Belluscio et al (2012) signal
 p = inputParser;
-addParameter(p,'maxDuration',0.2,@isnumeric);
-addParameter(p,'minDuration',0.1,@isnumeric);
-addParameter(p,'artefactThreshold',5,@isnumeric); % thresholds for CleanLFP to discount artefacts
-addParameter(p,'amplitudeStdThreshold',-1,@isnumeric); % if at any point in the cycle, amplitude falls below this many sds below the mean, the cycle will be discarded
-addParameter(p,'baseline',[0 Inf],@isnumeric); % the whole provided period will be used to compute the expected theta amplitude
+addParameter(p, 'maxDuration', 0.2, @isnumeric);
+addParameter(p, 'minDuration', 0.1, @isnumeric);
+addParameter(p, 'artefactThreshold', 5, @isnumeric); % thresholds for CleanLFP to discount artefacts
+addParameter(p, 'amplitudeStdThreshold', -1, @isnumeric); % if at any point in the cycle, amplitude falls below this many sds below the mean, the cycle will be discarded
+addParameter(p, 'baseline', [0, Inf], @isnumeric); % the whole provided period will be used to compute the expected theta amplitude
 
-parse(p,varargin{:})
+parse(p, varargin{:})
 maxDuration = p.Results.maxDuration;
 minDuration = p.Results.minDuration;
 artefactThreshold = p.Results.artefactThreshold;
@@ -70,64 +70,68 @@ amplitudeStdThreshold = p.Results.amplitudeStdThreshold;
 baseline = p.Results.baseline;
 
 %% Compute reference theta cycles
-thetaFiltered = FilterLFP(lfp, 'passband', [4 12]);
+thetaFiltered = FilterLFP(lfp, 'passband', [4, 12]);
 [~, amplitude, ~] = Phase(thetaFiltered);
-isBaseline = InIntervals(amplitude,baseline);
-amplitudeThreshold = nanmean(amplitude(isBaseline,2)) + amplitudeStdThreshold*nanstd(amplitude(isBaseline,2));
+isBaseline = InIntervals(amplitude, baseline);
+amplitudeThreshold = nanmean(amplitude(isBaseline, 2)) + amplitudeStdThreshold * nanstd(amplitude(isBaseline, 2));
 
-troughs = SineWavePeaks(thetaFiltered,'mode','troughs');
-troughtotrough = [troughs(1:end-1) troughs(2:end)];
+troughs = SineWavePeaks(thetaFiltered, 'mode', 'troughs');
+troughtotrough = [troughs(1:end-1), troughs(2:end)];
 
 %% Shift peaks to avoid the bias of trying to fit a sine onto an asymmetric wave
 
 filtered = FilterLFP(lfp, 'passband', broadPassband);
-t = filtered(:,1);
+t = filtered(:, 1);
 
 % the real peak is the lowest point between two troughs
-maxima = FindLocalMaxima(filtered(:,2));
-[~,w] = InIntervals(filtered(maxima),troughtotrough);
-ok = w>0; maxima = maxima(ok); w = w(ok);
-[~,keepers] = Accumulate(w,filtered(maxima,2),'mode','max');
+maxima = FindLocalMaxima(filtered(:, 2));
+[~, w] = InIntervals(filtered(maxima), troughtotrough);
+ok = w > 0;
+maxima = maxima(ok);
+w = w(ok);
+[~, keepers] = Accumulate(w, filtered(maxima, 2), 'mode', 'max');
 maxima = maxima(keepers(~isnan(keepers)));
 peaks = t(maxima);
 
-peaktopeak = [peaks(1:end-1) peaks(2:end)];
+peaktopeak = [peaks(1:end-1), peaks(2:end)];
 
 % the real trough is the lowest point between two peaks
-minima = FindLocalMinima(filtered(:,2));
-[~,w] = InIntervals(filtered(minima),peaktopeak);
-ok = w>0; minima = minima(ok); w = w(ok);
-[~,keepers] = Accumulate(w,filtered(minima,2),'mode','min');
+minima = FindLocalMinima(filtered(:, 2));
+[~, w] = InIntervals(filtered(minima), peaktopeak);
+ok = w > 0;
+minima = minima(ok);
+w = w(ok);
+[~, keepers] = Accumulate(w, filtered(minima, 2), 'mode', 'min');
 minima = minima(keepers(~isnan(keepers)));
 troughs = t(minima);
 
 % keep track of the theta cycles to keep
-ok = true(length(peaktopeak),1);
+ok = true(length(peaktopeak), 1);
 % remove cycles that are too long or too short
-badsize = diff(peaktopeak,[],2) > maxDuration | diff(peaktopeak,[],2) < minDuration;
+badsize = diff(peaktopeak, [], 2) > maxDuration | diff(peaktopeak, [], 2) < minDuration;
 ok(badsize) = false;
 % apply minimum amplitude threshold
 % the derivative threshold is set to Inf because theta is a slow signal
 % and fast artefacts captured by the derivative are not relevant
-[~,bad,~] = CleanLFP(lfp,'thresholds',[artefactThreshold Inf],'manual',false);
-amplitude(bad,2) = nan;
-nottheta = amplitude(~(amplitude(:,2)>amplitudeThreshold),1);
+[~, bad, ~] = CleanLFP(lfp, 'thresholds', [artefactThreshold, Inf], 'manual', false);
+amplitude(bad, 2) = nan;
+nottheta = amplitude(~(amplitude(:, 2) > amplitudeThreshold), 1);
 % intervals containing moments of low amplitude theta are not theta cycles
-ok = CountInIntervals(nottheta, peaktopeak)==0 & ok;
+ok = CountInIntervals(nottheta, peaktopeak) == 0 & ok;
 
 troughs = troughs(ok);
-peaktopeak = peaktopeak(ok,:);
-amplitude = amplitude(ok,2);
+peaktopeak = peaktopeak(ok, :);
+amplitude = amplitude(ok, 2);
 
 
 % ------------------------------- Helper functions -------------------------------
 function peaks = FindLocalMaxima(signal)
 %FindLocalMaxima - find local peaks
-if isdmatrix(signal,'@2'),
-    iPeaks = FindLocalMaxima(signal(:,2));
-    peaks = signal(iPeaks,1);
+if isdmatrix(signal, '@2')
+    iPeaks = FindLocalMaxima(signal(:, 2));
+    peaks = signal(iPeaks, 1);
     return
 end
 
-d = [nan;diff(signal(:))>0];
-peaks = strfind(d',[1 0])';
+d = [nan; diff(signal(:)) > 0];
+peaks = strfind(d', [1, 0])';

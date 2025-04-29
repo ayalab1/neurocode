@@ -99,7 +99,7 @@ addParameter(p, 'spkNum', 5, @isnumeric);
 addParameter(p, 'spkHz', 100, @isnumeric);
 addParameter(p, 'unMax', 0, @isnumeric);
 addParameter(p, 'pareDur', 0.2, @isnumeric);
-addParameter(p, 'stim', 0, @isnumeric);
+addParameter(p, 'stim', true, @islogical);
 addParameter(p, 'remRip', false, @islogical);
 
 parse(p, varargin{:});

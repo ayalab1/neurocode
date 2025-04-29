@@ -43,6 +43,7 @@ addParameter(p, 'passband', [4, 12])
 addParameter(p, 'maximize_theta_power', true)
 addParameter(p, 'run_parallel', false)
 addParameter(p, 'overwrite', false)
+addParameter(p, 'theta_channel', [])
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
@@ -50,6 +51,7 @@ passband = p.Results.passband;
 maximize_theta_power = p.Results.maximize_theta_power;
 run_parallel = p.Results.run_parallel;
 overwrite = p.Results.overwrite;
+theta_channel = p.Results.theta_channel;
 
 if ~iscell(basepath)
     basepath = {basepath};
@@ -58,16 +60,16 @@ end
 % iterate over basepaths
 if run_parallel && length(basepath) > 1
     parfor i = 1:length(basepath)
-        run(basepath{i}, passband, maximize_theta_power, overwrite)
+        run(basepath{i}, passband, maximize_theta_power, overwrite, theta_channel)
     end
 else
     for i = 1:length(basepath)
-        run(basepath{i}, passband, maximize_theta_power, overwrite)
+        run(basepath{i}, passband, maximize_theta_power, overwrite, theta_channel)
     end
 end
 end
 
-function run(basepath, passband, maximize_theta_power, overwrite)
+function run(basepath, passband, maximize_theta_power, overwrite, theta_channel)
 disp(basepath)
 basename = basenameFromBasepath(basepath);
 
@@ -76,8 +78,14 @@ if exist(fullfile(basepath, [basename, '.thetacycles.events.mat']), 'file') && ~
     return
 end
 
-% find deep ca1 lfp channel
-[lfp, channel] = get_deep_ca1_lfp(basepath, passband, maximize_theta_power);
+if isempty(theta_channel)
+    % find deep ca1 lfp channel
+    [lfp, channel] = get_deep_ca1_lfp(basepath, passband, maximize_theta_power);
+else
+    lfp = getLFP(theta_channel, 'basepath', basepath, ...
+        'basename', basename);
+    channel = theta_channel;
+end
 if isempty(lfp)
     disp('no ca1 lfp')
     return

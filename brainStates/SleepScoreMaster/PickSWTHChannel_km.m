@@ -22,7 +22,7 @@ addParameter(p, 'thIRASA', true);
 addParameter(p, 'downsamplefactor', 5);
 
 parse(p, varargin{:})
-noPrompts = p.Results.noPrompts;
+% noPrompts = p.Results.noPrompts;
 saveFiles = p.Results.saveFiles;
 ignoretime = p.Results.ignoretime;
 window = p.Results.window;
@@ -40,7 +40,7 @@ recordingname = basenameFromBasepath(basePath);
 matfilename = fullfile(basePath, [recordingname, '.SleepScoreLFP.LFP.mat']);
 
 figfolder = [fullfile(basePath, 'StateScoreFigures'), '/'];
-if ~exist(figfolder, 'dir') & saveFiles
+if ~exist(figfolder, 'dir') && saveFiles
     mkdir(figfolder)
 end
 
@@ -54,7 +54,7 @@ noverlap = 0; %Updated to speed up (don't need to sample at fine time resolution
 
 %For SW calculation
 %Load the slowwave filter weights
-if ~exist('SWWeightsName', 'var') | strcmp(SWWeightsName, 'PSS')
+if ~exist('SWWeightsName', 'var') || strcmp(SWWeightsName, 'PSS')
     %SWWeightsName = 'SWweights.mat';
     SWweights = 'PSS';
     SWWeightsName = 'PSS';
@@ -62,17 +62,17 @@ if ~exist('SWWeightsName', 'var') | strcmp(SWWeightsName, 'PSS')
 else
     load(SWWeightsName) % 'SWweights.mat' by default
     %Alter the filter weights if requested by the user
-    if Notch60Hz;
+    if Notch60Hz
         SWweights(SWfreqlist <= 62.5 & SWfreqlist >= 57.5) = 0;
     end
-    if NotchUnder3Hz;
+    if NotchUnder3Hz
         SWweights(SWfreqlist <= 3) = 0;
     end
     if NotchHVS
         SWweights(SWfreqlist <= 18 & SWfreqlist >= 12) = 0;
         SWweights(SWfreqlist <= 10 & SWfreqlist >= 4) = 0;
     end
-    if NotchTheta;
+    if NotchTheta
         SWweights(SWfreqlist <= 10 & SWfreqlist >= 4) = 0;
     end
 
@@ -88,14 +88,14 @@ thFFTfreqs = logspace(log10(f_all(1)), log10(f_all(2)), numfreqs);
 %% Check if SleepScoreLFP has already been claculated for this recording
 %If the SleepScoreLFP file already exists, load and return with SleepScoreLFP in hand
 if exist(matfilename, 'file') && ~OVERWRITE
-    display('SleepScoreLFP already calculated - loading from SleepScoreLFP.LFP.mat')
-    load(matfilename)
+    disp('SleepScoreLFP already calculated - loading from SleepScoreLFP.LFP.mat')
+    load(matfilename, 'SleepScoreLFP')
     if ~exist('SleepScoreLFP', 'var')
-        display([matfilename, ' does not contain a variable called SleepScoreLFP'])
+        disp([matfilename, ' does not contain a variable called SleepScoreLFP'])
     end
 
     if ~isequal(SleepScoreLFP.params.SWWeightsName, SWWeightsName)
-        display(['SlowWave Method used for Channel selection doesn''t match, updating to ', SWWeightsName])
+        disp(['SlowWave Method used for Channel selection doesn''t match, updating to ', SWWeightsName])
         SleepScoreLFP.params.SWfreqlist_selection = SleepScoreLFP.params.SWfreqlist;
         SleepScoreLFP.params.SWweights_selection = SleepScoreLFP.params.SWweights;
         SleepScoreLFP.params.SWWeightsName_selection = SleepScoreLFP.params.SWWeightsName;
@@ -106,11 +106,11 @@ if exist(matfilename, 'file') && ~OVERWRITE
 
     return
 end
-display('Picking SW and TH Channels for SleepScoreLFP.LFP.mat')
+disp('Picking SW and TH Channels for SleepScoreLFP.LFP.mat')
 
 %%
 
-xmlfilename = [datasetfolder, '/', recordingname, '/', recordingname, '.xml'];
+% xmlfilename = [datasetfolder, '/', recordingname, '/', recordingname, '.xml'];
 
 if exist(fullfile(datasetfolder, recordingname, [recordingname, '.lfp']), 'file')
     rawlfppath = fullfile(datasetfolder, recordingname, [recordingname, '.lfp']);
@@ -121,7 +121,7 @@ elseif exist(fullfile(datasetfolder, recordingname, [recordingname, '.eeg']), 'f
 elseif exist(fullfile(datasetfolder, [recordingname, '.eeg']), 'file')
     rawlfppath = fullfile(datasetfolder, [recordingname, '.eeg']);
 else
-    display('No .lfp file')
+    disp('No .lfp file')
 end
 
 %% Pick channels to use
@@ -132,12 +132,12 @@ session = getSession('basepath', basePath);
 %Should make this optional - move to SSM main f'n
 % if isfield(Par,'SpkGrps')
 %     SpkGrps = Par.SpkGrps;
-%     %display('Looking at all channels in SpikeGroups')
+%     %disp('Looking at all channels in SpikeGroups')
 % elseif isfield(Par,'AnatGrps')
 %     SpkGrps = Par.AnatGrps;
-%     display('No SpikeGroups, Using AnatomyGroups')
+%     disp('No SpikeGroups, Using AnatomyGroups')
 % else
-%     display('No SpikeGroups... checking all channels')
+%     disp('No SpikeGroups... checking all channels')
 % end
 %
 % spkgroupchannels = [SpkGrps.Channels];
@@ -211,8 +211,8 @@ for idx = 1:numSWChannels
     %     estimatedtotal = timespent./(percdone./100);
     %     estimatedremaining = estimatedtotal-timespent;
     %if mod(idx,10) == 1
-    %fprintf('\r'); % delete previous counter display
-    %         display(['SW Channels - Percent Complete: ',num2str(round(percdone)),...
+    %fprintf('\r'); % delete previous counter disp
+    %         disp(['SW Channels - Percent Complete: ',num2str(round(percdone)),...
     %             '.  Time Spent: ',num2str(round(timespent./60)),...
     %             '.  Est. Total Time: ',num2str(round(estimatedtotal./60)),...
     %             'min.  ETR: ',num2str(round(estimatedremaining./60)),'min.'])
@@ -236,11 +236,11 @@ for idx = 1:numSWChannels
             window*Fs, noverlap*Fs, swFFTfreqs, Fs);
         t_FFT = t_FFT + lfpStructure.timestamps(1); %Offset for scoretime start
         FFTspec = abs(FFTspec);
-        [zFFTspec, mu, sig] = zscore(log10(FFTspec)');
+        [zFFTspec, ~, ~] = zscore(log10(FFTspec)');
         % Remove transients before calculating SW histogram
         %this should be it's own whole section - removing/detecting transients
         totz = zscore(abs(sum(zFFTspec')));
-        badtimes = find(totz > 5);
+        badtimes = totz > 5;
         zFFTspec(badtimes, :) = 0;
 
         specdt = mode(diff(t_FFT));
@@ -380,7 +380,7 @@ SleepScoreLFP = v2struct(thLFP, swLFP, THchanID, SWchanID, sf, t, params);
 %     bz_tagChannel(basePath,SWchanID,'NREMDetectionChan','noPrompts',true);
 %     bz_tagChannel(basePath,THchanID,'ThetaChan','noPrompts',true);
 % catch
-%     display('Unable to save channel tags in sessionInfo')
+%     disp('Unable to save channel tags in sessionInfo')
 % end
 
 if saveFiles
@@ -459,7 +459,7 @@ else
     % Remove transients before calculating SW histogram
     %this should be it's own whole section - removing/detecting transients
     totz = zscore(abs(sum(zFFTspec')));
-    badtimes = find(totz > 5);
+    badtimes = totz > 5;
     zFFTspec(badtimes, :) = 0;
 
     specdt = mode(diff(t_FFT));
@@ -502,7 +502,7 @@ thFFTspec(thFFTspec == 0) = eps;
 
 [zFFTspec, mu, sig] = zscore(log10(thFFTspec)');
 
-thfreqs = find(thFFTfreqs >= f_theta(1) & thFFTfreqs <= f_theta(2));
+thfreqs = thFFTfreqs >= f_theta(1) & thFFTfreqs <= f_theta(2);
 thpower = sum((thFFTspec(thfreqs, :)), 1);
 allpower = sum((thFFTspec), 1);
 

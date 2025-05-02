@@ -1,7 +1,7 @@
 function truncated = TruncateIntervals(intervals, duration, flip)
 
 %TruncateIntervals
-% 
+%
 % Sometimes it makes sense to limit the duration of the intervals you are
 % analysing: for example, taking the first hour of slow wave sleep to
 % score reactivation/replay. TruncateIntervals will truncate the inputted
@@ -36,19 +36,25 @@ function truncated = TruncateIntervals(intervals, duration, flip)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version.
 
-if nargin<3, flip = false; end
+if nargin < 3
+    flip = false;
+end
 
-if sum(diff(intervals,[],2))<duration % if the intervals are already shorter than the desired duration
+if sum(diff(intervals, [], 2)) < duration % if the intervals are already shorter than the desired duration
     truncated = intervals; % there is nothing to truncate
     return
 end
 
-if flip, intervals = sortrows(-intervals(:,[2 1])); end
-
-limit = Unshift(duration,intervals); % transform the limit in absolute time
-truncated = intervals(intervals(:,1)<limit,:); % take only intervals that start before the limit is reached
-if truncated(end,2)>limit, % if the end of the last interval goes over the limit
-    truncated(end,2) = limit; % cut it short  
+if flip
+    intervals = sortrows(-intervals(:, [2, 1]));
 end
 
-if flip, truncated = sortrows(-truncated(:,[2 1])); end
+limit = Unshift(duration, intervals); % transform the limit in absolute time
+truncated = intervals(intervals(:, 1) < limit, :); % take only intervals that start before the limit is reached
+if truncated(end, 2) > limit % if the end of the last interval goes over the limit
+    truncated(end, 2) = limit; % cut it short
+end
+
+if flip
+    truncated = sortrows(-truncated(:, [2, 1]));
+end

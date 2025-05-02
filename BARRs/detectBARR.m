@@ -53,10 +53,10 @@ function [HSE] = detectBARR(varargin)
 %               Default: 0
 % pareDur:      Minimum duration of BARRs kept, in seconds. This should
 %               generally be kept at or below 0.2. Default: 0.2
-% stim:         Logical option to indicate whether or not the session
-%               includes stimulation (ie ripple generation). If so, 
-%               barrages overlapping with SWRs will be removed. Default:
-%               false
+% zeroRip:      Logical option to zero firing during SWRs. This is 
+%               typically used for sessions containing stimulation (ie 
+%               ripple generation). This seems to be a better option than 
+%               remRip.Default: false
 % remRip:       Logical option to remove BARRs which overlap with ripples.
 %               Default: false
 %
@@ -99,7 +99,7 @@ addParameter(p, 'spkNum', 5, @isnumeric);
 addParameter(p, 'spkHz', 100, @isnumeric);
 addParameter(p, 'unMax', 0, @isnumeric);
 addParameter(p, 'pareDur', 0.2, @isnumeric);
-addParameter(p, 'stim', true, @islogical);
+addParameter(p, 'zeroRip', true, @islogical);
 addParameter(p, 'remRip', false, @islogical);
 
 parse(p, varargin{:});
@@ -116,7 +116,7 @@ spkNum = p.Results.spkNum;
 spkHz = p.Results.spkHz;
 unMax = p.Results.unMax;
 pareDur = p.Results.pareDur;
-stim = p.Results.stim;
+zeroRip = p.Results.zeroRip;
 remRip = p.Results.remRip;
 
 %% Check if BARRs have already been detected
@@ -173,7 +173,7 @@ HSE = find_HSE_BARR('spikes',spikes,'nSigma',nSigma,'binSz',0.005,'tSmooth',0.02
                 'Notes',note_all,'sstd',-1*(nSigma-0.5),'estd',(nSigma-0.5),...
                 'recordMetrics',true,'remRip',remRip);
 
-HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, stim, unMax);
+HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, zeroRip, unMax);
 
 %% Save NeuroScope2 file
 BARR_N2(basepath);

@@ -89,6 +89,8 @@ addParameter(p, 'SSD_path', 'D:\KiloSort', @ischar) % Path to SSD disk. Make it 
 addParameter(p, 'path_to_dlc_bat_file', '', @isfile)
 addParameter(p, 'nKilosortRuns', 1, @isnumeric);
 addParameter(p, 'sortFiles', true, @islogical);
+addParameter(p, 'SWChannels', 0, @isnumeric);
+addParameter(p, 'ThetaChannels', 0, @isnumeric);
 addParameter(p, 'clean_rez_params', { ...
     'mahalThreshold', inf, ...
     'minNumberOfSpikes', 100, ...
@@ -121,7 +123,8 @@ path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
 sortFiles = p.Results.sortFiles;
 clean_rez_params = p.Results.clean_rez_params;
-
+SWChannels = p.Results.SWChannels;
+ThetaChannels = p.Results.ThetaChannels;
 
 if ~exist(basepath, 'dir')
     error('path provided does not exist')
@@ -249,9 +252,16 @@ end
 if stateScore
     try
         if exist('pulses', 'var')
-            SleepScoreMaster(basepath, 'noPrompts', true, 'ignoretime', pulses.intsPeriods, 'rejectChannels', session.channelTags.Bad.channels); % try to sleep score
+            SleepScoreMaster(basepath_, 'noPrompts', true,...
+                'ignoretime', pulses.intsPeriods,...
+                'rejectChannels', session.channelTags.Bad.channels,...
+                'SWChannels',SWChannels,...
+                'ThetaChannels',ThetaChannels); 
         else
-            SleepScoreMaster(basepath, 'noPrompts', true, 'rejectChannels', session.channelTags.Bad.channels); % takes lfp in base 0
+            SleepScoreMaster(basepath_, 'noPrompts', true,...
+                'rejectChannels', session.channelTags.Bad.channels,...
+                'SWChannels',SWChannels,...
+                'ThetaChannels',ThetaChannels); 
         end
     catch e
         warning('Problem with SleepScore scoring... unable to calculate');

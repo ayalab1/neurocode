@@ -209,7 +209,7 @@ end
 %% Make LFP
 try
     try
-        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', false);
+        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
     catch e
         fprintf(1, 'The identifier was:\n%s', e.identifier);
         fprintf(1, 'There was an error! The message was:\n%s', e.message);
@@ -217,7 +217,7 @@ try
             fclose([basepath, '\', basename, '.lfp']); %if the above run failed after starting the file
             delete([basepath, '\', basename, '.lfp']);
         end
-        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', false);
+        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
     end
 catch e
     fprintf(1, 'The identifier was:\n%s', e.identifier);

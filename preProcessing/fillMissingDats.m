@@ -51,6 +51,8 @@ ampNch = session.extracellular.nChannels;
 %% check location of each file and what to concat
 typeFiles = dir([basepath, filesep, '*', filesep, fileType, '.dat']);
 ampFiles = dir([basepath, filesep, '*', filesep, 'amplifier.dat']);
+contFiles = dir([basepath, filesep, '**', filesep, 'continuous.dat']); %check for openEphys
+ampFiles = cat(1,ampFiles,contFiles);
 typeFolders = {typeFiles.folder};
 ampFolders = {ampFiles.folder};
 

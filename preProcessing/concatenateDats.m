@@ -31,6 +31,7 @@ parse(p, varargin{:});
 
 basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
+sortFiles = p.Results.sortFiles;
 altSort = p.Results.altSort;
 
 if sortFiles&&(~isempty(altSort))

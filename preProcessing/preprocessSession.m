@@ -78,7 +78,6 @@ function preprocessSession(varargin)
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
-addParameter(p, 'fillTypes', [], @iscellstr);
 addParameter(p, 'analogInputs', false, @islogical);
 addParameter(p, 'analogChannels', [], @isnumeric);
 addParameter(p, 'digitalInputs', false, @islogical);
@@ -112,7 +111,6 @@ parse(p, varargin{:});
 
 basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
-fillTypes = p.Results.fillTypes;
 analogInputs = p.Results.analogInputs;
 analogChannels = p.Results.analogChannels;
 digitalInputs = p.Results.digitalInputs;
@@ -171,7 +169,8 @@ save(fullfile(basepath, [basename, '.session.mat']), 'session');
 
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles, 'sortFiles', sortFiles, 'altSort', altSort);
+concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles,...
+    'sortFiles', sortFiles, 'altSort', altSort);
 
 %% run again to add epochs from basename.MergePoints.mat
 session = sessionTemplate(basepath, 'showGUI', false);

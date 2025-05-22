@@ -59,7 +59,7 @@ if fillMissingDatFiles
         end
     end
 else
-    datCount = zeros(size(datpaths));
+    datCount = zeros(size(otherdattypes));
     for i = 1:size(datpaths,2)
         curDat = datpaths{i};
         cutoff = find(curDat=='\', 1, 'last');

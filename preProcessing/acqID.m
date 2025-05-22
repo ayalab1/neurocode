@@ -1,4 +1,12 @@
 function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
+%% [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
+
+% Function to acquire the ID of dat files (Intan or openEphys) within the 
+% given session folder (basepath) and sort according to the indicated 
+% paradigm (sortFiles, altSort). The function returns the path to and names
+% of the found dat files in sorted order. This script is to be used in
+% conjunction with concatenateDats.m
+
 %% INPUTS
 % basepath                Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd.
@@ -55,7 +63,9 @@ for i=1:size(useIDX,1)
     end
 end
 
-%datpaths and recordingnames are automatically ordered alphabetically
+% datpaths and recordingnames are ordered alphabetically by default. If
+% not maintaining the default order (ie sorting by time or manual order 
+% rather than by folder name), this loop will be entered
 if sortFiles %if we sort by time
     names2sort_intan = cellfun(@(x) regexpi(x, '(?<=_)\d{6}', 'match'), recordingnames, 'UniformOutput', false);
     ordering = nan(1,size(names2sort_intan,2));

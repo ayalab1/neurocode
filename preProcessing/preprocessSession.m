@@ -156,12 +156,15 @@ end
 
 % Check info.rhd
 % (assumes this will be the same across subsessions)
-rhdFile = checkFile('fileType', '.rhd', 'searchSubdirs', true);
-rhdFile = rhdFile(1);
-if ~(strcmp(rhdFile.folder, basepath) && strcmp(rhdFile.name(1:end-4), basename))
-    copyfile([rhdFile.folder, filesep, rhdFile.name], [basepath, filesep, basename, '.rhd'])
+try
+    rhdFile = checkFile('fileType', '.rhd', 'searchSubdirs', true);
+    rhdFile = rhdFile(1);
+    if ~(strcmp(rhdFile.folder, basepath) && strcmp(rhdFile.name(1:end-4), basename))
+        copyfile([rhdFile.folder, filesep, rhdFile.name], [basepath, filesep, basename, '.rhd'])
+    end
+catch
+    disp('No rhd file found. This will be the case if only processing openEphys files. Skipping step');
 end
-
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath, 'showGUI', false);

@@ -42,9 +42,18 @@ function preprocessSession(varargin)
 % nKilosortRuns           Number of desired Kilosort runs (default = 1). The
 %                         function will break down the shanks into "nKilosortRuns"
 %                         groups for each run
-% [sortFiles]             Concatenate .dat files based on intan time or
-%                         alphabetically (default = true, based on time).
-%                         Alternatively, enter false for alphabetical sort.
+% sortFiles               Logical option to sort files by their Intan or
+%                         OpenEphys timestamp. Setting to false will
+%                         default to altSort ordering (below). If altSort
+%                         is empty, files will be sorted alphabetically.
+% altSort                 Numerical array of indices ordering your 
+%                         subsession dat files. If, for example, you have 
+%                         subsession folders containing dat files labeled 
+%                         as FolderA; FolderB; FolderC; and want the order 
+%                         to be concatenated as "C, A, B", input altSort as 
+%                         [2, 3, 1]; Default is false, which sorts by
+%                         date/time (YYMMDD_HHMMSS for Intan, 
+%                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
 %
 %  OUTPUTS
 %    N/A
@@ -56,23 +65,19 @@ function preprocessSession(varargin)
 %  SEE ALSO
 %
 % Copyright (C) 2020-2023 by AntonioFR, 2021 Azahara Oliva,
-%               2022-2023 Lindsay Karaba, 2022-2024 Heath Larson,
+%               2022-2025 Lindsay Karaba, 2022-2024 Heath Larson,
 %               2022-2024 Ryan Harvey, 2022-2024 Ralitsa Todorova
 %
 % This program is free software; you can redistribute it and/or modify
 % it under the terms of the GNU General Public License as published by
 % the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
-
-
+% (at your option) any later version
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
 %% Set up parameters and parse inputs
 
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
-addParameter(p, 'fillTypes', [], @iscellstr);
 addParameter(p, 'analogInputs', false, @islogical);
 addParameter(p, 'analogChannels', [], @isnumeric);
 addParameter(p, 'digitalInputs', false, @islogical);
@@ -85,10 +90,11 @@ addParameter(p, 'cleanRez', true, @islogical);
 addParameter(p, 'getPos', false, @islogical);
 addParameter(p, 'removeNoise', false, @islogical); % denoising method removing the first PCA component
 addParameter(p, 'runSummary', false, @islogical);
-addParameter(p, 'SSD_path', 'D:\KiloSort', @ischar) % Path to SSD disk. Make it empty to disable SSD
+addParameter(p, 'SSD_path', 'D:\KiloSort', @ischar); % Path to SSD disk. Make it empty to disable SSD
 addParameter(p, 'path_to_dlc_bat_file', '', @isfile)
 addParameter(p, 'nKilosortRuns', 1, @isnumeric);
 addParameter(p, 'sortFiles', true, @islogical);
+addParameter(p, 'altSort', [], @isnumeric);
 addParameter(p, 'SWChannels', 0, @isnumeric);
 addParameter(p, 'ThetaChannels', 0, @isnumeric);
 addParameter(p, 'clean_rez_params', { ...
@@ -105,7 +111,6 @@ parse(p, varargin{:});
 
 basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
-fillTypes = p.Results.fillTypes;
 analogInputs = p.Results.analogInputs;
 analogChannels = p.Results.analogChannels;
 digitalInputs = p.Results.digitalInputs;
@@ -122,6 +127,7 @@ SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
 sortFiles = p.Results.sortFiles;
+altSort = p.Results.altSort;
 clean_rez_params = p.Results.clean_rez_params;
 SWChannels = p.Results.SWChannels;
 ThetaChannels = p.Results.ThetaChannels;
@@ -150,32 +156,26 @@ end
 
 % Check info.rhd
 % (assumes this will be the same across subsessions)
-rhdFile = checkFile('fileType', '.rhd', 'searchSubdirs', true);
-rhdFile = rhdFile(1);
-if ~(strcmp(rhdFile.folder, basepath) && strcmp(rhdFile.name(1:end-4), basename))
-    copyfile([rhdFile.folder, filesep, rhdFile.name], [basepath, filesep, basename, '.rhd'])
+rhdFile = dir("**/*.rhd");
+if ~isempty(rhdFile)
+    rhdFile = rhdFile(1);
+    if ~(strcmp(rhdFile.folder, basepath) && strcmp(rhdFile.name(1:end-4), basename))
+        copyfile([rhdFile.folder, filesep, rhdFile.name], [basepath, filesep, basename, '.rhd'])
+    end
+else
+    disp('No rhd file found. This will be the case if only processing openEphys files. Skipping step');
 end
-
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath, 'showGUI', false);
 save(fullfile(basepath, [basename, '.session.mat']), 'session');
 
-%% Fill missing dat files of zeros
-if fillMissingDatFiles
-    if isempty(fillTypes)
-        fillTypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
-    end
-    for ii = 1:length(fillTypes)
-        fillMissingDats('basepath', basepath, 'fileType', fillTypes{ii});
-    end
-end
-
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats(basepath, sortFiles);
+concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles,...
+    'sortFiles', sortFiles, 'altSort', altSort);
 
-%% run again to add epochs from basename.MergePoints.m
+%% run again to add epochs from basename.MergePoints.mat
 session = sessionTemplate(basepath, 'showGUI', false);
 save(fullfile(basepath, [basename, '.session.mat']), 'session');
 

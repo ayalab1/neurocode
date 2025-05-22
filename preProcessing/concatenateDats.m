@@ -107,7 +107,7 @@ if ispc
         %Last file string shouldn't end with '+'
         datpathsplus.amplifier{length(datpaths)} = [datpaths{length(datpaths)}];
         for j = 1:size(fileTypes,1)
-            datpathsplus.(fileTypes{j}){length(datpaths)} = cat(2,'"',fileBase{didx},fileTypes{j},'.dat "');
+            datpathsplus.(fileTypes{j}){length(datpaths)} = cat(2,'"',fileBase{end},fileTypes{j},'.dat "');
             t = dir(datpathsplus.(fileTypes{j}){end}(2:end-2));
             datsizes.(fileTypes{j}){end+1} = t.bytes;
         end
@@ -116,7 +116,7 @@ if ispc
         t = dir(datpaths{1}(2:end-2));
         datsizes.amplifier = t.bytes;
         for j = 1:size(fileTypes,1)
-            datpathsplus.(fileTypes{j}) = cat(2,'"',fileBase{didx},fileTypes{j},'.dat "');
+            datpathsplus.(fileTypes{j}) = cat(2,'"',fileBase{1},fileTypes{j},'.dat "');
             t = dir(datpathsplus.(fileTypes{j}){1}(2:end-2));
             datsizes.(fileTypes{j}){1} = t.bytes;
         end

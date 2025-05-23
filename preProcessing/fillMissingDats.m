@@ -45,14 +45,13 @@ files_table.data_type = {'int16', 'uint16', 'uint16', 'uint16', 'uint16', 'int32
 
 %% Get session info
 session = getSession('basepath', basepath); % Peter's sessionInfo
-basename = session.general.name;
 ampNch = session.extracellular.nChannels;
 
 %% check location of each file and what to concat
 typeFiles = dir([basepath, filesep, '*', filesep, fileType, '.dat']);
 ampFiles = dir([basepath, filesep, '*', filesep, 'amplifier.dat']);
 contFiles = dir([basepath, filesep, '**', filesep, 'continuous.dat']); %check for openEphys
-ampFiles = cat(1,ampFiles,contFiles);
+ampFiles = cat(1, ampFiles, contFiles);
 typeFolders = {typeFiles.folder};
 ampFolders = {ampFiles.folder};
 
@@ -61,7 +60,7 @@ fillInds = find(~ismember(ampFolders, typeFolders)); %index of folders that need
 % calculate number of channels to for fill file
 refTypeInd = find(ismember(typeFolders, ampFolders), 1);
 refTypeSize = typeFiles(refTypeInd).bytes;
-refAmpInd = find(strcmp(ampFolders, typeFiles(refTypeInd).folder));
+refAmpInd = strcmp(ampFolders, typeFiles(refTypeInd).folder);
 refAmpSize = ampFiles(refAmpInd).bytes;
 typeNch = refTypeSize * ampNch / refAmpSize;
 

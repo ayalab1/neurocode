@@ -46,14 +46,14 @@ function preprocessSession(varargin)
 %                         OpenEphys timestamp. Setting to false will
 %                         default to altSort ordering (below). If altSort
 %                         is empty, files will be sorted alphabetically.
-% altSort                 Numerical array of indices ordering your 
-%                         subsession dat files. If, for example, you have 
-%                         subsession folders containing dat files labeled 
-%                         as FolderA; FolderB; FolderC; and want the order 
-%                         to be concatenated as "C, A, B", input altSort as 
-%                         [2, 3, 1]; Default is false, which, when 
-%                         sortFiles is true, sorts by date/time 
-%                         (YYMMDD_HHMMSS for Intan, YYYY-MM-DD_HH-MM-SS for 
+% altSort                 Numerical array of indices ordering your
+%                         subsession dat files. If, for example, you have
+%                         subsession folders containing dat files labeled
+%                         as FolderA; FolderB; FolderC; and want the order
+%                         to be concatenated as "C, A, B", input altSort as
+%                         [2, 3, 1]; Default is false, which, when
+%                         sortFiles is true, sorts by date/time
+%                         (YYMMDD_HHMMSS for Intan, YYYY-MM-DD_HH-MM-SS for
 %                         OpenEphys).
 %
 %  OUTPUTS
@@ -74,6 +74,7 @@ function preprocessSession(varargin)
 % the Free Software Foundation; either version 3 of the License, or
 % (at your option) any later version
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 %% Set up parameters and parse inputs
 
 p = inputParser;
@@ -166,6 +167,7 @@ if ~isempty(rhdFile)
 else
     disp('No rhd file found. This will be the case if only processing openEphys files. Skipping step');
 end
+
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
 session = sessionTemplate(basepath, 'showGUI', false);
@@ -173,7 +175,7 @@ save(fullfile(basepath, [basename, '.session.mat']), 'session');
 
 %% Concatenate sessions
 disp('Concatenate session folders...');
-concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles,...
+concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles, ...
     'sortFiles', sortFiles, 'altSort', altSort);
 
 %% run again to add epochs from basename.MergePoints.mat

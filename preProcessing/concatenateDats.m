@@ -41,7 +41,10 @@ end
 
 basename = basenameFromBasepath(basepath);
 [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort);
-
+if isempty(datpaths)
+    disp('no subsessions detected, exiting concatenation');
+    return
+end
 otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
 toFill = zeros(size(otherdattypes));
 fileBase = cell(size(datpaths));

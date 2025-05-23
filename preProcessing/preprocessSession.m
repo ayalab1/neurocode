@@ -51,9 +51,10 @@ function preprocessSession(varargin)
 %                         subsession folders containing dat files labeled 
 %                         as FolderA; FolderB; FolderC; and want the order 
 %                         to be concatenated as "C, A, B", input altSort as 
-%                         [2, 3, 1]; Default is false, which sorts by
-%                         date/time (YYMMDD_HHMMSS for Intan, 
-%                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
+%                         [2, 3, 1]; Default is false, which, when 
+%                         sortFiles is true, sorts by date/time 
+%                         (YYMMDD_HHMMSS for Intan, YYYY-MM-DD_HH-MM-SS for 
+%                         OpenEphys).
 %
 %  OUTPUTS
 %    N/A

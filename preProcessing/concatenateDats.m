@@ -44,7 +44,13 @@ basename = basenameFromBasepath(basepath);
 if isempty(datpaths)
     disp('no subsessions detected, exiting concatenation');
     return
+else
+    disp('Concatenating subsessions in the following order: ');
+    for i = 1:size(datpaths,2)
+        disp(datpaths{i}(2:end-2)); %don't print added formating for concatentation
+    end
 end
+
 otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
 toFill = zeros(size(otherdattypes));
 fileBase = cell(size(datpaths));

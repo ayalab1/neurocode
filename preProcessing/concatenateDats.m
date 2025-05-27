@@ -68,6 +68,11 @@ if fillMissingDatFiles
             end
         end
     end
+    for ii = 1:length(toFill)
+        if toFill(ii)==1
+            fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii});
+        end
+    end
 else
     datCount = zeros(size(otherdattypes));
     for i = 1:size(datpaths, 2)

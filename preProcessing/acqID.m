@@ -70,11 +70,13 @@ end
 % rather than by folder name), this loop will be entered
 if sortFiles %if we sort by time
     names2sort_intan = cellfun(@(x) regexpi(x, '(?<=_)\d{6}', 'match'), recordingnames, 'UniformOutput', false);
+    dateStart_OE = cellfun(@(x) regexpi(x, '(?<=_)\d{4}', 'match'), recordingnames, 'UniformOutput', false);
     ordering = nan(1, size(names2sort_intan, 2));
     for i = 1:size(names2sort_intan, 2)
         if isempty(names2sort_intan{i})
             %assume open ephys
-            ordering(i) = str2num([recordingnames{i}([3:4, 6:7, 9:10, 12:13, 15:16, 18:19]), expNum(i), recNum(i)]);
+            find_date_start = strfind(recordingnames{i},dateStart_OE{i});
+            ordering(i) = str2num([recordingnames{i}(find_date_start+[2:3, 5:6, 8:9, 11:12, 14:15, 17:18]), expNum(i), recNum(i)]);
         else
             ordering(i) = str2num([names2sort_intan{i}{1}, names2sort_intan{i}{2}, expNum(i), recNum(i)]);
         end

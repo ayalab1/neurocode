@@ -26,6 +26,13 @@ if nargin < 3
     showCountdown = false;
 end
 
+% Check for active breakpoints
+dbstatus_ = dbstatus('-completenames');
+if ~isempty(dbstatus_)
+    warning(['Active breakpoints detected! ', ...
+        'Consider removing breakpoints (dbclear all) before using wait_until.']);
+end
+
 % Get current time (match timezone of targetTime)
 currentTime = datetime('now', 'TimeZone', targetTime.TimeZone);
 waitDuration = seconds(targetTime-currentTime);

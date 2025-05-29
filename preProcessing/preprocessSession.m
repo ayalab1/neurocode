@@ -134,6 +134,13 @@ clean_rez_params = p.Results.clean_rez_params;
 SWChannels = p.Results.SWChannels;
 ThetaChannels = p.Results.ThetaChannels;
 
+
+% Check for active breakpoints
+dbstatus_ = dbstatus('-completenames');
+if ~isempty(dbstatus_)
+    warning('Active breakpoints detected! Consider removing breakpoints (dbclear all)');
+end
+
 if ~exist(basepath, 'dir')
     error('path provided does not exist')
 end

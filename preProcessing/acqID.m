@@ -70,7 +70,7 @@ end
 % rather than by folder name), this loop will be entered
 if sortFiles %if we sort by time
     names2sort_intan = cellfun(@(x) regexpi(x, '(?<=_)\d{6}', 'match'), recordingnames, 'UniformOutput', false);
-    dateStart_OE = cellfun(@(x) regexpi(x, '(?<=_)\d{4}', 'match'), recordingnames, 'UniformOutput', false);
+    dateStart_OE = cellfun(@(x) regexpi(x, '\d{4}\-\d{2}\-\d{2}\_\d{2}\-\d{2}\-\d{2}', 'match'), recordingnames, 'UniformOutput', false);
     ordering = nan(1, size(names2sort_intan, 2));
     for i = 1:size(names2sort_intan, 2)
         if isempty(names2sort_intan{i})

@@ -73,6 +73,7 @@ end
 
 if isfield(session.spikeSorting{1, 1}, 'relativePath') && exist(session.spikeSorting{1, 1}.relativePath, 'dir')
     f.name = session.spikeSorting{:}.relativePath;
+    f.folder = basepath;
 else
     f = dir('Kilosort*');
     if (size(f, 1) ~= 1) && (~multiKilosort)

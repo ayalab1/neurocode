@@ -47,22 +47,38 @@ folderNames = allFolders(useIDX, :).folder;
 
 %this assumes that your recording folders with the date are within your
 %current basepath directory
+removeID = [];
 for i = 1:size(useIDX, 1)
-    datpaths{i} = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
-    startIDX = size(basepath, 2) + 2;
-    seps = find(allFolders(useIDX(i), :).folder{1} == '\');
-    seps(seps < startIDX) = [];
-    if isempty(seps)
-        recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:end); %intan
-        expNum(i) = '1';
-        recNum(i) = '1';
+    checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
+    if ~contains(checkPath,'ackup')
+        datpaths{i} = checkPath;
+        startIDX = size(basepath, 2) + 2;
+        seps = find(allFolders(useIDX(i), :).folder{1} == '\');
+        seps(seps < startIDX) = [];
+        if isempty(seps)
+            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:end); %intan
+            expNum(i) = '1';
+            recNum(i) = '1';
+        else
+            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:seps(1) - 1); %openEphys
+            expIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\experiment");
+            % this will look weird because it's stored as a string, but
+            % will be correct when converting back to double
+            expNum(i) = (allFolders(useIDX(i), :).folder{1}(expIDX + 11:seps(find(seps > expIDX, 1, 'first')) - 1));
+            recIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\recording");
+            recNum(i) = (allFolders(useIDX(i), :).folder{1}(recIDX + 10:seps(find(seps > recIDX, 1, 'first')) - 1));
+        end
     else
-        recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:seps(1) - 1); %openEphys
-        expIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\experiment");
-        expNum(i) = (allFolders(useIDX(i), :).folder{1}(expIDX + 11:seps(find(seps > expIDX, 1, 'first')) - 1));
-        recIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\recording");
-        recNum(i) = (allFolders(useIDX(i), :).folder{1}(recIDX + 10:seps(find(seps > recIDX, 1, 'first')) - 1));
+        disp('.dat file found nested in a folder labeled "backup". Skipping: ');
+        disp(checkPath);
+        removeID = [removeID i];
     end
+end
+if ~isempty(removeID)
+   datpaths(removeID) = [];
+   recordingnames(removeID) = [];
+   expNum(removeID) = [];
+   recNum(removeID) = [];
 end
 
 % datpaths and recordingnames are ordered alphabetically by default. If

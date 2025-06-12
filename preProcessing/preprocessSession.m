@@ -58,7 +58,9 @@ function preprocessSession(varargin)
 % ignoreFolders           Folder names that contain dat folders which
 %                         should be ignored. Input should be a list of
 %                         strings. Most often, this applies to a 'backup'
-%                         folder containing original copies of the data. 
+%                         folder containing original copies of the data.
+%                         Example input may look like: ["backup",
+%                         "ignore"].
 %
 %  OUTPUTS
 %    N/A
@@ -101,7 +103,7 @@ addParameter(p, 'path_to_dlc_bat_file', '', @isfile)
 addParameter(p, 'nKilosortRuns', 1, @isnumeric);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
-addParameter(p, 'ignoreFolders', [], @isstring);
+addParameter(p, 'ignoreFolders', "", @isstring);
 addParameter(p, 'SWChannels', 0, @isnumeric);
 addParameter(p, 'ThetaChannels', 0, @isnumeric);
 addParameter(p, 'clean_rez_params', { ...

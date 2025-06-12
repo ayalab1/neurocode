@@ -21,13 +21,19 @@ function concatenateDats(varargin)
 %                         [2, 3, 1]; Default is false, which sorts by
 %                         date/time (YYMMDD_HHMMSS for Intan,
 %                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
+% ignoreFolders           Folder names that contain dat folders which
+%                         should be ignored. Input should be a list of
+%                         strings. Most often, this applies to a 'backup'
+%                         folder containing original copies of the data.
+%                         Example input may look like: ["backup",
+%                         "ignore"].
 
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
-addParameter(p, 'ignoreFolders', [], @isstring);
+addParameter(p, 'ignoreFolders', "", @isstring);
 
 parse(p, varargin{:});
 

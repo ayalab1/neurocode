@@ -23,6 +23,12 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignore
 %                         [2, 3, 1]; Default is false, which sorts by
 %                         date/time (YYMMDD_HHMMSS for Intan,
 %                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
+% ignoreFolders           Folder names that contain dat folders which
+%                         should be ignored. Input should be a list of
+%                         strings. Most often, this applies to a 'backup'
+%                         folder containing original copies of the data.
+%                         Example input may look like: ["backup",
+%                         "ignore"].
 
 %% OUTPUTS
 % datpaths                Returns cell array of ordered datpaths in "PATH "
@@ -32,6 +38,9 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignore
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
+end
+if ignoreFolders == ""
+   ignoreFolders = []; %set to empty if default
 end
 
 d = dir(basepath);

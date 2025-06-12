@@ -3,6 +3,7 @@ function concatenateDats(varargin)
 % for Intan AND/OR openEphys recordings
 %
 %
+
 %% INPUTS
 % basepath                Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd.
@@ -54,8 +55,8 @@ if isempty(datpaths)
     return
 else
     disp('Concatenating subsessions in the following order: ');
-    for i = 1:size(datpaths,2)
-        disp(datpaths{i}(2:end-2)); %don't print added formating for concatentation
+    for i = 1:size(datpaths, 2)
+        disp(datpaths{i}(2:end - 2)); %don't print added formating for concatentation
     end
 end
 
@@ -77,7 +78,7 @@ if fillMissingDatFiles
         end
     end
     for ii = 1:length(toFill)
-        if toFill(ii)==1
+        if toFill(ii) == 1
             fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii});
         end
     end
@@ -132,7 +133,7 @@ if ispc
         for j = 1:size(fileTypes, 1)
             datpathsplus.(fileTypes{j}){length(datpaths)} = cat(2, '"', fileBase{end}, fileTypes{j}, '.dat "');
             t = dir(datpathsplus.(fileTypes{j}){end}(2:end - 2));
-            datsizes.(fileTypes{j}){end +1} = t.bytes;
+            datsizes.(fileTypes{j}){end, +1} = t.bytes;
         end
     else
         datpathsplus.amplifier = datpaths;

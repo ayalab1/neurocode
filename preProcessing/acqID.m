@@ -1,4 +1,4 @@
-function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
+function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders)
 
 %% [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
 
@@ -50,7 +50,13 @@ folderNames = allFolders(useIDX, :).folder;
 removeID = [];
 for i = 1:size(useIDX, 1)
     checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
-    if ~contains(checkPath,'ackup')
+    usePath = true;
+    for f = 1:length(ignoreFolders)
+        if contains(checkPath, ignoreFolders(f))
+            usePath = false;
+        end
+    end
+    if usePath
         datpaths{i} = checkPath;
         startIDX = size(basepath, 2) + 2;
         seps = find(allFolders(useIDX(i), :).folder{1} == '\');
@@ -71,7 +77,9 @@ for i = 1:size(useIDX, 1)
     else
         disp('.dat file found nested in a folder labeled "backup". Skipping: ');
         disp(checkPath);
-        removeID = [removeID i];
+        if i~=size(useIDX, 1) %won't need to remove if a real slot isn't filled after
+            removeID = [removeID i];
+        end
     end
 end
 if ~isempty(removeID)

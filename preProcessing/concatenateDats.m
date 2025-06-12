@@ -27,6 +27,7 @@ addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
+addParameter(p, 'ignoreFolders', [], @isstring);
 
 parse(p, varargin{:});
 
@@ -34,13 +35,14 @@ basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
 sortFiles = p.Results.sortFiles;
 altSort = p.Results.altSort;
+ignoreFolders = p.Results.ignoreFolders;
 
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
 end
 
 basename = basenameFromBasepath(basepath);
-[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort);
+[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders);
 if isempty(datpaths)
     disp('no subsessions detected, exiting concatenation');
     return

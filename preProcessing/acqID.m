@@ -1,4 +1,4 @@
-function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
+function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders)
 
 %% [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
 
@@ -23,6 +23,12 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
 %                         [2, 3, 1]; Default is false, which sorts by
 %                         date/time (YYMMDD_HHMMSS for Intan,
 %                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
+% ignoreFolders           Folder names that contain dat folders which
+%                         should be ignored. Input should be a list of
+%                         strings. Most often, this applies to a 'backup'
+%                         folder containing original copies of the data.
+%                         Example input may look like: ["backup",
+%                         "ignore"].
 
 %% OUTPUTS
 % datpaths                Returns cell array of ordered datpaths in "PATH "
@@ -32,6 +38,9 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
+end
+if ignoreFolders == ""
+    ignoreFolders = []; %set to empty if default
 end
 
 d = dir(basepath);
@@ -47,22 +56,46 @@ folderNames = allFolders(useIDX, :).folder;
 
 %this assumes that your recording folders with the date are within your
 %current basepath directory
+removeID = [];
 for i = 1:size(useIDX, 1)
-    datpaths{i} = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
-    startIDX = size(basepath, 2) + 2;
-    seps = find(allFolders(useIDX(i), :).folder{1} == '\');
-    seps(seps < startIDX) = [];
-    if isempty(seps)
-        recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:end); %intan
-        expNum(i) = '1';
-        recNum(i) = '1';
-    else
-        recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:seps(1) - 1); %openEphys
-        expIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\experiment");
-        expNum(i) = (allFolders(useIDX(i), :).folder{1}(expIDX + 11:seps(find(seps > expIDX, 1, 'first')) - 1));
-        recIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\recording");
-        recNum(i) = (allFolders(useIDX(i), :).folder{1}(recIDX + 10:seps(find(seps > recIDX, 1, 'first')) - 1));
+    checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
+    usePath = true;
+    for f = 1:length(ignoreFolders)
+        if contains(checkPath, ignoreFolders(f))
+            usePath = false;
+        end
     end
+    if usePath
+        datpaths{i} = checkPath;
+        startIDX = size(basepath, 2) + 2;
+        seps = find(allFolders(useIDX(i), :).folder{1} == '\');
+        seps(seps < startIDX) = [];
+        if isempty(seps)
+            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:end); %intan
+            expNum(i) = '1';
+            recNum(i) = '1';
+        else
+            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:seps(1) - 1); %openEphys
+            expIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\experiment");
+            % this will look weird because it's stored as a string, but
+            % will be correct when converting back to double
+            expNum(i) = (allFolders(useIDX(i), :).folder{1}(expIDX + 11:seps(find(seps > expIDX, 1, 'first')) - 1));
+            recIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\recording");
+            recNum(i) = (allFolders(useIDX(i), :).folder{1}(recIDX + 10:seps(find(seps > recIDX, 1, 'first')) - 1));
+        end
+    else
+        fprintf('.dat file found nested in a folder labeled %s . Skipping: \n', ignoreFolders(f));
+        disp(checkPath);
+        if i ~= size(useIDX, 1) %won't need to remove if a real slot isn't filled after
+            removeID = [removeID, i];
+        end
+    end
+end
+if ~isempty(removeID)
+    datpaths(removeID) = [];
+    recordingnames(removeID) = [];
+    expNum(removeID) = [];
+    recNum(removeID) = [];
 end
 
 % datpaths and recordingnames are ordered alphabetically by default. If
@@ -75,8 +108,8 @@ if sortFiles %if we sort by time
     for i = 1:size(names2sort_intan, 2)
         if isempty(names2sort_intan{i})
             %assume open ephys
-            find_date_start = strfind(recordingnames{i},dateStart_OE{i});
-            ordering(i) = str2num([recordingnames{i}(find_date_start+[2:3, 5:6, 8:9, 11:12, 14:15, 17:18]), expNum(i), recNum(i)]);
+            find_date_start = strfind(recordingnames{i}, dateStart_OE{i});
+            ordering(i) = str2num([recordingnames{i}(find_date_start + [2:3, 5:6, 8:9, 11:12, 14:15, 17:18]), expNum(i), recNum(i)]);
         else
             ordering(i) = str2num([names2sort_intan{i}{1}, names2sort_intan{i}{2}, expNum(i), recNum(i)]);
         end

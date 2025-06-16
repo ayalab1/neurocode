@@ -3,6 +3,7 @@ function concatenateDats(varargin)
 % for Intan AND/OR openEphys recordings
 %
 %
+
 %% INPUTS
 % basepath                Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd.
@@ -21,12 +22,19 @@ function concatenateDats(varargin)
 %                         [2, 3, 1]; Default is false, which sorts by
 %                         date/time (YYMMDD_HHMMSS for Intan,
 %                         YYYY-MM-DD_HH-MM-SS for OpenEphys).
+% ignoreFolders           Folder names that contain dat folders which
+%                         should be ignored. Input should be a list of
+%                         strings. Most often, this applies to a 'backup'
+%                         folder containing original copies of the data.
+%                         Example input may look like: ["backup",
+%                         "ignore"].
 
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
+addParameter(p, 'ignoreFolders', "", @isstring);
 
 parse(p, varargin{:});
 
@@ -34,20 +42,21 @@ basepath = p.Results.basepath;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
 sortFiles = p.Results.sortFiles;
 altSort = p.Results.altSort;
+ignoreFolders = p.Results.ignoreFolders;
 
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
 end
 
 basename = basenameFromBasepath(basepath);
-[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort);
+[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders);
 if isempty(datpaths)
     disp('no subsessions detected, exiting concatenation');
     return
 else
     disp('Concatenating subsessions in the following order: ');
-    for i = 1:size(datpaths,2)
-        disp(datpaths{i}(2:end-2)); %don't print added formating for concatentation
+    for i = 1:size(datpaths, 2)
+        disp(datpaths{i}(2:end - 2)); %don't print added formating for concatentation
     end
 end
 
@@ -69,7 +78,7 @@ if fillMissingDatFiles
         end
     end
     for ii = 1:length(toFill)
-        if toFill(ii)==1
+        if toFill(ii) == 1
             fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii});
         end
     end
@@ -124,7 +133,7 @@ if ispc
         for j = 1:size(fileTypes, 1)
             datpathsplus.(fileTypes{j}){length(datpaths)} = cat(2, '"', fileBase{end}, fileTypes{j}, '.dat "');
             t = dir(datpathsplus.(fileTypes{j}){end}(2:end - 2));
-            datsizes.(fileTypes{j}){end +1} = t.bytes;
+            datsizes.(fileTypes{j}){end, +1} = t.bytes;
         end
     else
         datpathsplus.amplifier = datpaths;

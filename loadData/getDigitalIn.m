@@ -150,7 +150,11 @@ if exist('digitalIn', 'var') == 1
     end
     ylim([0, length(digitalIn.timestampsOn)])
     mkdir('Pulses');
-    saveas(gcf, 'pulses\digitalIn.png')
+    try
+        saveas(gcf, 'Pulses\digitalIn.png')
+    catch
+        disp('failed to save image')
+    end
 else
     digitalIn = [];
 end

@@ -25,6 +25,8 @@ function preprocessSession(varargin)
 %                         analogEv in folder, is true
 % stateScore              Run automatic brain state detection with SleepScoreMaster.
 %                         Default true
+% LFPbeforeKilo           Option to generate LFP and run LFP-based
+%                         functions before KiloSort. Default true
 % spikeSort               Run automatic spike sorting using Kilosort. Default true
 % sortFiles               Sort subsessions with the date and timestamp in the end
 %                         of the folder name (ignore alphabetical order)
@@ -42,6 +44,13 @@ function preprocessSession(varargin)
 % nKilosortRuns           Number of desired Kilosort runs (default = 1). The
 %                         function will break down the shanks into "nKilosortRuns"
 %                         groups for each run
+% kiloShankSplit          Shanks delineation for multi-kilosort run. If you
+%                         have a four shank probe and want to sort shanks 1
+%                         and 2 together, skip 3, and sort 4 on it's own,
+%                         input as: [1 1 0 2]. Shanks 1 and 2 will be the
+%                         first kilosort run, and shank 4 will be the
+%                         second. Shank 3 is set to 0 so it will not be
+%                         run. Default []. 
 % sortFiles               Logical option to sort files by their Intan or
 %                         OpenEphys timestamp. Setting to false will
 %                         default to altSort ordering (below). If altSort
@@ -93,6 +102,7 @@ addParameter(p, 'digitalChannels', [], @isnumeric);
 addParameter(p, 'getAcceleration', false, @islogical);
 addParameter(p, 'cleanArtifacts', false, @islogical);
 addParameter(p, 'stateScore', true, @islogical);
+addParameter(p, 'LFPbeforeKilo', true, @islogical);
 addParameter(p, 'spikeSort', true, @islogical);
 addParameter(p, 'cleanRez', true, @islogical);
 addParameter(p, 'getPos', false, @islogical);
@@ -101,6 +111,7 @@ addParameter(p, 'runSummary', false, @islogical);
 addParameter(p, 'SSD_path', 'D:\KiloSort', @ischar); % Path to SSD disk. Make it empty to disable SSD
 addParameter(p, 'path_to_dlc_bat_file', '', @isfile)
 addParameter(p, 'nKilosortRuns', 1, @isnumeric);
+addParameter(p, 'kiloShankSplit', [], @isnumeric);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
 addParameter(p, 'ignoreFolders', "", @isstring);
@@ -127,6 +138,7 @@ digitalChannels = p.Results.digitalChannels;
 getAcceleration = p.Results.getAcceleration;
 cleanArtifacts = p.Results.cleanArtifacts;
 stateScore = p.Results.stateScore;
+LFPbeforeKilo = p.Results.LFPbeforeKilo;
 spikeSort = p.Results.spikeSort;
 cleanRez = p.Results.cleanRez;
 getPos = p.Results.getPos;
@@ -135,6 +147,7 @@ runSummary = p.Results.runSummary;
 SSD_path = p.Results.SSD_path;
 path_to_dlc_bat_file = p.Results.path_to_dlc_bat_file;
 nKilosortRuns = p.Results.nKilosortRuns;
+kiloShankSplit = p.Results.kiloShankSplit;
 sortFiles = p.Results.sortFiles;
 altSort = p.Results.altSort;
 ignoreFolders = p.Results.ignoreFolders;
@@ -227,37 +240,6 @@ if getAcceleration
     computeIntanAccel('saveMat', true);
 end
 
-%% Make LFP
-try
-    try
-        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
-    catch e
-        fprintf(1, 'The identifier was:\n%s', e.identifier);
-        fprintf(1, 'There was an error! The message was:\n%s', e.message);
-        if (exist([basepath, '\', basename, '.lfp'], "file") ~= 0)
-            fclose([basepath, '\', basename, '.lfp']); %if the above run failed after starting the file
-            delete([basepath, '\', basename, '.lfp']);
-        end
-        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
-    end
-catch e
-    fprintf(1, 'The identifier was:\n%s', e.identifier);
-    fprintf(1, 'There was an error! The message was:\n%s', e.message);
-    try
-        warning('LFPfromDat failed, trying ResampleBinary')
-        ResampleBinary([basepath, '\', basename, '.dat'], ...
-            [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
-    catch e
-        warning('LFP file could not be generated, moving on');
-        fprintf(1, 'The identifier was:\n%s', e.identifier);
-        fprintf(1, 'There was an error! The message was:\n%s', e.message);
-    end
-end
-
-% 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
-% it is possible to remove the copy of iosr toolbox from CellExplorer -
-% seems to be fixed? as of 9/22
-
 %% Clean data  - CHECK FOR OUR LAB
 % Remove stimulation artifacts
 if cleanArtifacts && analogInputs
@@ -265,75 +247,43 @@ if cleanArtifacts && analogInputs
     cleanPulses(pulses.ints{1}(:));
 end
 
-%% Get brain states
-% an automatic way of flaging bad channels is needed
-if stateScore
-    try
-        if exist('pulses', 'var')
-            SleepScoreMaster(basepath, 'noPrompts', true, ...
-                'ignoretime', pulses.intsPeriods, ...
-                'rejectChannels', session.channelTags.Bad.channels, ...
-                'SWChannels', SWChannels, ...
-                'ThetaChannels', ThetaChannels);
-        else
-            SleepScoreMaster(basepath, 'noPrompts', true, ...
-                'rejectChannels', session.channelTags.Bad.channels, ...
-                'SWChannels', SWChannels, ...
-                'ThetaChannels', ThetaChannels);
-        end
-    catch e
-        warning('Problem with SleepScore scoring... unable to calculate');
-        fprintf(1, 'The identifier was:\n%s', e.identifier);
-        fprintf(1, 'There was an error! The message was:\n%s', e.message);
+if LFPbeforeKilo
+    %Make LFP
+    runLFP(basepath, basename, session);
+    
+    % Get brain states
+    % an automatic way of flaging bad channels is needed
+    if stateScore
+        runStateScore(basepath, pulses, session, SWChannels, ThetaChannels);
     end
-end
-
-
-% remove noise from data for cleaner spike sorting
-if removeNoise
-    try
-        EMGFromLFP = getStruct(basepath, 'EMGFromLFP');
-    catch e
-        fprintf(1, 'The identifier was:\n%s', e.identifier);
-        fprintf(1, 'There was an error! The message was:\n%s', e.message);
-
-        EMGFromLFP = getEMGFromLFP(basepath, 'noPrompts', true, 'saveMat', true);
+    
+    % remove noise from data for cleaner spike sorting
+    if removeNoise
+        runRemoveNoise(basepath, basename, session);
     end
-
-    baseline = EMGFromLFP.timestamps(FindInterval(EMGFromLFP.data > quantile(EMGFromLFP.data, 0.99))); % select the period of top 1% EMG activity as the denoising baseline
-    DenoiseDat(fullfile(basepath, [basename, '.dat']), session, 'baseline', baseline);
-end
-
-%% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
-if spikeSort
-    if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
-        shanks = session.extracellular.spikeGroups.channels;
-        kilosortGroup = ceil(((1:length(shanks)) / nKilosortRuns));
-        for i = 1:nKilosortRuns
-            channels = cat(2, shanks{kilosortGroup == i});
-            excludeChannels = find(~ismember((1:session.extracellular.nChannels), channels));
-            excludeChannels = cat(2, excludeChannels, session.channelTags.Bad.channels);
-            excludeChannels = unique(excludeChannels);
-            if (length(excludeChannels) == session.extracellular.nChannels)
-                warning(['Run number ', num2str(i), ' excluded, moving on']);
-            else
-                kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, 'rejectchannels', excludeChannels);
-                if cleanRez
-                    load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
-                    CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
-                end
-            end
-        end
-    else
-
-        %% single sort
-        kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, ...
-            'rejectchannels', session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
-        if cleanRez
-            load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
-            CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
-        end
-        %     PhyAutoClustering(kilosortFolder);
+    
+    %% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
+    if spikeSort
+        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
+    end
+else
+    % remove noise from data for cleaner spike sorting
+    if removeNoise
+        runRemoveNoise(basepath, basename, session);
+    end
+    
+    % Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
+    if spikeSort
+        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
+    end
+    
+    % Make LFP
+    runLFP(basepath, basename, session);
+    
+    % Get brain states
+    % an automatic way of flaging bad channels is needed
+    if stateScore
+        runStateScore(basepath, pulses, session, SWChannels, ThetaChannels);
     end
 end
 
@@ -364,3 +314,108 @@ save(fullfile(basepath, 'preprocessSession_params.mat'), 'results')
 % saves a text file of the current code used
 targetFile = fullfile(basepath, 'preprocessSession.log');
 copyfile(which('preprocessSession.m'), targetFile);
+
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function runLFP(basepath, basename, session)
+try
+    try
+        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
+    catch e
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
+        if (exist([basepath, '\', basename, '.lfp'], "file") ~= 0)
+            fclose([basepath, '\', basename, '.lfp']); %if the above run failed after starting the file
+            delete([basepath, '\', basename, '.lfp']);
+        end
+        LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
+    end
+catch e
+    fprintf(1, 'The identifier was:\n%s', e.identifier);
+    fprintf(1, 'There was an error! The message was:\n%s', e.message);
+    try
+        warning('LFPfromDat failed, trying ResampleBinary')
+        ResampleBinary([basepath, '\', basename, '.dat'], ...
+            [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
+    catch e
+        warning('LFP file could not be generated, moving on');
+        fprintf(1, 'The identifier was:\n%s', e.identifier);
+        fprintf(1, 'There was an error! The message was:\n%s', e.message);
+    end
+end
+% 'useGPU'=true gives an error if CellExplorer in the path. Need to test if
+% it is possible to remove the copy of iosr toolbox from CellExplorer -
+% seems to be fixed? as of 9/22
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function runStateScore(basepath, pulses, session, SWChannels, ThetaChannels)
+try
+    if exist('pulses', 'var')
+        SleepScoreMaster(basepath, 'noPrompts', true, ...
+            'ignoretime', pulses.intsPeriods, ...
+            'rejectChannels', session.channelTags.Bad.channels, ...
+            'SWChannels', SWChannels, ...
+            'ThetaChannels', ThetaChannels);
+    else
+        SleepScoreMaster(basepath, 'noPrompts', true, ...
+            'rejectChannels', session.channelTags.Bad.channels, ...
+            'SWChannels', SWChannels, ...
+            'ThetaChannels', ThetaChannels);
+    end
+catch e
+    warning('Problem with SleepScore scoring... unable to calculate');
+    fprintf(1, 'The identifier was:\n%s', e.identifier);
+    fprintf(1, 'There was an error! The message was:\n%s', e.message);
+end
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function runRemoveNoise(basepath, basename, session)
+try
+    EMGFromLFP = getStruct(basepath, 'EMGFromLFP');
+catch e
+    fprintf(1, 'The identifier was:\n%s', e.identifier);
+    fprintf(1, 'There was an error! The message was:\n%s', e.message);
+    
+    EMGFromLFP = getEMGFromLFP(basepath, 'noPrompts', true, 'saveMat', true);
+end
+
+baseline = EMGFromLFP.timestamps(FindInterval(EMGFromLFP.data > quantile(EMGFromLFP.data, 0.99))); % select the period of top 1% EMG activity as the denoising baseline
+DenoiseDat(fullfile(basepath, [basename, '.dat']), session, 'baseline', baseline);
+end
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params)
+if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
+    shanks = session.extracellular.spikeGroups.channels;
+    if isempty(kiloShankSplit)
+        kilosortGroup = ceil(((1:length(shanks)) / nKilosortRuns));
+    else
+        kilosortGroup = kiloShankSplit;
+        nKiloSortRuns = max(kiloShankSplit);
+    end
+    for i = 1:nKilosortRuns
+        channels = cat(2, shanks{kilosortGroup == i});
+        excludeChannels = find(~ismember((1:session.extracellular.nChannels), channels));
+        excludeChannels = cat(2, excludeChannels, session.channelTags.Bad.channels);
+        excludeChannels = unique(excludeChannels);
+        if (length(excludeChannels) == session.extracellular.nChannels)
+            warning(['Run number ', num2str(i), ' excluded, moving on']);
+        else
+            kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, 'rejectchannels', excludeChannels);
+            if cleanRez
+                load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
+                CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
+            end
+        end
+    end
+else
+    
+    %% single sort
+    kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, ...
+        'rejectchannels', session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded
+    if cleanRez
+        load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
+        CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
+    end
+    %     PhyAutoClustering(kilosortFolder);
+end
+end

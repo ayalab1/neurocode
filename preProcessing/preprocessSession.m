@@ -264,7 +264,7 @@ if LFPbeforeKilo
 
     %% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
     if spikeSort
-        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
+        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params, cleanRez);
     end
 else
     % remove noise from data for cleaner spike sorting
@@ -274,7 +274,7 @@ else
 
     % Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
     if spikeSort
-        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
+        runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params, cleanRez);
     end
 
     % Make LFP
@@ -316,7 +316,7 @@ targetFile = fullfile(basepath, 'preprocessSession.log');
 copyfile(which('preprocessSession.m'), targetFile);
 
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function runLFP(basepath, basename, session)
 try
     try
@@ -347,7 +347,7 @@ end
 % it is possible to remove the copy of iosr toolbox from CellExplorer -
 % seems to be fixed? as of 9/22
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function runStateScore(basepath, pulses, session, SWChannels, ThetaChannels)
 try
     if exist('pulses', 'var')
@@ -368,8 +368,9 @@ catch e
     fprintf(1, 'There was an error! The message was:\n%s', e.message);
 end
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function runRemoveNoise(basepath, basename, session)
+
 try
     EMGFromLFP = getStruct(basepath, 'EMGFromLFP');
 catch e
@@ -382,8 +383,9 @@ end
 baseline = EMGFromLFP.timestamps(FindInterval(EMGFromLFP.data > quantile(EMGFromLFP.data, 0.99))); % select the period of top 1% EMG activity as the denoising baseline
 DenoiseDat(fullfile(basepath, [basename, '.dat']), session, 'baseline', baseline);
 end
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params)
+
+
+function runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params, cleanRez)
 if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
     shanks = session.extracellular.spikeGroups.channels;
     if isempty(kiloShankSplit)
@@ -416,6 +418,6 @@ else
         load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
         CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
     end
-    %     PhyAutoClustering(kilosortFolder);
+
 end
 end

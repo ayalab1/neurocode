@@ -50,7 +50,7 @@ function preprocessSession(varargin)
 %                         input as: [1 1 0 2]. Shanks 1 and 2 will be the
 %                         first kilosort run, and shank 4 will be the
 %                         second. Shank 3 is set to 0 so it will not be
-%                         run. Default []. 
+%                         run. Default [].
 % sortFiles               Logical option to sort files by their Intan or
 %                         OpenEphys timestamp. Setting to false will
 %                         default to altSort ordering (below). If altSort
@@ -250,18 +250,18 @@ end
 if LFPbeforeKilo
     %Make LFP
     runLFP(basepath, basename, session);
-    
+
     % Get brain states
     % an automatic way of flaging bad channels is needed
     if stateScore
         runStateScore(basepath, pulses, session, SWChannels, ThetaChannels);
     end
-    
+
     % remove noise from data for cleaner spike sorting
     if removeNoise
         runRemoveNoise(basepath, basename, session);
     end
-    
+
     %% Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
     if spikeSort
         runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
@@ -271,15 +271,15 @@ else
     if removeNoise
         runRemoveNoise(basepath, basename, session);
     end
-    
+
     % Kilosort concatenated sessions - Needs to be changed to probes, not shanks HLR 01/05/2023
     if spikeSort
         runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params);
     end
-    
+
     % Make LFP
     runLFP(basepath, basename, session);
-    
+
     % Get brain states
     % an automatic way of flaging bad channels is needed
     if stateScore
@@ -375,7 +375,7 @@ try
 catch e
     fprintf(1, 'The identifier was:\n%s', e.identifier);
     fprintf(1, 'There was an error! The message was:\n%s', e.message);
-    
+
     EMGFromLFP = getEMGFromLFP(basepath, 'noPrompts', true, 'saveMat', true);
 end
 
@@ -390,7 +390,7 @@ if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks
         kilosortGroup = ceil(((1:length(shanks)) / nKilosortRuns));
     else
         kilosortGroup = kiloShankSplit;
-        nKiloSortRuns = max(kiloShankSplit);
+        nKilosortRuns = max(kiloShankSplit);
     end
     for i = 1:nKilosortRuns
         channels = cat(2, shanks{kilosortGroup == i});
@@ -408,7 +408,7 @@ if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks
         end
     end
 else
-    
+
     %% single sort
     kilosortFolder = KiloSortWrapper('SSD_path', SSD_path, ...
         'rejectchannels', session.channelTags.Bad.channels); % 'NT',20*1024 for long sessions when RAM is overloaded

@@ -254,6 +254,9 @@ if LFPbeforeKilo
     % Get brain states
     % an automatic way of flaging bad channels is needed
     if stateScore
+        if ~exist('pulses', 'var')
+            pulses = [];
+        end
         runStateScore(basepath, pulses, session, SWChannels, ThetaChannels);
     end
 
@@ -283,6 +286,9 @@ else
     % Get brain states
     % an automatic way of flaging bad channels is needed
     if stateScore
+        if ~exist('pulses', 'var')
+            pulses = [];
+        end
         runStateScore(basepath, pulses, session, SWChannels, ThetaChannels);
     end
 end
@@ -350,7 +356,7 @@ end
 
 function runStateScore(basepath, pulses, session, SWChannels, ThetaChannels)
 try
-    if exist('pulses', 'var')
+    if ~isempty(pulses)
         SleepScoreMaster(basepath, 'noPrompts', true, ...
             'ignoretime', pulses.intsPeriods, ...
             'rejectChannels', session.channelTags.Bad.channels, ...

@@ -5,80 +5,46 @@ function LFPfromDat(basepath, varargin)
 %   basename must have basename.dat and basename.xml
 %   basepath is the full path for basename.dat]
 %
-%   [note that sincFilter was altered to accomodate GPU filtering]
-%
 % INPUTS
-% [basePath]    [path where the recording files are located
-%               where basePath is a folder of the form:
-%                   whateverPath/baseName/
-%
-%               Assumes presence of the following files:
-%                   basePath/baseName.dat
-%                   -or-
-%                   basePath/amplifier.dat
-%
-%                   (optional parameters files)
-%                   basePath/baseName.xml
-%                   basePath/baseName.sessionInfo.mat
-%
-%               If basePath not specified, tries the current working
-%               directory]
+% [basePath]    [path where the recording files are located]
 %   (options)
 %    =========================================================================
 %     Properties    Values
 %    ------------------------------------------------------------------------
-%       ['datFile']     [specify while file you'd like to compute lfp from]
-%       ['outFs']       [(default: 1250) downsampled frequency of the .lfp
-%                       output file. if no user input and not specified in
-%                       the xml, use default]
+%       ['datFile']     [specify which file you'd like to compute lfp from]
+%       ['outFs']       [(default: 1250) downsampled frequency of the .lfp output file]
 %       ['lopass']      [(default: 450) low pass filter frequency]
-%       ['useGPU']      [(default: false) whether or not to use GPU to speed
-%                       processing (might not want to if limited GPU)]
+%       ['useGPU']      [(default: false) whether to use GPU for processing]
+%       ['inFs']        [input sampling frequency]
+%       ['localDir']    [temporary directory for processing]
+%       ['session']     [session structure]
+%       ['maxMemoryGB'] [(default: auto) maximum memory to use in GB]
+%       ['useMemMap']   [(default: auto) use memory mapping for very large files]
 %
-%
-%  OUTPUT
+% OUTPUT
 %   [Creates file:   basePath/baseName.lfp]
 %
-%   [If no sessionInfo.mat file previously exists, creates one with
-%   the information from the .xml file, with the .lfp sampling frequency
-%   and the lowpass filter used]
-%
-% SEE ALSO
-%
-% Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
-%
-%[SMckenzie, BWatson, DLevenstein,kathrynmcclain] [2018-2022]
-%
-%
-% This program is free software; you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
-
-
-%TODO - make actual output file and enable outputting name differently
-% (for instance extracting lfp with different downsampling and different
-% .lfp  name)
+% [SMckenzie, BWatson, DLevenstein, kathrynmcclain] [2018-2022]
+% Optimized version [2025]
 
 %% Import
-
 import iosr.dsp.*
 
 %% Input handling
-
 if ~exist('basepath', 'var')
     basepath = pwd;
 end
 
 p = inputParser;
-addParameter(p, 'datFile', [], @isstr);
+addParameter(p, 'datFile', [], @ischar);
 addParameter(p, 'outFs', [], @isnumeric);
 addParameter(p, 'lopass', 450, @isnumeric);
 addParameter(p, 'useGPU', false, @islogical);
 addParameter(p, 'inFs', [], @isnumeric);
 addParameter(p, 'localDir', [], @isfolder);
 addParameter(p, 'session', [], @isstruct);
-
+addParameter(p, 'maxMemoryGB', [], @isnumeric);
+addParameter(p, 'useMemMap', [], @islogical);
 
 parse(p, varargin{:})
 datFile = p.Results.datFile;
@@ -88,6 +54,8 @@ useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
 localDir = p.Results.localDir;
 session = p.Results.session;
+maxMemoryGB = p.Results.maxMemoryGB;
+useMemMap = p.Results.useMemMap;
 
 if isempty(session)
     session = getSession('basepath', basepath);
@@ -100,7 +68,7 @@ elseif ~strcmp(datFile(end-3:end), '.dat')
     datFile = [datFile, '.dat'];
 end
 
-% if no gpuDevice found dont try to use
+% GPU setup
 if useGPU && gpuDeviceCount < 1
     warning('No GPU device found, continuing without..')
     useGPU = false;
@@ -108,162 +76,279 @@ end
 
 if useGPU
     g = gpuDevice(1);
+    fprintf('Using GPU: %s\n', g.Name);
 end
 
 sizeInBytes = 2;
 
-%% housekeeping
-
-%Check the dat
-fInfo = checkFile('basepath', basepath, 'filename', datFile, 'searchSubdirs', false');
+%% Get file info and metadata
+fInfo = checkFile('basepath', basepath, 'filename', datFile, 'searchSubdirs', false);
 fdat = fInfo.name;
 
-%Get the metadata
 if isempty(inFs)
     inFs = session.extracellular.sr;
 end
 
 nbChan = session.extracellular.nChannels;
 
-%set output sampling rate from xml, user input
-if isempty(outFs) %If user input - priority (keep from above)
+if isempty(outFs)
     outFs = session.extracellular.srLfp;
 end
 
 if lopass > outFs / 2
-    warning('low pass cutoff beyond Nyquist')
+    warning('Low pass cutoff beyond Nyquist frequency')
 end
 
 ratio = lopass / (inFs / 2);
 sampleRatio = (inFs / outFs);
 
-%output file
+% Output file
 if ~isempty(localDir)
     flfp = fullfile(localDir, [basename, '.lfp']);
 else
     flfp = fullfile(basepath, [basename, '.lfp']);
 end
 
-%% Set Chunk and buffer size at even multiple of sampleRatio
-chunksize = 1e5; % depends on the system... could be bigger I guess
-if mod(chunksize, sampleRatio) ~= 0
-    chunksize = chunksize + sampleRatio - mod(chunksize, sampleRatio);
-end
-
-%ntbuff should be even multiple of sampleRatio
-ntbuff = 525; %default filter size in iosr toolbox
-if mod(ntbuff, sampleRatio) ~= 0
-    ntbuff = ntbuff + sampleRatio - mod(ntbuff, sampleRatio);
-end
-
-nBytes = fInfo.bytes;
-nbChunks = floor(nBytes/(nbChan * sizeInBytes * chunksize)) - 1;
-
-%% GET LFP FROM DAT
+%% Check if file already exists
 if exist([basepath, '\', basename, '.lfp'], 'file') || exist([basepath, '\', basename, '.eeg'], 'file')
     fprintf('LFP file already exists \n')
     return
 end
 
-fidI = fopen(fdat, 'r');
-fprintf('Extraction of LFP begun \n')
-fidout = fopen(flfp, 'a');
+%% Optimize chunk size based on available memory
+nBytes = fInfo.bytes;
+totalSamples = nBytes / (nbChan * sizeInBytes);
+
+% Get available memory
+if isempty(maxMemoryGB)
+    try
+        memInfo = memory;
+        availableMemory = memInfo.MaxPossibleArrayBytes;
+    catch
+        availableMemory = 8e9; % Default to 8GB if memory info unavailable
+    end
+else
+    availableMemory = maxMemoryGB * 1e9;
+end
+
+% Calculate optimal chunk size
+% Account for: input data (int16), filtered data (double), output data (int16)
+% Safety factor of 4 for intermediate calculations
+memoryPerSample = nbChan * (2 + 8 + 2) * 4; % bytes per sample
+maxChunkSize = floor(availableMemory/memoryPerSample);
+maxChunkSize = min(maxChunkSize, 2e6); % Cap at 2M samples for reasonable progress updates
+
+% Ensure chunk size is multiple of sample ratio
+chunksize = maxChunkSize;
+if mod(chunksize, sampleRatio) ~= 0
+    chunksize = chunksize - mod(chunksize, sampleRatio);
+end
+
+fprintf('Optimized chunk size: %d samples (%.1f MB per chunk)\n', chunksize, chunksize*nbChan*sizeInBytes/1e6);
+
+%% Set up memory mapping for very large files
+if isempty(useMemMap)
+    useMemMap = nBytes > 50e9; % Auto-enable for files > 50GB
+end
+
+% Buffer size for filter
+ntbuff = 525; % default filter size in iosr toolbox
+if mod(ntbuff, sampleRatio) ~= 0
+    ntbuff = ntbuff + sampleRatio - mod(ntbuff, sampleRatio);
+end
+
+nbChunks = floor(totalSamples/chunksize);
+if nbChunks == 0
+    nbChunks = 1;
+    chunksize = totalSamples;
+end
+
+%% Pre-allocate arrays for maximum efficiency
+fprintf('Pre-allocating arrays...\n');
+maxOutputSize = ceil(chunksize/sampleRatio);
+
+% Pre-allocate main processing arrays - corrected dimensions
+if useGPU
+    try
+        % For transposed data: [samples x channels]
+        dat_gpu = gpuArray(zeros(chunksize+2*ntbuff, nbChan));
+        filtered_gpu = gpuArray(zeros(chunksize+2*ntbuff, nbChan));
+        fprintf('GPU arrays pre-allocated\n');
+    catch ME
+        warning(ME.message);
+        useGPU = false;
+    end
+end
+
+% CPU arrays not needed for pre-allocation since we create them on-the-fly
+
+%% Set up file I/O
+fprintf('Setting up optimized file I/O...\n');
+
+if useMemMap && ~useGPU
+    % Memory-mapped file access for very large files
+    fprintf('Using memory-mapped file access for large dataset\n');
+    try
+        mmap = memmapfile(fdat, 'Format', {'int16', [nbChan, totalSamples], 'data'});
+        useMemMapFile = true;
+    catch
+        warning('Memory mapping failed, using standard file I/O');
+        useMemMapFile = false;
+        fidI = fopen(fdat, 'r');
+    end
+else
+    useMemMapFile = false;
+    fidI = fopen(fdat, 'r');
+end
+
+fidout = fopen(flfp, 'w'); % Use 'w' instead of 'a' for better performance
+
+%% Main processing loop - OPTIMIZED
+fprintf('Starting optimized LFP extraction...\n');
+tic;
 
 for ibatch = 1:nbChunks
 
-    if mod(ibatch, 10) == 0
-        if ibatch ~= 10
-            fprintf(repmat('\b', [1, length([num2str(round(100*(ibatch - 10)/nbChunks)), ' percent complete'])]))
-        end
-        fprintf('%d percent complete', round(100*ibatch/nbChunks));
+    % Progress reporting
+    if mod(ibatch, max(1, floor(nbChunks/20))) == 0
+        elapsed = toc;
+        eta = elapsed * (nbChunks - ibatch) / ibatch;
+        fprintf('Progress: %d/%d (%.1f%%) - ETA: %.1f min\n', ...
+            ibatch, nbChunks, 100*ibatch/nbChunks, eta/60);
     end
 
-    if ibatch > 1
-        fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-        dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
-        try
-            dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
-        catch
-            % One possible issue is that the network bugged and so the file was dropped. This can be fixed by reloading the file:
-            % === SOLUTION ===
-            fidI = fopen(fdat, 'r');
-            fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-            dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
-            % === END OF SOLUTION === % if this executes fine, hit "dbcont"
-            try
-                dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
-            catch
-                warning('This should be fixed.. tell Raly! [or repeat the solution just above and see if that works. If no errors, hit dbcont!]');
-                keyboard;
-            end
+    %% Read data chunk
+    if useMemMapFile
+        % Memory-mapped reading
+        startIdx = (ibatch - 1) * chunksize + 1;
+        if ibatch == 1
+            endIdx = min(startIdx+chunksize+ntbuff-1, totalSamples);
+            dat = double(mmap.Data.data(:, startIdx:endIdx));
+        else
+            startIdx = startIdx - ntbuff;
+            endIdx = min(startIdx+chunksize+2*ntbuff-1, totalSamples);
+            dat = double(mmap.Data.data(:, startIdx:endIdx));
         end
     else
-        dat = fread(fidI, nbChan*(chunksize + ntbuff), 'int16');
+        % Standard file reading
+        if ibatch > 1
+            fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
+            dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
+        else
+            dat = fread(fidI, nbChan*(chunksize + ntbuff), 'int16');
+        end
+
         try
-            dat = reshape(dat, [nbChan, (chunksize + ntbuff)]);
+            if ibatch > 1
+                dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
+            else
+                dat = reshape(dat, [nbChan, (chunksize + ntbuff)]);
+            end
+            dat = double(dat);
         catch
-            warning('This should be fixed.. tell Raly!');
-            keyboard;
+            warning('Reshape failed at chunk %d, trying file reload...', ibatch);
+            if ~useMemMapFile
+                fclose(fidI);
+                fidI = fopen(fdat, 'r');
+                if ibatch > 1
+                    fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
+                    dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
+                    dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
+                else
+                    dat = fread(fidI, nbChan*(chunksize + ntbuff), 'int16');
+                    dat = reshape(dat, [nbChan, (chunksize + ntbuff)]);
+                end
+                dat = double(dat);
+            end
         end
     end
 
-    DATA = nan(size(dat, 1), chunksize/sampleRatio);
-    for ii = 1:size(dat, 1)
-        d = double(dat(ii, :));
-        if useGPU
-            d = gpuArray(d);
-            tmp = gpuArray(zeros(size(d)));
-        end
-        tmp = iosr.dsp.sincFilter(d, ratio);
-        if useGPU
-            if ibatch == 1
-                DATA(ii, :) = gather_try(int16(real(tmp(sampleRatio:sampleRatio:end-ntbuff))));
-            else
-                DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff))));
-            end
+    %% OPTIMIZED FILTERING - Transpose for better performance
+    % sincFilter processes columns, so transpose to make time dimension first
+    dat_transposed = dat'; % Now [samples x channels]
+
+    if useGPU
+        % GPU processing
+        dat_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)) = dat_transposed;
+
+        % Apply filter - now each channel is a column, processed in parallel
+        filtered_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)) =...
+            iosr.dsp.sincFilter(dat_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)), ratio);
+
+        % Transpose back to [channels x samples]
+        filtered_data = filtered_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2))';
+
+        % Downsample
+        if ibatch == 1
+            DATA = int16(real(filtered_data(:, sampleRatio:sampleRatio:end-ntbuff)));
         else
-            if ibatch == 1
-                DATA(ii, :) = int16(real(tmp(sampleRatio:sampleRatio:end-ntbuff)));
-            else
-                DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff)));
-            end
+            DATA = int16(real(filtered_data(:, ntbuff+sampleRatio:sampleRatio:end-ntbuff)));
+        end
+
+        % Transfer back to CPU for writing
+        DATA = gather(DATA);
+
+    else
+        % CPU processing - transpose for column-wise processing
+        filtered_transposed = iosr.dsp.sincFilter(dat_transposed, ratio);
+        filtered_data = filtered_transposed'; % Back to [channels x samples]
+
+        % Downsample
+        if ibatch == 1
+            DATA = int16(real(filtered_data(:, sampleRatio:sampleRatio:end-ntbuff)));
+        else
+            DATA = int16(real(filtered_data(:, ntbuff+sampleRatio:sampleRatio:end-ntbuff)));
         end
     end
-    fwrite(fidout, DATA(:), 'int16');
+
+    %% Write data
+    fwrite(fidout, DATA, 'int16');
 end
 
+%% Process remainder
+remainder = totalSamples - nbChunks * chunksize;
+if remainder > 0
+    fprintf('Processing remainder: %d samples\n', remainder);
 
-remainder = nBytes / (sizeInBytes * nbChan) - nbChunks * chunksize;
-if ~isempty(remainder)
-    fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-    dat = fread(fidI, nbChan*(remainder + ntbuff), 'int16');
-    try
+    if useMemMapFile
+        startIdx = nbChunks * chunksize - ntbuff + 1;
+        endIdx = totalSamples;
+        dat = double(mmap.Data.data(:, startIdx:endIdx));
+    else
+        fseek(fidI, ((nbChunks - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
+        dat = fread(fidI, nbChan*(remainder + ntbuff), 'int16');
         dat = reshape(dat, [nbChan, (remainder + ntbuff)]);
-    catch
-        warning('Check the number of channels in the xml match what you recorded. If not the problem, tell Raly!');
-        keyboard;
+        dat = double(dat);
     end
 
-    DATA = nan(size(dat, 1), floor(remainder/sampleRatio));
-    for ii = 1:size(dat, 1)
-        d = double(dat(ii, :));
-        if useGPU
-            d = gpuArray(d);
-        end
-
-        tmp = iosr.dsp.sincFilter(d, ratio);
-
-        if useGPU
-            DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end))));
-        else
-            DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end)));
-        end
+    % Process remainder with corrected orientation
+    if useGPU
+        dat_transposed = dat';
+        dat_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)) = dat_transposed;
+        filtered_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)) =...
+            iosr.dsp.sincFilter(dat_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2)), ratio);
+        filtered_data = filtered_gpu(1:size(dat_transposed, 1), 1:size(dat_transposed, 2))';
+        output_size = floor(remainder/sampleRatio);
+        DATA = gather(int16(real(filtered_data(:, ntbuff+sampleRatio:sampleRatio:end))));
+        DATA = DATA(:, 1:output_size);
+    else
+        dat_transposed = dat';
+        filtered_transposed = iosr.dsp.sincFilter(dat_transposed, ratio);
+        filtered_data = filtered_transposed';
+        output_size = floor(remainder/sampleRatio);
+        DATA = int16(real(filtered_data(:, ntbuff+sampleRatio:sampleRatio:end)));
+        DATA = DATA(:, 1:output_size);
     end
 
-    fwrite(fidout, DATA(:), 'int16');
+    fwrite(fidout, DATA, 'int16');
 end
 
-fclose(fidI);
+%% Cleanup
+if useMemMapFile
+    clear mmap;
+else
+    fclose(fidI);
+end
 fclose(fidout);
 
 if useGPU
@@ -271,8 +356,15 @@ if useGPU
     gpuDevice([]);
 end
 
-disp('lfp file created')
+elapsed = toc;
+fprintf('LFP extraction completed in %.1f minutes\n', elapsed/60);
+fprintf('Processing speed: %.1f MB/min\n', (nBytes / 1e6)/(elapsed / 60));
+
+% Move file if using local directory
 if ~isempty(localDir)
     movefile(flfp, fullfile(basepath, [basename, '.lfp']));
 end
+
+fprintf('LFP file created: %s\n', fullfile(basepath, [basename, '.lfp']));
+
 end

@@ -36,16 +36,11 @@ function LFPfromDat(basepath, varargin)
 %   LFPfromDat('/path/to/data', 'lopass', 300, 'outFs', 1250, 'useGPU', true)
 %
 %   Dependencies:
-%   - iosr.dsp package
 %   - Parallel Computing Toolbox (for GPU support)
 %   - getSession.m (from CellExplorer)
 %
-%   See also: fast_sinc_filter_matrix, getSession
 %
 %   Note: Will skip processing if .lfp file already exists
-
-%% Import
-import iosr.dsp.*
 
 %% Input handling
 if ~exist('basepath', 'var')
@@ -81,7 +76,7 @@ elseif ~strcmp(datFile(end-3:end), '.dat')
     datFile = [datFile, '.dat'];
 end
 
-% GPU setup - simplified
+% GPU setup
 if useGPU && gpuDeviceCount < 1
     warning('No GPU device found, continuing without..')
     useGPU = false;

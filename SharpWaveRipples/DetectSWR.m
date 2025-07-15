@@ -136,7 +136,6 @@ function ripples = DetectSWR(Channels, varargin)
 %
 % MAXGIGS:      the maximum number of GIGABYTES this
 %
-% noPrompts     true/false disable any user prompts (default: true)
 %
 % useSPW        Reject all events without a significant (and sufficiently long)
 %               sharp-wave true, and determine the [start stop] boundaries of
@@ -195,12 +194,11 @@ addParameter(p, 'minDurSW', 0.02, @isnumeric); % seconds
 addParameter(p, 'maxDurSW', 0.5, @isnumeric); % seconds
 addParameter(p, 'minDurRP', 0.025, @isnumeric); % seconds
 addParameter(p, 'check', false, @islogical);
-addParameter(p, 'EVENTFILE', true, @islogical);
+addParameter(p, 'EVENTFILE', false, @islogical);
 addParameter(p, 'FIGS', false, @islogical);
 addParameter(p, 'TRAINING', false, @islogical);
 addParameter(p, 'DEBUG', false, @islogical);
 addParameter(p, 'MAXGIGS', 16, @isnumeric); % GigaBytes
-addParameter(p, 'noPrompts', true, @islogical);
 addParameter(p, 'useSPW', true, @islogical);
 addParameter(p, 'useEEG', false, @islogical); % if you want the function to look for a .eeg file before looking for the .lfp
 
@@ -228,7 +226,6 @@ FIGS = p.Results.FIGS;
 TRAINING = p.Results.TRAINING;
 DEBUG = p.Results.DEBUG;
 MAXGIGS = p.Results.MAXGIGS;
-noPrompts = p.Results.noPrompts;
 useSPW = p.Results.useSPW;
 useEEG = p.Results.useEEG;
 
@@ -239,7 +236,7 @@ useEEG = p.Results.useEEG;
 sessionInfo = getSession('basepath', basepath);
 if exist(fullfile(basepath, [sessionInfo.general.name, '.ripples.events.mat']), 'file') && ~forceDetect
     disp('Ripples already detected! Loading file...');
-    load(fullfile(basepath, [sessionInfo.general.name, '.ripples.events.mat']));
+    load(fullfile(basepath, [sessionInfo.general.name, '.ripples.events.mat']), 'ripples');
     return
 end
 
@@ -809,7 +806,7 @@ end
 % This first pass is permissive: it is just detecting maxima without
 % regards for magnitude
 
-WinSize = floor((WinSize * SR)/1000); %#ok<NODEF> % window in samples
+WinSize = floor((WinSize * SR)/1000); % % window in samples
 HalfWinSize = floor(WinSize/2); % for logging ripple power around SW
 
 % for each trial, block features into windows
@@ -1143,7 +1140,7 @@ for ep_i = 1:Nepochs
 
         % We have a valid detection
         valid = valid + 1;
-        if useSPW, % let event boundaries be entirely determined by the sharp wave boundaries
+        if useSPW % let event boundaries be entirely determined by the sharp wave boundaries
             SWR_valid.Ts(valid, :) = [SWRs(ii), (SWRs(ii) - (bound + 1 - startSWR)), (SWRs(ii) + stopSWR - 1)];
         else % event boundaries are determined by the union of the sharp wave and ripple intervals
             SWR_valid.Ts(valid, :) = [SWRs(ii), min([SWRs(ii) - (bound + 1 - startSWR), startRP]), max([SWRs(ii) + stopSWR - 1, stopRP])];
@@ -1279,7 +1276,7 @@ for ep_i = 1:Nepochs
         idxs = SWR_valid.Ts(irip, 2):SWR_valid.Ts(irip, 3);
         [~, imax] = max(envelope(idxs));
         imax = imax + idxs(1) - 1;
-        idxsmax = round([imax - 0.01 * SR:imax + 0.01 * SR]);
+        idxsmax = round(imax-0.01*SR:imax+0.01*SR);
         [~, imin] = min(lfp(idxsmax));
         imin = imin + idxsmax(1) - 1;
         TsTrough(irip) = imin;
@@ -1302,7 +1299,7 @@ for ep_i = 1:Nepochs
     amplitude = abs(h);
     unwrapped = unwrap(phase);
     % Compute instantaneous frequency
-    frequency = bz_Diff(medfilt1(unwrapped, 12), [0:length(lfpfilt) - 1]'/SR, 'smooth', 0);
+    frequency = bz_Diff(medfilt1(unwrapped, 12), (0:length(lfpfilt) - 1)'/SR, 'smooth', 0);
     frequency = frequency / (2 * pi);
 
     %%%%%%%%%%%%%%%%%%%%%%%
@@ -1408,7 +1405,7 @@ for ep_i = 1:Nepochs
     params.DEBUG = DEBUG;
     SWR.detectorinfo.detectionparms = params;
     SWR.detectorinfo.detectorname = 'bz_DetectSWR';
-    SWR.detectorinfo.detectiondate = datestr(datetime('now'), 'dd-mmm-yyyy');
+    SWR.detectorinfo.detectiondate = datetime('now', 'Format', 'd-MMM-y');
     SWR.detectorinfo.detectionintervals = Epochs;
 
     % write out log file

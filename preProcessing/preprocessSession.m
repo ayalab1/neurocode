@@ -155,6 +155,10 @@ clean_rez_params = p.Results.clean_rez_params;
 SWChannels = p.Results.SWChannels;
 ThetaChannels = p.Results.ThetaChannels;
 
+if removeNoise
+    removeNoise = false;
+    warning('removeNoise not implemented')
+end
 
 % Check for active breakpoints
 dbstatus_ = dbstatus('-completenames');

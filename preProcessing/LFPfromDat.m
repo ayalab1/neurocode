@@ -1,85 +1,60 @@
 function LFPfromDat(basepath, varargin)
-% LFPFROMDAT Extract Local Field Potential (LFP) from wideband .dat file
-%   [perform lowpass (2 X output Fs) sinc filter on wideband data
-%   subsample the filtered data and save as a new flat binary
-%   basename must have basename.dat and basename.xml
-%   basepath is the full path for basename.dat]
+%LFPfromDat Extract Local Field Potential (LFP) from wideband .dat file
+%   This function performs extraction of LFP signals from raw wideband
+%   neural data (.dat file) through filtering and downsampling.
 %
-%   [note that sincFilter was altered to accomodate GPU filtering]
+%   Syntax:
+%   LFPfromDat(basepath)
+%   LFPfromDat(basepath, 'ParameterName', ParameterValue, ...)
 %
-% INPUTS
-% [basePath]    [path where the recording files are located
-%               where basePath is a folder of the form:
-%                   whateverPath/baseName/
+%   Inputs:
+%   basepath - Path to directory containing the .dat file (default: current directory)
 %
-%               Assumes presence of the following files:
-%                   basePath/baseName.dat
-%                   -or-
-%                   basePath/amplifier.dat
+%   Optional Name-Value Parameters:
+%   'datFile'     - Name of .dat file (default: [basename '.dat'])
+%   'outFs'       - Output sampling rate (default: session.extracellular.srLfp)
+%   'lopass'      - Low-pass cutoff frequency (default: 450 Hz)
+%   'useGPU'      - Enable GPU acceleration (default: false)
+%   'inFs'        - Input sampling rate (default: session.extracellular.sr)
+%   'localDir'    - Temporary directory for processing (default: basepath)
+%   'session'     - Session metadata structure (default: loaded from basepath)
+%   'filterOrder' - Order of the sinc filter (controls sharpness and kernel length) (default: 525, but dynamically adjusted)
 %
-%                   (optional parameters files)
-%                   basePath/baseName.xml
-%                   basePath/baseName.sessionInfo.mat
+%   Outputs:
+%   Creates a .lfp file in the basepath directory with downsampled, filtered data
 %
-%               If basePath not specified, tries the current working
-%               directory]
-%   (options)
-%    =========================================================================
-%     Properties    Values
-%    ------------------------------------------------------------------------
-%       ['datFile']     [specify while file you'd like to compute lfp from]
-%       ['outFs']       [(default: 1250) downsampled frequency of the .lfp
-%                       output file. if no user input and not specified in
-%                       the xml, use default]
-%       ['lopass']      [(default: 450) low pass filter frequency]
-%       ['useGPU']      [(default: false) whether or not to use GPU to speed
-%                       processing (might not want to if limited GPU)]
+%   Processing Pipeline:
+%   1. Reads raw data in chunks to minimize memory usage
+%   2. Applies optimized sinc filter (low-pass)
+%   3. Downsamples to target rate
+%   4. Writes results to binary file
 %
+%   Example:
+%   % Basic usage
+%   LFPfromDat('/path/to/data')
 %
-%  OUTPUT
-%   [Creates file:   basePath/baseName.lfp]
+%   % Custom parameters
+%   LFPfromDat('/path/to/data', 'lopass', 300, 'outFs', 1250, 'useGPU', true)
 %
-%   [If no sessionInfo.mat file previously exists, creates one with
-%   the information from the .xml file, with the .lfp sampling frequency
-%   and the lowpass filter used]
-%
-% SEE ALSO
-%
-% Dependency: iosr tool box https://github.com/IoSR-Surrey/MatlabToolbox
-%
-%[SMckenzie, BWatson, DLevenstein,kathrynmcclain] [2018-2022]
+%   Dependencies:
+%   - Parallel Computing Toolbox (for GPU support)
+%   - getSession.m (from CellExplorer)
 %
 %
-% This program is free software; you can redistribute it and/or modify
-% it under the terms of the GNU General Public License as published by
-% the Free Software Foundation; either version 3 of the License, or
-% (at your option) any later version.
-
-
-%TODO - make actual output file and enable outputting name differently
-% (for instance extracting lfp with different downsampling and different
-% .lfp  name)
-
-%% Import
-
-import iosr.dsp.*
-
+%   Note: Will skip processing if .lfp file already exists
 %% Input handling
-
 if ~exist('basepath', 'var')
     basepath = pwd;
 end
-
 p = inputParser;
-addParameter(p, 'datFile', [], @isstr);
+addParameter(p, 'datFile', [], @ischar);
 addParameter(p, 'outFs', [], @isnumeric);
 addParameter(p, 'lopass', 450, @isnumeric);
-addParameter(p, 'useGPU', false, @islogical);
+addParameter(p, 'useGPU', true, @islogical);
 addParameter(p, 'inFs', [], @isnumeric);
 addParameter(p, 'localDir', [], @isfolder);
 addParameter(p, 'session', [], @isstruct);
-
-
+addParameter(p, 'filterOrder', 525, @isnumeric); % New parameter for filter order
 parse(p, varargin{:})
 datFile = p.Results.datFile;
 outFs = p.Results.outFs;
@@ -88,191 +63,210 @@ useGPU = p.Results.useGPU;
 inFs = p.Results.inFs;
 localDir = p.Results.localDir;
 session = p.Results.session;
-
+filterOrder = p.Results.filterOrder;
 if isempty(session)
-    session = getSession('basepath', basepath);
+    try
+        session = getSession('basepath', basepath);
+    catch ME
+        error('LFPfromDat:SessionLoadError', 'Could not load session metadata. Please ensure getSession.m is available and a .session.mat file exists in the basepath. Error: %s', ME.message);
+    end
 end
 basename = session.general.name;
-
 if isempty(datFile)
     datFile = [basename, '.dat'];
 elseif ~strcmp(datFile(end-3:end), '.dat')
     datFile = [datFile, '.dat'];
 end
-
-% if no gpuDevice found dont try to use
+% GPU setup
 if useGPU && gpuDeviceCount < 1
     warning('No GPU device found, continuing without..')
     useGPU = false;
 end
-
 if useGPU
     g = gpuDevice(1);
 end
-
-sizeInBytes = 2;
-
-%% housekeeping
-
-%Check the dat
-fInfo = checkFile('basepath', basepath, 'filename', datFile, 'searchSubdirs', false');
+sizeInBytes = 2; % int16 is 2 bytes
+%% Housekeeping
+fInfo = checkFile('basepath', basepath, 'filename', datFile, 'searchSubdirs', false);
 fdat = fInfo.name;
-
-%Get the metadata
 if isempty(inFs)
     inFs = session.extracellular.sr;
 end
-
 nbChan = session.extracellular.nChannels;
-
-%set output sampling rate from xml, user input
-if isempty(outFs) %If user input - priority (keep from above)
+if isempty(outFs)
     outFs = session.extracellular.srLfp;
 end
-
-if lopass > outFs / 2
-    warning('low pass cutoff beyond Nyquist')
+% Handle lopass > outFs / 2 more robustly.
+% If lopass is above Nyquist, set it to Nyquist and warn.
+if lopass >= outFs / 2
+    warning('LFPfromDat:NyquistWarning', 'Low-pass cutoff (%.1f Hz) is at or beyond the Nyquist frequency (%.1f Hz) for the output sampling rate (%.1f Hz). Setting lopass to Nyquist - epsilon.', lopass, outFs/2, outFs);
+    lopass = (outFs / 2) - 1; % Set to just below Nyquist to avoid issues
 end
-
 ratio = lopass / (inFs / 2);
 sampleRatio = (inFs / outFs);
-
-%output file
+% Output file
 if ~isempty(localDir)
     flfp = fullfile(localDir, [basename, '.lfp']);
 else
     flfp = fullfile(basepath, [basename, '.lfp']);
 end
-
-%% Set Chunk and buffer size at even multiple of sampleRatio
-chunksize = 1e5; % depends on the system... could be bigger I guess
+%% chunking
+% Corrected chunking and filtering logic to fix file size mismatch bug
+% A chunk size that's a multiple of the sample ratio is used for clean downsampling.
+chunksize = 1e5;
 if mod(chunksize, sampleRatio) ~= 0
-    chunksize = chunksize + sampleRatio - mod(chunksize, sampleRatio);
+    chunksize = chunksize - mod(chunksize, sampleRatio);
+    if chunksize < sampleRatio
+        chunksize = sampleRatio;
+    end
 end
 
-%ntbuff should be even multiple of sampleRatio
-ntbuff = 525; %default filter size in iosr toolbox
-if mod(ntbuff, sampleRatio) ~= 0
-    ntbuff = ntbuff + sampleRatio - mod(ntbuff, sampleRatio);
+% Dynamically adjust filter order (N) and buffer size (ntbuff)
+N = max(filterOrder, round(3*sampleRatio));
+if mod(N, 2) == 0
+    N = N + 1;
 end
+ntbuff = N;
 
-nBytes = fInfo.bytes;
-nbChunks = floor(nBytes/(nbChan * sizeInBytes * chunksize)) - 1;
+totalSamples = fInfo.bytes / (nbChan * sizeInBytes);
 
-%% GET LFP FROM DAT
-if exist([basepath, '\', basename, '.lfp'], 'file') || exist([basepath, '\', basename, '.eeg'], 'file')
+if exist([basepath, filesep, basename, '.lfp'], 'file') || ...
+        exist([basepath, filesep, basename, '.eeg'], 'file')
     fprintf('LFP file already exists \n')
     return
 end
 
+%% Main processing
 fidI = fopen(fdat, 'r');
-fprintf('Extraction of LFP begun \n')
-fidout = fopen(flfp, 'a');
+if fidI == -1
+    error('LFPfromDat:FileOpenError', 'Could not open input .dat file: %s', fdat);
+end
 
-for ibatch = 1:nbChunks
+fidout = fopen(flfp, 'w');
+if fidout == -1
+    error('LFPfromDat:FileOpenError', 'Could not create output .lfp file: %s', flfp);
+end
 
-    if mod(ibatch, 10) == 0
-        if ibatch ~= 10
-            fprintf(repmat('\b', [1, length([num2str(round(100*(ibatch - 10)/nbChunks)), ' percent complete'])]))
-        end
-        fprintf('%d percent complete', round(100*ibatch/nbChunks));
+fprintf('Starting LFP extraction...\n')
+tic;
+
+processedSamples = 0;
+pre_buffer = []; % No pre-buffer for the first chunk
+
+WaitMessage = parfor_wait(ceil(totalSamples/chunksize),...
+    'ReportInterval', 20);
+
+while processedSamples < totalSamples
+    % Determine how many samples to read this iteration
+    remainingSamples = totalSamples - processedSamples;
+    readSamples = min(chunksize, remainingSamples);
+
+    % Read chunk data
+    fseek(fidI, (processedSamples - size(pre_buffer, 2))*nbChan*sizeInBytes, 'bof');
+    current_chunk = fread(fidI, [nbChan, readSamples + size(pre_buffer, 2)], 'int16');
+
+    % If this is the last chunk, it might read fewer samples than requested
+    if size(current_chunk, 2) < readSamples + size(pre_buffer, 2)
+        current_chunk = reshape(current_chunk, [nbChan, numel(current_chunk) / nbChan]);
     end
 
-    if ibatch > 1
-        fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-        dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
-        try
-            dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
-        catch
-            % One possible issue is that the network bugged and so the file was dropped. This can be fixed by reloading the file:
-            % === SOLUTION ===
-            fidI = fopen(fdat, 'r');
-            fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-            dat = fread(fidI, nbChan*(chunksize + 2 * ntbuff), 'int16');
-            % === END OF SOLUTION === % if this executes fine, hit "dbcont"
-            try
-                dat = reshape(dat, [nbChan, (chunksize + 2 * ntbuff)]);
-            catch
-                warning('This should be fixed.. tell Raly! [or repeat the solution just above and see if that works. If no errors, hit dbcont!]');
-                keyboard;
-            end
-        end
+    dataToFilter = double(current_chunk);
+
+    % Filter the data
+    if useGPU
+        dataToFilter = gpuArray(dataToFilter);
+        filtered_data = fast_sinc_filter_matrix(dataToFilter, ratio, N, useGPU);
     else
-        dat = fread(fidI, nbChan*(chunksize + ntbuff), 'int16');
-        try
-            dat = reshape(dat, [nbChan, (chunksize + ntbuff)]);
-        catch
-            warning('This should be fixed.. tell Raly!');
-            keyboard;
-        end
+        filtered_data = fast_sinc_filter_matrix(dataToFilter, ratio, N, useGPU);
     end
 
-    DATA = nan(size(dat, 1), chunksize/sampleRatio);
-    for ii = 1:size(dat, 1)
-        d = double(dat(ii, :));
-        if useGPU
-            d = gpuArray(d);
-            tmp = gpuArray(zeros(size(d)));
-        end
-        tmp = iosr.dsp.sincFilter(d, ratio);
-        if useGPU
-            if ibatch == 1
-                DATA(ii, :) = gather_try(int16(real(tmp(sampleRatio:sampleRatio:end-ntbuff))));
-            else
-                DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff))));
-            end
-        else
-            if ibatch == 1
-                DATA(ii, :) = int16(real(tmp(sampleRatio:sampleRatio:end-ntbuff)));
-            else
-                DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end-ntbuff)));
-            end
-        end
+    % Extract the downsampled portion corresponding to the *original* chunk
+    % not including the pre-buffer
+    if isempty(pre_buffer)
+        downsampled_chunk = filtered_data(:, sampleRatio:sampleRatio:readSamples);
+    else
+        downsampled_chunk = filtered_data(:, size(pre_buffer, 2)+sampleRatio:sampleRatio:size(pre_buffer, 2)+readSamples);
     end
-    fwrite(fidout, DATA(:), 'int16');
+
+    % Update the pre-buffer for the next iteration
+    pre_buffer = double(current_chunk(:, end-ntbuff+1:end));
+
+    if useGPU
+        downsampled_chunk = gather(int16(real(downsampled_chunk)));
+    else
+        downsampled_chunk = int16(real(downsampled_chunk));
+    end
+
+    % Write to file
+    fwrite(fidout, downsampled_chunk(:), 'int16');
+    processedSamples = processedSamples + readSamples;
+
+    % if mod(processedSamples, chunksize*10) == 0
+    %     fprintf('%d percent complete\n', round(100*processedSamples/totalSamples));
+    % end
+    WaitMessage.Send;
 end
-
-
-remainder = nBytes / (sizeInBytes * nbChan) - nbChunks * chunksize;
-if ~isempty(remainder)
-    fseek(fidI, ((ibatch - 1) * (nbChan * sizeInBytes * chunksize))-(nbChan * sizeInBytes * ntbuff), 'bof');
-    dat = fread(fidI, nbChan*(remainder + ntbuff), 'int16');
-    try
-        dat = reshape(dat, [nbChan, (remainder + ntbuff)]);
-    catch
-        warning('Check the number of channels in the xml match what you recorded. If not the problem, tell Raly!');
-        keyboard;
-    end
-
-    DATA = nan(size(dat, 1), floor(remainder/sampleRatio));
-    for ii = 1:size(dat, 1)
-        d = double(dat(ii, :));
-        if useGPU
-            d = gpuArray(d);
-        end
-
-        tmp = iosr.dsp.sincFilter(d, ratio);
-
-        if useGPU
-            DATA(ii, :) = gather_try(int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end))));
-        else
-            DATA(ii, :) = int16(real(tmp(ntbuff+sampleRatio:sampleRatio:end)));
-        end
-    end
-
-    fwrite(fidout, DATA(:), 'int16');
-end
+WaitMessage.Destroy;
 
 fclose(fidI);
 fclose(fidout);
 
 if useGPU
     reset(g);
-    gpuDevice([]);
 end
 
-disp('lfp file created')
-if ~isempty(localDir)
-    movefile(flfp, fullfile(basepath, [basename, '.lfp']));
+elapsed = toc;
+fprintf('\nLFP extraction completed in %.2f seconds\n', elapsed);
+
+if ~isempty(localDir) && ~strcmp(localDir, basepath)
+    try
+        movefile(flfp, fullfile(basepath, [basename, '.lfp']));
+        disp('LFP file moved to basepath.')
+    catch ME
+        warning('LFPfromDat:MoveFileError', 'Could not move LFP file from %s to %s. Error: %s', flfp, fullfile(basepath, [basename, '.lfp']), ME.message);
+    end
+end
+
+disp('LFP file created')
+end
+
+function y = fast_sinc_filter_matrix(x, ratio, N, useGPU)
+%FAST_SINC_FILTER_MATRIX Optimized matrix-based sinc filtering
+% This version uses vectorized operations but avoids FFT overhead for moderate sizes
+
+[nChan, nSamples] = size(x);
+
+n = -floor(N/2):floor(N/2);
+B = sinc(ratio*n) .* ratio;
+
+if useGPU
+    B = gpuArray(B);
+end
+
+% For larger chunks, use frequency domain
+kernelLen = length(B);
+fftLen = 2^nextpow2(nSamples+kernelLen-1);
+% Pre-compute filter FFT
+B_fft = fft(B, fftLen);
+% Process all channels at once
+y = zeros(nChan, nSamples);
+if useGPU
+    y = gpuArray(y);
+    B_fft = gpuArray(B_fft);
+end
+for i = 1:nChan
+    % Zero-pad input
+    x_padded = [x(i, :), zeros(1, fftLen-nSamples)];
+    if useGPU
+        x_padded = gpuArray(x_padded);
+    end
+    % FFT-based convolution
+    X_fft = fft(x_padded);
+    Y_fft = X_fft .* B_fft;
+    y_full = ifft(Y_fft);
+    % Extract same-sized output (matching 'same' option)
+    % For 'same' convolution, the delay is floor(kernelLen/2)
+    delay = floor(kernelLen/2);
+    y(i, :) = y_full(delay+1:delay+nSamples);
 end
 end

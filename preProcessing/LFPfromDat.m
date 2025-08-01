@@ -42,7 +42,6 @@ function LFPfromDat(basepath, varargin)
 %
 %
 %   Note: Will skip processing if .lfp file already exists
-
 %% Input handling
 if ~exist('basepath', 'var')
     basepath = pwd;
@@ -87,7 +86,6 @@ if useGPU
     g = gpuDevice(1);
 end
 sizeInBytes = 2; % int16 is 2 bytes
-
 %% Housekeeping
 fInfo = checkFile('basepath', basepath, 'filename', datFile, 'searchSubdirs', false);
 fdat = fInfo.name;
@@ -112,7 +110,6 @@ if ~isempty(localDir)
 else
     flfp = fullfile(basepath, [basename, '.lfp']);
 end
-
 %% chunking
 % Corrected chunking and filtering logic to fix file size mismatch bug
 % A chunk size that's a multiple of the sample ratio is used for clean downsampling.
@@ -138,6 +135,7 @@ if exist([basepath, filesep, basename, '.lfp'], 'file') || ...
     fprintf('LFP file already exists \n')
     return
 end
+
 %% Main processing
 fidI = fopen(fdat, 'r');
 if fidI == -1
@@ -154,6 +152,9 @@ tic;
 
 processedSamples = 0;
 pre_buffer = []; % No pre-buffer for the first chunk
+
+WaitMessage = parfor_wait(ceil(totalSamples/chunksize),...
+    'ReportInterval', 20);
 
 while processedSamples < totalSamples
     % Determine how many samples to read this iteration
@@ -200,10 +201,12 @@ while processedSamples < totalSamples
     fwrite(fidout, downsampled_chunk(:), 'int16');
     processedSamples = processedSamples + readSamples;
 
-    if mod(processedSamples, chunksize*10) == 0
-        fprintf('%d percent complete\n', round(100*processedSamples/totalSamples));
-    end
+    % if mod(processedSamples, chunksize*10) == 0
+    %     fprintf('%d percent complete\n', round(100*processedSamples/totalSamples));
+    % end
+    WaitMessage.Send;
 end
+WaitMessage.Destroy;
 
 fclose(fidI);
 fclose(fidout);

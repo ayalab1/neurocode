@@ -1,4 +1,4 @@
-function [interpolated,discarded] = Interpolate(samples,timestamps,varargin)
+function [interpolated, discarded] = Interpolate(samples, timestamps, varargin)
 
 %Interpolate - Interpolate samples (positions, spikes, LFP, etc.) at given timestamps.
 %
@@ -49,69 +49,69 @@ trim = 'on';
 maxGap = Inf;
 type = 'linear';
 
-if nargin < 2 | mod(length(varargin),2) ~= 0,
-	error('Incorrect number of parameters (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
+if nargin < 2 || mod(length(varargin), 2) ~= 0
+    error('Incorrect number of parameters (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
 end
-if ~isdvector(timestamps),
-	error('Incorrect timestamps - should be a vector (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
+if ~isdvector(timestamps)
+    error('Incorrect timestamps - should be a vector (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
 end
 timestamps = timestamps(:);
 
 % Parse parameter list
-for j = 1:2:length(varargin),
-	if ~ischar(varargin{j}),
-		error(['Parameter ' num2str(j+2) ' is not a property (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).']);
-	end
-	switch(lower(varargin{j})),
-		case 'type',
-			type = varargin{j+1};
-			if ~isastring(type,'linear','circular'),
-				error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
-			end
-		case 'trim',
-			trim = lower(varargin{j+1});
-			if ~isastring(trim,'on','off'),
-				error('Incorrect value for property ''trim'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
-			end
-		case 'maxgap',
-			maxGap = varargin{j+1};
-			if ~isdscalar(maxGap,'>=0'),
-				error('Incorrect value for property ''maxGap'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
-			end
-		otherwise,
-			error(['Unknown property ''' num2str(varargin{j}) ''' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).']);
-	end
+for j = 1:2:length(varargin)
+    if ~ischar(varargin{j})
+        error(['Parameter ', num2str(j+2), ' is not a property (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).']);
+    end
+    switch (lower(varargin{j}))
+        case 'type'
+            type = varargin{j+1};
+            if ~isastring(type, 'linear', 'circular')
+                error('Incorrect value for property ''type'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
+            end
+        case 'trim'
+            trim = lower(varargin{j+1});
+            if ~isastring(trim, 'on', 'off')
+                error('Incorrect value for property ''trim'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
+            end
+        case 'maxgap'
+            maxGap = varargin{j+1};
+            if ~isdscalar(maxGap, '>=0')
+                error('Incorrect value for property ''maxGap'' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).');
+            end
+        otherwise
+            error(['Unknown property ''', num2str(varargin{j}), ''' (type ''help <a href="matlab:help Interpolate">Interpolate</a>'' for details).']);
+    end
 end
 
 interpolated = [];
-if isempty(timestamps) | isempty(samples), return; end
+if isempty(timestamps) || isempty(samples), return; end
 
 pointProcess = isvector(samples);
 
 % Determine which target timestamps are too far away from sample timestamps (isolated) and should be discarded
-[~,isolated] = Match(timestamps,samples(:,1),'match','closest','error',maxGap);
+[~, isolated] = Match(timestamps, samples(:, 1), 'match', 'closest', 'error', maxGap);
 
-if pointProcess,
-	% 'Interpolate' samples at timestamps (see help above)
-	[interpolated,~,discarded] = Match(samples,timestamps,'error',maxGap);
+if pointProcess
+    % 'Interpolate' samples at timestamps (see help above)
+    [interpolated, ~, discarded] = Match(samples, timestamps, 'error', maxGap);
 else
-	% Determine which timestamps would require extrapolation
-	outside = logical(zeros(size(timestamps)));
-	if strcmp(trim,'on'),
-		outside = timestamps<samples(1,1)|timestamps>samples(end,1);
-	end
-	% Discard isolated timestamps and timestamps that would require extrapolation
-	discarded = outside|isolated;
-	timestamps(discarded) = [];
-	% Circular data?
-	if strcmp(type,'circular'),
-		range = isradians(samples(:,2:end));
-		samples(:,2:end) = exp(i*samples(:,2:end));
-	end
-	% Interpolate samples at timestamps
-	interpolated = [timestamps interp1(samples(:,1),samples(:,2:end),timestamps)];
-	% Circular data?
-	if strcmp(type,'circular'),
-		interpolated(:,2:end) = wrap(angle(interpolated(:,2:end)),range);
-	end
+    % Determine which timestamps would require extrapolation
+    outside = false(size(timestamps));
+    if strcmp(trim, 'on')
+        outside = timestamps < samples(1, 1) | timestamps > samples(end, 1);
+    end
+    % Discard isolated timestamps and timestamps that would require extrapolation
+    discarded = outside | isolated;
+    timestamps(discarded) = [];
+    % Circular data?
+    if strcmp(type, 'circular')
+        range = isradians(samples(:, 2:end));
+        samples(:, 2:end) = exp(1i*samples(:, 2:end));
+    end
+    % Interpolate samples at timestamps
+    interpolated = [timestamps, interp1(samples(:, 1), samples(:, 2:end), timestamps)];
+    % Circular data?
+    if strcmp(type, 'circular')
+        interpolated(:, 2:end) = wrap(angle(interpolated(:, 2:end)), range);
+    end
 end

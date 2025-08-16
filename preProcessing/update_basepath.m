@@ -1,13 +1,15 @@
 function update_basepath
 %
-%  [update_basepath] - [update basepath to match current path]
 % 
-%   Update basepath inside session files to match current path
-%   (to correct for when data is preprocessed in a different drive)
+%   USAGE: update_basepath
 %
-%   session.general.basepath will be updated to new path
-%   preprocessSession_params.mat will be updated to new path but will keep
-%   a copy of original path as 'basepath_original'
+%   After copying the files generated during preprocessing a given
+%   session outside in your local drive (or somewhere else), run 
+%   update_basepath inside the folder where you want your files to be and 
+%   it will update the basename and basepath to match the current location
+%
+%   a copy of the original path where preprocessing was run is kept as 
+%   'basepath_original' inside preprocessSession_params.mat
 %
 %
 % [ayalab - 2025]
@@ -20,12 +22,15 @@ basename = basenameFromBasepath(pwd);
 %list all files to search through
 fileList = dir(fullfile(pwd, '*.*'));
 
-% Find files that need correction and replace basepath
+% Find session and session params to replace basepath
 for k = 1:length(fileList)
     fileName = fileList(k).name;
     
     % Find and rewrite path for session.mat
     if contains(fileName, '.session.mat')
+        
+        tmp_basename = extractBefore(fileName,".session.mat");
+        
         fullFilePath = fullfile(pwd, fileName);
         
         % Load variables from the file
@@ -54,8 +59,19 @@ for k = 1:length(fileList)
         results.basepath=pwd;
         save(fullfile(pwd, ['preprocessSession_params.mat']), 'results');
     end
+    
+    
 end
 
-disp(['basepath updated']);
+% Find files that need correction and replace them
+fileList = dir([tmp_basename '.*']);
+
+for k = 1:length(fileList)
+    filename_old = fileList(k).name;
+    filename_new = strrep(filename_old, tmp_basename, basename);  % Replace 'day5' with 'day45'
+    movefile(filename_old, filename_new);  % Rename the file
+end
+
+disp(['file names updated']);
 
 end

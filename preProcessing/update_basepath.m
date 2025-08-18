@@ -68,8 +68,10 @@ fileList = dir([tmp_basename '.*']);
 
 for k = 1:length(fileList)
     filename_old = fileList(k).name;
-    filename_new = strrep(filename_old, tmp_basename, basename);  % Replace 'day5' with 'day45'
-    movefile(filename_old, filename_new);  % Rename the file
+    filename_new = strrep(filename_old, tmp_basename, basename);
+    if ~exist(fullfile(pwd, filename_new),'file')
+        movefile(filename_old, filename_new); 
+    end
 end
 
 disp(['file names updated']);

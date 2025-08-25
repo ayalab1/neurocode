@@ -52,6 +52,8 @@ addParameter(p, 'brainRegion', '', @(x) ischar(x) || isstring(x) || iscell(x));
 addParameter(p, 'cellType', '', @(x) ischar(x) || isstring(x) || iscell(x));
 addParameter(p, 'UID', [], @(x) isnumeric(x));
 addParameter(p, 'state', '', @(x) ischar(x) || isstring(x));
+addParameter(p, 'remove_unstable', false, @(x) islogical(x));
+addParameter(p, 'stable_interval_width', 600, @(x) isnumeric(x));
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
@@ -59,6 +61,8 @@ brainRegion = p.Results.brainRegion;
 cellType = p.Results.cellType;
 UID = p.Results.UID;
 state = p.Results.state;
+remove_unstable = p.Results.remove_unstable;
+stable_interval_width = p.Results.stable_interval_width;
 
 % load cell metrics
 basename = basenameFromBasepath(basepath);
@@ -104,6 +108,18 @@ end
 if isfield(cell_metrics, 'tags')
     if isfield(cell_metrics.tags, 'Bad')
         keep_idx = ~ismember(spikes.UID, cell_metrics.tags.Bad);
+        spikes = restrict_cells(spikes, keep_idx);
+    end
+end
+
+% remove if unstable
+if remove_unstable
+    if ~isempty(spikes.times)
+        % bin data
+        st = SpikeArray(spikes.times);
+        bst = st.bin('ds', stable_interval_width);
+        % allow for 1 unstable interval max
+        keep_idx = sum(bst.data == 0, 1) < 2;
         spikes = restrict_cells(spikes, keep_idx);
     end
 end

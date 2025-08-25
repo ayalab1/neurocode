@@ -88,8 +88,15 @@ classdef analogSignalArray < handle
             n_rows_timestamps = size(self.timestamps, 1);
             n_cols_timestamps = size(self.timestamps, 2);
 
-            if n_rows_data < n_cols_data
+            n_timestamps = max(n_rows_timestamps, n_cols_timestamps);
+
+            % [n samples x n signals]
+            if n_cols_data == n_timestamps
                 self.data = self.data';
+            elseif n_rows_data == n_timestamps
+                % great, correct shape
+            else
+                error('timestamps and data have different n samples')
             end
 
             if n_rows_timestamps < n_cols_timestamps

@@ -8,6 +8,8 @@ function [spikes, varargout] = importSpikes(varargin)
 %   cellType: optional, string, char, or cell array
 %   UID: optional, numeric array
 %   state: optional, string or char, sleep state to restrict to
+%   remove_unstable: optional, logical
+%   stable_interval_width: optional, int, bin size for remove_unstable, allows 1 empty bin
 %
 % Outputs:
 %   spikes
@@ -42,6 +44,11 @@ function [spikes, varargout] = importSpikes(varargin)
 %     'brainRegion', 'CA1', 'cellType', 'Pyr')
 % spike_array
 % <SpikeArray: 15 units> of length 06:23:07.270 hours
+%
+% [spikes, spike_array] = importSpikes('basepath', 'Z:\Data\AYAold\AYA7\day19', ...
+%   'brainRegion', 'CA1', 'cellType', 'Pyr','remove_unstable',true)
+% spike_array
+% <SpikeArray: 13 units> of length 06:23:07.270 hours
 %
 % Ryan H
 

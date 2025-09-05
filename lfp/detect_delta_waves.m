@@ -285,22 +285,22 @@ if EMG_threshold < Inf
     if size(immobility, 2) == 1
         immobility = immobility';
     end
-else
-    immobility = [-inf, inf];
+    clean_lfp = Restrict(clean_lfp, immobility);
+end
+
+% remove data in ignore intervals
+if ~isempty(ignore_intervals)
+    ignore_intervals = IntervalArray(ignore_intervals);
+    keep_intervals = ~ignore_intervals;
+    clean_lfp = Restrict(clean_lfp, keep_intervals.data);
 end
 
 % detect delta waves
-deltas0 = FindDeltaWaves(Restrict(clean_lfp, immobility));
+deltas0 = FindDeltaWaves(clean_lfp);
 
 % restict to deltas that are above the amplitude threshold
 deltas = deltas0(deltas0(:, 5)-deltas0(:, 6) > threshold, :);
 
-
-% remove deltas that intersect with ignore intervals
-if ~isempty(ignore_intervals)
-    keep_intervals = ~IntervalsIntersect(deltas(:, [1, 3]), ignore_intervals);
-    deltas = deltas(keep_intervals, :);
-end
 
 if verify_firing
     % Verify that spiking decreases at the peak of the delta

@@ -398,8 +398,17 @@ end
 function runKiloSort(nKilosortRuns, kiloShankSplit, session, SSD_path, clean_rez_params, cleanRez)
 if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks down into the desired number of kilosort runs
     shanks = session.extracellular.spikeGroups.channels;
+
     if isempty(kiloShankSplit)
-        kilosortGroup = ceil(((1:length(shanks)) / nKilosortRuns));
+        nShanks = numel(shanks);
+        kilosortGroup = zeros(1, nShanks);
+
+        % Divide shanks into nearly equal groups
+        edges = round(linspace(0, nShanks, nKilosortRuns+1));
+
+        for i = 1:nKilosortRuns
+            kilosortGroup(edges(i)+1:edges(i+1)) = i;
+        end
     else
         kilosortGroup = kiloShankSplit;
         nKilosortRuns = max(kiloShankSplit);
@@ -417,6 +426,8 @@ if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks
                 load(fullfile(kilosortFolder, 'rez.mat'), 'rez');
                 CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
             end
+            % remove chanMap so it doesn't mess up the next run
+            delete(fullfile(basepath, 'chanMap.mat'))
         end
     end
 else

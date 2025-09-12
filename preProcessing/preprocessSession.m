@@ -427,7 +427,7 @@ if nKilosortRuns > 1 % if more than one Kilosort cycle desired, break the shanks
                 CleanRez(rez, 'savepath', kilosortFolder, clean_rez_params{:});
             end
             % remove chanMap so it doesn't mess up the next run
-            delete(fullfile(basepath, 'chanMap.mat'))
+            delete(fullfile(pwd, 'chanMap.mat'))
         end
     end
 else

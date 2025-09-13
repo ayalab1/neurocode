@@ -13,7 +13,7 @@
 % 0- Linearize maze positions and get trial structure
 
 %% Loading posTrials & spikes
-load('posTrials.mat')
+load('posTrials.mat') % somewhat useless to not have general_behavioral_file compatibility
 basename = basenameFromBasepath(pwd);
 load(fullfile(pwd,[basename,'.spikes.cellinfo.mat']))
 

@@ -1,18 +1,8 @@
 %% Basic pipeline for place field analysis
-%
-%  this pipeline is not complete and lacks full explanation of major functions
-%  and variables being used. As such it is largely useless and still requires rereading of
-%  all functions. It is advised to instead use 'pipelineFiringMaps' that is
-%  located:
-%           neurocode\tutorials\pipelineFiringMaps
-%- HLR 2025
-%
 % These are the basic fucntions for performing place field analysis (in
 % 1D for now). Is still work in progress and anyone is welcome to contribute.
-%   
-%
-%
-% TOD)
+
+% TODO:
 % - Decide a common trial structure and way to linearize positions.
 % - Implent trial based firing map and place field detection
 % - 2D place fields
@@ -23,8 +13,7 @@
 % 0- Linearize maze positions and get trial structure
 
 %% Loading posTrials & spikes
-load('posTrials.mat') % somewhat useless to not have general_behavioral_file compatibility
-% no documentation of where this variable comes from or what it contains
+load('posTrials.mat')
 basename = basenameFromBasepath(pwd);
 load(fullfile(pwd,[basename,'.spikes.cellinfo.mat']))
 

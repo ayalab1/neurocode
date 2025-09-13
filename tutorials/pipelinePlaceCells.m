@@ -1,8 +1,11 @@
 %% Basic pipeline for place field analysis
 %
-%  this pipeline is not complete and lacks full explanation of the pipeline
-%  in MATLAB. As such it is largely useless and still requires rereading of all functions
-% - HLR 2025
+%  this pipeline is not complete and lacks full explanation of major functions
+%  and variables being used. As such it is largely useless and still requires rereading of
+%  all functions. It is advised to instead use 'pipelineFiringMaps' that is
+%  located:
+%           neurocode\tutorials\pipelineFiringMaps
+%- HLR 2025
 %
 % These are the basic fucntions for performing place field analysis (in
 % 1D for now). Is still work in progress and anyone is welcome to contribute.

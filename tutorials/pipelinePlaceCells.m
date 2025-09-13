@@ -21,6 +21,7 @@
 
 %% Loading posTrials & spikes
 load('posTrials.mat') % somewhat useless to not have general_behavioral_file compatibility
+% no documentation of where this variable comes from or what it contains
 basename = basenameFromBasepath(pwd);
 load(fullfile(pwd,[basename,'.spikes.cellinfo.mat']))
 

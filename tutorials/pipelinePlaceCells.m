@@ -1,8 +1,15 @@
 %% Basic pipeline for place field analysis
+%
+%  this pipeline is not complete and lacks full explanation of the pipeline
+%  in MATLAB. As such it is largely useless and still requires rereading of all functions
+% - HLR 2025
+%
 % These are the basic fucntions for performing place field analysis (in
 % 1D for now). Is still work in progress and anyone is welcome to contribute.
-
-% TODO:
+%   
+%
+%
+% TOD)
 % - Decide a common trial structure and way to linearize positions.
 % - Implent trial based firing map and place field detection
 % - 2D place fields

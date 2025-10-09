@@ -4,9 +4,9 @@ function animName = animalFromBasepath(basepath)
 % working with. The function will return the animal name as a string. 
 % L Karaba, 10/21
 
-remDay = find(basepath=='\');
+remDay = find(basepath==filesep);
 cutBase = basepath(1:(remDay(end)-1)); %back out from day name
-starAn = find(cutBase=='\');
+starAn = find(cutBase==filesep);
 aC = 1;
 animName='';
 for i = (starAn(end)+1):length(cutBase)

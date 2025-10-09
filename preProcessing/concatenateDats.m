@@ -68,7 +68,7 @@ if fillMissingDatFiles
     % check if any of the folders to concatenate contain these files
     for i = 1:size(datpaths, 2)
         curDat = datpaths{i};
-        cutoff = find(curDat == '\', 1, 'last');
+        cutoff = find(curDat == filesep, 1, 'last');
         curDat = curDat(2:cutoff); %remove formatting
         fileBase{i} = curDat;
         for j = 1:size(otherdattypes, 1)
@@ -86,7 +86,7 @@ else
     datCount = zeros(size(otherdattypes));
     for i = 1:size(datpaths, 2)
         curDat = datpaths{i};
-        cutoff = find(curDat == '\', 1, 'last');
+        cutoff = find(curDat == filesep, 1, 'last');
         curDat = curDat(2:cutoff); %remove formatting
         fileBase{i} = curDat;
         for j = 1:size(otherdattypes, 1)
@@ -152,10 +152,58 @@ if ispc
         catstring.(fileTypes{j}) = ['! copy /b ', cs, ' ', newpaths.(fileTypes{j})];
     end
 else
-    error('This function cannot yet handle non-pc commands');
-    %if isunix
-    %cs = strjoin(datpaths.amplifier);
-    %catstring = ['! cat ', cs, ' > ', newdatpath];
+    % Linux/Unix: build input lists and concatenate with cat
+    nSubs = size(datpaths, 2);
+    datsizes.amplifier = zeros(1, nSubs);
+    datpathsplus.amplifier = cell(1, nSubs);
+
+    for didx = 1:nSubs
+        % Unquote original entry (stored like: "full/path/file.dat ")
+        amp_in = datpaths{didx}(2:end-2);
+
+        % Resolve to exactly one file and record size
+        info = dir(amp_in);                          % may be scalar, empty, or multiple [web:39]
+        if isempty(info)
+            error('File not found: %s', amp_in);
+        end
+        info = info(~[info.isdir]);                  % drop directories [web:39]
+        [~,targetName,targetExt] = fileparts(amp_in);% parse target name/ext [web:43]
+        match = strcmp({info.name}, [targetName targetExt]); % exact match
+        if any(match)
+            info = info(find(match,1,'first'));
+        elseif numel(info) == 1
+            % Single non-dir entry; accept as best-effort
+            info = info(1);
+        else
+            error('Path did not resolve to a single file: %s', amp_in);
+        end
+
+        datpathsplus.amplifier{didx} = ['"', amp_in, '"'];
+        datsizes.amplifier(didx) = info.bytes;
+
+        % Build per-type inputs
+        for j = 1:size(fileTypes, 1)
+            in_path = [fileBase{didx}, fileTypes{j}, '.dat'];
+            datpathsplus.(fileTypes{j}){didx} = ['"', in_path, '"'];
+            % Optional bookkeeping (not used in final size check for amplifier)
+            info2 = dir(in_path);                    % may be empty if not selected for concat [web:39]
+            if ~isempty(info2), info2 = info2(~[info2.isdir]); end
+            if ~isempty(info2)
+                datsizes.(fileTypes{j}){didx} = info2(1).bytes; %#ok<AGROW>
+            else
+                datsizes.(fileTypes{j}){didx} = 0; %#ok<AGROW>
+            end
+        end
+    end
+
+    % Compose shell commands with proper quoting and redirection
+    cs = strjoin(datpathsplus.amplifier, ' ');
+    catstring.amplifier = ['! cat ', cs, ' > "', newpaths.amplifier, '"'];
+
+    for j = 1:size(fileTypes, 1)
+        cs = strjoin(datpathsplus.(fileTypes{j}), ' ');
+        catstring.(fileTypes{j}) = ['! cat ', cs, ' > "', newpaths.(fileTypes{j}), '"'];
+    end
 end
 
 if ~exist(newpaths.amplifier, "file")

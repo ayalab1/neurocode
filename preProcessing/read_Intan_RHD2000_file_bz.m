@@ -58,7 +58,7 @@ p.addParameter('basepath',pwd,@isfolder);
 p.parse(varargin{:});
 path = p.Results.basepath;
 
-% path = [pwd,'\'];
+% path = [pwd,filesep];
 file = [ls(fullfile(path,'*.rhd'))];
 
 if (file == 0)

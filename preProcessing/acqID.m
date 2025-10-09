@@ -58,7 +58,7 @@ folderNames = allFolders(useIDX, :).folder;
 %current basepath directory
 removeID = [];
 for i = 1:size(useIDX, 1)
-    checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, '\', allFolders(useIDX(i), :).name{1}, ' "');
+    checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, filesep, allFolders(useIDX(i), :).name{1}, ' "');
     usePath = true;
     for f = 1:length(ignoreFolders)
         if contains(checkPath, ignoreFolders(f))
@@ -67,27 +67,32 @@ for i = 1:size(useIDX, 1)
     end
     if usePath
         datpaths{i} = checkPath;
-        startIDX = size(basepath, 2) + 2;
-        seps = find(allFolders(useIDX(i), :).folder{1} == '\');
-        seps(seps < startIDX) = [];
-        if isempty(seps)
-            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:end); %intan
+        folderPath = allFolders(useIDX(i), :).folder{1};
+
+        % Remove basepath from folderPath
+        relPath = strrep(folderPath, basepath, '');
+        relPath = regexprep(relPath, ['^' filesep], ''); % Remove leading separator
+
+        % Split relative path into parts
+        parts = split(relPath, filesep);
+
+        if numel(parts) == 1
+            % Intan format: only one folder after basepath
+            recordingnames{i} = parts{1};
             expNum(i) = '1';
             recNum(i) = '1';
         else
-            recordingnames{i} = allFolders(useIDX(i), :).folder{1}(startIDX:seps(1) - 1); %openEphys
-            expIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\experiment");
-            % this will look weird because it's stored as a string, but
-            % will be correct when converting back to double
-            expNum(i) = (allFolders(useIDX(i), :).folder{1}(expIDX + 11:seps(find(seps > expIDX, 1, 'first')) - 1));
-            recIDX = strfind(allFolders(useIDX(i), :).folder{1}, "\recording");
-            recNum(i) = (allFolders(useIDX(i), :).folder{1}(recIDX + 10:seps(find(seps > recIDX, 1, 'first')) - 1));
+            recordingnames{i} = relParts{1};
+            expIdx = find(startsWith(relParts, 'experiment'), 1);
+            recIdx = find(startsWith(relParts, 'recording'), 1);
+            expNum(i) = ternary(~isempty(expIdx), extractAfter(relParts{expIdx}, 'experiment'), '1');
+            recNum(i) = ternary(~isempty(recIdx), extractAfter(relParts{recIdx}, 'recording'), '1');
         end
     else
         fprintf('.dat file found nested in a folder labeled %s . Skipping: \n', ignoreFolders(f));
         disp(checkPath);
-        if i ~= size(useIDX, 1) %won't need to remove if a real slot isn't filled after
-            removeID = [removeID, i];
+        if i ~= numel(useIDX)  % won't need to remove if a real slot isn't filled after
+            removeID(end+1) = i;
         end
     end
 end

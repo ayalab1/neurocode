@@ -75,7 +75,7 @@ if isempty(infofile) % look in subdirectories
     for i = 1:length(d)
         subdir = d(i).name;
         if isfolder(subdir)
-            subfile = ls(strcat(subdir,'\*.rhd'));
+            subfile = ls(strcat(subdir,filesep,'*.rhd'));
             if ~isempty(subfile)
                 infofile = strcat(subdir,filesep,subfile);
                 break

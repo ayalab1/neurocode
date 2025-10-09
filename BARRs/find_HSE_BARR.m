@@ -145,16 +145,16 @@ cleanest = p.Results.cleanest;
 basename = basenameFromBasepath(basepath);
 
 if isempty(spikes)&&(~loadspkhist) %if we don't plan to load spikes but they weren't inputted
-    load(strcat(basepath, '\', basename, '.spikes.cellinfo.mat'));
+    load(strcat(basepath, filesep, basename, '.spikes.cellinfo.mat'));
 end
 
-if ~exist(strcat(basepath,'\','Barrage_Files'))
+if ~exist(strcat(basepath,filesep,'Barrage_Files'))
     mkdir('Barrage_Files');
 end
 if cleanest
-    savePath = strcat(basepath, '\Barrage_Files\', basename, '.clean.');
+    savePath = strcat(basepath, filesep, 'Barrage_Files', filesep, basename, '.clean.');
 else
-    savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
+    savePath = strcat(basepath, filesep, 'Barrage_Files', filesep, basename, '.');
 end
 
 fprintf('\n');
@@ -336,7 +336,7 @@ if save_evts
     end
     
     %     SaveEvents([basename '_' name '.HSE.evt'],events1);
-    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2), 'saveName', 'H', 'savePath', strcat(pwd,'\Barrage_Files'));
+    createEVT(HSE.timestamps(:,1), HSE.peaks, HSE.timestamps(:,2), 'saveName', 'H', 'savePath', strcat(pwd, filesep, 'Barrage_Files'));
 end
 
 if futEVT
@@ -444,10 +444,10 @@ function [allspk] = remSWR(basepath, basename, spikes)
 
 %disp('Removing Ripples...');
 try
-    load(strcat(basepath,'\',basename,'.ripples.events.mat'));
+    load(strcat(basepath,filesep,basename,'.ripples.events.mat'));
     SWRt = ripples.timestamps;
 catch
-    load(strcat(basepath, '\', basename, '.SWR.events.mat'));
+    load(strcat(basepath, filesep, basename, '.SWR.events.mat'));
     SWRt = SWR.timestamps;
 end
 spiket = cat(1,spikes.times{:});

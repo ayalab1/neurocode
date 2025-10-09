@@ -6,7 +6,7 @@ function pullSpikes(varargin)
 %%%%%%%%%%%%%%
 % basepath:     Full path where session is located. Default: pwd
 % savePath:     Location for spike structures to be saved. For example,
-%               '[basepath '\Barrage_Files']'. Default: pwd
+%               '[basepath '/Barrage_Files']'. Default: pwd
 % force:        Logical option to force redetection of spikes. Default:
 %               false
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -34,7 +34,7 @@ if force
     toDelete = zeros(size(getFiles,1),1);
     for j = 1:size(getFiles,1)
         if fun_existsPyr(getFiles(j).name)||fun_existsInt(getFiles(j).name)
-            disp(['Deleting ' getFiles(j).folder '\' getFiles(j).name]);
+            disp(['Deleting ' getFiles(j).folder filesep getFiles(j).name]);
             toDelete(j) = 1;
         end
     end
@@ -43,8 +43,8 @@ if force
         keyboard
         for j = 1:size(getFiles,1)
             if toDelete(j)==1
-                delete([getFiles(j).folder '\' getFiles(j).name]);
-                disp(['Deleted ' getFiles(j).folder '\' getFiles(j).name]);
+                delete([getFiles(j).folder filesep getFiles(j).name]);
+                disp(['Deleted ' getFiles(j).folder filesep getFiles(j).name]);
             end
         end
     end
@@ -61,8 +61,8 @@ end
 
 cd(basepath);
 %% Load and prepare cell_metrics
-if exist([basepath '\' basename '.cell_metrics.cellinfo.mat'])
-    load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+if exist([basepath filesep basename '.cell_metrics.cellinfo.mat'])
+    load([basepath filesep basename '.cell_metrics.cellinfo.mat']);
 else
     warning('cell_metrics does not exist, computing');
     load([basename '.session.mat']);
@@ -76,7 +76,7 @@ end
 
 if ~isfield(cell_metrics,'tags')
     cell_metrics.tags.Bad = [];
-    save([basepath '\' basename '.cell_metrics.cellinfo.mat'], 'cell_metrics');
+    save([basepath filesep basename '.cell_metrics.cellinfo.mat'], 'cell_metrics');
 end
 
 %% Pull regions
@@ -125,7 +125,7 @@ for i = 1:length(useReg)
         end
     end
     if sum(UIDcheck==spikes.UID)==length(spikes.times)
-        save(strcat(savePath, '\', basename, '.', useReg{i}, 'pyr.cellinfo.mat'), 'spikes');
+        save(strcat(savePath, filesep, basename, '.', useReg{i}, 'pyr.cellinfo.mat'), 'spikes');
     else
         error('Issue with importing');
     end
@@ -150,7 +150,7 @@ for i = 1:length(useReg)
         end
     end
     if sum(UIDcheck==spikes.UID)==length(spikes.times)
-        save(strcat(savePath, '\', basename, '.', useReg{i}, 'int.cellinfo.mat'), 'spikes');
+        save(strcat(savePath, filesep, basename, '.', useReg{i}, 'int.cellinfo.mat'), 'spikes');
     else
         error('Issue with importing');
     end
@@ -159,10 +159,10 @@ end
 %% Pull all pyr or int cells
 spikes = [];
 spikes = importSpikes('cellType', "Pyramidal Cell");
-save([savePath '\' basename '.allpyr.cellinfo.mat'], 'spikes');
+save([savePath filesep basename '.allpyr.cellinfo.mat'], 'spikes');
 spikes = [];
 spikes = importSpikes('cellType', ["Narrow Interneuron"; "Wide Interneuron"]);
-save([savePath '\' basename '.allint.cellinfo.mat'], 'spikes');
+save([savePath filesep basename '.allint.cellinfo.mat'], 'spikes');
 
 cd(original);
 end

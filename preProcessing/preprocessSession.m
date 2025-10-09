@@ -180,7 +180,7 @@ end
 [~, basename] = fileparts(basepath);
 
 % Get xml file in order
-if ~exist([basepath, '\', basename, '.xml'], 'file')
+if ~exist([basepath, filesep, basename, '.xml'], 'file')
     xmlFile = checkFile('fileType', '.xml', 'searchSubdirs', true);
     xmlFile = xmlFile(1);
     if ~(strcmp(xmlFile.folder, basepath) && strcmp(xmlFile.name(1:end-4), basename))
@@ -334,9 +334,9 @@ try
     catch e
         fprintf(1, 'The identifier was:\n%s', e.identifier);
         fprintf(1, 'There was an error! The message was:\n%s', e.message);
-        if (exist([basepath, '\', basename, '.lfp'], "file") ~= 0)
-            fclose([basepath, '\', basename, '.lfp']); %if the above run failed after starting the file
-            delete([basepath, '\', basename, '.lfp']);
+        if (exist([basepath, filesep, basename, '.lfp'], "file") ~= 0)
+            fclose([basepath, filesep, basename, '.lfp']); %if the above run failed after starting the file
+            delete([basepath, filesep, basename, '.lfp']);
         end
         LFPfromDat(basepath, 'outFs', 1250, 'useGPU', true);
     end
@@ -345,8 +345,8 @@ catch e
     fprintf(1, 'There was an error! The message was:\n%s', e.message);
     try
         warning('LFPfromDat failed, trying ResampleBinary')
-        ResampleBinary([basepath, '\', basename, '.dat'], ...
-            [basepath, '\', basename, '.lfp'], session.extracellular.nChannels, 1, 16);
+        ResampleBinary([basepath, filesep, basename, '.dat'], ...
+            [basepath, filesep, basename, '.lfp'], session.extracellular.nChannels, 1, 16);
     catch e
         warning('LFP file could not be generated, moving on');
         fprintf(1, 'The identifier was:\n%s', e.identifier);

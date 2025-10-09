@@ -1194,18 +1194,19 @@ function PlotSegments_Callback(hObject, eventdata, handles)
 
 % Load Segments in directory
 
-[path] = cell2mat(regexp( handles.filename, '^.*\', 'match' ));
+m = regexp(handles.filename,'^(.*[\/])','tokens','once');
+path = cell2mat(m);
 [extension] = cell2mat(regexp( handles.filename, '\w+$', 'match' ));
 
 path=get(handles.Path,'String');
 extension=get(handles.Extensions,'String');
-dirlist = dir( [path '\*' extension '.seg.txt'] );
+dirlist = dir( [path filesep '*' extension '.seg.txt'] );
 ndir = length(dirlist);
 n = 1;
 all_segments = [];
 while n <= ndir
     file = dirlist(n).name;
-    segments = load_segment([path '\' file]);
+    segments = load_segment([path filesep file]);
     all_segments = [all_segments segments];
     n = n + 1;
 end

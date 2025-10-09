@@ -15,68 +15,68 @@ animName = animalFromBasepath(basepath);
 HSE = loadBarrage(basepath);
 if ~isempty(HSE.NREM)
 load(strcat(basename,'.cell_metrics.cellinfo.mat'));
-load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
+load(strcat(basepath,filesep,basename,'.SleepState.states.mat'));
 switch useState
     case "nonTheta"
-        if ~exist([basepath '\Barrage_Files\nonTheta'])
-            mkdir([basepath '\Barrage_Files\nonTheta']);
+        if ~exist([basepath filesep 'Barrage_Files' filesep 'nonTheta'])
+            mkdir([basepath filesep 'Barrage_Files' filesep 'nonTheta']);
         end
         if contains(plotSave,'clean')
-            plotSave = [basepath '\Barrage_Files\nonTheta\' basename '.clean.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'nonTheta' filesep basename '.clean.'];
         else
-            plotSave = [basepath '\Barrage_Files\nonTheta\' basename '.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'nonTheta' filesep basename '.'];
         end
     case "imm"
-        if ~exist([basepath '\Barrage_Files\imm'])
-            mkdir([basepath '\Barrage_Files\imm']);
+        if ~exist([basepath filesep 'Barrage_Files' filesep 'imm'])
+            mkdir([basepath filesep 'Barrage_Files' filesep 'imm']);
         end
         if contains(plotSave,'clean')
-            plotSave = [basepath '\Barrage_Files\imm\' basename '.clean.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'imm' filesep basename '.clean.'];
         else
-            plotSave = [basepath '\Barrage_Files\imm\' basename '.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'imm' filesep basename '.'];
         end
     case "theta"
-        if ~exist([basepath '\Barrage_Files\theta'])
-            mkdir([basepath '\Barrage_Files\theta']);
+        if ~exist([basepath filesep 'Barrage_Files' filesep 'theta'])
+            mkdir([basepath filesep 'Barrage_Files' filesep 'theta']);
         end
         if contains(plotSave,'clean')
-            plotSave = [basepath '\Barrage_Files\theta\' basename '.clean.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'theta' filesep basename '.clean.'];
         else
-            plotSave = [basepath '\Barrage_Files\theta\' basename '.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'theta' filesep basename '.'];
         end
     case "REM"
-        if ~exist([basepath '\Barrage_Files\REM'])
-            mkdir([basepath '\Barrage_Files\REM']);
+        if ~exist([basepath filesep 'Barrage_Files' filesep 'REM'])
+            mkdir([basepath filesep 'Barrage_Files' filesep 'REM']);
         end
         if contains(plotSave,'clean')
-            plotSave = [basepath '\Barrage_Files\REM\' basename '.clean.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'REM' filesep basename '.clean.'];
         else
-            plotSave = [basepath '\Barrage_Files\REM\' basename '.'];
+            plotSave = [basepath filesep 'Barrage_Files' filesep 'REM' filesep basename '.'];
         end
     otherwise
         useState = "NREM";
 end
 
-if ~exist(strcat(basepath,'\Barrage_Files\PSTHmet\'))
-    mkdir(strcat(basepath,'\Barrage_Files\PSTHmet\'));
+if ~exist([basepath filesep 'Barrage_Files' filesep 'PSTHmet'])
+    mkdir([basepath filesep 'Barrage_Files' filesep 'PSTHmet']);
 end
-if ~exist(strcat(basepath,'\',basename,'.ripples.events.mat'))
-    if exist(strcat(basepath,'\',basename,'SWR.events.mat'))
-        load(strcat(basepath,'\',basename,'SWR.events.mat'));
+if ~exist(strcat(basepath,filesep,basename,'.ripples.events.mat'))
+    if exist(strcat(basepath,filesep,basename,'SWR.events.mat'))
+        load(strcat(basepath,filesep,basename,'SWR.events.mat'));
         ripples = SWR;
         if isfield(ripples,'peaktimes')
             ripples.peaks = ripples.peaktimes;
         end
         plotRips = 1;
-    elseif exist(strcat(basepath,'\old files\SWR.mat'))
-        load(strcat(basepath,'\old files\SWR.mat'));
+    elseif exist(strcat(basepath, filesep, 'old files', filesep, 'SWR.mat'))
+        load(strcat(basepath, filesep, 'old files', filesep, 'SWR.mat'));
         ripples = SWR;
         if isfield(ripples,'peaktimes')
             ripples.peaks = ripples.peaktimes;
         end
         plotRips = 1;
-    elseif exist(strcat(basepath,'\oldfiles\SWR.mat'))
-        load(strcat(basepath,'\oldfiles\SWR.mat'));
+    elseif exist(strcat(basepath, filesep, 'old files', filesep, 'SWR.mat'))
+        load(strcat(basepath, filesep, 'old files', filesep, 'SWR.mat'));
         ripples = SWR;
         if isfield(ripples,'peaktimes')
             ripples.peaks = ripples.peaktimes;
@@ -215,11 +215,11 @@ for i = 1:length(check)
         regCheck = regions{j};
         if contains(regCheck, check(i))
             br = convertStringsToChars(check(i));
-            if ~exist([basepath '\Barrage_Files\' basename '.' br 'pyr.cellinfo.mat'])
+            if ~exist([basepath filesep 'Barrage_Files' filesep basename '.' br 'pyr.cellinfo.mat'])
                 spikes = importSpikes('brainRegion', check(i), 'cellType', "Pyramidal Cell");
-                save([basepath '\Barrage_Files\' basename '.' br 'pyr.cellinfo.mat'], 'spikes');
+                save([basepath filesep 'Barrage_Files' filesep basename '.' br 'pyr.cellinfo.mat'], 'spikes');
             else
-                load([basepath '\Barrage_Files\' basename '.' br 'pyr.cellinfo.mat']);
+                load([basepath filesep 'Barrage_Files' filesep basename '.' br 'pyr.cellinfo.mat']);
             end
             if ~isempty(spikes.times)
                 if plotRips
@@ -268,15 +268,15 @@ for i = 1:length(check)
 
                 if useState == "NREM"
                     if contains(plotSave, 'clean')
-                        save([basepath '\Barrage_Files\PSTHmet\' basename '.clean.' br 'PSTHmets.mat'], 'PSTHmets');
+                        save([basepath filesep 'Barrage_Files' filesep 'PSTHmet' filesep basename '.clean.' br 'PSTHmets.mat'], 'PSTHmets');
                     else
-                        save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmets.mat'], 'PSTHmets');
+                        save([basepath filesep 'Barrage_Files' filesep 'PSTHmet' filesep basename '.' br 'PSTHmets.mat'], 'PSTHmets');
                     end
                 else
                     if contains(plotSave, 'clean')
-                        save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.clean.', br, 'PSTHmets.mat'), 'PSTHmets');
+                        save(strcat(basepath, filesep, 'Barrage_Files', filesep, useState, filesep, basename, '.clean.', br, 'PSTHmets.mat'), 'PSTHmets');
                     else
-                        save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.', br, 'PSTHmets.mat'), 'PSTHmets');
+                        save(strcat(basepath, filesep, 'Barrage_Files', filesep, useState, filesep, basename, '.', br, 'PSTHmets.mat'), 'PSTHmets');
                     end
                 end
 
@@ -298,11 +298,11 @@ for i = 1:length(check)
         if contains(regCheck, check(i))
             br = convertStringsToChars(check(i));
             spikes = [];
-            if ~exist([basepath '\Barrage_Files\' basename '.' br 'int.cellinfo.mat'])
+            if ~exist([basepath filesep 'Barrage_Files' filesep basename '.' br 'int.cellinfo.mat'])
                 spikes = importSpikes('brainRegion', check(i), 'cellType', ["Wide Interneuron"; "Narrow Interneuron"]);
-                save([basepath '\Barrage_Files\' basename '.' br 'int.cellinfo.mat'], 'spikes');
+                save([basepath filesep 'Barrage_Files' filesep basename '.' br 'int.cellinfo.mat'], 'spikes');
             else
-                load([basepath '\Barrage_Files\' basename '.' br 'int.cellinfo.mat']);
+                load([basepath filesep 'Barrage_Files' filesep basename '.' br 'int.cellinfo.mat']);
             end
             if ~isempty(spikes.times)
                 if plotRips
@@ -351,15 +351,15 @@ for i = 1:length(check)
 
                 if useState == "NREM"
                     if contains(plotSave, 'clean')
-                        save([basepath '\Barrage_Files\PSTHmet\' basename '.clean.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
+                        save([basepath filesep 'Barrage_Files' filesep 'PSTHmet' filesep basename '.clean.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
                     else
-                        save([basepath '\Barrage_Files\PSTHmet\' basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
+                        save([basepath filesep 'Barrage_Files' filesep 'PSTHmet' filesep basename '.' br 'PSTHmetsINT.mat'], 'PSTHmetsINT');
                     end
                 else
                     if contains(plotSave, 'clean')
-                        save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.clean.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
+                        save(strcat(basepath, filesep, 'Barrage_Files', filesep, useState, filesep, basename, '.clean.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
                     else
-                        save(strcat(basepath, '\Barrage_Files\', useState,'\', basename, '.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
+                        save(strcat(basepath, filesep, 'Barrage_Files', filesep, useState, filesep, basename, '.', br, 'PSTHmetsINT.mat'), 'PSTHmetsINT');
                     end
                 end
 

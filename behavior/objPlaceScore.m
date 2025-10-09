@@ -72,13 +72,13 @@ sum_sessionSeq=sum(sessionsSeq);
 
 if sum_sessionSeq>3
     
-cd([basepath '\' nsespaths{find(sessionsSeq == 1)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 1)}]);
 data_training_1 = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
-cd([basepath '\' nsespaths{find(sessionsSeq == 2)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 2)}]);
 data_training_2 = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
-cd([basepath '\' nsespaths{find(sessionsSeq == 3)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 3)}]);
 data_training_3 = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
-cd([basepath '\' nsespaths{find(sessionsSeq == 4)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 4)}]);
 data_test_multi = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
 
 cd(basepath);
@@ -125,9 +125,9 @@ object_B_test = object_test_multi(2,:);
 
 else
     
-cd([basepath '\' nsespaths{find(sessionsSeq == 1)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 1)}]);
 data_training = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
-cd([basepath '\' nsespaths{find(sessionsSeq == 2)}]);
+cd([basepath filesep nsespaths{find(sessionsSeq == 2)}]);
 data_test_single = getDigitalIn('all','fs', fs, 'offset', 0, 'periodLag', 1);
 
 cd(basepath);
@@ -176,7 +176,7 @@ objScore.discrimination_index = DI;
 objScore.object_preference = object_preference;
 
 % save variables to basepath
-save ([basepath '\' 'objScore.mat'], 'objScore');
+save ([basepath filesep 'objScore.mat'], 'objScore');
 
 % figure;
 % bar(object,0.5);

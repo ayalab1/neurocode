@@ -142,8 +142,8 @@ function save_file = encode_file_path(basepath, save_path)
 %    >> 'Z:\home\ryanh\projects\ripple_heterogeneity\replay_02_17_23\Z---___Data___AYAold___AB3___AB3_38_41.mat'
 
 % Normalize paths
-basepath = strrep(basepath, '\', filesep);
-save_path = strrep(save_path, '\', filesep);
+basepath = strrep(basepath, filesep, filesep);
+save_path = strrep(save_path, filesep, filesep);
 % Encode file path with unlikely characters
 save_file = fullfile(save_path, [strrep(strrep(basepath, filesep, '___'), ':', '---'), '.mat']);
 end

@@ -476,7 +476,7 @@ if saveFig
     else
         useFileN = num2str(fileN);
     end
-    saveas(gcf,[savePath '\' animName '.' basename '.rastEvt' useFileN '.png']);
+    saveas(gcf,[savePath filesep animName '.' basename '.rastEvt' useFileN '.png']);
 end
 
 H = gcf; %save current figure as output

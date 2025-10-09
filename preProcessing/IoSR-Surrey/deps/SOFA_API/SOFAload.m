@@ -28,7 +28,7 @@ function Obj = SOFAload(fn,varargin)
 
 % SOFA API - function SOFAload
 % Copyright (C) 2012 Acoustics Research Institute - Austrian Academy of Sciences
-% Licensed under the EUPL, Version 1.1 or – as soon they will be approved by the European Commission - subsequent versions of the EUPL (the "License")
+% Licensed under the EUPL, Version 1.1 or ï¿½ as soon they will be approved by the European Commission - subsequent versions of the EUPL (the "License")
 % You may not use this work except in compliance with the License.
 % You may obtain a copy of the License at: http://joinup.ec.europa.eu/software/page/eupl
 % Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" basis, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -82,7 +82,7 @@ if strfind(fn,'://')
 else
     newfn = fn;
     if ~exist(fn,'file') % file does not exist? 
-        warning('SOFA:load',['File not found: '  strrep(fn,'\','\\')]);
+        warning('SOFA:load',['File not found: '  strrep(fn,filesep,'\\')]);
         % local path: replace SOFAdbPath by SOFAdbURL, download to SOFAdbPath 
         if length(fn)>length(SOFAdbPath) % fn is longer than SOFAdbPath?
             if strcmp(SOFAdbPath,fn(1:length(SOFAdbPath))) % fn begins with SOFAdbPath
@@ -92,7 +92,7 @@ else
                     if success~=1, error(msg); end
                 end          
             webfn = fn(length(SOFAdbPath)+1:end);
-            webfn(strfind(webfn,'\'))='/';
+            webfn(strfind(webfn,filesep))='/';
             webfn = [SOFAdbURL regexprep(webfn,' ','%20')];        
             disp(['Downloading ' fn(length(SOFAdbPath)+1:end) ' from ' SOFAdbURL]);
             [f,stat] = urlwrite(webfn,fn);

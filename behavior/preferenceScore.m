@@ -61,14 +61,14 @@ end
 %% Pull data per folder
 trainCt= 1;
 for i = 1:length(nsespaths)
-    cd([basepath '\' nsespaths{i}]);
+    cd([basepath filesep nsespaths{i}]);
     try
         load('digitalIn.events.mat');
     catch
         warning('no Digital In detected, running processFolder');
         cd(basepath);
         processFolder;
-        cd([basepath '\' nsespaths{i}]);
+        cd([basepath filesep nsespaths{i}]);
         load('digitalIn.events.mat');
     end
     if contains(nsespaths{i}, 'rain')||contains(nsespaths{i}, 'rial') %train or Train or trial or Trial
@@ -124,6 +124,6 @@ objScore.object_test_time = test_time;
 objScore.discrimination_index = DI;
 objScore.object_preference = obj_pref;
 
-save([basepath '\' 'objScore.mat'], 'objScore');
+save([basepath filesep 'objScore.mat'], 'objScore');
 cd(basepath);
 end

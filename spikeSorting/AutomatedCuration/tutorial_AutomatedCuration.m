@@ -54,7 +54,7 @@ fid = fopen(fullfile(neurosuite_path,'launch_curation.bat'),'w');
 fwrite(fid, sprintf('%s\n', '@echo_on'));
 fwrite(fid, sprintf('%s\n', 'call conda deactivate'));
 fwrite(fid, sprintf('%s\n', 'call conda activate AutomatedCurator'));
-lineStart = ['python ' fullfile(github_path,'neurocode','spikeSorting','AutomatedCuration','Automated-curation','running_AI_pipeline_bash.py') ' ' strrep(fullfile(neurosuite_path,basename),'\','\\')];
+lineStart = ['python ' fullfile(github_path,'neurocode','spikeSorting','AutomatedCuration','Automated-curation','running_AI_pipeline_bash.py') ' ' strrep(fullfile(neurosuite_path,basename),filesep,'\\')];
 
 cluster_info_table = importdata(fullfile(clustering_path,'cluster_info.tsv')); 
 shankID = cluster_info_table.data(:,end); 

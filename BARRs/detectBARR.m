@@ -123,32 +123,32 @@ remRip = p.Results.remRip;
 basename = basenameFromBasepath(basepath);
 animal = animalFromBasepath(basepath);
 
-if exist([basepath '\Barrage_Files\' basename '.HSE.mat'])&&~force
+if exist([basepath filesep 'Barrage_Files' filesep basename '.HSE.mat'])&&~force
     disp('BARRs already detected! Loading file...');
-    load([basepath '\Barrage_Files\' basename '.HSE.mat']);
+    load([basepath filesep 'Barrage_Files' filesep basename '.HSE.mat']);
     return
 end
 
 %% Prep for detection
-savePath = convertStringsToChars(strcat(basepath, '\Barrage_Files\', basename, '.'));
-if ~exist([basepath '\Barrage_Files'])
-    mkdir('Barrage_Files');
+savePath = convertStringsToChars(strcat(basepath, filesep, 'Barrage_Files', filesep, basename, '.'));
+if ~exist([basepath filesep 'Barrage_Files'])
+    mkdir([basepath filesep 'Barrage_Files']);
 end
 
-pullSpikes('basepath', basepath, 'savePath', [basepath '\Barrage_Files'], 'force', true); %Get region/cell type spike files
+pullSpikes('basepath', basepath, 'savePath', [basepath filesep 'Barrage_Files'], 'force', true); %Get region/cell type spike files
 
-if ~exist(strcat(basepath,'\Barrage_Files\',basename,'.CA2pyr.cellinfo.mat'))
+if ~exist(strcat(basepath,filesep,'Barrage_Files',filesep,basename,'.CA2pyr.cellinfo.mat'))
     disp('No CA2 pyramidal cells detected, exiting');
     return
 end
 
-if ~exist(strcat(basepath,'\',basename,'.SleepState.states.mat'))
+if ~exist(strcat(basepath,filesep,basename,'.SleepState.states.mat'))
     disp('SleepScore not detected, calculating');
-    load([basepath '\' basename '.session.mat']);
+    load([basepath filesep basename '.session.mat']);
     SleepState = SleepScoreMaster(basepath,'rejectChannels',session.channelTags.Bad.channels);
     clear session
 else
-    load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
+    load(strcat(basepath,filesep,basename,'.SleepState.states.mat'));
 end
 
 %% Detect good candidate units

@@ -612,7 +612,7 @@ elseif exist([basepath, filesep, [basename, '.posTrials.mat']], 'file')
     source = 'basename.posTrials.mat';
 
     % posTrials is sometimes moved
-elseif exist([basepath, filesep, ['oldfiles', filesep,posTrials.mat']], 'file')
+elseif exist([basepath, filesep, ['oldfiles', filesep, 'posTrials.mat']], 'file')
     disp('detected posTrials.mat')
     load([basepath, filesep, ['oldfiles', filesep, 'posTrials.mat']], 'posTrials');
     positions = [posTrials{1}; posTrials{2}];

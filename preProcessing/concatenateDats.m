@@ -28,6 +28,10 @@ function concatenateDats(varargin)
 %                         folder containing original copies of the data.
 %                         Example input may look like: ["backup",
 %                         "ignore"].
+% behaviorOnly            Set to true for behavior-only sessions (no
+%                         amplifier.dat). Reads metadata from info.rhd or
+%                         settings.xml. Skips LFP, Kilosort, and SleepScore.
+%                         Default false
 
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
@@ -35,6 +39,7 @@ addParameter(p, 'fillMissingDatFiles', false, @islogical);
 addParameter(p, 'sortFiles', true, @islogical);
 addParameter(p, 'altSort', [], @isnumeric);
 addParameter(p, 'ignoreFolders', "", @isstring);
+addParameter(p, 'behaviorOnly', false, @islogical);
 
 parse(p, varargin{:});
 
@@ -43,6 +48,7 @@ fillMissingDatFiles = p.Results.fillMissingDatFiles;
 sortFiles = p.Results.sortFiles;
 altSort = p.Results.altSort;
 ignoreFolders = p.Results.ignoreFolders;
+behaviorOnly = p.Results.behaviorOnly;
 
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
@@ -79,7 +85,7 @@ if fillMissingDatFiles
     end
     for ii = 1:length(toFill)
         if toFill(ii) == 1
-            fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii});
+            fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii}, 'behaviorOnly', behaviorOnly);
         end
     end
 else
@@ -232,12 +238,61 @@ else
 end
 
 %% Create MergePoints file based on concatenation
-sessionInfo = LoadXml(fullfile(basepath, [basename, '.xml']));
-nSamp = [];
-for didx = 1:length(datpaths)
-    t = dir(datpaths{didx}(2:end - 2));
-    dataTypeNBytes = numel(typecast(cast(0, 'int16'), 'uint8'));
-    nSamp(didx) = t.bytes / (sessionInfo.nChannels * dataTypeNBytes);
+% For behavior-only sessions, read metadata from info.rhd or session file
+% instead of requiring XML file
+if behaviorOnly
+    % Try to load session file to get sampling rate
+    sessionFile = fullfile(basepath, [basename, '.session.mat']);
+    if exist(sessionFile, 'file')
+        load(sessionFile, 'session');
+        sessionInfo.SampleRate = session.extracellular.sr;
+        sessionInfo.nChannels = 1; % For digitalin.dat, we use bytes directly
+    else
+        % Try to read from info.rhd
+        rhdFile = dir(fullfile(basepath, '**', '*.rhd'));
+        if ~isempty(rhdFile)
+            try
+                [~, ~, ~, ~, ~, ~, frequency_parameters, ~] = ...
+                    read_Intan_RHD2000_file_bz('basepath', rhdFile(1).folder);
+                sessionInfo.SampleRate = frequency_parameters.board_dig_in_sample_rate;
+                sessionInfo.nChannels = 1; % For digitalin.dat
+            catch
+                warning('Could not read sampling rate from info.rhd. Using default 20000 Hz');
+                sessionInfo.SampleRate = 20000;
+                sessionInfo.nChannels = 1;
+            end
+        else
+            warning('No session file or info.rhd found. Using default sampling rate 20000 Hz');
+            sessionInfo.SampleRate = 20000;
+            sessionInfo.nChannels = 1;
+        end
+    end
+    
+    % For behavior-only, calculate samples from digitalin.dat (uint16, 2 bytes per sample)
+    nSamp = [];
+    for didx = 1:length(datpaths)
+        % Find digitalin.dat in this subsession folder
+        subsessionPath = datpaths{didx}(2:end - 2); % Remove quotes and spaces
+        [parentPath, ~, ~] = fileparts(subsessionPath);
+        digitalinPath = fullfile(parentPath, 'digitalin.dat');
+        
+        if exist(digitalinPath, 'file')
+            t = dir(digitalinPath);
+            % digitalin.dat: uint16, 2 bytes per sample
+            nSamp(didx) = t.bytes / 2;
+        else
+            error(['digitalin.dat not found in ', parentPath]);
+        end
+    end
+else
+    % Standard mode: use XML file
+    sessionInfo = LoadXml(fullfile(basepath, [basename, '.xml']));
+    nSamp = [];
+    for didx = 1:length(datpaths)
+        t = dir(datpaths{didx}(2:end - 2));
+        dataTypeNBytes = numel(typecast(cast(0, 'int16'), 'uint8'));
+        nSamp(didx) = t.bytes / (sessionInfo.nChannels * dataTypeNBytes);
+    end
 end
 
 cumsum_nSamp = cumsum(nSamp);

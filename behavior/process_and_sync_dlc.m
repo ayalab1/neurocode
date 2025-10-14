@@ -51,11 +51,38 @@ if exist(fullfile(basepath, [basename, '.MergePoints.events.mat']), 'file')
             end
 
             % read video to get framerate
-            obj = VideoReader(fullfile(video_file.folder, video_file.name));
-            fs = obj.FrameRate;
+            % Try VideoReader first, if it fails use ffprobe
+            try
+                obj = VideoReader(fullfile(video_file.folder, video_file.name));
+                fs = obj.FrameRate;
+                if isempty(fs) || fs == 0
+                    error('Frame rate is empty or zero');
+                end
+            catch ME
+                warning(ME.identifier, 'VideoReader failed: %s. Attempting to use ffprobe...', ME.message);
+                % Use ffprobe to get frame rate
+                video_path = fullfile(video_file.folder, video_file.name);
+                [status, result] = system(sprintf('ffprobe -v error -select_streams v:0 -show_entries stream=r_frame_rate -of default=noprint_wrappers=1:nokey=1 "%s"', video_path));
+                if status == 0
+                    % Parse the frame rate (usually in format "30/1" or "29.97")
+                    rate_parts = strsplit(strtrim(result), '/');
+                    if length(rate_parts) == 2
+                        fs = str2double(rate_parts{1}) / str2double(rate_parts{2});
+                    else
+                        fs = str2double(result);
+                    end
+                    fprintf('Frame rate extracted using ffprobe: %.2f fps\n', fs);
+                else
+                    error('Could not extract frame rate from video using VideoReader or ffprobe. Please install video codecs or provide frame rate manually.');
+                end
+            end
 
             % load csv with proper header
             df = load_dlc_csv(fullfile(file(1).folder, file(1).name));
+            
+            fprintf('DLC CSV loaded: %d rows (tracking frames)\n', size(df, 1));
+            fprintf('Video frame rate: %.2f fps\n', fs);
+            fprintf('Expected duration: %.2f seconds\n', size(df, 1) / fs);
 
             % locate columns with [x,y,likelihood]
             field_names = df.Properties.VariableNames;
@@ -75,6 +102,9 @@ if exist(fullfile(basepath, [basename, '.MergePoints.events.mat']), 'file')
 
             x = df{:, x_col};
             y = df{:, y_col};
+            
+            fprintf('Before sync - X: %d rows, Y: %d rows, ts: %d rows\n', ...
+                size(x, 1), size(y, 1), length(ts));
 
             tempTracking{count} = sync_ttl(file.folder, x, y, ts, fs, pulses_delta_range);
             trackFolder(count) = ii;
@@ -185,9 +215,43 @@ if ~exist(fullfile(folder, 'digitalIn.events.mat'), 'file')
 end
 load(fullfile(folder, 'digitalIn.events.mat'), 'digitalIn')
 
+% Find the correct TTL channel by matching expected frame rate
 Len = cellfun(@length, digitalIn.timestampsOn, 'UniformOutput', false);
-[~, idx] = max(cell2mat(Len));
-bazlerTtl = digitalIn.timestampsOn{idx};
+fprintf('Digital input channels found with pulse counts:\n');
+for ch = 1:length(Len)
+    if Len{ch} > 0
+        pulse_freq = 1 / median(diff(digitalIn.timestampsOn{ch}));
+        fprintf('  Channel %d: %d pulses, median frequency: %.2f Hz\n', ch, Len{ch}, pulse_freq);
+    end
+end
+
+% Find channel whose frequency is closest to expected video frame rate (fs)
+best_idx = [];
+min_freq_diff = inf;
+for ch = 1:length(digitalIn.timestampsOn)
+    if ~isempty(digitalIn.timestampsOn{ch}) && length(digitalIn.timestampsOn{ch}) > 10
+        pulse_freq = 1 / median(diff(digitalIn.timestampsOn{ch}));
+        freq_diff = abs(pulse_freq - fs);
+        if freq_diff < min_freq_diff && abs(pulse_freq - fs) / fs < 0.2
+            min_freq_diff = freq_diff;
+            best_idx = ch;
+        end
+    end
+end
+
+if isempty(best_idx)
+    warning('No digital input channel matches expected frame rate (%.2f Hz). Using channel with most pulses.', fs);
+    [~, best_idx] = max(cell2mat(Len));
+else
+    fprintf('Selected channel %d for camera TTLs (frequency matches expected %.2f Hz)\n', best_idx, fs);
+end
+
+bazlerTtl = digitalIn.timestampsOn{best_idx};
+
+% Debug: Check TTL timestamps
+fprintf('=== DEBUG: TTL timestamp analysis ===\n');
+fprintf('bazlerTtl range: %.6f to %.6f seconds\n', min(bazlerTtl), max(bazlerTtl));
+fprintf('bazlerTtl sample values: [%.6f, %.6f, %.6f, ...]\n', bazlerTtl(1), bazlerTtl(2), bazlerTtl(3));
 
 %check for extra pulses of much shorter distance than they should
 extra_pulses = diff(bazlerTtl) < ((1 / fs) - (1 / fs) * pulses_delta_range);
@@ -203,7 +267,6 @@ if bazlerTtl(1) < 1
     warning('MyComponent:MyWarningID', 'First ttl %f may indicate video was started before intan', bazlerTtl(1));
 end
 
-
 if isempty(bazlerTtl)
     warning('no real ttls, something went wrong')
     disp('fix the issue and type dbcont to continue')
@@ -211,6 +274,16 @@ if isempty(bazlerTtl)
 end
 
 basler_intan_diff = length(bazlerTtl) - size(x, 1);
+
+fprintf('\n=== TTL vs DLC Frame Mismatch Analysis ===\n');
+fprintf('Number of TTL pulses: %d\n', length(bazlerTtl));
+fprintf('Number of DLC frames: %d\n', size(x, 1));
+if basler_intan_diff > 0
+    fprintf('Difference: %d more TTL pulses than DLC frames\n', basler_intan_diff);
+else
+    fprintf('Difference: %d more DLC frames than TTL pulses\n', abs(basler_intan_diff));
+end
+fprintf('==========================================\n\n');
 
 [x, y, ts, bazlerTtl, fs, notes] = match_basler_frames_to_ttl(bazlerTtl, basler_intan_diff, x, y, ts, fs);
 

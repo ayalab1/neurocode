@@ -20,6 +20,12 @@ function general_behavior_file(varargin)
 %   optitrack .csv file
 %   *_Behavior*.mat file from crcns_pfc-2_data
 %
+% OPTIONAL PARAMETERS:
+%   'video_overlay'     - logical, enable video overlay in manual_trackerjumps (default: false)
+%   'clean_tracker_jumps' - logical, enable manual tracker jump cleaning GUI (default: true)
+%   'convert_xy_to_cm'  - logical, convert coordinates from pixels to cm (default: true)
+%   'maze_sizes'        - vector, maze dimensions in cm for coordinate conversion (required if convert_xy_to_cm=true)
+%
 % TODO:
 %       -make so you can choose (w/ varargin) which method to use (some sessions meet several)
 %           This will require making each method into a sub/local function
@@ -41,6 +47,7 @@ addParameter(p, 'force_format', 'none', @(x) any(strcmpi(x,{'none','optotrack','
 addParameter(p, 'clean_tracker_jumps', true, @islogical); % option to manually clean tracker jumps
 addParameter(p, 'convert_xy_to_cm', true, @islogical); % option to convert xy to cm (best if used with clean_tracker_jumps)
 addParameter(p, 'maze_sizes', [], @isvector); % list of maze sizes (x-dim, in cm) per non-sleep epoch (if same maze & cam pos over epochs use single number)
+addParameter(p, 'video_overlay', false, @islogical); % option to overlay tracking on video frame in manual_trackerjumps
 
 parse(p, varargin{:});
 basepaths = p.Results.basepath;
@@ -54,11 +61,11 @@ force_format = p.Results.force_format;
 clean_tracker_jumps = p.Results.clean_tracker_jumps;
 convert_xy_to_cm = p.Results.convert_xy_to_cm;
 maze_sizes = p.Results.maze_sizes;
+video_overlay = p.Results.video_overlay;
 
 if convert_xy_to_cm && isempty(maze_sizes)
     error('Cannot run with "convert_xy_to_cm" option without providing maze_sizes.');
 end
-
 
 if ~iscell(basepaths)
     basepaths = {basepaths};
@@ -152,6 +159,11 @@ if clean_tracker_jumps
     epoch_df = epoch_df(epoch_df.environment ~= "sleep", :);
     start = epoch_df.startTime;
     stop = epoch_df.stopTime;
+    % make full paths using epoch_df.basepath and epoch_df.name
+    session_paths = cellfun(@(x,y) fullfile(x,y), ...
+        epoch_df.basepath, ...
+        epoch_df.name, ...
+        'UniformOutput', false);
 
     good_idx = manual_trackerjumps(behavior.timestamps, ...
         behavior.position.x, ...
@@ -159,7 +171,9 @@ if clean_tracker_jumps
         start, ...
         stop, ...
         basepath, ...
-        'darkmode', true);
+        session_paths, ...
+        'darkmode', true, ...
+        'video_overlay', p.Results.video_overlay);
 
     behavior.position.x(~good_idx) = NaN;
     behavior.position.y(~good_idx) = NaN;
@@ -598,9 +612,9 @@ elseif exist([basepath, filesep, [basename, '.posTrials.mat']], 'file')
     source = 'basename.posTrials.mat';
 
     % posTrials is sometimes moved
-elseif exist([basepath, filesep, ['oldfiles\posTrials.mat']], 'file')
+elseif exist([basepath, filesep, ['oldfiles', filesep,posTrials.mat']], 'file')
     disp('detected posTrials.mat')
-    load([basepath, filesep, ['oldfiles\posTrials.mat']], 'posTrials');
+    load([basepath, filesep, ['oldfiles', filesep, 'posTrials.mat']], 'posTrials');
     positions = [posTrials{1}; posTrials{2}];
     [~, idx] = sort(positions(:, 1));
     positions = positions(idx, :);

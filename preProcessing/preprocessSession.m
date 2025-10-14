@@ -15,6 +15,10 @@ function preprocessSession(varargin)
 %  -------------------------------------------------------------------------
 % basepath                Basepath for experiment. It contains all session
 %                         folders. If not provided takes pwd
+% behaviorOnly            Set to true for behavior-only sessions (no amplifier.dat,
+%                         no spike sorting). Reads metadata from info.rhd or
+%                         settings.xml. Skips LFP, Kilosort, and SleepScore.
+%                         Default false
 % analogChannels          List of analog channels with pulses to be detected (it
 %                         supports Intan Buzsaki Edition)
 % digitalChannels         List of digital channels with pulses to be detected (it
@@ -94,6 +98,7 @@ function preprocessSession(varargin)
 
 p = inputParser;
 addParameter(p, 'basepath', pwd, @isfolder); % by default, current folder
+addParameter(p, 'behaviorOnly', false, @islogical); % behavior-only mode (no amplifier.dat)
 addParameter(p, 'fillMissingDatFiles', false, @islogical);
 addParameter(p, 'analogInputs', false, @islogical);
 addParameter(p, 'analogChannels', [], @isnumeric);
@@ -130,6 +135,7 @@ addParameter(p, 'clean_rez_params', { ...
 parse(p, varargin{:});
 
 basepath = p.Results.basepath;
+behaviorOnly = p.Results.behaviorOnly;
 fillMissingDatFiles = p.Results.fillMissingDatFiles;
 analogInputs = p.Results.analogInputs;
 analogChannels = p.Results.analogChannels;
@@ -180,12 +186,16 @@ end
 [~, basename] = fileparts(basepath);
 
 % Get xml file in order
-if ~exist([basepath, filesep, basename, '.xml'], 'file')
-    xmlFile = checkFile('fileType', '.xml', 'searchSubdirs', true);
-    xmlFile = xmlFile(1);
-    if ~(strcmp(xmlFile.folder, basepath) && strcmp(xmlFile.name(1:end-4), basename))
-        copyfile([xmlFile.folder, filesep, xmlFile.name], [basepath, filesep, basename, '.xml'])
+if ~behaviorOnly
+    if ~exist([basepath, filesep, basename, '.xml'], 'file')
+        xmlFile = checkFile('fileType', '.xml', 'searchSubdirs', true);
+        xmlFile = xmlFile(1);
+        if ~(strcmp(xmlFile.folder, basepath) && strcmp(xmlFile.name(1:end-4), basename))
+            copyfile([xmlFile.folder, filesep, xmlFile.name], [basepath, filesep, basename, '.xml'])
+        end
     end
+else
+    disp('Behavior-only mode: skipping XML file requirement');
 end
 
 % Check info.rhd
@@ -202,16 +212,25 @@ end
 
 %% Make SessionInfo
 % Manually ID bad channels at this point. automating it would be good
-session = sessionTemplate(basepath, 'showGUI', false);
+if behaviorOnly
+    disp('Creating behavior-only session metadata...');
+    session = sessionTemplate_behaviorOnly(basepath, 'showGUI', false);
+else
+    session = sessionTemplate(basepath, 'showGUI', false);
+end
 save(fullfile(basepath, [basename, '.session.mat']), 'session');
 
 %% Concatenate sessions
 disp('Concatenate session folders...');
 concatenateDats('basepath', basepath, 'fillMissingDatFiles', fillMissingDatFiles, ...
-    'sortFiles', sortFiles, 'altSort', altSort, 'ignoreFolders', ignoreFolders);
+    'sortFiles', sortFiles, 'altSort', altSort, 'ignoreFolders', ignoreFolders, 'behaviorOnly', behaviorOnly);
 
 %% run again to add epochs from basename.MergePoints.mat
-session = sessionTemplate(basepath, 'showGUI', false);
+if behaviorOnly
+    session = sessionTemplate_behaviorOnly(basepath, 'showGUI', false);
+else
+    session = sessionTemplate(basepath, 'showGUI', false);
+end
 save(fullfile(basepath, [basename, '.session.mat']), 'session');
 
 %% Process additional inputs - CHECK FOR OUR LAB
@@ -249,6 +268,28 @@ end
 if cleanArtifacts && analogInputs
     [pulses] = getAnalogPulses(analogInp, 'analogCh', analogChannels);
     cleanPulses(pulses.ints{1}(:));
+end
+
+% Skip electrophysiology processing in behavior-only mode
+if behaviorOnly
+    disp('Behavior-only mode: Skipping LFP, spike sorting, and brain state detection');
+    
+    % Still process tracking if requested
+    if getPos
+        % check for pre existing deeplab cut
+        if exist(path_to_dlc_bat_file, 'file')
+            system(path_to_dlc_bat_file, '-echo')
+        end
+        % put tracking into standard format
+        general_behavior_file('basepath', basepath)
+    end
+    
+    % Log and exit
+    results = p.Results;
+    save(fullfile(basepath, 'preprocessSession_params.mat'), 'results')
+    targetFile = fullfile(basepath, 'preprocessSession.log');
+    copyfile(which('preprocessSession.m'), targetFile);
+    return
 end
 
 if LFPbeforeKilo

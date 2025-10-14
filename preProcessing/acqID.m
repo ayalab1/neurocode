@@ -51,7 +51,9 @@ recNum = [];
 
 listing = dir("**");
 allFolders = struct2table(listing);
-useIDX = find(contains(allFolders.name, 'continuous.dat') | contains(allFolders.name, 'amplifier.dat'));
+useIDX = find(contains(allFolders.name, 'continuous.dat') | ...
+    contains(allFolders.name, 'amplifier.dat') | ...
+    contains(allFolders.name, 'digitalin.dat'));
 folderNames = allFolders(useIDX, :).folder;
 
 %this assumes that your recording folders with the date are within your

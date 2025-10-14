@@ -58,21 +58,35 @@ p.addParameter('basepath',pwd,@isfolder);
 p.parse(varargin{:});
 path = p.Results.basepath;
 
-% path = [pwd,filesep];
-file = [ls(fullfile(path,'*.rhd'))];
-
-if (file == 0)
+% Cross-platform file discovery using dir
+d = dir(fullfile(path,'*.rhd'));
+if isempty(d)
+    warning('No .rhd files found in path: %s', path);
     return;
-elseif size(file,1) > 1
+end
+
+% Reconstruct full absolute paths consistently across platforms
+files = fullfile({d.folder}, {d.name});
+files = string(files);
+
+if length(files) == 1
+    file = char(files(1));
+else
+    % Multiple .rhd files found, select the one matching basename
     basename = basenameFromBasepath(path);
-    i=1;
-    while i<=size(file,1)
-        tempFile = file(i,:);
-        if contains(tempFile, basename)
-           file = [];
-           file = tempFile;
+    file_found = false;
+    for i = 1:length(files)
+        [~, fname, ~] = fileparts(files(i));
+        if contains(fname, basename)
+            file = char(files(i));
+            file_found = true;
+            break;
         end
-        i=i+1;
+    end
+    if ~file_found
+        % If no basename match, use the first file
+        file = char(files(1));
+        warning('Multiple .rhd files found, but none matched basename "%s". Using: %s', basename, file);
     end
 end
 
@@ -82,7 +96,9 @@ end
 % file = d(end).name;
 
 tic;
-filename = fullfile(path,file);
+file = strip(file);
+% file is already a full path, no need to use fullfile again
+filename = file;
 fid = fopen(filename, 'r');
 
 s = dir(filename);

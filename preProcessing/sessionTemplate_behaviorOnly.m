@@ -32,7 +32,7 @@ function session = sessionTemplate_behaviorOnly(input1, varargin)
 % Parse inputs
 p = inputParser;
 addRequired(p, 'input1', @(X) (ischar(X) && exist(X, 'dir')) || isstruct(X));
-addParameter(p, 'basename', [], @isstr);
+addParameter(p, 'basename', [], @ischar);
 addParameter(p, 'showGUI', false, @islogical);
 addParameter(p, 'addBehaviorFiles', false, @islogical);
 

@@ -25,11 +25,11 @@ basename = basenameFromBasepath(basepath);
     spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA1");
     ripplesTemp = eventSpikingTreshold(ripples,'spikes',spikes,'spikingThreshold',0.4);
     ripples = ripplesTemp;
-    if ~exist([basepath '\Ripple_Profile'])
+    if ~exist([basepath filesep 'Ripple_Profile'])
         mkdir('Ripple_Profile');
     end
-    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,['Ripple_Profile\SWRmua.png']);
-    
+    save([basename '.ripples.events.mat'],'ripples');saveas(gcf,['Ripple_Profile' filesep 'SWRmua.png']);
+
     % remove very large amplitude events (likely artifacts)
     ripples = removeArtifactsFromEvents(ripples,'stdThreshold',10);
     
@@ -45,7 +45,7 @@ basename = basenameFromBasepath(basepath);
     createEVT(ripples);
 
     % plot wavelet to check detection quality 
-    if ~exist([basepath '\Ripple_Profile'])
+    if ~exist([basepath filesep 'Ripple_Profile'])
         mkdir('Ripple_Profile');
     end
     lfpRip = getLFP(swrCh.Ripple_Channel, 'basename', basename);
@@ -54,7 +54,7 @@ basename = basenameFromBasepath(basepath);
     catch
         [wavAvg,lfpAvg] = eventWavelet(lfpRip,ripples.peaks,'twin',[0.1 0.1]);
     end
-    saveas(gcf,['Ripple_Profile\swrWaveletSample.png']);
+    saveas(gcf,['Ripple_Profile' filesep 'swrWaveletSample.png']);
     
 %% 3- Separate ripples by task epochs     
     % creat pre/task/post structure. Need to be improved

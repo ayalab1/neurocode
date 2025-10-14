@@ -1,12 +1,12 @@
 function HSE = loadBarrage(basepath)
 home_path = pwd;
-cd([basepath '\Barrage_Files']);
+cd([basepath filesep 'Barrage_Files']);
 basename = basenameFromBasepath(basepath);
 anim = animalFromBasepath(basepath);
 
-disp(strcat('Loading barrages from '," ",anim, "/", basename));
+disp(strcat('Loading barrages from '," ",anim, filesep, basename));
 load([basename '.HSE.mat'],'HSE');
-% load([basepath '\' basename '.session.mat']);
+% load([basepath filesep basename '.session.mat']);
 
 % pre=[]; post=[];
 % for i=1:size(session.epochs,2)
@@ -59,7 +59,7 @@ load([basename '.HSE.mat'],'HSE');
 %     HSE = correct_HSE;
 %     HSE.keep = (1:size(HSE.timestamps,1)); %for this version Aza has imposed keep parameters separately
 % 
-%     load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
+%     load(strcat(basepath,filesep,basename,'.SleepState.states.mat'));
 %     SleepState.ints.NREMstate(:,1)=SleepState.ints.NREMstate(:,1)-1; %buffer?
 %     SleepState.ints.NREMstate(:,2)=SleepState.ints.NREMstate(:,2)+1;
 % 

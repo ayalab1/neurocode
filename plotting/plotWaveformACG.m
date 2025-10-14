@@ -1,6 +1,6 @@
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
-load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+load([basepath filesep basename '.cell_metrics.cellinfo.mat']);
 unit = 3;
 
 %% ACGs

@@ -114,7 +114,7 @@ if stim==1
 end
 
 
-load(strcat(basepath,'\',basename,'.SleepState.states.mat'));
+load(strcat(basepath,filesep,basename,'.SleepState.states.mat'));
 if ~isempty(SleepState.ints.NREMstate)
     HSEnREM = eventIntervals(HSE,SleepState.ints.NREMstate,1);
     if ~isempty(HSEnREM)

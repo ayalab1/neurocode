@@ -175,7 +175,7 @@ else
 end
 
 %% 2 - compute basic cell metrics
-if exist([basepath, '\anatomical_map.csv'], 'file')
+if exist([basepath, filesep, 'anatomical_map.csv'], 'file')
     channel_mapping;
 end
 if prePhy

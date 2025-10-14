@@ -65,7 +65,7 @@ if isstring(basepath)||ischar(basepath)
         data_path = basepath;
 
         % look for all the cell_metrics.cellinfo.mat files
-        files = dir([data_path,'\**\*.cell_metrics.cellinfo.mat']);
+        files = dir([data_path,filesep,'**',filesep,'*.cell_metrics.cellinfo.mat']);
 
         % pull out basepaths and basenames
         for i = 1:length(files)

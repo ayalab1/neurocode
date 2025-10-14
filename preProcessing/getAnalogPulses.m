@@ -128,7 +128,7 @@ if isempty(f) || f.bytes == 0 % if analogin is empty or doesn't exist
 
     f = dir('*amplifier*.dat'); % is exist amplifier
     if isempty(f)
-        analogFile = split(basepath, '\');
+        analogFile = split(basepath, filesep);
         analogFile = analogFile{end};
         analogFile = strcat(analogFile, '.dat');
     else

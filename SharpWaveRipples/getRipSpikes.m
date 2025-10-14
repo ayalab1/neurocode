@@ -180,9 +180,9 @@ end
 % 4. Save
 if saveMat
     if (saveNum ~= 0)
-        save(strcat(savePath, '\', basename, '.', num2str(saveNum), '.spkEventTimes.mat'), 'spkEventTimes');
+        save(strcat(savePath, filesep, basename, '.', num2str(saveNum), '.spkEventTimes.mat'), 'spkEventTimes');
     else
-        save(strcat(savePath, '\', basename, '.spkEventTimes.mat'), 'spkEventTimes');
+        save(strcat(savePath, filesep, basename, '.spkEventTimes.mat'), 'spkEventTimes');
     end
 end
 

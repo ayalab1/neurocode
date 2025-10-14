@@ -96,7 +96,7 @@ else
     end
     if isempty(file) && searchSuperdirs
         mydir  = pwd;
-        idcs   = strfind(mydir,'\');
+        idcs   = strfind(mydir,filesep);
         newdir = mydir(1:idcs(end)-1);
         superFile = dir([newdir,filesep,'*',fileType]);
         file = [file; superFile];

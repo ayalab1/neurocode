@@ -20,7 +20,7 @@ channels = double(readNPY('channel_map.npy'));
 channelShanks = double(readNPY('channel_shanks.npy'))';
 possibleShanks = unique(channelShanks(:))';
 nShanks = max(channelShanks);
-xml = dir([neurosuite_path '\*.xml']);
+xml = dir([neurosuite_path filesep '*.xml']);
 [~,basename] = fileparts(fullfile(xml.folder,xml.name));
 
 %%

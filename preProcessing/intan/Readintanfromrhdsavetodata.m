@@ -60,7 +60,7 @@ digitalInp= cell(1, 11);
 digitalduration= cell(1, 11);
 
 for ii=1:size(MergePoints.foldernames ,2)
-    load([basepath '\' MergePoints.foldernames{1,ii} '\' 'digitalIn.events.mat'])
+    load([basepath filesep MergePoints.foldernames{1,ii} filesep 'digitalIn.events.mat'])
     %oprerate each cell
     sumT=MergePoints.timestamps(ii,1);
     for cellIndex = 1:numel(digitalIn.timestampsOn)

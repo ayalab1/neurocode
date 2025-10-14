@@ -24,7 +24,7 @@ end
 %% Create Neuroscope2 file for barrage events
 basename = basenameFromBasepath(basepath);
 
-savePath = strcat(basepath, '\Barrage_Files\', basename, '.');
+savePath = strcat(basepath, filesep, 'Barrage_Files', filesep, basename, '.');
 load([savePath 'HSE.mat']);
 
 HSEn2.timestamps = HSE.timestamps(HSE.keep(HSE.NREM),:);

@@ -18,14 +18,14 @@ end
 basepath = pwd;
 basename = basenameFromBasepath(basepath);
 
-if ~exist(strcat(basepath,'\','Barrage_Files'))
+if ~exist(strcat(basepath,filesep,'Barrage_Files'))
     mkdir('Barrage_Files');
 end
 
 load([basename '.cell_metrics.cellinfo.mat']);
 
 %% Produce spike structure
-load([basepath '\Barrage_Files\' basename '.CA2pyr.cellinfo.mat']);
+load([basepath filesep 'Barrage_Files' filesep basename '.CA2pyr.cellinfo.mat']);
 
 %% Get cell by cell firing rate
 tSmooth = 0.05; binsz = 0.01;

@@ -33,7 +33,7 @@ function [data] = cleanPulses(ts, varargin)
 % (at your option) any later version.
 
 % Default parameters
-filename = split(pwd,'\'); filename = filename{end};
+filename = split(pwd,filesep); filename = filename{end};
 
 % Parse options
 p = inputParser;

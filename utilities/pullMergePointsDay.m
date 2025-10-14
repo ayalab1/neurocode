@@ -15,7 +15,7 @@ function [timestamps, idx, dayID] = pullMergePointsDay(basepath)
 % format where the basename includes "day#". 
 
 basename = basenameFromBasepath(basepath);
-load([basepath '\' basename '.MergePoints.events.mat']);
+load([basepath filesep basename '.MergePoints.events.mat']);
 fun_existsdate = @(x) (strfind(ismember(x, '1234567890'), [0, ones(1, 6), 0])+1); %locate date information
 dateStore = [];
 for i = 1:size(MergePoints.foldernames,2)
@@ -59,7 +59,7 @@ while ~found
     if i <= size(allFolders,1)
         if ~isempty(fun_existsday(allFolders(i).name))
             useIDX = i;
-            cd([allFolders(useIDX).folder '\' allFolders(useIDX).name]);
+            cd([allFolders(useIDX).folder filesep allFolders(useIDX).name]);
             subDir = dir();
             for j = 1:size(subDir,1)
                 if ~isempty(fun_existsSubfolder(subDir(j).name))&&isempty(fun_existsKiloSort(subDir(j).name))

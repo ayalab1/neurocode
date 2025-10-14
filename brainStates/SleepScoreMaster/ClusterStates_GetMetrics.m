@@ -103,7 +103,7 @@ sf_LFP = SleepScoreLFP.sf/downsamplefactor;
 noverlap = window-1; %1s dt
 
 if strcmp(SWweights,'PSS')
-    display('Calculating SW Mertric using Power Spectrum Slope')
+    display('Calculating SW Metric using Power Spectrum Slope')
     %Put the LFP in the right structure format
     lfp.data = swLFP;
     lfp.timestamps = t_LFP;
@@ -125,7 +125,7 @@ if strcmp(SWweights,'PSS')
     totz = NormToInt(abs(sum(zFFTspec,2)),'modZ');
     badtimes = find(totz>3);
 else
-    display(['Calculating SW Mertric using ',SleepScoreLFP.params.SWWeightsName])
+    display(['Calculating SW Metric using ',SleepScoreLFP.params.SWWeightsName])
 
     freqlist = logspace(0,2,100);
     [swFFTspec,swFFTfreqs,t_clus] = spectrogram(single(swLFP),window*sf_LFP,noverlap*sf_LFP,freqlist,sf_LFP);

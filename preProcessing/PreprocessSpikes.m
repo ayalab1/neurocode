@@ -54,7 +54,6 @@ showCellMet = p.Results.showCellMet;
 prePhy = p.Results.prePhy;
 datFolder = p.Results.datFolder;
 spikeLabels = p.Results.spikeLabels; %spike labels is causing issues even when no bad channels are noted - Heathlarsson 05/29/23
-
 %% 1- extract spike times and waveforms for sorted clusters
 cd(basepath);
 basename = basenameFromBasepath(pwd);
@@ -72,8 +71,13 @@ if ~isempty(datFolder)
 end
 
 if isfield(session.spikeSorting{1, 1}, 'relativePath') && exist(session.spikeSorting{1, 1}.relativePath, 'dir')
-    f.name = session.spikeSorting{:}.relativePath;
-    f.folder = basepath;
+    f = struct();
+    for sorting_i = 1:length(session.spikeSorting)
+        f(sorting_i).name = session.spikeSorting{sorting_i}.relativePath;
+        f(sorting_i).folder = basepath;
+    end
+    % transpose to work with current uses of size
+    f = f';
 else
     f = dir('Kilosort*');
     if (size(f, 1) ~= 1) && (~multiKilosort)
@@ -86,9 +90,6 @@ else
 end
 % Make sure there is only one KiloSort folder before running, unless you
 % needed to spike sort probes separately (multiKilosort=1).
-
-% The hippocampal KiloSort folder should be listed first in the session
-% folder for organization, but this is not necessary for running
 
 % check if spikes.cellinfo has already been created
 pre_exist_spike_files = dir('*spikes*.cellinfo.mat');
@@ -173,7 +174,6 @@ else
             'labelsToRead', spikeLabels);
     end
 end
-
 %% 2 - compute basic cell metrics
 if exist([basepath, filesep, 'anatomical_map.csv'], 'file')
     channel_mapping;
@@ -206,6 +206,6 @@ end
 
 % GUI to manually curate cell classification
 if showCellMet
-    cell_metrics = CellExplorer('metrics', cell_metrics);
+    CellExplorer('metrics', cell_metrics);
 end
 end

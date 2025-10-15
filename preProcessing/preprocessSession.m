@@ -273,7 +273,7 @@ end
 % Skip electrophysiology processing in behavior-only mode
 if behaviorOnly
     disp('Behavior-only mode: Skipping LFP, spike sorting, and brain state detection');
-    
+
     % Still process tracking if requested
     if getPos
         % check for pre existing deeplab cut
@@ -283,7 +283,7 @@ if behaviorOnly
         % put tracking into standard format
         general_behavior_file('basepath', basepath)
     end
-    
+
     % Log and exit
     results = p.Results;
     save(fullfile(basepath, 'preprocessSession_params.mat'), 'results')

@@ -274,7 +274,7 @@ if behaviorOnly
             sessionInfo.nChannels = 1;
         end
     end
-    
+
     % For behavior-only, calculate samples from digitalin.dat (uint16, 2 bytes per sample)
     nSamp = [];
     for didx = 1:length(datpaths)
@@ -282,7 +282,7 @@ if behaviorOnly
         subsessionPath = datpaths{didx}(2:end - 2); % Remove quotes and spaces
         [parentPath, ~, ~] = fileparts(subsessionPath);
         digitalinPath = fullfile(parentPath, 'digitalin.dat');
-        
+
         if exist(digitalinPath, 'file')
             t = dir(digitalinPath);
             % digitalin.dat: uint16, 2 bytes per sample

@@ -111,7 +111,7 @@ end
 for ii = 1:length(fillInds)
     fillIdx = fillInds(ii);
     localAmpSize = ampFiles(fillIdx).bytes;
-    
+
     % Calculate number of samples based on reference file
     if behaviorOnly || ampNch == 0
         % For behavior-only, reference is digitalin.dat (16 channels, uint16, 2 bytes)

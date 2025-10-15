@@ -79,7 +79,7 @@ if exist(fullfile(basepath, [basename, '.MergePoints.events.mat']), 'file')
 
             % load csv with proper header
             df = load_dlc_csv(fullfile(file(1).folder, file(1).name));
-            
+
             fprintf('DLC CSV loaded: %d rows (tracking frames)\n', size(df, 1));
             fprintf('Video frame rate: %.2f fps\n', fs);
             fprintf('Expected duration: %.2f seconds\n', size(df, 1) / fs);
@@ -102,7 +102,7 @@ if exist(fullfile(basepath, [basename, '.MergePoints.events.mat']), 'file')
 
             x = df{:, x_col};
             y = df{:, y_col};
-            
+
             fprintf('Before sync - X: %d rows, Y: %d rows, ts: %d rows\n', ...
                 size(x, 1), size(y, 1), length(ts));
 

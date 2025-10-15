@@ -105,13 +105,13 @@ for i = 1:size(useIDX, 1)
             recordingnames{i} = parts{1};
             expIdx = find(startsWith(parts, 'experiment'), 1);
             recIdx = find(startsWith(parts, 'recording'), 1);
-            
+
             if ~isempty(expIdx)
                 expNum(i) = extractAfter(parts{expIdx}, 'experiment');
             else
                 expNum(i) = '1';
             end
-            
+
             if ~isempty(recIdx)
                 recNum(i) = extractAfter(parts{recIdx}, 'recording');
             else

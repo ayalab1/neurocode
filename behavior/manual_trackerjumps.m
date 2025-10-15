@@ -47,20 +47,20 @@ for i=1:length(StartofRec)
     xtemp=x(ts>=StartofRec(i) & ts<=EndofRec(i));
     ytemp=y(ts>=StartofRec(i) & ts<=EndofRec(i));
     tstemp=ts(ts>=StartofRec(i) & ts<=EndofRec(i));
-    
+
     % Check if we have valid data
     if isempty(xtemp) || isempty(ytemp)
         warning('Event %d has no data points', i);
         continue;
     end
-    
+
     % Remove NaN values for visualization
     valid_idx = ~isnan(xtemp) & ~isnan(ytemp);
     if sum(valid_idx) == 0
         warning('Event %d has only NaN values', i);
         continue;
     end
-    
+
     fprintf('Event %d: %d total points, %d valid points\n', i, length(xtemp), sum(valid_idx));
 
     % Auto-detect video path if video_overlay is enabled but path is empty
@@ -68,11 +68,11 @@ for i=1:length(StartofRec)
     basename = basenameFromBasepath(session_paths{i});
     if p.Results.video_overlay && isempty(current_video_path)
         fprintf('Video overlay enabled, searching for video file...\n');
-        
+
         % Look for video files in MergePoints folders first
         if exist(fullfile(session_paths{i}, [basename, '.MergePoints.events.mat']), 'file')
             load(fullfile(session_paths{i}, [basename, '.MergePoints.events.mat']), 'MergePoints');
-            
+
             % Check subsession folders for MP4/AVI files
             for k = 1:length(MergePoints.foldernames)
                 mp4_files = dir(fullfile(session_paths{i}, MergePoints.foldernames{k}, '*.mp4'));
@@ -81,7 +81,7 @@ for i=1:length(StartofRec)
                     fprintf('Found video: %s\n', current_video_path);
                     break;
                 end
-                
+
                 avi_files = dir(fullfile(session_paths{i}, MergePoints.foldernames{k}, '*.avi'));
                 if ~isempty(avi_files)
                     current_video_path = fullfile(session_paths{i}, MergePoints.foldernames{k}, avi_files(1).name);
@@ -90,7 +90,7 @@ for i=1:length(StartofRec)
                 end
             end
         end
-        
+
         % If still not found, check main session folder
         if isempty(current_video_path)
             mp4_files = dir(fullfile(session_paths{i}, '*.mp4'));
@@ -105,12 +105,12 @@ for i=1:length(StartofRec)
                 end
             end
         end
-        
+
         if isempty(current_video_path)
             fprintf('Warning: No video file found for overlay. Proceeding without video.\n');
         end
     end
-    
+
     % use the gui to cut out points
     [~,~,in]=restrictMovement(xtemp,ytemp,restic_dir,darkmode,axis_equal,...
         alpha,add_scatter,video_overlay,current_video_path,video_frame_time,tstemp);
@@ -193,7 +193,7 @@ video_frame = [];
 if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
     try
         fprintf('Loading video frame from: %s\n', video_path);
-        
+
         % Determine which frame to extract
         if isempty(video_frame_time) && ~isempty(timestamps)
             % Use middle timestamp of current event
@@ -206,11 +206,11 @@ if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
         else
             fprintf('Using specified timestamp: %.3f s\n', video_frame_time);
         end
-        
+
         % Try to read video frame
         try
             v = VideoReader(video_path);
-            
+
             % Check if video_frame_time exceeds video duration
             if ~isempty(video_frame_time) && video_frame_time > v.Duration
                 fprintf('Warning: Requested time (%.3f s) exceeds video duration (%.3f s). Skipping video overlay.\n', ...
@@ -253,7 +253,7 @@ if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
         catch video_err
             fprintf('Warning: VideoReader failed: %s\n', video_err.message);
             fprintf('Attempting ffmpeg method...\n');
-            
+
             % Get video duration using ffprobe for validation
             if ~isempty(video_frame_time)
                 duration_cmd = sprintf('ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "%s" 2>/dev/null', video_path);
@@ -276,12 +276,12 @@ if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
             else
                 continue_to_ffmpeg = true;
             end
-            
+
             % Fallback: try to extract frame using system ffmpeg
             if continue_to_ffmpeg
                 temp_frame_path = tempname;
                 temp_frame_path = [temp_frame_path, '.jpg'];
-                
+
                 if ~isempty(video_frame_time)
                     cmd = sprintf('ffmpeg -i "%s" -ss %.3f -vframes 1 -y "%s" 2>/dev/null', ...
                         video_path, video_frame_time, temp_frame_path);
@@ -289,7 +289,7 @@ if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
                     cmd = sprintf('ffmpeg -i "%s" -vframes 1 -y "%s" 2>/dev/null', ...
                         video_path, temp_frame_path);
                 end
-                
+
                 [status, ~] = system(cmd);
                 if status == 0 && exist(temp_frame_path, 'file')
                     video_frame = imread(temp_frame_path);
@@ -303,7 +303,7 @@ if video_overlay && ~isempty(video_path) && exist(video_path, 'file')
                 end
             end
         end
-        
+
     catch err
         fprintf('Warning: Could not load video frame: %s\n', err.message);
         video_frame = [];
@@ -322,15 +322,15 @@ if ~isempty(video_frame)
     % Display video frame
     imshow(video_frame);
     hold on;
-    
+
     % Get image dimensions for coordinate scaling
     [img_height, img_width, ~] = size(video_frame);
-    
+
     % Scale tracking coordinates to match image dimensions if needed
     % Assume tracking coordinates are already in pixel coordinates
     x_scaled = x_plot;
     y_scaled = y_plot;
-    
+
     % Plot tracking data over video
     if darkmode
         plot(x_scaled, y_scaled, 'Color', [1,1,1,alpha], 'LineWidth', 1.5);
@@ -343,14 +343,14 @@ if ~isempty(video_frame)
             scatter(x_scaled, y_scaled, 8, 'r', 'filled', 'MarkerEdgeColor', 'k', 'LineWidth', 0.5);
         end
     end
-    
+
     title('Click around the points you want to keep (Video overlay)')
-    
+
     % Set axis limits to match image
     xlim([0, img_width]);
     ylim([0, img_height]);
     axis equal;
-    
+
 else
     % Original plotting without video overlay
     if darkmode

@@ -1,6 +1,6 @@
-function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders)
+function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders, behaviorOnly)
 
-%% [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort)
+%% [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders, behaviorOnly)
 
 % Function to acquire the ID of dat files (Intan or openEphys) within the
 % given session folder (basepath) and sort according to the indicated
@@ -29,6 +29,10 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignore
 %                         folder containing original copies of the data.
 %                         Example input may look like: ["backup",
 %                         "ignore"].
+% behaviorOnly            Logical flag to only search for digitalin.dat
+%                         files (behavior-only mode without electrophysiology).
+%                         Default is false (searches for continuous.dat,
+%                         amplifier.dat, and digitalin.dat).
 
 %% OUTPUTS
 % datpaths                Returns cell array of ordered datpaths in "PATH "
@@ -36,6 +40,10 @@ function [datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignore
 % recordingnames          Returns cell array of ordered subsession folder
 %                         names.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if nargin < 5
+    behaviorOnly = false; % Default to standard mode
+end
+
 if sortFiles && (~isempty(altSort))
     error('sortFiles cannot be empty while altSort provides an order. Please choose to either sort by time (sortFiles=true) or designate a manual order of concatenation (altSort)');
 end
@@ -51,9 +59,18 @@ recNum = [];
 
 listing = dir("**");
 allFolders = struct2table(listing);
-useIDX = find(contains(allFolders.name, 'continuous.dat') | ...
-    contains(allFolders.name, 'amplifier.dat') | ...
-    contains(allFolders.name, 'digitalin.dat'));
+
+% Choose which files to search for based on behaviorOnly mode
+if behaviorOnly
+    % Behavior-only mode: only search for digitalin.dat
+    useIDX = find(contains(allFolders.name, 'digitalin.dat'));
+    fprintf('Running in behavior-only mode: searching only for digitalin.dat files\n');
+else
+    % Standard mode: search for all recording files
+    useIDX = find(contains(allFolders.name, 'continuous.dat') | ...
+        contains(allFolders.name, 'amplifier.dat'));
+end
+
 folderNames = allFolders(useIDX, :).folder;
 
 %this assumes that your recording folders with the date are within your
@@ -84,11 +101,22 @@ for i = 1:size(useIDX, 1)
             expNum(i) = '1';
             recNum(i) = '1';
         else
-            recordingnames{i} = relParts{1};
-            expIdx = find(startsWith(relParts, 'experiment'), 1);
-            recIdx = find(startsWith(relParts, 'recording'), 1);
-            expNum(i) = ternary(~isempty(expIdx), extractAfter(relParts{expIdx}, 'experiment'), '1');
-            recNum(i) = ternary(~isempty(recIdx), extractAfter(relParts{recIdx}, 'recording'), '1');
+            % OpenEphys format: multiple folders (experiment/recording structure)
+            recordingnames{i} = parts{1};
+            expIdx = find(startsWith(parts, 'experiment'), 1);
+            recIdx = find(startsWith(parts, 'recording'), 1);
+            
+            if ~isempty(expIdx)
+                expNum(i) = extractAfter(parts{expIdx}, 'experiment');
+            else
+                expNum(i) = '1';
+            end
+            
+            if ~isempty(recIdx)
+                recNum(i) = extractAfter(parts{recIdx}, 'recording');
+            else
+                recNum(i) = '1';
+            end
         end
     else
         fprintf('.dat file found nested in a folder labeled %s . Skipping: \n', ignoreFolders(f));

@@ -55,7 +55,7 @@ if sortFiles && (~isempty(altSort))
 end
 
 basename = basenameFromBasepath(basepath);
-[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders);
+[datpaths, recordingnames] = acqID(basepath, sortFiles, altSort, ignoreFolders, behaviorOnly);
 if isempty(datpaths)
     disp('no subsessions detected, exiting concatenation');
     return
@@ -66,7 +66,14 @@ else
     end
 end
 
-otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
+if behaviorOnly
+    % In behavior-only mode, digitalin is the primary file (replaces amplifier)
+    % so we don't include it in otherdattypes
+    otherdattypes = {'analogin'; 'auxiliary'; 'time'; 'supply'};
+else
+    % Standard mode: amplifier is primary, digitalin is in otherdattypes
+    otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
+end
 toFill = zeros(size(otherdattypes));
 fileBase = cell(size(datpaths));
 
@@ -105,7 +112,7 @@ else
         if datCount(j) < length(datpaths)
             toFill(j) = false;
             disp([otherdattypes{j}, ' present in ', num2str(datCount(j)), ...
-                '/', num2str(length(datpaths)), ' subfolders, will not concatenate.']);
+                filesep, num2str(length(datpaths)), ' subfolders, will not concatenate.']);
             %If receiving this message, can make 'fillMissingDatFiles' true
             %to fill the subfolders missing the files with zero'd data
         else

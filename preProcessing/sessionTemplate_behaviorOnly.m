@@ -153,7 +153,27 @@ end
 %% Helper Functions
 
 function session = readIntanBehaviorMetadata(session, basepath, rhdFile)
-    % Read metadata from Intan info.rhd file
+    % readIntanBehaviorMetadata - Extract metadata from Intan RHD2000 files
+    %
+    % Reads recording parameters from an Intan info.rhd file including:
+    % - Sampling rates (main and LFP)
+    % - Digital input channels (board_dig_in)
+    % - Analog input channels (board_adc)
+    % - Auxiliary channels (accelerometer, etc.)
+    % - Recording notes
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basepath    - Path to session directory
+    %   rhdFile     - Dir struct entry for the .rhd file
+    %
+    % OUTPUTS:
+    %   session     - Session struct with Intan metadata populated
+    %
+    % NOTES:
+    %   - Uses read_Intan_RHD2000_file_bz() to parse binary RHD format
+    %   - Falls back to setDefaultBehaviorMetadata() on error
+    %   - Sets extracellular.nChannels = 0 (behavior-only, no amplifier data)
 
     try
         % Use existing Intan reader
@@ -250,7 +270,26 @@ function session = readIntanBehaviorMetadata(session, basepath, rhdFile)
 end
 
 function session = readOpenEphysBehaviorMetadata(session, basepath, settingsFile)
-    % Read metadata from OpenEphys settings.xml file
+    % readOpenEphysBehaviorMetadata - Extract metadata from OpenEphys settings.xml
+    %
+    % Parses OpenEphys XML configuration to extract recording parameters.
+    % Attempts to find sampling rate from SIGNALCHAIN->PROCESSOR->EDITOR hierarchy.
+    % Falls back to detectChannelsFromFiles() for channel detection since XML
+    % may not contain complete channel information.
+    %
+    % INPUTS:
+    %   session         - Partially filled session struct
+    %   basepath        - Path to session directory
+    %   settingsFile    - Dir struct entry for settings.xml
+    %
+    % OUTPUTS:
+    %   session         - Session struct with OpenEphys metadata populated
+    %
+    % NOTES:
+    %   - Default sampling rate is 30000 Hz if not found in XML
+    %   - Uses xml2struct() for XML parsing
+    %   - Calls detectChannelsFromFiles() to count actual data channels
+    %   - Falls back to setDefaultBehaviorMetadata() on error
 
     try
         % Parse XML file
@@ -326,7 +365,28 @@ function session = readOpenEphysBehaviorMetadata(session, basepath, settingsFile
 end
 
 function session = setDefaultBehaviorMetadata(session, basepath)
-    % Set default metadata when no info files are found
+    % setDefaultBehaviorMetadata - Apply fallback metadata when no info files exist
+    %
+    % Used when neither info.rhd (Intan) nor settings.xml (OpenEphys) are found.
+    % Sets conservative default values and relies on detectChannelsFromFiles()
+    % to determine actual channel counts from data files.
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basepath    - Path to session directory
+    %
+    % OUTPUTS:
+    %   session     - Session struct with default metadata
+    %
+    % DEFAULTS:
+    %   - Sampling rate: 20000 Hz (common Intan default)
+    %   - LFP rate: 1250 Hz
+    %   - No electrode groups or spike groups (behavior-only)
+    %   - Channel counts determined from actual files
+    %
+    % NOTES:
+    %   - Displays warning that user should verify parameters
+    %   - Should only be used as last resort
 
     warning('Using default behavior metadata. Please verify sampling rate and channel counts!');
 
@@ -342,13 +402,33 @@ function session = setDefaultBehaviorMetadata(session, basepath)
 end
 
 function session = detectChannelsFromFiles(session, basepath, defaultDigitalChannels, defaultAnalogChannels)
-    % Detect number of digital and analog channels from file sizes
+    % detectChannelsFromFiles - Determine channel counts from actual data files
+    %
+    % Searches for digitalin.dat, analogin.dat, and digitalout.dat files to
+    % determine what input channels are present. Uses configurable defaults
+    % for channel counts since files don't self-describe their channel count.
     %
     % INPUTS:
     %   session                  - Session struct being built
     %   basepath                 - Path to session directory
-    %   defaultDigitalChannels   - Default number of digital channels (e.g., 16 for Intan)
-    %   defaultAnalogChannels    - Default number of analog channels (e.g., 8 for Intan)
+    %   defaultDigitalChannels   - Number of digital input channels (default: 16 for Intan)
+    %   defaultAnalogChannels    - Number of analog input channels (default: 8 for Intan)
+    %
+    % OUTPUTS:
+    %   session                  - Session struct with populated channel information:
+    %                              - inputs.nDigitalChannels, digitalChannels, digitalChannelNames
+    %                              - inputs.nAnalogChannels, analogChannels, analogChannelNames
+    %                              - inputs.hasDigitalOut
+    %
+    % FILE FORMATS:
+    %   digitalin.dat  - uint16, multiplexed digital channels
+    %   analogin.dat   - uint16, multiplexed analog channels
+    %   digitalout.dat - uint16, digital output channels
+    %
+    % NOTES:
+    %   - Searches recursively with dir(fullfile(basepath, '**', filename))
+    %   - Channel names are auto-generated (e.g., 'Digital-0', 'Analog-0')
+    %   - Defaults can be overridden via function parameters
     
     % Check for digitalin.dat
     digitalFiles = dir(fullfile(basepath, '**', 'digitalin.dat'));
@@ -398,7 +478,31 @@ function session = detectChannelsFromFiles(session, basepath, defaultDigitalChan
 end
 
 function session = calculateSessionDuration(session, basepath, basename)
-    % Calculate session duration from time.dat or data files
+    % calculateSessionDuration - Determine recording duration from data files
+    %
+    % Attempts to calculate total session duration using available files,
+    % prioritizing time.dat for accuracy, then falling back to data files.
+    %
+    % INPUTS:
+    %   session     - Session struct being built
+    %   basepath    - Path to session directory
+    %   basename    - Base name for session files (unused but kept for compatibility)
+    %
+    % OUTPUTS:
+    %   session     - Session struct with populated:
+    %                 - extracellular.nSamples (total samples)
+    %                 - general.duration (seconds)
+    %
+    % FILE PRIORITY:
+    %   1. time.dat       - Most accurate (contains actual timestamps)
+    %   2. digitalin.dat  - Good fallback (file size / 2 bytes = samples)
+    %   3. analogin.dat   - Last resort (file size / (nChannels * 2 bytes) = samples)
+    %
+    % NOTES:
+    %   - time.dat contains int32 timestamps in sample units
+    %   - Duration = nSamples / samplingRate
+    %   - Searches recursively for files in subdirectories
+    %   - Displays warning if no usable files found
 
     % Try to use time.dat first
     timeFiles = dir(fullfile(basepath, '**', 'time.dat'));
@@ -461,8 +565,28 @@ function session = calculateSessionDuration(session, basepath, basename)
 end
 
 function s = xml2struct(xmlFile)
-    % Simple XML to struct converter
-    % For more robust parsing, consider using MATLAB's xmlread or external tools
+    % xml2struct - Convert XML file to MATLAB struct
+    %
+    % Recursively parses XML document into nested struct with element names
+    % as field names and attributes stored in .Attributes subfields.
+    %
+    % INPUTS:
+    %   xmlFile     - Path to XML file
+    %
+    % OUTPUTS:
+    %   s           - Struct representation of XML hierarchy
+    %
+    % EXAMPLE:
+    %   For XML: <SETTINGS><PROCESSOR name="test" rate="30000">...</PROCESSOR></SETTINGS>
+    %   Output:  s.SETTINGS.PROCESSOR.Attributes.name = 'test'
+    %            s.SETTINGS.PROCESSOR.Attributes.rate = '30000'
+    %
+    % NOTES:
+    %   - Uses MATLAB's built-in xmlread() for parsing
+    %   - Calls parseChildNodes() recursively for nested elements
+    %   - Replaces '-' and ':' in element names with '_'
+    %   - Element attributes stored in .Attributes substruct
+    %   - Basic implementation; consider external tools for complex XML
 
     try
         tree = xmlread(xmlFile);
@@ -474,7 +598,26 @@ function s = xml2struct(xmlFile)
 end
 
 function children = parseChildNodes(theNode)
-    % Recursively parse XML nodes
+    % parseChildNodes - Recursively parse XML DOM nodes into struct
+    %
+    % Helper function for xml2struct(). Traverses XML document tree and
+    % converts nodes and their attributes into nested MATLAB struct.
+    %
+    % INPUTS:
+    %   theNode     - XML DOM node object (from xmlread)
+    %
+    % OUTPUTS:
+    %   children    - Struct containing parsed child elements and attributes
+    %
+    % PARSING RULES:
+    %   - Only ELEMENT_NODE types are processed (ignores text, comments, etc.)
+    %   - Node names with '-' or ':' are converted to '_' for valid fieldnames
+    %   - Node attributes stored in .Attributes substruct
+    %   - Recursively processes nested child nodes
+    %
+    % NOTES:
+    %   - Called internally by xml2struct()
+    %   - Uses Java DOM API (getChildNodes, getAttributes, etc.)
 
     children = struct;
 
@@ -525,7 +668,35 @@ function children = parseChildNodes(theNode)
 end
 
 function session = createBehaviorEpochs(session, basepath, basename)
-    % Create epochs from MergePoints, subsession folders, or default
+    % createBehaviorEpochs - Define temporal epochs for the session
+    %
+    % Creates epoch definitions from available information, prioritizing
+    % MergePoints.events.mat (from concatenateDats), then subsession folders,
+    % finally falling back to single default epoch.
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basepath    - Path to session directory
+    %   basename    - Base name for session files
+    %
+    % OUTPUTS:
+    %   session     - Session struct with populated epochs cell array
+    %                 Each epoch contains: name, startTime, stopTime,
+    %                 behavioralParadigm, environment, manipulation
+    %
+    % EPOCH SOURCES (in priority order):
+    %   1. MergePoints.events.mat - Most accurate (from concatenateDats)
+    %   2. Subsession folders (session_01, session_02, etc.) - Approximate
+    %   3. Single default epoch - Last resort
+    %
+    % BEHAVIORAL INFERENCE:
+    %   - Attempts to infer behavioralParadigm from folder names
+    %   - Keywords: 'sleep'/'rest' → Sleep, 'maze'/'task' → Maze, 'open'/'field' → Open field
+    %
+    % NOTES:
+    %   - Skips update if existing epochs already match MergePoints
+    %   - Warns user if MergePoints missing with multiple subsessions
+    %   - Subsession epoch times are approximate until concatenateDats runs
 
     % Check for MergePoints file (created by concatenateDats)
     mergePointsFile = fullfile(basepath, [basename, '.MergePoints.events.mat']);
@@ -591,7 +762,6 @@ function session = createBehaviorEpochs(session, basepath, basename)
                         session.epochs{i}.behavioralParadigm = 'Open field';
                         session.epochs{i}.environment = 'Open field';
                     end
-
                 end
 
                 disp(['  Created ', num2str(length(session.epochs)), ' epochs from MergePoints']);
@@ -671,7 +841,27 @@ function session = createBehaviorEpochs(session, basepath, basename)
 end
 
 function session = createDefaultEpoch(session, basename)
-    % Create a single default epoch for the entire session
+    % createDefaultEpoch - Create single epoch spanning entire session
+    %
+    % Used when no MergePoints or subsession folders exist. Creates one
+    % epoch covering the full recording duration with placeholder metadata.
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basename    - Base name for session (used as epoch name)
+    %
+    % OUTPUTS:
+    %   session     - Session struct with single epoch:
+    %                 - name: basename
+    %                 - startTime: 0
+    %                 - stopTime: session.general.duration (or inf if unknown)
+    %                 - behavioralParadigm: 'Unknown'
+    %                 - environment: 'Unknown'
+    %                 - manipulation: 'None'
+    %
+    % NOTES:
+    %   - Used as fallback when no epoch information available
+    %   - stopTime set to inf if duration not yet calculated
 
     session.epochs{1}.name = basename;
     session.epochs{1}.startTime = 0;
@@ -691,7 +881,34 @@ function session = createDefaultEpoch(session, basename)
 end
 
 function session = extractSessionDateTime(session, basepath, ~)
-    % Extract date and time from folder name or file timestamps
+    % extractSessionDateTime - Determine recording date and time
+    %
+    % Attempts to extract recording timestamp from folder naming conventions
+    % or file metadata. Supports common Intan and OpenEphys naming patterns.
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basepath    - Path to session directory
+    %   (unused)    - Placeholder for basename (not needed)
+    %
+    % OUTPUTS:
+    %   session     - Session struct with populated:
+    %                 - general.date (format: 'YYYY-MM-DD')
+    %                 - general.time (format: 'HH:MM:SS')
+    %
+    % SUPPORTED FORMATS:
+    %   Intan:      basename_YYMMDD_HHMMSS (e.g., session_210315_143022)
+    %   OpenEphys:  basename_YYYY-MM-DD_HH-MM-SS (e.g., session_2021-03-15_14-30-22)
+    %
+    % FALLBACK ORDER:
+    %   1. Folder name pattern matching
+    %   2. .rhd file modification timestamp
+    %   3. Current date (last resort)
+    %
+    % NOTES:
+    %   - Uses regex to parse common date/time patterns
+    %   - Assumes YY dates are 2000+
+    %   - Warns when falling back to current date
 
     % Try to extract from folder name first (common formats)
     pathParts = strsplit(basepath, filesep);
@@ -764,7 +981,35 @@ function session = extractSessionDateTime(session, basepath, ~)
 end
 
 function session = addBehavioralPaths(session, basepath, basename)
-    % Add paths to behavioral data files if they exist
+    % addBehavioralPaths - Detect and catalog behavioral data files
+    %
+    % Searches for tracking, video, DeepLabCut, and Optitrack files and
+    % adds their paths to the session struct. Useful for automatic discovery
+    % of processed behavioral data.
+    %
+    % INPUTS:
+    %   session     - Partially filled session struct
+    %   basepath    - Path to session directory
+    %   basename    - Base name for session files
+    %
+    % OUTPUTS:
+    %   session     - Session struct with populated fields:
+    %                 - behavioralTracking: Cell array of tracking file names
+    %                 - videos: Cell array of video file paths (relative)
+    %                 - deepLabCut: Cell array of DLC CSV file paths
+    %                 - optitrack: Cell array of Optitrack CSV file paths
+    %
+    % DETECTED FILES:
+    %   Tracking:   *.position.behavior.mat, *.tracking.behavior.mat, *.animal.behavior.mat
+    %   Videos:     *.mp4, *.avi, *.mov, *.mkv (recursive search)
+    %   DeepLabCut: *DLC*.csv (recursive search)
+    %   Optitrack:  *optitrack*.csv (recursive search)
+    %
+    % NOTES:
+    %   - Stores relative paths (from basepath) for portability
+    %   - Searches recursively in subdirectories
+    %   - Only called if 'addBehaviorFiles' parameter is true
+    %   - Displays summary of found files
 
     % Check for tracking files
     trackingFiles = {

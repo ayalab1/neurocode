@@ -16,16 +16,21 @@ function session = sessionTemplate_behaviorOnly(input1, varargin)
     %   session = sessionTemplate_behaviorOnly(session) % update existing session
     %
     % INPUTS:
-    %   input1          - Either basepath (string) or existing session struct
-    %   showGUI         - Show session GUI editor (default: false)
-    %   basename        - Override basename detection
-    %   addBehaviorFiles - Auto-detect tracking/video/DLC files (default: false)
+    %   input1              - Either basepath (string) or existing session struct
+    %   showGUI             - Show session GUI editor (default: false)
+    %   basename            - Override basename detection
+    %   addBehaviorFiles    - Auto-detect tracking/video/DLC files (default: false)
+    %   nDigitalChannels    - Number of digital input channels (default: 16 for Intan)
+    %   nAnalogChannels     - Number of analog input channels (default: 8 for Intan)
     %
     % OUTPUTS:
     %   session         - Session metadata structure
     %
     % EXAMPLE:
     %   session = sessionTemplate_behaviorOnly('/path/to/behavior/session');
+    %   
+    %   % For a system with 32 digital channels:
+    %   session = sessionTemplate_behaviorOnly(basepath, 'nDigitalChannels', 32);
     %
     % See also: sessionTemplate, preprocessSession
 
@@ -35,11 +40,15 @@ function session = sessionTemplate_behaviorOnly(input1, varargin)
     addParameter(p, 'basename', [], @ischar);
     addParameter(p, 'showGUI', false, @islogical);
     addParameter(p, 'addBehaviorFiles', false, @islogical);
+    addParameter(p, 'nDigitalChannels', 16, @isnumeric); % Intan default
+    addParameter(p, 'nAnalogChannels', 8, @isnumeric);  % Intan default
 
     parse(p, input1, varargin{:})
     basename = p.Results.basename;
     showGUI = p.Results.showGUI;
     addBehaviorFiles = p.Results.addBehaviorFiles;
+    nDigitalChannels = p.Results.nDigitalChannels;
+    nAnalogChannels = p.Results.nAnalogChannels;
 
     % Initialize session struct and basepath
     if ischar(input1)
@@ -303,7 +312,7 @@ function session = readOpenEphysBehaviorMetadata(session, basepath, settingsFile
         session.extracellular.leastSignificantBit = 0.195; % Default (Intan = 0.195, Amplipex = 0.3815)
 
         % Detect digital/analog channels from actual files
-        session = detectChannelsFromFiles(session, basepath);
+        session = detectChannelsFromFiles(session, basepath, nDigitalChannels, nAnalogChannels);
 
         disp(['  Sampling rate: ', num2str(session.extracellular.sr), ' Hz'])
         disp(['  Digital channels detected: ', num2str(session.inputs.nDigitalChannels)])
@@ -328,23 +337,33 @@ function session = setDefaultBehaviorMetadata(session, basepath)
     session.extracellular.nSpikeGroups = 0;
 
     % Detect channels from files
-    session = detectChannelsFromFiles(session, basepath);
+    session = detectChannelsFromFiles(session, basepath, nDigitalChannels, nAnalogChannels);
 
 end
 
-function session = detectChannelsFromFiles(session, basepath)
+function session = detectChannelsFromFiles(session, basepath, defaultDigitalChannels, defaultAnalogChannels)
     % Detect number of digital and analog channels from file sizes
-
+    %
+    % INPUTS:
+    %   session                  - Session struct being built
+    %   basepath                 - Path to session directory
+    %   defaultDigitalChannels   - Default number of digital channels (e.g., 16 for Intan)
+    %   defaultAnalogChannels    - Default number of analog channels (e.g., 8 for Intan)
+    
     % Check for digitalin.dat
     digitalFiles = dir(fullfile(basepath, '**', 'digitalin.dat'));
 
     if ~isempty(digitalFiles)
         digitalFile = digitalFiles(1);
         fileInfo = dir(fullfile(digitalFile.folder, digitalFile.name));
-        % Intan digital: 16 channels, uint16, so 2 bytes per sample per channel
-        % Typical: 16 channels
-        session.inputs.nDigitalChannels = 16; % Standard Intan
-        session.inputs.digitalChannels = 1:16;
+        % Use the configurable default
+        session.inputs.nDigitalChannels = defaultDigitalChannels;
+        session.inputs.digitalChannels = 1:defaultDigitalChannels;
+        
+        % Generate default channel names
+        for i = 1:defaultDigitalChannels
+            session.inputs.digitalChannelNames{i} = sprintf('Digital-%d', i-1);
+        end
     else
         session.inputs.nDigitalChannels = 0;
     end
@@ -355,9 +374,14 @@ function session = detectChannelsFromFiles(session, basepath)
     if ~isempty(analogFiles)
         analogFile = analogFiles(1);
         fileInfo = dir(fullfile(analogFile.folder, analogFile.name));
-        % Intan analog: 8 channels, uint16, 2 bytes per sample
-        session.inputs.nAnalogChannels = 8; % Standard Intan
-        session.inputs.analogChannels = 1:8;
+        % Use the configurable default
+        session.inputs.nAnalogChannels = defaultAnalogChannels;
+        session.inputs.analogChannels = 1:defaultAnalogChannels;
+        
+        % Generate default channel names
+        for i = 1:defaultAnalogChannels
+            session.inputs.analogChannelNames{i} = sprintf('Analog-%d', i-1);
+        end
     else
         session.inputs.nAnalogChannels = 0;
     end

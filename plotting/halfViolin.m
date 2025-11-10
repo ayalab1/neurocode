@@ -12,6 +12,7 @@ function varargout = halfViolin(data,varargin)
 % default values
 nColumns = size(data,2);
 nBins = 1000; 
+binCenters = [];
 maxWidth = 0.5; 
 colors = get(gca,'ColorOrder'); if size(colors,1)<nColumns, colors = repmat(colors,nColumns,1); end
 xdata = 1:nColumns;
@@ -23,6 +24,8 @@ for i = 1:2:length(varargin),
     switch(lower(varargin{i})),
         case 'nbins',
             nBins = varargin{i+1};
+        case 'bincenters',
+            binCenters = varargin{i+1};
         case 'colors'
             colors = varargin{i+1};
         case 'x'
@@ -46,10 +49,12 @@ end
 if isa(colors,'double'), colormatrix = colors; colors = cell(size(colormatrix,1),1); for i=1:size(colormatrix,1), colors{i} = colormatrix(i,:); end; end
 if ~isa(colors,'cell'), colors = repmat({colors},nColumns); end
 if ~exist('smooth','var'),smooth = nBins/100; end % needs to be defined after "nBins" is provided
+if isempty(binCenters), % generate probability distribution
+    limits = quantile(data(:),[0 1]) + [-1 1]*range(data(:));
+    binCenters = linspace(limits(1),limits(2),nBins);
+end
 
-% generate probability distribution
-limits = quantile(data(:),[0 1]) + [-1 1]*range(data(:));
-[h,ht] = Dist(linspace(limits(1),limits(2),nBins),data);
+[h,ht] = Dist(binCenters,data);
 if nColumns>1,h = Smooth(h,[smooth 0]); else, h = Smooth(h,smooth); end
 h = h./max(h(:))*maxWidth;
 

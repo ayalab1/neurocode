@@ -20,7 +20,7 @@ function residuals = CorrResiduals(spikes, intervals1, intervals2)
 
 r1 = CorrInIntervals(spikes,intervals1);
 r2 = CorrInIntervals(spikes,intervals2);
-ok = ~isnan(r1(:)) & ~isnan(r2(:));
+ok = ~isnan(r1(:)) & ~isnan(r2(:)) & ~tril(ones(size(r1))); % take only cross-correlations (not the diagonal) and take each one once (not t
 % linear fit
 x = r1(ok); y = r2(ok);
 a = polyfit(x(:),y(:),1);

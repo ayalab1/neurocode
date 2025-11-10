@@ -1,4 +1,4 @@
-function struct = getStruct(basepath,extension,fieldName)
+function [struct,filename] = getStruct(basepath,extension,fieldName)
 
 %getStruct - Load custom data extensions associated with a given session.
 

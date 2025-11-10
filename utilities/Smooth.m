@@ -9,7 +9,8 @@ function smoothed = Smooth(data,smooth,varargin)
 %    data           data to smooth
 %    smooth         vertical and horizontal kernel sizes:
 %                    - gaussian: standard deviations [Sv Sh] (optionally,
-%                      kernel size W can also be provided as [Sv Sh Wv Wh])
+%                      kernel half-size W can be provided as [Sv Sh Wv Wh])
+%                      (default half-size: [10*Sv 10*Sh])
 %                    - rectangular/triangular: window half size [Nv Nh]
 %                   (in number of samples, 0 = no smoothing)
 %    <options>      optional list of property-value pairs (see table below))

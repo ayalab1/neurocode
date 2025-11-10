@@ -18,7 +18,7 @@ function [SleepScoreMetrics,StatePlotMaterials] = ClusterStates_GetMetrics(...
 %% Params
 p = inputParser;
 addParameter(p,'onSticky',false)
-addParameter(p,'ignoretime',[])
+addParameter(p,'ignoretime',zeros(0,2))
 addParameter(p,'window',2)
 addParameter(p,'smoothfact',15)
 addParameter(p,'IRASA',true)
@@ -106,10 +106,11 @@ if strcmp(SWweights,'PSS')
     display('Calculating SW Metric using Power Spectrum Slope')
     %Put the LFP in the right structure format
     lfp.data = swLFP;
-    lfp.timestamps = t_LFP;
+    lfp.timestamps = t_LFP(:);
     lfp.samplingRate = sf_LFP;
     %Calculate PSS
     [specslope,spec] = bz_PowerSpectrumSlope(lfp,window,window-noverlap,'frange',[4 90],'IRASA',IRASA);
+    specslope.timestamps = specslope.timestamps(:); specslope.data = specslope.data(:); 
     broadbandSlowWave = -specslope.data; %So NREM is higher as opposed to lower
     t_clus = specslope.timestamps;
     swFFTfreqs = specslope.freqs';
@@ -158,8 +159,8 @@ f_theta = [5 10];
 if ThIRASA && strcmp(SWweights,'PSS')
     display('Calculating Theta Metric above PSS')
     %Put the LFP in the right structure format
-    lfp.data = thLFP;
-    lfp.timestamps = t_LFP;
+    lfp.data = double(thLFP);
+    lfp.timestamps = t_LFP(:)';
     lfp.samplingRate = sf_LFP;
     %Calculate PSS
     [specslope,spec] = bz_PowerSpectrumSlope(lfp,window,window-noverlap,...

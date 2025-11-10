@@ -58,6 +58,7 @@ QWAKEtimes =  WAKEtimes & ~hightheta; %Used later if QWake scored
 %%
 %Start/end offset due to FFT
 
+t_clus = t_clus(:);
 %Construct IDX STRUCTURE FOR bz_IDXtoINT
 IDX.statenames = {'WAKE','','NREM','','REM'};
 IDX.timestamps = t_clus; %Timestamps pulled from clustering (in ClusterStates_GetMetrics)
@@ -79,11 +80,10 @@ IDX = bz_INTtoIDX(INT,'statenames',{'WAKE','','NREM','','REM'});
 
 
 %Make the following repeated chunks of code into a single function.
-
 %Short NREM -> WAKE
 Sdur = diff(INT.NREMstate,[],2);
 shortSints = Sdur<=minSWSsecs;
-shortSidx = InIntervals(IDX.timestamps,INT.NREMstate(shortSints,:));
+shortSidx = InIntervals(IDX.timestamps,double(INT.NREMstate(shortSints,:)));
 IDX.states(shortSidx) = 1;   
 INT = bz_IDXtoINT(IDX);
 

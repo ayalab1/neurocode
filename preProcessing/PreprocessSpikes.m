@@ -45,7 +45,7 @@ addParameter(p, 'showGUI', false, @islogical);
 addParameter(p, 'showCellMet', true, @islogical);
 addParameter(p, 'prePhy', false, @islogical);
 addParameter(p, 'datFolder', [], @isfolder);
-addParameter(p, 'spikeLabels', {'good'}, @iscell);
+addParameter(p, 'spikeLabels', {'unsorted'}, @iscell);
 parse(p, varargin{:});
 
 multiKilosort = p.Results.multiKilosort;

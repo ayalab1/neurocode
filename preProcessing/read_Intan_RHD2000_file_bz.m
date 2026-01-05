@@ -54,25 +54,39 @@ function [amplifier_channels, notes, aux_input_channels, spike_triggers,...
 
 %______________________________________________________________________
 p = inputParser;
-p.addParameter('basepath',pwd,@isfolder); 
+p.addParameter('basepath',pwd,@isfolder);
 p.parse(varargin{:});
 path = p.Results.basepath;
 
-% path = [pwd,filesep];
-file = [ls(fullfile(path,'*.rhd'))];
-
-if (file == 0)
+% Cross-platform file discovery using dir
+d = dir(fullfile(path,'*.rhd'));
+if isempty(d)
+    warning('No .rhd files found in path: %s', path);
     return;
-elseif size(file,1) > 1
+end
+
+% Reconstruct full absolute paths consistently across platforms
+files = fullfile({d.folder}, {d.name});
+files = string(files);
+
+if length(files) == 1
+    file = char(files(1));
+else
+    % Multiple .rhd files found, select the one matching basename
     basename = basenameFromBasepath(path);
-    i=1;
-    while i<=size(file,1)
-        tempFile = file(i,:);
-        if contains(tempFile, basename)
-           file = [];
-           file = tempFile;
+    file_found = false;
+    for i = 1:length(files)
+        [~, fname, ~] = fileparts(files(i));
+        if contains(fname, basename)
+            file = char(files(i));
+            file_found = true;
+            break;
         end
-        i=i+1;
+    end
+    if ~file_found
+        % If no basename match, use the first file
+        file = char(files(1));
+        warning('Multiple .rhd files found, but none matched basename "%s". Using: %s', basename, file);
     end
 end
 
@@ -82,7 +96,9 @@ end
 % file = d(end).name;
 
 tic;
-filename = fullfile(path,file);
+file = strip(file);
+% file is already a full path, no need to use fullfile again
+filename = file;
 fid = fopen(filename, 'r');
 
 s = dir(filename);
@@ -139,19 +155,19 @@ notes = struct( ...
     'note1', fread_QString(fid), ...
     'note2', fread_QString(fid), ...
     'note3', fread_QString(fid) );
-    
+
 % If data file is from GUI v1.1 or later, see if temperature sensor data
 % was saved.
 num_temp_sensor_channels = 0;
 if ((data_file_main_version_number == 1 && data_file_secondary_version_number >= 1) ...
-    || (data_file_main_version_number > 1))
+        || (data_file_main_version_number > 1))
     num_temp_sensor_channels = fread(fid, 1, 'int16');
 end
 
 % If data file is from GUI v1.3 or later, load eval board mode.
 eval_board_mode = 0;
 if ((data_file_main_version_number == 1 && data_file_secondary_version_number >= 3) ...
-    || (data_file_main_version_number > 1))
+        || (data_file_main_version_number > 1))
     eval_board_mode = fread(fid, 1, 'int16');
 end
 
@@ -250,7 +266,7 @@ for signal_group = 1:number_of_signal_groups
             new_trigger_channel(1).digital_edge_polarity = fread(fid, 1, 'int16');
             new_channel(1).electrode_impedance_magnitude = fread(fid, 1, 'single');
             new_channel(1).electrode_impedance_phase = fread(fid, 1, 'single');
-            
+
             if (channel_enabled)
                 switch (signal_type)
                     case 0
@@ -276,7 +292,7 @@ for signal_group = 1:number_of_signal_groups
                         error('Unknown channel type');
                 end
             end
-            
+
         end
     end
 end
@@ -326,7 +342,7 @@ if (num_board_dig_out_channels > 0)
 end
 % Temp sensor is sampled once per data block
 if (num_temp_sensor_channels > 0)
-   bytes_per_block = bytes_per_block + 1 * 2 * num_temp_sensor_channels; 
+    bytes_per_block = bytes_per_block + 1 * 2 * num_temp_sensor_channels;
 end
 
 % How many data blocks remain in this file?
@@ -358,7 +374,7 @@ else
 end
 
 if (data_present)
-    
+
     % Pre-allocate memory for data.
     fprintf(1, 'Allocating memory for data...\n');
 
@@ -391,7 +407,7 @@ if (data_present)
         % integeters to signed integers to accomidate negative (adjusted)
         % timestamps for pretrigger data.
         if ((data_file_main_version_number == 1 && data_file_secondary_version_number >= 2) ...
-        || (data_file_main_version_number > 1))
+                || (data_file_main_version_number > 1))
             t_amplifier(amplifier_index:(amplifier_index + num_samples_per_data_block - 1)) = fread(fid, num_samples_per_data_block, 'int32');
         else
             t_amplifier(amplifier_index:(amplifier_index + num_samples_per_data_block - 1)) = fread(fid, num_samples_per_data_block, 'uint32');
@@ -444,28 +460,28 @@ end
 fclose(fid);
 
 if (data_present)
-    
+
     fprintf(1, 'Parsing data...\n');
 
     % Extract digital input channels to separate variables.
     for i=1:num_board_dig_in_channels
-       mask = 2^(board_dig_in_channels(i).native_order) * ones(size(board_dig_in_raw));
-       board_dig_in_data(i, :) = (bitand(board_dig_in_raw, mask) > 0);
+        mask = 2^(board_dig_in_channels(i).native_order) * ones(size(board_dig_in_raw));
+        board_dig_in_data(i, :) = (bitand(board_dig_in_raw, mask) > 0);
     end
     for i=1:num_board_dig_out_channels
-       mask = 2^(board_dig_out_channels(i).native_order) * ones(size(board_dig_out_raw));
-       board_dig_out_data(i, :) = (bitand(board_dig_out_raw, mask) > 0);
+        mask = 2^(board_dig_out_channels(i).native_order) * ones(size(board_dig_out_raw));
+        board_dig_out_data(i, :) = (bitand(board_dig_out_raw, mask) > 0);
     end
 
     % Scale voltage levels appropriately.
     amplifier_data = amplifier_data - 32768;
-%     amplifier_data = 0.195 * (amplifier_data - 32768); % converting units into microvolts. Raly: commented this out because want the raw units as this is what is recorded when .dat file outputs are used directly
+    %     amplifier_data = 0.195 * (amplifier_data - 32768); % converting units into microvolts. Raly: commented this out because want the raw units as this is what is recorded when .dat file outputs are used directly
     aux_input_data = 37.4e-6 * aux_input_data; % units = volts
     supply_voltage_data = 74.8e-6 * supply_voltage_data; % units = volts
     if (eval_board_mode == 1)
         board_adc_data = 152.59e-6 * (board_adc_data - 32768); % units = volts
     elseif (eval_board_mode == 13) % Intan Recording Controller
-        board_adc_data = 312.5e-6 * (board_adc_data - 32768); % units = volts    
+        board_adc_data = 312.5e-6 * (board_adc_data - 32768); % units = volts
     else
         board_adc_data = 50.354e-6 * board_adc_data; % units = volts
     end
@@ -587,99 +603,99 @@ return
 
 function a = fread_QString(fid)
 
-% a = read_QString(fid)
-%
-% Read Qt style QString.  The first 32-bit unsigned number indicates
-% the length of the string (in bytes).  If this number equals 0xFFFFFFFF,
-% the string is null.
+    % a = read_QString(fid)
+    %
+    % Read Qt style QString.  The first 32-bit unsigned number indicates
+    % the length of the string (in bytes).  If this number equals 0xFFFFFFFF,
+    % the string is null.
 
-a = '';
-length = fread(fid, 1, 'uint32');
-if length == hex2num('ffffffff')
-    return;
-end
-% convert length from bytes to 16-bit Unicode words
-length = length / 2;
+    a = '';
+    length = fread(fid, 1, 'uint32');
+    if length == hex2num('ffffffff')
+        return;
+    end
+    % convert length from bytes to 16-bit Unicode words
+    length = length / 2;
 
-for i=1:length
-    a(i) = fread(fid, 1, 'uint16');
-end
+    for i=1:length
+        a(i) = fread(fid, 1, 'uint16');
+    end
 
-return
+    return
 
 
 function s = plural(n)
 
-% s = plural(n)
-% 
-% Utility function to optionally plurailze words based on the value
-% of n.
+    % s = plural(n)
+    %
+    % Utility function to optionally plurailze words based on the value
+    % of n.
 
-if (n == 1)
-    s = '';
-else
-    s = 's';
-end
+    if (n == 1)
+        s = '';
+    else
+        s = 's';
+    end
 
-return
+    return
 
 
 function out = notch_filter(in, fSample, fNotch, Bandwidth)
 
-% out = notch_filter(in, fSample, fNotch, Bandwidth)
-%
-% Implements a notch filter (e.g., for 50 or 60 Hz) on vector 'in'.
-% fSample = sample rate of data (in Hz or Samples/sec)
-% fNotch = filter notch frequency (in Hz)
-% Bandwidth = notch 3-dB bandwidth (in Hz).  A bandwidth of 10 Hz is
-%   recommended for 50 or 60 Hz notch filters; narrower bandwidths lead to
-%   poor time-domain properties with an extended ringing response to
-%   transient disturbances.
-%
-% Example:  If neural data was sampled at 30 kSamples/sec
-% and you wish to implement a 60 Hz notch filter:
-%
-% out = notch_filter(in, 30000, 60, 10);
+    % out = notch_filter(in, fSample, fNotch, Bandwidth)
+    %
+    % Implements a notch filter (e.g., for 50 or 60 Hz) on vector 'in'.
+    % fSample = sample rate of data (in Hz or Samples/sec)
+    % fNotch = filter notch frequency (in Hz)
+    % Bandwidth = notch 3-dB bandwidth (in Hz).  A bandwidth of 10 Hz is
+    %   recommended for 50 or 60 Hz notch filters; narrower bandwidths lead to
+    %   poor time-domain properties with an extended ringing response to
+    %   transient disturbances.
+    %
+    % Example:  If neural data was sampled at 30 kSamples/sec
+    % and you wish to implement a 60 Hz notch filter:
+    %
+    % out = notch_filter(in, 30000, 60, 10);
 
-tstep = 1/fSample;
-Fc = fNotch*tstep;
+    tstep = 1/fSample;
+    Fc = fNotch*tstep;
 
-L = length(in);
+    L = length(in);
 
-% Calculate IIR filter parameters
-d = exp(-2*pi*(Bandwidth/2)*tstep);
-b = (1 + d*d)*cos(2*pi*Fc);
-a0 = 1;
-a1 = -b;
-a2 = d*d;
-a = (1 + d*d)/2;
-b0 = 1;
-b1 = -2*cos(2*pi*Fc);
-b2 = 1;
+    % Calculate IIR filter parameters
+    d = exp(-2*pi*(Bandwidth/2)*tstep);
+    b = (1 + d*d)*cos(2*pi*Fc);
+    a0 = 1;
+    a1 = -b;
+    a2 = d*d;
+    a = (1 + d*d)/2;
+    b0 = 1;
+    b1 = -2*cos(2*pi*Fc);
+    b2 = 1;
 
-out = zeros(size(in));
-out(1) = in(1);  
-out(2) = in(2);
-% (If filtering a continuous data stream, change out(1) and out(2) to the
-%  previous final two values of out.)
+    out = zeros(size(in));
+    out(1) = in(1);
+    out(2) = in(2);
+    % (If filtering a continuous data stream, change out(1) and out(2) to the
+    %  previous final two values of out.)
 
-% Run filter
-for i=3:L
-    out(i) = (a*b2*in(i-2) + a*b1*in(i-1) + a*b0*in(i) - a2*out(i-2) - a1*out(i-1))/a0;
-end
+    % Run filter
+    for i=3:L
+        out(i) = (a*b2*in(i-2) + a*b1*in(i-1) + a*b0*in(i) - a2*out(i-2) - a1*out(i-1))/a0;
+    end
 
-return
+    return
 
 
 function move_to_base_workspace(variable)
 
-% move_to_base_workspace(variable)
-%
-% Move variable from function workspace to base MATLAB workspace so
-% user will have access to it after the program ends.
+    % move_to_base_workspace(variable)
+    %
+    % Move variable from function workspace to base MATLAB workspace so
+    % user will have access to it after the program ends.
 
-variable_name = inputname(1);
-assignin('base', variable_name, variable);
+    variable_name = inputname(1);
+    assignin('base', variable_name, variable);
 
-return;
+    return;
 

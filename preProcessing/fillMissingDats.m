@@ -33,10 +33,12 @@ otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
 isFileType = @(x) sum(strcmp(x, otherdattypes)) == 1;
 addParameter(p, 'basepath', pwd, @isfolder)
 addParameter(p, 'fileType', [], isFileType)
+addParameter(p, 'behaviorOnly', false, @islogical);
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
 fileType = p.Results.fileType;
+behaviorOnly = p.Results.behaviorOnly;
 
 % get file types and data types
 files_table = table();
@@ -49,31 +51,83 @@ ampNch = session.extracellular.nChannels;
 
 %% check location of each file and what to concat
 typeFiles = dir([basepath, filesep, '*', filesep, fileType, '.dat']);
-ampFiles = dir([basepath, filesep, '*', filesep, 'amplifier.dat']);
-contFiles = dir([basepath, filesep, '**', filesep, 'continuous.dat']); %check for openEphys
-ampFiles = cat(1, ampFiles, contFiles);
+
+% For behavior-only sessions, use digitalin.dat as reference instead of amplifier.dat
+if behaviorOnly || ampNch == 0
+    disp('Behavior-only mode: using digitalin.dat as reference');
+    ampFiles = dir([basepath, filesep, '*', filesep, 'digitalin.dat']);
+    if isempty(ampFiles)
+        warning('No digitalin.dat files found in subsessions. Cannot fill missing files.');
+        return
+    end
+else
+    % Standard mode: use amplifier.dat or continuous.dat
+    ampFiles = dir([basepath, filesep, '*', filesep, 'amplifier.dat']);
+    contFiles = dir([basepath, filesep, '**', filesep, 'continuous.dat']); %check for openEphys
+    ampFiles = cat(1, ampFiles, contFiles);
+end
+
 typeFolders = {typeFiles.folder};
 ampFolders = {ampFiles.folder};
 
 fillInds = find(~ismember(ampFolders, typeFolders)); %index of folders that need fill
 
-% calculate number of channels to for fill file
+if isempty(fillInds)
+    disp(['All subsessions already have ', fileType, '.dat files. No filling needed.']);
+    return
+end
+
+% calculate number of channels for fill file
 refTypeInd = find(ismember(typeFolders, ampFolders), 1);
+
+if isempty(refTypeInd)
+    warning(['Cannot find a subsession with both ', fileType, '.dat and reference file. Cannot determine channel count.']);
+    return
+end
+
 refTypeSize = typeFiles(refTypeInd).bytes;
-refAmpInd = strcmp(ampFolders, typeFiles(refTypeInd).folder);
+refAmpInd = find(strcmp(ampFolders, typeFiles(refTypeInd).folder), 1);
+
+if isempty(refAmpInd)
+    warning('Cannot find matching reference file. Cannot fill missing files.');
+    return
+end
+
 refAmpSize = ampFiles(refAmpInd).bytes;
-typeNch = refTypeSize * ampNch / refAmpSize;
+
+% Calculate number of channels based on file type
+if behaviorOnly || ampNch == 0
+    % For behavior-only, use digitalin as reference (16 channels, uint16)
+    digitalNch = 16; % Standard Intan digital input channels
+    refNch = digitalNch;
+    refBytesPerSample = 2; % uint16
+    typeNch = refTypeSize * refNch / refAmpSize;
+else
+    % Standard mode with amplifier channels
+    typeNch = refTypeSize * ampNch / refAmpSize;
+end
 
 %% Fill in missing files
 for ii = 1:length(fillInds)
     fillIdx = fillInds(ii);
     localAmpSize = ampFiles(fillIdx).bytes;
-    nPoints = localAmpSize / (ampNch * 2);
+
+    % Calculate number of samples based on reference file
+    if behaviorOnly || ampNch == 0
+        % For behavior-only, reference is digitalin.dat (16 channels, uint16, 2 bytes)
+        nPoints = localAmpSize / (refNch * refBytesPerSample);
+    else
+        % Standard mode with amplifier
+        nPoints = localAmpSize / (ampNch * 2);
+    end
 
     zeroData = zeros(typeNch, nPoints);
 
     filepath = [ampFiles(fillIdx).folder, filesep, fileType, '.dat'];
+    disp(['Creating missing file: ', filepath]);
     fid = fopen(filepath, 'w');
     fwrite(fid, zeroData, files_table.data_type{contains(files_table.files, fileType)});
     fclose(fid);
 end
+
+disp(['Successfully filled ', num2str(length(fillInds)), ' missing ', fileType, '.dat files']);

@@ -33,10 +33,16 @@ otherdattypes = {'analogin'; 'digitalin'; 'auxiliary'; 'time'; 'supply'};
 isFileType = @(x) sum(strcmp(x, otherdattypes)) == 1;
 addParameter(p, 'basepath', pwd, @isfolder)
 addParameter(p, 'fileType', [], isFileType)
+addParameter(p, 'ignoreFolders', "", @isstring);
 
 parse(p, varargin{:})
 basepath = p.Results.basepath;
 fileType = p.Results.fileType;
+ignoreFolders = p.Results.ignoreFolders;
+
+if ignoreFolders == ""
+    ignoreFolders = [];
+end
 
 % get file types and data types
 files_table = table();
@@ -53,6 +59,20 @@ ampFiles = dir([basepath, filesep, '*', filesep, 'amplifier.dat']);
 contFiles = dir([basepath, filesep, '**', filesep, 'continuous.dat']); %check for openEphys
 ampFiles = cat(1, ampFiles, contFiles);
 typeFolders = {typeFiles.folder};
+
+useAmpFiles = [];
+for a = 1:length(ampFiles)
+    skip = 0;
+    for f = 1:length(ignoreFolders)
+        if (contains(ampFiles(a).folder, ignoreFolders(f)) || contains(ampFiles(a).folder, ".memory_usage"))
+            skip = 1;
+        end
+    end
+    if skip~=1
+        useAmpFiles = cat(1, useAmpFiles, ampFiles(a));
+    end
+end
+ampFiles = useAmpFiles;
 ampFolders = {ampFiles.folder};
 
 fillInds = find(~ismember(ampFolders, typeFolders)); %index of folders that need fill
@@ -68,7 +88,7 @@ typeNch = refTypeSize * ampNch / refAmpSize;
 for ii = 1:length(fillInds)
     fillIdx = fillInds(ii);
     localAmpSize = ampFiles(fillIdx).bytes;
-    nPoints = localAmpSize / (ampNch * 2);
+    nPoints = double(localAmpSize / (ampNch * 2));
 
     zeroData = zeros(typeNch, nPoints);
 

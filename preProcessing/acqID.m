@@ -64,6 +64,9 @@ for i = 1:size(useIDX, 1)
         if contains(checkPath, ignoreFolders(f))
             usePath = false;
         end
+        if contains(checkPath, ".memory_usage")
+            usePath = false; %check for new memory usage dat file and ignore automatically
+        end
     end
     if usePath
         datpaths{i} = checkPath;
@@ -82,11 +85,19 @@ for i = 1:size(useIDX, 1)
             expNum(i) = '1';
             recNum(i) = '1';
         else
-            recordingnames{i} = relParts{1};
-            expIdx = find(startsWith(relParts, 'experiment'), 1);
-            recIdx = find(startsWith(relParts, 'recording'), 1);
-            expNum(i) = ternary(~isempty(expIdx), extractAfter(relParts{expIdx}, 'experiment'), '1');
-            recNum(i) = ternary(~isempty(recIdx), extractAfter(relParts{recIdx}, 'recording'), '1');
+            recordingnames{i} = parts{1};
+            expIdx = find(startsWith(relPath, 'experiment'), 1);
+            recIdx = find(startsWith(relPath, 'recording'), 1);
+            if ~isempty(expIdx)
+                expNum(i) = extractAfter(relParts(expIdx), 'experiment');
+            else
+                expNum(i) = '1';
+            end
+            if ~isempty(expIdx)
+                recNum(i) = extractAfter(relParts(recIdx), 'recording');
+            else
+                recNum(i) = '1';
+            end
         end
     else
         fprintf('.dat file found nested in a folder labeled %s . Skipping: \n', ignoreFolders(f));

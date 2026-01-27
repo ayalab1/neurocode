@@ -79,7 +79,7 @@ if fillMissingDatFiles
     end
     for ii = 1:length(toFill)
         if toFill(ii) == 1
-            fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii});
+            fillMissingDats('basepath', basepath, 'fileType', otherdattypes{ii},'ignoreFolders',ignoreFolders);
         end
     end
 else

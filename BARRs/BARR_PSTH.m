@@ -414,7 +414,7 @@ shuffled_iri = iri(randomOrder);
 shuffled_r = cumsum([shuffled_iri]); %raly had cumsum([0; shuffled_iri]);
 
 [ccg_ripple_barrage_shuf,t_ripple_barrage_shuf] = CCG(cat(1,shuffled_r,t_barrages{1}),cat(1,t_ripple_id{1},2*t_barrage_id{1}),'binSize',binsize,'duration',duration,'norm','rate');
-        figure(5);plot(t_ripple_barrage_shuf,ccg_ripple_barrage_shuf(:,2,1),'r');hold on;title('ccg barr-SWR'); yline(0,'k--');xlim([-3 3]);
+        figure(5);plot(t_ripple_barrage_shuf,ccg_ripple_barrage_shuf(:,2,1),'r');hold on;title('ccg barr-SWR shuffle'); yline(0,'k--');xlim([-3 3]);
         saveas(gcf,[plotSave 'CCG_shuff.png']);
         % Old jitter start
 %     for it = 1:10000

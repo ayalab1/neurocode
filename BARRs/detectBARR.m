@@ -53,12 +53,14 @@ function [HSE] = detectBARR(varargin)
 %               Default: 0
 % pareDur:      Minimum duration of BARRs kept, in seconds. This should
 %               generally be kept at or below 0.2. Default: 0.2
-% zeroRip:      Logical option to zero firing during SWRs. This is 
-%               typically used for sessions containing stimulation (ie 
-%               ripple generation). This seems to be a better option than 
-%               remRip.Default: false
-% remRip:       Logical option to remove BARRs which overlap with ripples.
+% zeroRip:      Logical option to remove BARRs which overlap with ripples.
+%               This seems to be a better option than remRip. 
 %               Default: false
+% remRip:       Logical option to zero firing during SWRs. This is 
+%               typically used for sessions containing stimulation (ie 
+%               ripple generation). Default: false
+% newSpks:      Logical option to regenerate spike groups if the regions or
+%               cell types have been adjusted. Default: false
 %
 %%%%%%%%%%%%%%%
 %%% OUTPUTS %%%
@@ -101,6 +103,7 @@ addParameter(p, 'unMax', 0, @isnumeric);
 addParameter(p, 'pareDur', 0.2, @isnumeric);
 addParameter(p, 'zeroRip', true, @islogical);
 addParameter(p, 'remRip', false, @islogical);
+addParameter(p, 'newSpks', false, @islogical);
 
 parse(p, varargin{:});
 
@@ -118,6 +121,7 @@ unMax = p.Results.unMax;
 pareDur = p.Results.pareDur;
 zeroRip = p.Results.zeroRip;
 remRip = p.Results.remRip;
+newSpks = p.Results.newSpks;
 
 %% Check if BARRs have already been detected
 basename = basenameFromBasepath(basepath);
@@ -135,7 +139,7 @@ if ~exist([basepath filesep 'Barrage_Files'])
     mkdir([basepath filesep 'Barrage_Files']);
 end
 
-pullSpikes('basepath', basepath, 'savePath', [basepath filesep 'Barrage_Files'], 'force', true); %Get region/cell type spike files
+pullSpikes('basepath', basepath, 'savePath', [basepath filesep 'Barrage_Files'], 'force', newSpks); %Get region/cell type spike files
 
 if ~exist(strcat(basepath,filesep,'Barrage_Files',filesep,basename,'.CA2pyr.cellinfo.mat'))
     disp('No CA2 pyramidal cells detected, exiting');
@@ -174,6 +178,12 @@ HSE = find_HSE_BARR('spikes',spikes,'nSigma',nSigma,'binSz',0.005,'tSmooth',0.02
                 'recordMetrics',true,'remRip',remRip);
 
 HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, zeroRip, unMax);
+%add unitsForDetection parameters
+HSE.detectorinfo.Hz = Hz;
+HSE.detectorinfo.ft = ft;
+HSE.detectorinfo.numEvt = numEvt;
+HSE.detectorinfo.savePath = savePath;
+save([savePath 'HSE.mat'], 'HSE');
 
 %% Save NeuroScope2 file
 BARR_N2(basepath);

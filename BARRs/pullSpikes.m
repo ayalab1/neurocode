@@ -16,7 +16,7 @@ addParameter(p,'basepath',pwd,@isfolder);
 addParameter(p,'savePath',pwd,@ischar);
 addParameter(p,'force',false,@islogical);
 
-parse(p,varargin{:})
+parse(p, varargin{:});
 
 basepath = p.Results.basepath;
 savePath = p.Results.savePath;
@@ -27,8 +27,8 @@ cd(savePath);
 basename = basenameFromBasepath(basepath);
 
 %% Remove old runs if necessary
+getFiles = dir();
 if force
-    getFiles = dir();
     fun_existsPyr = @(x) (contains(x, 'pyr.cellinfo.mat'));
     fun_existsInt = @(x) (contains(x, 'int.cellinfo.mat'));
     toDelete = zeros(size(getFiles,1),1);
@@ -53,6 +53,7 @@ else
     fun_existsInt = @(x) (contains(x, 'int.cellinfo.mat'));
     for j = 1:size(getFiles,1)
         if fun_existsPyr(getFiles(j).name)||fun_existsInt(getFiles(j).name)
+            cd(original);
             disp('Region spike structures detected, returning');
             return
         end

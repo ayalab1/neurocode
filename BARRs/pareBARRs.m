@@ -136,5 +136,14 @@ end
 HSE.fin = HSE.keep(HSE.NREM(HSE.nonRip)); 
 disp(['Final num: ' num2str(length(HSE.fin))]);
 disp(['Num removed: ' num2str(length(HSE.NREM) - length(HSE.fin))]);
+
+%%add parameters
+HSE.detectorinfo.numCell = numCell;
+HSE.detectorinfo.numSpk = numSpk;
+HSE.detectorinfo.pareDur = pareDur;
+HSE.detectorinfo.singleHz = singleHz;
+HSE.detectorinfo.stim = stim;
+HSE.detectorinfo.maxCell = maxCell;
+
 save([savePath 'HSE.mat'], 'HSE');
 end

@@ -225,9 +225,9 @@ for i = 1:length(check)
                 if plotRips
                     %                     PSTH_ripples = computePSTH(ripples,spikes,'duration',1,'plots', false,'alignment','peaks','zscorePlot',false);
 %                     [PSTH_ripples,PSTH_t] = makePETH(spikes,ripples.timestamps(:,1),[-3 3]);
-                    [PSTH_ripples, PSTH_t] = manualPSTH(spikes, ripples.timestamps(:,1),[-1,1],1/1000);
+                    [PSTH_ripples, PSTH_t] = manualPSTH(spikes, ripples.timestamps(:,1),[-1,1],1/100); %was 1/1000
                     if runTags
-                        warning('NOT ADJUSTED TO NEW DIMENSIONS');
+                        %warning('NOT ADJUSTED TO NEW DIMENSIONS');
 %                         for k = 1:size(PSTH_ripples,1)
 %                            if ((max(PSTH_ripples(k,91:111))-max(PSTH_ripples(k,1:71))) > 1.5*std(PSTH_ripples(k,:)))
 %                                cell_metrics.tags.Pr = [cell_metrics.tags.Pr spikes.UID(k)];
@@ -248,9 +248,9 @@ for i = 1:length(check)
                 end
                 %                     PSTH_bar = computePSTH(HSEnrem,spikes,'duration',1,'plots', false,'alignment','peaks','zscorePlot',false);
 %                 [PSTH_bar,PSTH_t] = makePETH(spikes,HSEuse.timestamps(:,1),[-3 3]);
-                [PSTH_bar, PSTH_t] = manualPSTH(spikes, HSEuse.timestamps(:,1),[-1 1],1/1000);
+                [PSTH_bar, PSTH_t] = manualPSTH(spikes, HSEuse.timestamps(:,1),[-1 1],1/100); %was 1/1000
                 if runTags
-                    warning('NOT ADJUSTED TO NEW DIMENSIONS');
+                    %warning('NOT ADJUSTED TO NEW DIMENSIONS');
 %                     for k = 1:size(PSTH_bar,1)
 %                         if (mean(PSTH_bar(k,1001:2001))-mean(PSTH_bar(k,1:100))) > 0.3
 %                             cell_metrics.tags.Pb = [cell_metrics.tags.Pb spikes.UID(k)];
@@ -414,7 +414,7 @@ shuffled_iri = iri(randomOrder);
 shuffled_r = cumsum([shuffled_iri]); %raly had cumsum([0; shuffled_iri]);
 
 [ccg_ripple_barrage_shuf,t_ripple_barrage_shuf] = CCG(cat(1,shuffled_r,t_barrages{1}),cat(1,t_ripple_id{1},2*t_barrage_id{1}),'binSize',binsize,'duration',duration,'norm','rate');
-        figure(5);plot(t_ripple_barrage_shuf,ccg_ripple_barrage_shuf(:,2,1),'r');hold on;title('ccg barr-SWR'); yline(0,'k--');xlim([-3 3]);
+        figure(5);plot(t_ripple_barrage_shuf,ccg_ripple_barrage_shuf(:,2,1),'r');hold on;title('ccg barr-SWR shuffle'); yline(0,'k--');xlim([-3 3]);
         saveas(gcf,[plotSave 'CCG_shuff.png']);
         % Old jitter start
 %     for it = 1:10000

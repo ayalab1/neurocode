@@ -60,12 +60,12 @@ removeID = [];
 for i = 1:size(useIDX, 1)
     checkPath = cat(2, '"', allFolders(useIDX(i), :).folder{1}, filesep, allFolders(useIDX(i), :).name{1}, ' "');
     usePath = true;
+    if contains(checkPath, ".memory_usage")
+        usePath = false; %check for new memory usage dat file and ignore automatically
+    end
     for f = 1:length(ignoreFolders)
         if contains(checkPath, ignoreFolders(f))
             usePath = false;
-        end
-        if contains(checkPath, ".memory_usage")
-            usePath = false; %check for new memory usage dat file and ignore automatically
         end
     end
     if usePath

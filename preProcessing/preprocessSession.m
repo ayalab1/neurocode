@@ -160,7 +160,7 @@ if removeNoise
     warning('removeNoise not implemented')
 end
 
-%add standard "ignore" prefixes
+%add standard "ignore" prefixes to be extra safe
 ignoreFolders = [ignoreFolders, "ignore", "backup", "memory_usage"];
 
 % Check for active breakpoints

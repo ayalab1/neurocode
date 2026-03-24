@@ -161,7 +161,11 @@ if removeNoise
 end
 
 %add standard "ignore" prefixes to be extra safe
-ignoreFolders = [ignoreFolders, "ignore", "backup", "memory_usage"];
+if ignoreFolders == ""
+    ignoreFolders = ["ignore", "backup", "memory_usage"];
+else
+    ignoreFolders = [ignoreFolders, "ignore", "backup", "memory_usage"];
+end
 
 % Check for active breakpoints
 dbstatus_ = dbstatus('-completenames');

@@ -88,9 +88,6 @@ if recalculate_speed
     speed_smooth = get_SmoothedSpeed(behavior, MergePoints, epochs, orderKalmanVel, do_smooth, ...
         'smoothing_width', smoothing_width, 'figopt', doPlot);
     behavior.speed_smooth = speed_smooth';
-    if savedata
-        save(fullfile(basepath, [prefix, '.animal.behavior.mat']), 'behavior') % update behavior info
-    end
 end
 % use the smoothed speed?
 if use_smoothed_speed

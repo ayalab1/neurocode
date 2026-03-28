@@ -43,8 +43,8 @@ addParameter(p, 'show_fig', true, @islogical); % do you want a figure?
 addParameter(p, 'norm_zero_to_one', false, @islogical); % normalize linear coords 0-1
 addParameter(p, 'maze_sizes', [], @isnumeric); % width of mazes in cm (must correspond with linear epochs)
 addParameter(p, 'split_linearize', false, @islogical); % make linear epoch by epoch
-addParameter(p, 'remove_extra_fields', false, @islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
-addParameter(p, 'just_save_animal_behavior', false, @islogical); % true will only save animal behav file
+addParameter(p, 'remove_extra_fields', true, @islogical); % removes extra FMA syle fields 'positionTrials','run','positionTrialsRun'
+addParameter(p, 'just_save_animal_behavior', true, @islogical); % true will only save animal behav file
 addParameter(p, 'clean_tracker_jumps', false, @islogical);
 
 parse(p, varargin{:});
@@ -338,9 +338,7 @@ if show_fig
     saveas(gcf, [basepath, filesep, [basename, '.linearTrackBehavior.fig']]);
 end
 
-if remove_extra_fields
-    behavior = rmfield(behavior, {'positionTrials', 'run', 'positionTrialsRun', 'speedTh'});
-end
+behavior = rmfield(behavior, {'positionTrials', 'run', 'positionTrialsRun', 'speedTh'});
 
 %% Generate output variables
 if savemat

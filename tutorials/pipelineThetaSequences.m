@@ -75,9 +75,6 @@ if ~isfield(behavior,'run') % Here is some example code to detect running epochs
     run(diff(run,[],2)<0.5,:) = []; % remove run epochs lasting for less than 0.5s
     behavior.run = run;
     behavior.speed = speed(:,2)'; % replace old speed with this speed
-
-    % I recommend saving the running epochs in the behavior file:
-    save(fullfile(basepath,[basename '.animal.behavior.mat']),'behavior');
 end
 
 ok = InIntervals(thetacycles.timestamps,behavior.run);

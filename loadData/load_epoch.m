@@ -22,8 +22,9 @@ load(fullfile(basepath_, [basename, '.session.mat']), 'session')
 for ep = 1:length(session.epochs)
 
     name{ep, 1} = session.epochs{ep}.name;
-    startTime(ep, 1) = session.epochs{ep}.startTime;
-    stopTime(ep, 1) = session.epochs{ep}.stopTime;
+    % force to double in case time is different type
+    startTime(ep, 1) = double(session.epochs{ep}.startTime);
+    stopTime(ep, 1) = double(session.epochs{ep}.stopTime);
 
     if isfield(session.epochs{ep}, 'environment')
         environment{ep, 1} = session.epochs{ep}.environment;

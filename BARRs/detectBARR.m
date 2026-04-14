@@ -59,8 +59,6 @@ function [HSE] = detectBARR(varargin)
 % remRip:       Logical option to zero firing during SWRs. This is 
 %               typically used for sessions containing stimulation (ie 
 %               ripple generation). Default: false
-% newSpks:      Logical option to regenerate spike groups if the regions or
-%               cell types have been adjusted. Default: false
 %
 %%%%%%%%%%%%%%%
 %%% OUTPUTS %%%
@@ -103,7 +101,6 @@ addParameter(p, 'unMax', 0, @isnumeric);
 addParameter(p, 'pareDur', 0.2, @isnumeric);
 addParameter(p, 'zeroRip', true, @islogical);
 addParameter(p, 'remRip', false, @islogical);
-addParameter(p, 'newSpks', false, @islogical);
 
 parse(p, varargin{:});
 
@@ -121,7 +118,6 @@ unMax = p.Results.unMax;
 pareDur = p.Results.pareDur;
 zeroRip = p.Results.zeroRip;
 remRip = p.Results.remRip;
-newSpks = p.Results.newSpks;
 
 %% Check if BARRs have already been detected
 basename = basenameFromBasepath(basepath);
@@ -139,10 +135,16 @@ if ~exist([basepath filesep 'Barrage_Files'])
     mkdir([basepath filesep 'Barrage_Files']);
 end
 
-pullSpikes('basepath', basepath, 'savePath', [basepath filesep 'Barrage_Files'], 'force', newSpks); %Get region/cell type spike files
+useReg = pullSpikes(basepath); %Get region/cell type spike files
 
-if ~exist(strcat(basepath,filesep,'Barrage_Files',filesep,basename,'.CA2pyr.cellinfo.mat'))
-    disp('No CA2 pyramidal cells detected, exiting');
+try
+    checkCA2 = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA2");
+    if isempty(checkCA2.times)
+       disp('No CA2 pyramidal cells detected, exiting');
+    return
+    end
+catch
+    disp('Issue loading CA2 pyramidal cells, exiting');
     return
 end
 
@@ -164,7 +166,7 @@ load([savePath 'useSpk.UIDkeep.mat']);
 load([savePath 'useSpk.cellinfo.mat']); %load in the spikes that we've picked and run to save
 
 if isempty(spikes.UID)
-    load([savePath 'CA2pyr.cellinfo.mat']);
+    spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA2");
     UIDkeep = spikes.UID;
     save([savePath 'useSpk.UIDkeep.mat'],'UIDkeep');
     warning('unitsForDetection did not return any units, defaulting to all CA2pyr');
@@ -190,4 +192,5 @@ BARR_N2(basepath);
 
 %% Run analysis script
 BARR_PSTH(savePath,"NREM");
+% BARR_PSTH(savePath,"nonTheta");
 end

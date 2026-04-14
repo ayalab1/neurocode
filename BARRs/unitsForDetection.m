@@ -25,7 +25,9 @@ end
 load([basename '.cell_metrics.cellinfo.mat']);
 
 %% Produce spike structure
-load([basepath filesep 'Barrage_Files' filesep basename '.CA2pyr.cellinfo.mat']);
+spikes = importSpikes('cellType', "Pyramidal Cell", 'brainRegion', "CA2");
+
+%load([basepath filesep 'Barrage_Files' filesep basename '.CA2pyr.cellinfo.mat']);
 
 %% Get cell by cell firing rate
 tSmooth = 0.05; binsz = 0.01;
@@ -78,4 +80,8 @@ spikes = [];
 spikes = keep;
 save([savePath 'useSpk.cellinfo.mat'], 'spikes');
 save([savePath 'useSpk.UIDkeep.mat'],'UIDkeep');
+
+load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+cell_metrics.tags.BARR_UID = UIDkeep;
+save([basepath '\' basename '.cell_metrics.cellinfo.mat']);
 end

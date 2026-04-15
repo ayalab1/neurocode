@@ -218,5 +218,38 @@ classdef analogSignalArray < handle
                 varargin{:});
         end
 
+        function self = downsample(self, new_fs)
+            % Downsample analogSignalArray using MATLAB's resample()
+            %
+            % Usage:
+            %   asa.downsample(10)
+
+            if isempty(self.data)
+                warning('analogSignalArray is empty');
+                return;
+            end
+
+            old_fs = self.sampling_rate;
+
+            if new_fs >= old_fs
+                warning('new_fs must be less than old_fs, downsampling not performed')
+                return;
+            end
+
+            % Compute rational resampling ratio
+            [p, q] = rat(new_fs / old_fs);
+
+            % --- Resample data ---
+            % resample operates column-wise (perfect for [samples x signals])
+            self.data = resample(self.data, p, q);
+
+            % --- Recompute timestamps ---
+            n_samples_new = size(self.data, 1);
+            self.timestamps = self.timestamps(1) + (0:n_samples_new-1)' / new_fs;
+
+            % Update sampling rate
+            self.sampling_rate = new_fs;
+        end
+
     end
 end

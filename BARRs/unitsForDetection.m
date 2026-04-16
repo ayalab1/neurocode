@@ -83,5 +83,5 @@ save([savePath 'useSpk.UIDkeep.mat'],'UIDkeep');
 
 load([basepath '\' basename '.cell_metrics.cellinfo.mat']);
 cell_metrics.tags.BARR_UID = UIDkeep;
-save([basepath '\' basename '.cell_metrics.cellinfo.mat']);
+save([basepath '\' basename '.cell_metrics.cellinfo.mat'],'cell_metrics');
 end

@@ -241,7 +241,7 @@ for i=1:size(useReg,2)
         end
         
     else
-        warning(['No pyramidal cells in ' br]);
+        warning(strcat('No pyramidal cells in ', br));
     end
     subNum = subNum+1; % should max at 4
 end
@@ -312,7 +312,7 @@ for i=1:size(useReg,2)
         end
         
     else
-        warning(['No interneurons in ' br]);
+        warning(strcat('No interneurons in ', br));
         intEmpt = intEmpt+1;
     end
     subNum = subNum+1; % should max at 4

@@ -53,6 +53,12 @@ function [HSE] = detectBARR(varargin)
 %               Default: 0
 % pareDur:      Minimum duration of BARRs kept, in seconds. This should
 %               generally be kept at or below 0.2. Default: 0.2
+% freqFilt:     Frequency band to restrict. Recommended to restrict
+%               ~100-200 Hz to exclude ripple events. If an event has this
+%               instantaneous frequency at the detected peak, it will be
+%               removed. Recommended [100 200]. Default: [] (skips)
+% freqChan:     1-based channel to use for restricting events with an
+%               instaneous peak frequency in the restricted band. 
 % zeroRip:      Logical option to remove BARRs which overlap with ripples.
 %               This seems to be a better option than remRip. 
 %               Default: false
@@ -99,6 +105,8 @@ addParameter(p, 'spkNum', 5, @isnumeric);
 addParameter(p, 'spkHz', 100, @isnumeric);
 addParameter(p, 'unMax', 0, @isnumeric);
 addParameter(p, 'pareDur', 0.2, @isnumeric);
+addParameter(p, 'freqFilt',[],@isnumeric);
+addParameter(p, 'freqChan', 0, @isnumeric);
 addParameter(p, 'zeroRip', true, @islogical);
 addParameter(p, 'remRip', false, @islogical);
 
@@ -116,6 +124,8 @@ spkNum = p.Results.spkNum;
 spkHz = p.Results.spkHz;
 unMax = p.Results.unMax;
 pareDur = p.Results.pareDur;
+freqFilt = p.Results.freqFilt;
+freqChan = p.Results.freqChan;
 zeroRip = p.Results.zeroRip;
 remRip = p.Results.remRip;
 
@@ -179,7 +189,7 @@ HSE = find_HSE_BARR('spikes',spikes,'nSigma',nSigma,'binSz',0.005,'tSmooth',0.02
                 'Notes',note_all,'sstd',-1*(nSigma-0.5),'estd',(nSigma-0.5),...
                 'recordMetrics',true,'remRip',remRip);
 
-HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, zeroRip, unMax);
+HSE = pareBARRs(basepath, HSE, spikes, savePath, unMin, spkNum, pareDur, spkHz, freqFilt, freqChan, zeroRip, unMax);
 %add unitsForDetection parameters
 HSE.detectorinfo.Hz = Hz;
 HSE.detectorinfo.ft = ft;

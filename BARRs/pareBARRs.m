@@ -1,5 +1,5 @@
 %% Pare events
-function HSE = pareBARRs(basepath, HSE, spikes, savePath, numCell, numSpk, pareDur, singleHz, stim, maxCell)
+function HSE = pareBARRs(basepath, HSE, spikes, savePath, numCell, numSpk, pareDur, singleHz, freqFilt, freqChan, stim, maxCell)
 %% Refine BARR detection
 %
 % This script pares back BARR detections based on restrictions provided as
@@ -25,6 +25,13 @@ function HSE = pareBARRs(basepath, HSE, spikes, savePath, numCell, numSpk, pareD
 % singleHz:     Firing rate needed for a single BARR unit to be allowed to
 %               drive a BARR. Note that this does not mean it's the only 
 %               cell firing, just that it's the only flagged cell firing.
+% freqFilt:     Frequency band to restrict. Recommended to restrict
+%               ~100-200 Hz to exclude ripple events. If an event has this
+%               instantaneous frequency at the detected peak, it will be
+%               removed. Recommended [100 200]. Default: [] (skips)
+% freqChan:     1-based channel to use for restricting events with an
+%               instaneous peak frequency in the restricted band. Default
+%               will try to pull from ripples file, requires lfp file. 
 %% OPTIONAL %%
 % stim:         Logical option to indicate whether or not the session
 %               includes stimulation (ie ripple generation). If so, 
@@ -60,10 +67,14 @@ function HSE = pareBARRs(basepath, HSE, spikes, savePath, numCell, numSpk, pareD
 %        HSE.timestamps(HSE.keep(HSE.NREM),:)
 %%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if nargin < 8
+if nargin < 9 
+    freqChan = 0;
     stim = 0;
     maxCell = 0;
-elseif nargin <9
+elseif nargin < 10 %options not implemented into main script
+    stim = 0;
+    maxCell = 0;
+elseif nargin < 11
     maxCell = 0;
 end
 
@@ -113,6 +124,52 @@ if stim==1
     HSE.note = "HSE.keep has removed barrages overlapping with ripples";
 end
 
+if ~isempty(freqFilt)
+    if freqChan==0
+        load([basepath '\' basename '.ripples.events.mat']);
+        try
+            freqChan = ripples.detectorinfo.detectionchannel1;
+        catch
+            try
+                freqChan = ripples.detectorinfo.detectionparms.Channels(1);
+            catch
+                disp('Check for this specific case');
+            end
+        end
+    end
+    disp(['Using channel ' num2str(freqChan) ' for frequency filter']);
+    load([basepath '\' basename '.session.mat']);
+    disp('Loading LFP...');
+    SR = 1250;
+    % Compute instantaneous phase and amplitude
+    lfp = LoadBinary([basepath '\' basename '.lfp'],'frequency',SR, 'nChannels', session.extracellular.nChannels, 'channels',freqChan);
+    %     lfpfilt = bz_Filter(lfp(:, 1), 'passband', ripBP, 'filter', 'fir1', 'nyquist', SR/2);
+    h = hilbert(lfp);
+    phase = angle(h);
+    amplitude = abs(h);
+    unwrapped = unwrap(phase);
+    % Compute instantaneous frequency
+    frequency = bz_Diff(medfilt1(unwrapped, 12), (0:length(lfp) - 1)'/SR, 'smooth', 0);
+    frequency = frequency / (2 * pi);
+    
+    t = linspace(0,session.epochs{end}.stopTime,length(lfp));
+%t = linspace(0,(1/SR)*length(lfp), length(lfp));
+tempKeep4 = [];
+toCheckFreq = [];
+for i = 1:length(HSE.keep)
+    [~,keep4_t] = min(abs(HSE.peaks(HSE.keep(i))-t));
+    toCheckFreq(i) = frequency(keep4_t);
+    if ~((frequency(keep4_t) < freqFilt(2)) && (frequency(keep4_t) > freqFilt(1)))
+        tempKeep4 = [tempKeep4 HSE.keep(i)];
+    end
+end
+HSE.keep = tempKeep4;
+if isfield(HSE, 'note')
+    HSE.note = "Frequency filter used for HSE.keep";
+else
+    HSE.note = [HSE.note "Frequency filter used"];
+end
+end
 
 load(strcat(basepath,filesep,basename,'.SleepState.states.mat'));
 if ~isempty(SleepState.ints.NREMstate)

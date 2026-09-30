@@ -1,4 +1,4 @@
-function read_Intan_RHD2000_file
+function read_Intan_RHD2000_file(varargin)
 
 % read_Intan_RHD2000_file
 %
@@ -16,6 +16,21 @@ function read_Intan_RHD2000_file
 % >> whos
 % >> amplifier_channels(1)
 % >> plot(t_amplifier, amplifier_data(1,:))
+%
+% For large recordings that do not fit in memory, stream the data directly
+% to the traditional Intan .dat files instead:
+% >> read_Intan_RHD2000_file('streamToDat', true)
+% Output files are overwritten in the selected RHD file's directory. Analog
+% values remain raw ADC counts; auxiliary samples are repeated four times.
+% Digital inputs remain packed uint16 words and time.dat stores sample ticks.
+% Amplifiers retain the legacy reader's centering and software notch filter.
+% Streaming does not populate the base workspace or export supply, temperature,
+% digital output, or header files.
+
+p = inputParser;
+p.addParameter('streamToDat', false, @(x) islogical(x) && isscalar(x));
+p.parse(varargin{:});
+stream_to_dat = p.Results.streamToDat;
 
 [file, path, filterindex] = ...
     uigetfile('*.rhd', 'Select an RHD2000 Data File', 'MultiSelect', 'off');
@@ -27,6 +42,10 @@ end
 tic;
 filename = [path,file];
 fid = fopen(filename, 'r');
+if (fid == -1)
+    error('Intan:InputOpenFailed', 'Could not open %s.', filename);
+end
+cleanup_input = onCleanup(@() fclose(fid));
 
 s = dir(filename);
 filesize = s.bytes;
@@ -290,6 +309,23 @@ num_board_dig_out_samples = num_samples_per_data_block * num_data_blocks;
 
 record_time = num_amplifier_samples / sample_rate;
 
+if (stream_to_dat && data_present)
+    if (mod(bytes_remaining, bytes_per_block) ~= 0)
+        error('Intan:IncompleteDataBlock', 'RHD file contains an incomplete data block.');
+    end
+    stream_data_to_dat_files(fid, path, num_data_blocks, ...
+        num_samples_per_data_block, num_amplifier_channels, ...
+        num_aux_input_channels, num_supply_voltage_channels, ...
+        num_board_adc_channels, num_board_dig_in_channels, ...
+        num_board_dig_out_channels, num_temp_sensor_channels, ...
+        data_file_main_version_number, data_file_secondary_version_number, ...
+        sample_rate, notch_filter_frequency);
+    clear cleanup_input;
+    fprintf(1, 'Done!  Elapsed time: %0.1f seconds\n', toc);
+    fprintf(1, 'Streamed data to .dat files in %s\n\n', path);
+    return;
+end
+
 if (data_present)
     fprintf(1, 'File contains %0.3f seconds of data.  Amplifiers were sampled at %0.2f kS/s.\n', ...
         record_time, sample_rate / 1000);
@@ -384,7 +420,7 @@ if (data_present)
 end
 
 % Close data file.
-fclose(fid);
+clear cleanup_input;
 
 if (data_present)
     
@@ -528,6 +564,127 @@ fprintf(1, '\n');
 return
 
 
+function stream_data_to_dat_files(fid, output_path, num_data_blocks, ...
+    samples_per_block, num_amplifier_channels, num_aux_input_channels, ...
+    num_supply_voltage_channels, num_board_adc_channels, ...
+    num_board_dig_in_channels, num_board_dig_out_channels, ...
+    num_temp_sensor_channels, main_version, secondary_version, ...
+    sample_rate, notch_filter_frequency)
+
+% Stream RHD blocks directly to the traditional Intan .dat files.  This
+% reproduces the layout produced by fwrite(amplifier_data, 'int16') without
+% retaining the complete recording in memory.
+
+fid_amplifier = fopen(fullfile(output_path, 'amplifier.dat'), 'w', 'ieee-le');
+fid_auxiliary = fopen(fullfile(output_path, 'auxiliary.dat'), 'w', 'ieee-le');
+fid_analogin = fopen(fullfile(output_path, 'analogin.dat'), 'w', 'ieee-le');
+fid_digitalin = fopen(fullfile(output_path, 'digitalin.dat'), 'w', 'ieee-le');
+fid_time = fopen(fullfile(output_path, 'time.dat'), 'w', 'ieee-le');
+
+file_ids = [fid_amplifier, fid_auxiliary, fid_analogin, fid_digitalin, fid_time];
+if any(file_ids == -1)
+    cellfun(@fclose, num2cell(file_ids(file_ids ~= -1)));
+    error('Intan:OutputOpenFailed', 'Could not open one or more output .dat files in %s.', output_path);
+end
+cleanup_files = onCleanup(@() cellfun(@fclose, num2cell(file_ids)));
+
+fprintf(1, 'Streaming data to .dat files...\n');
+print_increment = 10;
+percent_done = print_increment;
+filter_states = cell(1, num_amplifier_channels);
+num_gaps = 0;
+previous_timestamp = [];
+
+for block_index = 1:num_data_blocks
+    if ((main_version == 1 && secondary_version >= 2) || main_version > 1)
+        timestamps = read_stream_samples(fid, samples_per_block, 'int32=>int32');
+    else
+        timestamps = read_stream_samples(fid, samples_per_block, 'uint32=>uint32');
+    end
+    num_gaps = num_gaps + sum(diff([previous_timestamp; double(timestamps)]) ~= 1);
+    previous_timestamp = double(timestamps(end));
+    % Preserve timestamp bits even for unsigned v1.0/v1.1 values above intmax.
+    write_stream_samples(fid_time, typecast(timestamps, 'int32'), 'int32');
+
+    if (num_amplifier_channels > 0)
+        amplifier_block = read_stream_samples(fid, [samples_per_block, num_amplifier_channels], 'uint16=>uint16')';
+        % The legacy workflow first subtracts 32768, then writes int16.
+        amplifier_block = double(amplifier_block) - 32768;
+        if (notch_filter_frequency > 0 && main_version < 3)
+            for channel_index = 1:num_amplifier_channels
+                [amplifier_block(channel_index, :), filter_states{channel_index}] = ...
+                    notch_filter(amplifier_block(channel_index, :), sample_rate, ...
+                    notch_filter_frequency, 10, filter_states{channel_index});
+            end
+        end
+        write_stream_samples(fid_amplifier, amplifier_block, 'int16');
+    end
+
+    if (num_aux_input_channels > 0)
+        auxiliary_block = read_stream_samples(fid, [samples_per_block / 4, num_aux_input_channels], 'uint16=>uint16')';
+        write_stream_samples(fid_auxiliary, repelem(auxiliary_block, 1, 4), 'uint16');
+    end
+
+    % These signals are not written by the legacy export workflow, but must
+    % be consumed to remain aligned with the next data block.
+    if (num_supply_voltage_channels > 0)
+        read_stream_samples(fid, [1, num_supply_voltage_channels], 'uint16=>uint16');
+    end
+
+    if (num_temp_sensor_channels > 0)
+        read_stream_samples(fid, [1, num_temp_sensor_channels], 'int16=>int16');
+    end
+
+    if (num_board_adc_channels > 0)
+        analogin_block = read_stream_samples(fid, [samples_per_block, num_board_adc_channels], 'uint16=>uint16')';
+        write_stream_samples(fid_analogin, analogin_block, 'uint16');
+    end
+
+    if (num_board_dig_in_channels > 0)
+        digital_input_raw = read_stream_samples(fid, samples_per_block, 'uint16=>uint16');
+        % Intan .dat readers decode native digital channels from packed bits.
+        write_stream_samples(fid_digitalin, digital_input_raw, 'uint16');
+    end
+
+    if (num_board_dig_out_channels > 0)
+        read_stream_samples(fid, samples_per_block, 'uint16=>uint16');
+    end
+
+    fraction_done = 100 * block_index / num_data_blocks;
+    if (fraction_done >= percent_done)
+        fprintf(1, '%d%% done...\n', percent_done);
+        percent_done = percent_done + print_increment;
+    end
+end
+
+clear cleanup_files;
+if (num_gaps > 0)
+    fprintf(1, 'Warning: %d gaps in timestamp data found.  Time scale will not be uniform!\n', num_gaps);
+end
+fprintf(1, 'Finished streaming data.\n');
+
+return
+
+
+function data = read_stream_samples(fid, dimensions, precision)
+
+[data, count] = fread(fid, dimensions, precision);
+if (count ~= prod(dimensions))
+    error('Intan:ShortRead', 'Could not read a complete RHD data block.');
+end
+
+return
+
+
+function write_stream_samples(fid, data, precision)
+
+if (fwrite(fid, data, precision) ~= numel(data))
+    error('Intan:ShortWrite', 'Could not write all samples to an output .dat file.');
+end
+
+return
+
+
 function a = fread_QString(fid)
 
 % a = read_QString(fid)
@@ -567,7 +724,7 @@ end
 return
 
 
-function out = notch_filter(in, fSample, fNotch, Bandwidth)
+function [out, state] = notch_filter(in, fSample, fNotch, Bandwidth, state)
 
 % out = notch_filter(in, fSample, fNotch, Bandwidth)
 %
@@ -587,6 +744,10 @@ function out = notch_filter(in, fSample, fNotch, Bandwidth)
 tstep = 1/fSample;
 Fc = fNotch*tstep;
 
+continuing = (nargin >= 5 && ~isempty(state));
+if continuing
+    in = [state.input, in];
+end
 L = length(in);
 
 % Calculate IIR filter parameters
@@ -601,14 +762,24 @@ b1 = -2*cos(2*pi*Fc);
 b2 = 1;
 
 out = zeros(size(in));
-out(1) = in(1);  
-out(2) = in(2);
+if continuing
+    out(1:2) = state.output;
+else
+    out(1) = in(1);
+    out(2) = in(2);
+end
 % (If filtering a continuous data stream, change out(1) and out(2) to the
 %  previous final two values of out.)
 
 % Run filter
 for i=3:L
     out(i) = (a*b2*in(i-2) + a*b1*in(i-1) + a*b0*in(i) - a2*out(i-2) - a1*out(i-1))/a0;
+end
+
+state.input = in(end-1:end);
+state.output = out(end-1:end);
+if continuing
+    out = out(3:end);
 end
 
 return

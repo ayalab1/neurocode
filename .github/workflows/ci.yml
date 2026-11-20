@@ -32,6 +32,7 @@ jobs:
             Signal_Processing_Toolbox
             DSP_System_Toolbox
             Statistics_and_Machine_Learning_Toolbox
+            Parallel_Computing_Toolbox
 
       # Public repositories get a MATLAB license only through the
       # matlab-actions run steps, not by calling matlab from a shell.

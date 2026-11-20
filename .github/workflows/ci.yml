@@ -10,22 +10,28 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: neurocode  # Checkout into a folder named 'neurocode'
 
       - name: Checkout external repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: ayalab1/CellExplorer
           path: CellExplorer
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v1
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2025b
+          products: >
+            Signal_Processing_Toolbox
+            DSP_System_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
 
       - name: Compile MEX files
         run: |

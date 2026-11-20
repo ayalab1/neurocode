@@ -34,6 +34,16 @@ function [EMGFromLFP] = getEMGFromLFP(basepath, varargin)
 %       'samplingFrequency' - desired sampling rate for EMG output. default:2
 %       'noPrompts'     (default: false) prevents prompts about saving/adding metadata
 %       'fromDat'           -uses the .dat file instead of .lfp (default:false)
+%       'maxAutoChannels'   - maximum number of spike groups sampled when
+%                             channels are picked automatically (one channel
+%                             per group). Recordings with more usable spike
+%                             groups use this many groups spread evenly
+%                             across the spike-group list, because the cost
+%                             grows with the number of channel pairs.
+%                             Recordings with at most this many usable
+%                             groups are unaffected.
+%                             specialChannels are always added on top.
+%                             Use inf to disable the cap. default: 16
 %
 %
 % OUTPUTS
@@ -45,6 +55,8 @@ function [EMGFromLFP] = getEMGFromLFP(basepath, varargin)
 %          .channels            - channel #'s used for analysis
 %          .detectorName        - string name of function used
 %          .samplingFrequency   - 1 / sampling rate of EMGCorr data
+%          .detectorinfo        - how channels were selected (method,
+%                                 maxAutoChannels, spike groups used, ...)
 %
 %   =========================================================================
 
@@ -68,6 +80,7 @@ addParameter(p, 'samplingFrequency', 2, @isnumeric)
 addParameter(p, 'noPrompts', false, @islogical);
 addParameter(p, 'fromDat', false, @islogical);
 addParameter(p, 'chInfo', [], @isstruct);
+addParameter(p, 'maxAutoChannels', 16, @(x) isnumeric(x) && isscalar(x) && x >= 2);
 parse(p, varargin{:})
 
 restrict = p.Results.restrict;
@@ -80,6 +93,7 @@ samplingFrequency = p.Results.samplingFrequency;
 noPrompts = p.Results.noPrompts;
 fromDat = p.Results.fromDat;
 chInfo = p.Results.chInfo;
+maxAutoChannels = p.Results.maxAutoChannels;
 
 if ~isempty(p.Results.saveLocation)
     matfilename = fullfile(p.Results.saveLocation, [recordingname, '.EMGFromLFP.LFP.mat']);
@@ -120,7 +134,6 @@ end
 
 binScootS = 1 ./ samplingFrequency;
 binScootSamps = round(Fs*binScootS); % must be integer, or error on line 190
-corrChunkSz = 20; %for batch-processed correlations
 
 %% Pick channels and to analyze
 % get spike groups,
@@ -132,8 +145,11 @@ corrChunkSz = 20; %for batch-processed correlations
 % xcorrs_chs is a list of channels that will be loaded
 % spkgrpstouse is a list of spike groups to find channels from
 
+nUsableSpikeGroups = NaN;
+spkgrpsused = [];
 if ~isempty(restrictChannels) % If restrict channel case:
     xcorr_chs = restrictChannels;
+    selectionMethod = 'restrictChannels';
 else
     % get list of spike groups (aka shanks) that should be used
     usablechannels = [];
@@ -149,6 +165,24 @@ else
 
     % okay, lets limit usableshankchannels with spkgrpstouse. Thus, empty shanks will be excluded.
     usableshankchannels = usableshankchannels(spkgrpstouse);
+    nUsableSpikeGroups = length(spkgrpstouse);
+
+    % The number of channel pairs, and with it the run time, grows
+    % quadratically with the number of spike groups. Keep at most
+    % maxAutoChannels groups, spread evenly over the spike-group list.
+    % Recordings with <= maxAutoChannels usable groups take the unchanged
+    % path below.
+    if nUsableSpikeGroups > maxAutoChannels
+        keepgroups = unique(round(linspace(1, nUsableSpikeGroups, floor(maxAutoChannels))));
+        usableshankchannels = usableshankchannels(keepgroups);
+        spkgrpstouse = spkgrpstouse(keepgroups);
+        selectionMethod = 'onePerSpikeGroupCapped';
+    elseif length(usableshankchannels) > 1
+        selectionMethod = 'onePerSpikeGroup';
+    else
+        selectionMethod = 'fiveFromSingleSpikeGroup';
+    end
+    spkgrpsused = spkgrpstouse;
 
     % get number of channels per shank. If one valid shank, choose 5 channels
     if length(usableshankchannels) > 1
@@ -185,7 +219,7 @@ end
 
 switch fromDat
     case false
-        lfp = LoadBinary(lfpFile, 'nChannels', nChannels, 'channels', xcorr_chs, ...
+        lfp = loadBinary(lfpFile, 'nChannels', nChannels, 'channels', xcorr_chs, ...
             'start', restrict(1), 'duration', diff(restrict), 'frequency', Fs); %read and convert to mV
 
         if isempty(lfp)
@@ -193,7 +227,7 @@ switch fromDat
         end
 
     case true
-        lfp = LoadBinary(datFile, 'nChannels', nChannels, 'channels', xcorr_chs, ...
+        lfp = loadBinary(datFile, 'nChannels', nChannels, 'channels', xcorr_chs, ...
             'start', restrict(1), 'duration', diff(restrict), 'frequency', datFs, ...
             'downsample', datFs./Fs); %read and convert to mV
         if isempty(lfp)
@@ -214,40 +248,35 @@ lfp = filtsig_in(lfp, Fs, xcorr_freqband);
 xcorr_window_samps = round(binScootS*Fs);
 xcorr_window_inds = -xcorr_window_samps:xcorr_window_samps; %+- that number of ms in samples
 
-% new version... batches of correlation calculated at once
+% Pearson correlation of every channel pair in each window, summed over
+% pairs. Windows are processed in blocks of bins: each channel's windows are
+% centered and scaled once per block, so a pair costs one elementwise
+% product instead of a per-bin corr() call. Same formula as corr (NaN for a
+% flat window), results agree with the former per-bin loop to rounding error.
 timestamps = (1 + xcorr_window_inds(end)):binScootSamps:(size(lfp, 1) - xcorr_window_inds(end));
 numbins = length(timestamps);
 EMGCorr = zeros(numbins, 1);
-% tic
-counter = 1;
-for j = 1:(length(xcorr_chs))
-    for k = (j + 1):length(xcorr_chs)
-        %disp([num2str(counter*2 ./ (length(xcorr_chs)*length(xcorr_chs)*length(timestamps)))])
-        bz_Counter(counter, (length(xcorr_chs) * (length(xcorr_chs) - 1))./2, 'Channel Pair')
-        c1 = [];
-        c2 = [];
-        binind = 0;
-        binindstart = 1;
-        for i = timestamps
-            binind = binind + 1;
-            s1 = lfp(i + xcorr_window_inds, j);
-            s2 = lfp(i + xcorr_window_inds, k);
-            c1 = cat(2, c1, s1);
-            c2 = cat(2, c2, s2);
-            if size(c1, 2) == corrChunkSz || i == timestamps(end)
-                binindend = binind;
-                tmp = corr(c1, c2);
-                tmp = diag(tmp);
-                EMGCorr(binindstart:binindend) = EMGCorr(binindstart:binindend) + tmp;
-                c1 = [];
-                c2 = [];
-                binindstart = binind + 1;
-            end
+nCh = length(xcorr_chs);
+nPairs = nCh * (nCh - 1) / 2;
+nWin = length(xcorr_window_inds);
+% bins per block, keeping the block of windowed data near 256 MB
+binsPerBlock = max(1, floor(256e6/(8 * nWin * max(nCh, 1))));
+for binindstart = 1:binsPerBlock:numbins
+    binindend = min(numbins, binindstart+binsPerBlock-1);
+    nb = binindend - binindstart + 1;
+    sampleinds = xcorr_window_inds(:) + timestamps(binindstart:binindend);
+    z = reshape(double(lfp(sampleinds(:), :)), nWin, nb, nCh);
+    z = z - sum(z, 1) / nWin;
+    z = z ./ sqrt(sum(z.^2, 1));
+    for j = 1:nCh
+        for k = (j + 1):nCh
+            r = sum(z(:, :, j).*z(:, :, k), 1);
+            r(r > 1) = 1; % guard against rounding, as corr does
+            r(r < -1) = -1;
+            EMGCorr(binindstart:binindend) = EMGCorr(binindstart:binindend) + r(:);
         end
-        counter = counter + 1;
     end
 end
-% toc
 
 EMGCorr = EMGCorr / (length(xcorr_chs) * (length(xcorr_chs) - 1) / 2); % normalize
 
@@ -256,6 +285,13 @@ EMGFromLFP.data = EMGCorr;
 EMGFromLFP.channels = xcorr_chs;
 EMGFromLFP.detectorName = 'getEMGFromLFP';
 EMGFromLFP.samplingFrequency = samplingFrequency;
+EMGFromLFP.detectorinfo.channelSelection = selectionMethod;
+EMGFromLFP.detectorinfo.maxAutoChannels = maxAutoChannels;
+EMGFromLFP.detectorinfo.nUsableSpikeGroups = nUsableSpikeGroups;
+EMGFromLFP.detectorinfo.spikeGroupsUsed = spkgrpsused;
+EMGFromLFP.detectorinfo.specialChannels = specialChannels;
+EMGFromLFP.detectorinfo.rejectChannels = rejectChannels;
+EMGFromLFP.detectorinfo.nChannelPairs = nPairs;
 
 if ~any(~isnan(EMGFromLFP.data))
     keyboard

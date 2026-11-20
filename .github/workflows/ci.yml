@@ -10,28 +10,43 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           path: neurocode  # Checkout into a folder named 'neurocode'
 
       - name: Checkout external repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           repository: ayalab1/CellExplorer
           path: CellExplorer
 
       - name: Set up MATLAB
-        uses: matlab-actions/setup-matlab@v1
+        uses: matlab-actions/setup-matlab@v2
+        with:
+          release: R2025b
+          products: >
+            Signal_Processing_Toolbox
+            DSP_System_Toolbox
+            Statistics_and_Machine_Learning_Toolbox
+            Parallel_Computing_Toolbox
 
-      - name: Compile MEX files
-        run: |
-          matlab -batch "cd neurocode/utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c"
-          matlab -batch "cd neurocode/utilities/mapsC+; mex Contiguous.c; mex FindField.c"
+      # Public repositories get a MATLAB license only through the
+      # matlab-actions run steps, not by calling matlab from a shell.
+      - name: Compile interval MEX files
+        uses: matlab-actions/run-command@v2
+        with:
+          command: cd neurocode/utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c
+
+      - name: Compile map MEX files
+        uses: matlab-actions/run-command@v2
+        with:
+          command: cd neurocode/utilities/mapsC+; mex Contiguous.c; mex FindField.c
 
       - name: Run MATLAB tests
-        run: |
-          matlab -batch "addpath(genpath('neurocode')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('neurocode/test'); assertSuccess(results);"
+        uses: matlab-actions/run-command@v2
+        with:
+          command: addpath(genpath('neurocode')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('neurocode/test'); assertSuccess(results);

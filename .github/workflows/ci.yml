@@ -33,11 +33,19 @@ jobs:
             DSP_System_Toolbox
             Statistics_and_Machine_Learning_Toolbox
 
-      - name: Compile MEX files
-        run: |
-          matlab -batch "cd neurocode/utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c"
-          matlab -batch "cd neurocode/utilities/mapsC+; mex Contiguous.c; mex FindField.c"
+      # Public repositories get a MATLAB license only through the
+      # matlab-actions run steps, not by calling matlab from a shell.
+      - name: Compile interval MEX files
+        uses: matlab-actions/run-command@v2
+        with:
+          command: cd neurocode/utilities/intervalsC+; mex CountInIntervals.c; mex FindInInterval.c; mex MatchUpIndices.c
+
+      - name: Compile map MEX files
+        uses: matlab-actions/run-command@v2
+        with:
+          command: cd neurocode/utilities/mapsC+; mex Contiguous.c; mex FindField.c
 
       - name: Run MATLAB tests
-        run: |
-          matlab -batch "addpath(genpath('neurocode')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('neurocode/test'); assertSuccess(results);"
+        uses: matlab-actions/run-command@v2
+        with:
+          command: addpath(genpath('neurocode')); addpath('CellExplorer/calc_CellMetrics'); results = runtests('neurocode/test'); assertSuccess(results);
